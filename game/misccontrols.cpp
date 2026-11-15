@@ -74,15 +74,6 @@ bool ButtonControl::Init(char *pszLabel, int nfnt, char *szFnUp, char *szFnDown,
 			m_rc.bottom = m_rc.top + _max(siz1.cy, siz2.cy);
 		}
 	} else {
-#if 0 // old-style filled-rect buttons
-		Font *pfnt = gapfnt[m_nfnt];
-		int cx = pfnt->GetTextExtent(m_szLabel);
-		int cy = pfnt->GetHeight();
-		if (m_rc.right == m_rc.left)
-				m_rc.right = m_rc.left + cx + PcFromFc(3 + 3);
-		if (m_rc.bottom == m_rc.top)
-			m_rc.bottom = m_rc.top + cy + PcFromFc(1 + 2);
-#else
 		Size sizMid;
 		s_ptbmMidUp->GetSize(&sizMid);
 
@@ -95,7 +86,6 @@ bool ButtonControl::Init(char *pszLabel, int nfnt, char *szFnUp, char *szFnDown,
 
 		if (m_rc.right == m_rc.left)
 			m_rc.right = m_rc.left + (sizMid.cx * 3);
-#endif
 	}
 
 	if (fCenter)
@@ -167,28 +157,6 @@ void ButtonControl::OnPaint(DibBitmap *pbm)
 			gapfnt[m_nfnt]->DrawText(pbm, m_szLabel, x + rcForm.left, y + rcForm.top);
 		}
 	} else {
-#if 0 // old-style filled-rect buttons
-		Rect rcT = m_rc;
-		rcT.Offset(rcForm.left, rcForm.top);
-
-		int cxyBorder2x = gcxyBorder * 2;
-		pbm->Fill(rcT.left + gcxyBorder, rcT.top + gcxyBorder, rcT.Width() - cxyBorder2x, rcT.Height() - cxyBorder2x, GetColor(fSelected ? kiclrButtonFillHighlight : kiclrButtonFill));
-
-		int iclr = GetColor(fSelected ? kiclrWhite : kiclrButtonBorder);
-		pbm->Fill(rcT.left + gcxyBorder, rcT.top, rcT.Width() - cxyBorder2x, gcxyBorder, iclr);
-		pbm->Fill(rcT.left, rcT.top + gcxyBorder, gcxyBorder, rcT.Height() - cxyBorder2x, iclr);
-		pbm->Fill(rcT.right - gcxyBorder, rcT.top + gcxyBorder, gcxyBorder, rcT.Height() - cxyBorder2x, iclr);
-		pbm->Fill(rcT.left + gcxyBorder, rcT.bottom - gcxyBorder, rcT.Width() - cxyBorder2x, gcxyBorder, iclr);
-
-		if (m_szLabel[0] != 0) {
-			Font *pfnt = gapfnt[m_nfnt];
-			int cx = pfnt->GetTextExtent(m_szLabel);
-			int cy = pfnt->GetHeight();
-			int x = m_rc.left + (m_rc.Width() - cx + 1) / 2;
-			int y = m_rc.top + (m_rc.Height() - cy + gcxyBorder) / 2;
-			gapfnt[m_nfnt]->DrawText(pbm, m_szLabel, x + rcForm.left, y + rcForm.top);
-		}
-#else
 		Rect rcT = m_rc;
 		rcT.Offset(rcForm.left, rcForm.top);
 
@@ -213,15 +181,8 @@ void ButtonControl::OnPaint(DibBitmap *pbm)
 
 		ptbmLeft->BltTo(pbm, x, rcT.top);
 		x += sizLeft.cx;
-#if 0
-		while (x < xRight) {
-			ptbmMid->BltTo(pbm, x, rcT.top);
-			x += sizMid.cx;
-		}
-#else
 		ptbmMid->FillTo(0, pbm, x, rcT.top, xRight - x, rcT.Height());
 		x = xRight;
-#endif
 
 		ptbmRight->BltTo(pbm, xRight, rcT.top);
 
@@ -233,7 +194,6 @@ void ButtonControl::OnPaint(DibBitmap *pbm)
 			int y = m_rc.top + ((sizMid.cy - gapfnt[m_nfnt]->GetHeight() + 1) / 2);
 			gapfnt[m_nfnt]->DrawText(pbm, m_szLabel, x + rcForm.left, y + rcForm.top);
 		}
-#endif
 	}
 }
 
@@ -271,55 +231,6 @@ void ButtonControl::SetText(char *psz)
 	Invalidate();
 }
 
-#if 0 // not used now
-// Preset button control
-
-bool PresetButtonControl::Init(char *pszLabel, int nfnt, char *szFnUp, char *szFnDown, bool fCenter)
-{
-	if (szFnUp != NULL)
-		m_ptbmUp = GetSharedTBitmap(szFnUp);
-	if (szFnDown != NULL)
-		m_ptbmDown = GetSharedTBitmap(szFnDown);
-
-	if (m_ptbmUp != NULL) {
-		Size siz1 = { 0, 0 };
-		m_ptbmUp->GetSize(&siz1);
-		if (siz1.cx != 0 && siz1.cy != 0) {
-			m_rc.right = m_rc.left + siz1.cx + 2;
-			m_rc.bottom = m_rc.top + siz1.cy + 2;
-		}
-	}
-	if (fCenter)
-		m_rc.Offset(-m_rc.Width() / 2, 0);
-
-	return true;
-}
-
-void PresetButtonControl::OnPaint(DibBitmap *pbm)
-{
-	bool fSet = (m_wf & kfCtlSet) != 0;
-
-	Rect rcForm;
-	m_pfrm->GetRect(&rcForm);
-
-	bool fSelected = m_pfrm->IsControlInside(this);
-	Rect rcT = m_rc;
-	rcT.Offset(rcForm.left, rcForm.top);
-
-	if (fSelected) {
-		pbm->Fill(rcT.left + 1, rcT.top + 1, rcT.Width() - 2, rcT.Height() - 2, GetColor(kiclrButtonFillHighlight));
-	}
-
-	TBitmap *ptbm;
-	if (fSet)
-		ptbm = m_ptbmDown;
-	else
-		ptbm = m_ptbmUp;
-
-	if (ptbm != NULL)
-		ptbm->BltTo(pbm, m_rc.left + rcForm.left + 1, m_rc.top + rcForm.top + 1);
-}
-#endif
 
 // CheckBox Control
 
@@ -635,7 +546,7 @@ void LabelControl::CalcRect()
 // @S. - subsequent characters' side colors are mapped to the local player's side
 // @@ - escaped '@'. Use to output an '@'
 
-int FancyTextCore(DibBitmap *pbm, Font *pfntDefault, char *psz, int x, int y, int cch, bool fGetTextExtent) secControl;
+int FancyTextCore(DibBitmap *pbm, Font *pfntDefault, char *psz, int x, int y, int cch, bool fGetTextExtent);
 
 int DrawFancyText(DibBitmap *pbm, Font *pfntDefault, char *psz, int x, int y, int cch)
 {
@@ -897,12 +808,6 @@ ListControl::~ListControl()
 
 	Clear();
 
-#if 0 // Don't delete these because the form will do it
-	if (m_pbtnUp != NULL)
-		delete m_pbtnUp;
-	if (m_pbtnDown != NULL)
-		delete m_pbtnDown;
-#endif
 
     if (m_fTimerAdded) {
         gtimm.RemoveTimer(this);
@@ -927,9 +832,6 @@ bool ListControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	m_cyItem = pfnt->GetHeight() + kcyListLineSpace - pfnt->GetLineOverlap();
     m_cxEllipsis = pfnt->GetTextExtent("...");
 
-#if defined(IPHONE) || defined(__IPHONEOS__) || defined(__ANDROID__)
-    m_wf |= kfLstcScrollPosition;
-#endif
 
 	return true;
 }
@@ -1045,12 +947,7 @@ void ListControl::OnPaint(DibBitmap *pbm)
             int y2 = rcScrollPos.Height() * (m_iliTop + cliDrawn) / m_cli;
             pbm->Fill(rcScrollPos.left, rcScrollPos.top + y1,
                     rcScrollPos.Width(), y2 - y1,
-#if 0
-                    m_fPenDown ? GetColor(kiclrWhite) :
                     GetColor(m_iclrScrollPos));
-#else
-                    GetColor(m_iclrScrollPos));
-#endif
         }
     } else {
         if (fNeedsScrollUp) {
@@ -1541,19 +1438,6 @@ void ListControl::Select(int iliSelect, bool fOnly, bool fMakeCenter)
 		Invalidate();
 }
 
-#if 0
-// Enumerate the list Items
-
-ListItem *ListControl::EnumItemPtr(Enum *penm)
-{
-	if (penm->m_pvNext == (void *)kEnmFirst) 
-		penm->m_pvNext = (void *)m_pliFirst;
-	else if (penm->m_pvNext != NULL)
-		penm->m_pvNext = (void *)((ListItem *)penm->m_pvNext)->pliNext;
-
-	return (ListItem *)penm->m_pvNext;
-}
-#endif
 
 int ListControl::GetSelectedItemIndex()
 {
@@ -1864,7 +1748,7 @@ DamageMeterControl::~DamageMeterControl()
 
 #define kfxDamagePerSecMax itofx(16)
 
-void DrawPips(DibBitmap *pbm, TBitmap *ptbm, int *px, int y, int nDamage, int ctFiringRate) secControl;
+void DrawPips(DibBitmap *pbm, TBitmap *ptbm, int *px, int y, int nDamage, int ctFiringRate);
 void DrawPips(DibBitmap *pbm, TBitmap *ptbm, int *px, int y, int nDamage, int ctFiringRate)
 {
 	if (nDamage == 0)

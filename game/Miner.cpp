@@ -6,12 +6,6 @@ namespace wi {
 static MinerConsts gConsts;
 AnimationData *MinerGob::s_panidVacuum = NULL;
 
-#if defined(DEBUG_HELPERS)
-char *MinerGob::GetName()
-{
-	return "Miner";
-}
-#endif
 
 static int s_anMovingStripIndices[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
@@ -300,7 +294,7 @@ if (!(m_ff & kfGobActive)) {
 
 			FogMap *pfogm = gsim.GetLevel()->GetFogMap();
 			if (pfogm->FindNearestGalaxite(m_tptGalaxite.tx, m_tptGalaxite.ty, 
-					&m_tptGalaxite, (m_pplr->GetFlags() & kfPlrComputer) != 0 || ggame.IsMultiplayer())) {
+					&m_tptGalaxite, (m_pplr->GetFlags() & kfPlrComputer) != 0)) {
 				m_wptTarget.wx = WcFromTc(m_tptGalaxite.tx);
 				m_wptTarget.wy = WcFromTc(m_tptGalaxite.ty);
 				SetState(kstMinerApproachGalaxite);
@@ -616,7 +610,7 @@ if (!(m_ff & kfGobActive)) {
 					// Miners controlled by computer players or in a network game can (must) ignore fog.
 
 					bool fFound = pfogm->FindNearestGalaxite(tx, ty, &m_tptGalaxite, 
-							(m_pplr->GetFlags() & kfPlrComputer) != 0 || ggame.IsMultiplayer());
+							(m_pplr->GetFlags() & kfPlrComputer) != 0);
 					if (!fFound) {
 
 						// Can't find any! Deliver what we have & then we'll park it by our
@@ -836,39 +830,14 @@ if (!(m_ff & kfGobActive)) {
 
 			DefUpdate();
 
-#if 0
-EndStateMachineInherit(MobileUnitGob)
-#else
             return knHandled;
         }
     } else {
         return (int)MobileUnitGob::ProcessStateMachineMessage(st, pmsg);
     }
     return (int)MobileUnitGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
-#ifdef MP_DEBUG_SHAREDMEM
-void MinerGob::MPValidate()
-{
-	// TODO: animation state
-	MPValidateGobMember(MinerGob, m_nGalaxiteAmount);
-	MPValidateGobMember(MinerGob, m_cDelay);
-	MPValidateGobMember(MinerGob, m_gidFavoriteProcessor);
-	MPValidateGobMember(MinerGob, m_tptGalaxite);
-
-// gpplrLocal specific
-//	MPValidateGobMember(MinerGob, m_fMinerUnderAttack);
-
-	MPValidateGobMember(MinerGob, m_fAttemptingToDeliver);
-	MPValidateGobMember(MinerGob, m_fHidden);
-
-// Visibility specific
-//	m_aniVacuum.MPValidate((Animation *)(((byte *)MPGetGobPtr(m_gid)) + OFFSETOF(MinerGob, m_aniVacuum)));
-
-	MobileUnitGob::MPValidate();
-}
-#endif
 
 Gid MinerGob::FindClosestProcessor()
 {

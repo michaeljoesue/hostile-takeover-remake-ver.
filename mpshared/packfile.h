@@ -7,7 +7,6 @@
 
 namespace wi {
 
-#if !defined(PIL)
 
 // Pdb structs
 
@@ -54,7 +53,6 @@ struct DatabaseHdrType {
 	RecordListType	recordList;	// 72 first record list
                                 // 80
 };		
-#endif // !defined(PIL)
 
 // PackFileReader. Exposes c-runtime prototype apis, calls PdbReader for data
 // access to pdbs created with packpdb.
@@ -115,7 +113,6 @@ struct FileMap // fmap
 #define PACKENUM_FIRST 0
 #define PACKENUM_LAST 1
 
-#ifndef USE_PALM_UNIX_HEADERS
 class PackFileReader // pakr
 {
 public:
@@ -130,17 +127,12 @@ public:
 	bool EnumFiles(Enum *penm, int key, char *pszFn, int cbFn);
 	void *MapFile(const char *pszFn, FileMap *pfmap, dword *pcb = NULL);
 	void UnmapFile(FileMap *pfmap);
-    bool HashFile(const char *pszFn, byte *hash);
-    bool GetPdbName(const char *pszFn, char *pszPdb, int cbPdb,
-            char *pszDir = NULL, int cbDir = 0);
 
 	bool Push(const char *pszDir, const char *pszFn);
 	bool Pop();
-	bool Delete(const char *pszDir, const char *pszFn);
 
 private:
     virtual PdbReader *OpenPdb(const char *pszDir, const char *pszFn) = 0;
-    virtual bool DeletePdb(const char *pszDir, const char *pszFn) = 0;
 
 	bool Push(const char *pszDir, const char *pszFn, PdbReader *ppdbReader);
 	bool FindDirEntry(const char *psz, DirEntry *pdir, ReaderInfo **pprnfo);
@@ -150,7 +142,6 @@ private:
 	int m_crnfoAlloc;
 	ReaderInfo *m_arnfo;
 };
-#endif
 
 #ifndef SEEK_CUR
 #define SEEK_CUR    1

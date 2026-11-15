@@ -3,58 +3,26 @@
 
 namespace base {
 
-pthread_key_t Thread::s_key_;
+Thread *Thread::s_current_;
 
-Thread::Thread(SocketServer *ss) : start_routine_(NULL), start_pv_(NULL),
-        started_(false), MessageQueue(ss) {
-    static bool s_first_thread;
-    if (!s_first_thread) {
-        pthread_key_create(&s_key_, NULL);
-        pthread_setspecific(s_key_, this);
-        s_first_thread = true;
+Thread::Thread(EventServer *es) : MessageQueue(es) {
+    // The first Thread created is the main (current) thread
+    if (s_current_ == NULL) {
+        s_current_ = this;
     }
 }
 
 Thread::~Thread() {
     Stop();
-}
-
-void Thread::Start(void (start_routine)(void *), void *start_pv) {
-    start_routine_ = start_routine;
-    start_pv_ = start_pv;
-    pthread_create(&thread_, NULL, PreRun, this);
-}
-
-void *Thread::PreRun(void *pv) {
-    Thread *thread = (Thread *)pv;
-    pthread_setspecific(s_key_, thread);
-    thread->started_ = true;
-    if (thread->start_routine_ != NULL) {
-        thread->start_routine_(thread->start_pv_);
-    } else {
-        thread->RunLoop();
-    }
-    return NULL;
-}
-
-void Thread::CallerStart(void *pv) {
-    ICaller *caller = (ICaller *)pv;
-    caller->Call();
-    delete caller;
-}
-
-void Thread::Stop(bool wait) {
-    MessageQueue::Stop();
-    if (wait && started_ && &current() != this) {
-        void *pv;
-        pthread_join(thread_, &pv);
+    if (s_current_ == this) {
+        s_current_ = NULL;
     }
 }
 
 void Thread::RunLoop(long64 ct) {
     Thread& thread = current();
 
-    long64 tEnd;
+    long64 tEnd = 0;
     if (ct != kctForever) {
         tEnd = base::GetTickCount() + ct;
     }
@@ -67,7 +35,7 @@ void Thread::RunLoop(long64 ct) {
         }
         thread.Dispatch(&msg);
 
-        if (ct != -1) {
+        if (ct != kctForever) {
             long64 tCur = base::GetTickCount();
             if (tCur >= tEnd) {
                 return;

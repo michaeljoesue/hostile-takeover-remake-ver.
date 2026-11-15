@@ -43,14 +43,6 @@ private:
 #define ENDLABEL(name) { 0, 0 } }; const base::Labels name(name ## _labels);
 #endif
 
-class StringEncoder {
-public:
-    static const char *Escape(const char *s, bool quote = false);
-    static const char *Replace(const char *s, const char *findstr,
-            const char *replacewith);
-    static const char *QueryEncode(const char *s);
-};
-
 } // namespace base
 
 #endif // __BASE_MISC_H__

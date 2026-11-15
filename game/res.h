@@ -4,9 +4,7 @@
 #define kidfLoseSummary 1003
 #define kidfGameOptions 1004
 #define kidfTileMapTest 1005
-#define kidfContinueGame 1006
 #define kidfHrcMenu 1008
-#define kidfPickLevel 1009
 #define kidfWinSummary 1010
 #define kidfBuildInfantry 1011
 #define kidfResearchMenu 1012
@@ -18,18 +16,13 @@
 #define kidfPlaceStructure 1018
 #define kidfTestOptions 1019
 #define kidfStartup 1021
-#define kidfPickTransport 1022
-#define kidfHostMultiplayer 1024
 #define kidfObjectives 1025
-#define kidfGameStart 1026
 #define kidfChangeDisplayMode 1028
 #define kidfMessageBox 1029
 #define kidfUnitMenu 1030
 #define kidfMobileHqMenu 1031
 #define kidfMinerMenu 1032
 #define kidfMemoryUse 1033
-#define kidfRoom 1034
-#define kidfCreateGame 1035
 #define kidfSimUI 1036
 #define kidfInputUI 1037
 #define kidfLoadGame 1038
@@ -37,7 +30,6 @@
 #define kidfEcomLarge 1040
 #define kidfEcomSmall 1041
 #define kidfHelp 1042
-#define kidfPlay 1043
 #define kidfInGameMenu 1044
 #define kidfUpgrade 1045
 #define kidfMiniMap 1046
@@ -48,29 +40,11 @@
 #define kidfDisplayOptions 1052
 #define kidfPerformanceOptions 1053
 #define kidfGobCount 1054
-#define kidfDrmCode 1055
-#define kidfDrmKey 1056
-#define kidfRegisterNow 1057
 #define kidfMessageBoxQuery 1058
 #define kidfInputPanel 1059
-#define kidfDeleteMissionPack 1060
 #define kidfLoading 1061
-#define kidfWaiting 1062
-#define kidfMultiplayerLoseSummary 1063
-#define kidfMultiplayerWinSummary 1064
-#define kidfMultiplayerObjectives 1065
-#define kidfBluetoothPatchQuery 1066
-#define kidfRoomWide 1067
-#define kidfCreateGameWide 1068
 #define kidfSelectMissionWide 1069
-#define kidfDownloadMissionPackWide 1070
-#define kidfDownloadBox 1071
 #define kidfHelpWide 1072
-#define kidfLobby 1073
-#define kidfLogin 1074
-#define kidfCreateRoom 1075
-#define kidfChooseServer 1076
-#define kidfAddOnSingleMulti 1077
 
 #define kifntDefault 0
 #define kifntShadow 1
@@ -137,28 +111,12 @@
 
 // Startup form constants
 
-#define kidcPlaySinglePlayer 1001
-#define kidcPlayMultiPlayer 1002
 #define kidcPlay 1003
 #define kidcSetupGame 1004
-#define kidcBuyMe 1005
 #define kidcCredits 1006
 #define kidcExitGame 1007
 #define kidcLoadSavedGame 1008
-#define kidcPlayDemo 1500
-#define kidcPlayMission 1010
 #define kidcVersion 1011
-#define kidcDownloadMissions 1501
-#define kidcForums 1502
-#define kidcLeaderboard 1503
-
-// Play Solo form constants
-
-#define kidcBeginNewGame 1012
-#define kidcPlayChallengeLevel 1013
-#define kidcPlayStoryMission 1014
-#define kidcPlaybackGame 1015
-//#define kidcLoadSavedGame 1008
 
 // SimUIForm constants
 
@@ -200,7 +158,6 @@
 #define kidcMaxRepaint 1009
 #define kidcAutosave 1010
 #define kidcMemoryUse 1011
-#define kidcLockStep 1012
 #define kidcDrawUpdateRects 1013
 //#define kidcGraphStats 1014
 #define kidcGodMode 1015
@@ -233,85 +190,16 @@
 
 #define kidcMessage 1001
 
-// Login form constants
+// Load / save game form constants
 
-#define kidcAnonymous 1200
-#define kidcLogin 1201
-#define kidcRegister 1202
-#define kidcUpdateAccount 1203
-
-// Lobby form constants
-
-#define kidcRoomList 1200
-#define kidcJoinRoom 1201
-#define kidcNewRoom 1202
-#define kidcSignOut 1203
-#define kidcLurkerCount 1204
-
-// CreateRoom constants
-
-#define kidcRoomNameLabel 1200
-#define kidcRoomName 1201
-#define kidcRoomNamePanel 1202
-#define kidcPrivate 1203
-
-// PlayMultiplayer form constants
-
-#define kidcJoinGame 1001
-#define kidcNewGame 1002
 #define kidcGameList 1003
-#define kidcChat 1904
-#define kidcPlayerName 1005
-#define kidcSearching 1006
-#define kidcPlayerNamePanel 1007
-#define kidcPlayerNameLabel 1008
-#define kidcStatus 1009
-#define kidcSpecify 1010
-#define kidcNoGames 1011
 
-// CreateNewMultiplayer form constants
+// SelectMission form constants
 
-#define kidcPassword 1101
-#define kidcMapList 1102
-
-// MeetingForm constants
-
-#define kidcGameName 1001
-#define kidcMapName 1002
-#define kidcNumPlayers 1003
-#define kidcPlayerList 1004
-#define kidcGameNameLabel 1005
-#define kidcGameNamePanel 1006
-#define kidcPasswordLabel 1107
-#define kidcPasswordPanel 1108
-#define kidcAddress 1009
-#define kidcAddressLabel 1010
-
-// PickLevelForm constants
-
-#define kidcLevelList 1001
 #define kidcCategories 1500
-#define kidcAddOnMessage 1501
 #define kidcStoryList 1502
 #define kidcChallengeList 1503
-#define kidcAddOnList 1504
-
-// DownloadMissionPack constants
-
-#define kidcMissionPackList 1001
 #define kidcMissionPackInfo 1002
-#define kidcNumMissions 1010
-#define kidcDiscuss 1011
-
-// PickTransportForm constants
-
-#define kidcNoTransportsAvailable 1001
-#define kidcTransport1 1101
-#define kidcTransport2 1102
-#define kidcTransport3 1103
-#define kidcTransport4 1104
-#define kidcTransport5 1105
-#define kidcTransport6 1106
 
 // UnitMenu constants
 
@@ -415,7 +303,6 @@
 #define kidcPerformanceOptions 1003
 #define kidcColorOptions 1004
 #define kidcDisplayOptions 1005
-#define kidcDeleteMissionPack 1007
 
 // InGameOptions constants
 
@@ -465,39 +352,9 @@
 #define kidcScorchMarks 1009
 #define kidcSymbolFlashing 1010
 
-// kidfChooseServer
-#define kidcServerList 1300
-#define kidcServerName 1301
-#define kidcServerLocation 1302
-#define kidcServerStatus 1303
-#define kidcRefresh 1304
+// Input Panel / Key entry
 
-// DRM Code
-
-#define kidcCode 1001
-#define kidcEnterKey 1002
-//#define kidcPlayDemo 1003
-
-// DRM Key
-
-#define kidc0 1010
-#define kidc1 1011
-#define kidc2 1012
-#define kidc3 1013
-#define kidc4 1014
-#define kidc5 1015
-#define kidc6 1016
-#define kidc7 1017
-#define kidc8 1018
-#define kidc9 1019
-#define kidcA 1020
-#define kidcB 1021
-#define kidcC 1022
-#define kidcD 1023
-#define kidcE 1024
-#define kidcF 1025
 #define kidcBackspace 1026
-#define kidcKey 1027
 
 // Input Panel
 

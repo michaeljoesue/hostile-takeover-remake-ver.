@@ -227,7 +227,7 @@ void BuilderGob::DefUpdate()
 	// God can build things instantly and for free
 
 	bool fBuild = false;
-	if (gfGodMode && !ggame.IsMultiplayer()) {
+	if (gfGodMode) {
 		fBuild = true;
 		WaitingForCredits(false);
 	} else {
@@ -586,7 +586,7 @@ void MobileUnitBuildForm::SetOwner(BuilderGob *pbldr)
 
 void MobileUnitBuildForm::UpdateUnitInfo(ListItem *pli)
 {
-	MobileUnitConsts *pmuntc = (MobileUnitConsts *)gapuntc[(long)pli->pvData];
+	MobileUnitConsts *pmuntc = (MobileUnitConsts *)gapuntc[(pword)pli->pvData];
 
 	// Update Cost
 
@@ -700,7 +700,7 @@ void MobileUnitBuildForm::OnControlSelected(word idc)
 		return;
 //CRM
 	case kidcHelp:
-		Help(m_idf == kidfBuildInfantry ? "personnel" : "vehicles", !ggame.IsMultiplayer());
+		Help(m_idf == kidfBuildInfantry ? "personnel" : "vehicles", true);
 		break;
 
 	case kidcOrder:
@@ -1006,7 +1006,6 @@ void BuildListControl::OnPaint(DibBitmap *pbm)
 
 void BuildListControl::DrawItem(DibBitmap *pbm, ListItem *pli, int x, int y, int cx, int cy)
 {
-	HostSoundServiceProc();
 
 	Rect rc;
 	if (pli->fSelected) {

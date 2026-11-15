@@ -3,21 +3,14 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <limits.h>
-#include <sys/time.h>
 #include <stdio.h>
 #include <SDL.h>
 #include "game/sdl/sdlpackfile.h"
 #include "game/sdl/sysmessages.h"
 
-// To determine if running on simulator, the sdk sets TARGET_IPHONE_SIMULATOR
-// to 0 or 1.
-#if defined(IPHONE) || defined(__IPHONEOS__)
-#include <TargetConditionals.h>
-#if TARGET_IPHONE_SIMULATOR == 1
-#define SIMULATOR
-#endif
+#ifndef PATH_MAX
+#define PATH_MAX 260
 #endif
 
 namespace wi {
@@ -28,9 +21,6 @@ namespace wi {
 
 typedef char TCHAR;
 #define TEXT(str) str
-
-#define _MAX_PATH PATH_MAX
-#define MAX_PATH PATH_MAX
 
 #define chrPageUp 0xb
 #define chrPageDown 0xc
@@ -122,10 +112,7 @@ public:
     void FrameComplete(int cfrmm, UpdateMap **apupd, Rect *arc, bool fScrolled);
     void ResetScrollOffset();
     SpriteManager *GetSpriteManager();
-    void SetFormMgrs(FormMgr *pfrmmSim, FormMgr *pfrmmInput);
     void RenderGameSurface();
-    float Density();
-    void SetShouldRender(bool fsr);
 
 private:
     int m_imode;
@@ -148,8 +135,6 @@ private:
     int m_pitch32;
     int m_pixelCount;
 
-    float m_density;
-    bool m_fShouldRender;
 };
 
 #define kfDtClearLine 1

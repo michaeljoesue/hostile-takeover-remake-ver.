@@ -9,13 +9,6 @@ namespace wi {
 
 #pragma pack(push, 2)
 
-const int kcUpdatesBlockInitial = 1;
-
-const dword kdwClientID = 0x47414d45;
-
-#define kdwTypeAddon 'ADD2'
-#define kszTypeAddon "ADD2"
-
 #define knVersionLevelSupported 1
 
 // NOTE: Gob ids (gid) and StateMachine ids (smid) are interchangeable
@@ -33,24 +26,9 @@ const int kcPlayersMax = 4 + 1;	// + 1 computer controlled neutral player
 
 const Pid kpidNeutral = 0xffff;
 
-#define knLagNone 0
-#define knLagGrace 1
-#define knLagGuilty 2
-#define knLagKill 3
-
-const int kcupdAllowedLag = 7; // TUNE:
-
 const int kcbLevelTitle = 40;
 #define kcbFilename 29
 const int kcbPlayerName = 32;
-const int kcbRoomname = 32;
-const int kcbPassword = 32;
-const int kcbUsernameMax = 64;
-const int kcbTokenMax = 256;
-const int kcbDidMax = 34;
-const int kcbChatMax = 1024;
-const int kcbShowMessageMax = 512;
-const int kcbPlatformMax = 32;
 
 // Side masks
 
@@ -66,21 +44,12 @@ const SideMask ksidmAll = ksidmNeutral | ksidmSide1 | ksidmSide2 | ksidmSide3 | 
 #define GetSideMask(side) (1 << side)
 
 const word kfPlrInUse = 0x0001;
-const word kfPlrReady = 0x0002;
 const word kfPlrComputer = 0x0004;
 const word kfPlrUnfulfilled = 0x0008;
 const word kfPlrStructureAttacked = 0x0010;
 const word kfPlrComputerOvermind = 0x0020;
 const word kfPlrAutoRepair = 0x0040;
-const word kfPlrDisconnectBroadcasted = 0x0080;
-const word kfPlrObserver = 0x0100;
 const word kfPlrSummaryShown = 0x0200;
-const word kfPlrCreator = 0x0400;
-const word kfPlrDisconnectScheduled = 0x0800;
-const word kfPlrWinner = 0x1000;
-const word kfPlrLoser = 0x2000;
-const word kfPlrRemovedAtGameStart = 0x4000;
-const word kfPlrHumanJoined = 0x8000;
 
 // Size
 
@@ -95,44 +64,8 @@ struct WPoint // pt
 	WCoord wx, wy;
 };
 
-// Network address
-
-struct NetAddress // nad
-{
-	byte ab[16];
-};
-
-// Simulation version, use in multiplayer game params
-
-#define knVersionSimulation 2
-
-#define PACKID_MAIN 0xffffffff
-
-struct PackId {
-    dword id;
-    byte hash[16];
-};
-
-struct GameParams // rams
-{
-    PackId packid; // 20
-    dword dwVersionSimulation; // 4
-    int tGameSpeed; // 4
-    char szLvlFilename[kcbFilename]; // 29
-    byte filler[3]; // 3
-}; // 60
-
-struct PlayerName {
-    char szPlayerName[kcbPlayerName];
-};
-
-// Message is sent multiplayer and dispatched as is (without going through
-// reformatting). This means: fixed sized data types, "platform independent"
-// packing (meaning data types must be aligned on natural boundaries, like
-// dword on a 4 byte boundary etc). Message structure arrays are memcpy'ed to
-// produce NetMessages. This gives the additional requirement of packed Message
-// structures beginning on 4 byte boundaries. To achieve this ensure that all
-// union'ed structs are 4 bytes length multiples
+// Simulation messages. Commands are queued as arrays of Message structures,
+// so all union'ed structs are 4 bytes length multiples.
 
 struct Message // msg
 {
@@ -221,11 +154,6 @@ struct Message // msg
 		struct {
 			UnitMask um;
 		} HuntEnemiesCommand;
-
-        struct {
-            Pid pid;
-            word nReason;
-        } PlayerDisconnect;
 	};
 };
 
@@ -269,7 +197,6 @@ enum MessageId { // mid
 	kmidFire,
 	kmidHeal,
 	kmidPlaySfx,
-    kmidPlayerDisconnect,
 };
 
 STARTLABEL(MessageNames)
@@ -311,13 +238,6 @@ STARTLABEL(MessageNames)
 	LABEL(kmidHeal)
 	LABEL(kmidPlaySfx)
 ENDLABEL(MessageNames)
-
-struct UpdateResult // ur
-{
-	int cUpdatesBlock;
-    dword hash;
-    int cmsLatency;
-};
 
 #pragma pack(pop)
 

@@ -404,15 +404,6 @@ void WRect::Set(WPoint wpt1, WPoint wpt2)
 	}
 }
 
-#if 0 // UNUSED
-void WRect::FromPixelRect(Rect *prc)
-{
-	left = WcFromPc(prc->left);
-	right = WcFromPc(prc->right);
-	top = WcFromPc(prc->top);
-	bottom = WcFromPc(prc->bottom);
-}
-#endif
 
 void WRect::FromTileRect(TRect *ptrc)
 {
@@ -705,15 +696,6 @@ void WLineIterator::Init(WCoord wx1, WCoord wy1, WCoord wx2, WCoord wy2, int nIn
 	m_wdy = wdy / cSteps;
 	m_cStepsRemaining = cSteps;
 
-#if 0	// doing without for now
-	// Some fraction of a step is lost when we convert cSteps to an integer.
-	// Add this fractional step to m_fx, m_fy to start things off so the
-	// final step will leave us at the desired destination.
-
-	fix fxFrac = fracfx(cfxSteps);
-	m_fx = addfx(m_fx, (fix)mulfx(m_fdx, fxFrac));
-	m_fy = addfx(m_fy, (fix)mulfx(m_fdy, fxFrac));
-#endif
 }
 
 //
@@ -930,62 +912,6 @@ int CompareDates(Date *pdate1, Date *pdate2)
 // false means beta has timed out
 // true means beta has not timed out
 
-#ifdef BETA_TIMEOUT
-#define knMonthBetaStart 10
-#define knDayBetaStart 1
-#define knYearBetaStart 2009
-
-#define knMonthBetaEnd 12
-#define knDayBetaEnd 1
-#define knYearBetaEnd 2009
-
-bool CheckBetaTimeout()
-{
-	// Get current date
-
-	Date date;
-	HostGetCurrentDate(&date);
-
-	// Get prefs. If we have prefs, get the last date run from there
-
-	Date dateLast;
-	dateLast.nYear = gprefsInit.nYearLastRun;
-	dateLast.nMonth = gprefsInit.nMonthLastRun;
-	dateLast.nDay = gprefsInit.nDayLastRun;
-
-	// See if the date has been set backwards to trick us :)
-
-	if (CompareDates(&date, &dateLast) < 0) {
-TimeOut:
-		HtMessageBox(kfMbWhiteBorder | kfMbClearDib, "Test Release", "Thank you for playing Hostile Takeover. Unfortunately this test release has expired! Please contact us at:\n\nhttp://www.spiffcode.com");
-		return false;
-	}
-
-	// See if the current date is ahead of the demo start date
-
-	Date dateStart;
-	dateStart.nYear = knYearBetaStart;
-	dateStart.nMonth = knMonthBetaStart;
-	dateStart.nDay = knDayBetaStart;
-	if (CompareDates(&date, &dateStart) < 0)
-		goto TimeOut;
-
-	// See if the current date is before the demo end date
-
-	Date dateEnd;
-	dateEnd.nYear = knYearBetaEnd;
-	dateEnd.nMonth = knMonthBetaEnd;
-	dateEnd.nDay = knDayBetaEnd;
-	if (CompareDates(&date, &dateEnd) > 0)
-		goto TimeOut;
-
-	// All looks ok. Save the prefs which'll save the current date
-
-	ggame.SavePreferences();
-
-	return true;
-}
-#endif
 
 // Hardwired sfx categories
 
@@ -1443,100 +1369,6 @@ void DrawBorder(DibBitmap *pbm, Rect *prc, int nThickness, Color clr, UpdateMap 
 	}
 }
 
-#if 0
-void DrawBitmapBorder(DibBitmap *pbm, UpdateMap *pupd, Rect *prc, AnimationData *panid, int ifrm, Side side)
-{
-	// Get piece bounds
-
-	Rect rcTL;
-	panid->GetBounds(0, ifrm, &rcTL);
-	Rect rcT;
-	panid->GetBounds(1, ifrm, &rcT);
-	Rect rcTR;
-	panid->GetBounds(2, ifrm, &rcTR);
-	Rect rcR;
-	panid->GetBounds(3, ifrm, &rcR);
-	Rect rcBR;
-	panid->GetBounds(4, ifrm, &rcBR);
-	Rect rcB;
-	panid->GetBounds(5, ifrm, &rcB);
-	Rect rcBL;
-	panid->GetBounds(6, ifrm, &rcBL);
-	Rect rcL;
-	panid->GetBounds(7, ifrm, &rcL);
-
-	// Draw repeating top edge
-
-	Rect rcBounds;
-	int xL = prc->left + rcTL.Width();
-	int xR = prc->right - rcTR.Width();
-	int cxPiece = rcT.Width();
-	for (; xL < xR; xL += cxPiece) {
-		rcBounds = rcT;
-		rcBounds.Offset(xL, prc->top);
-		if (pupd->IsRectInvalid(&rcBounds))
-			panid->DrawFrame(1, ifrm, pbm, xL, prc->top, side);
-	}
-
-	// Draw repeating bottom edge
-
-	xL = prc->left + rcBL.Width();
-	xR = prc->right - rcBR.Width();
-	cxPiece = rcB.Width();
-	for (; xL < xR; xL += cxPiece) {
-		rcBounds = rcB;
-		rcBounds.Offset(xL, prc->bottom);
-		if (pupd->IsRectInvalid(&rcBounds))
-			panid->DrawFrame(5, ifrm, pbm, xL, prc->bottom, side);
-	}
-
-	// Draw repeating left edge
-
-	int yT = prc->top + rcTL.Height();
-	int yB = prc->bottom - rcBL.Height();
-	int cyPiece = rcL.Height();
-	for (; yT < yB; yT += cyPiece) {
-		rcBounds = rcL;
-		rcBounds.Offset(prc->left, yT);
-		if (pupd->IsRectInvalid(&rcBounds))
-			panid->DrawFrame(7, ifrm, pbm, prc->left, yT, side);
-	}
-
-	// Draw repeating right edge
-
-	yT = prc->top + rcTR.Height();
-	yB = prc->bottom - rcBR.Height();
-	cyPiece = rcR.Height();
-	for (; yT < yB; yT += cyPiece) {
-		rcBounds = rcR;
-		rcBounds.Offset(prc->right, yT);
-		if (pupd->IsRectInvalid(&rcBounds))
-			panid->DrawFrame(3, ifrm, pbm, prc->right, yT, side);
-	}
-
-	// Draw the corners
-
-	rcBounds = rcTL;
-	rcBounds.Offset(prc->left, prc->top);
-	if (pupd->IsRectInvalid(&rcBounds))
-		panid->DrawFrame(0, ifrm, pbm, prc->left, prc->top, side);
-
-	rcBounds = rcTR;
-	rcBounds.Offset(prc->right, prc->top);
-	if (pupd->IsRectInvalid(&rcBounds))
-		panid->DrawFrame(2, ifrm, pbm, prc->right, prc->top, side);
-
-	rcBounds = rcBR;
-	rcBounds.Offset(prc->right, prc->bottom);
-	if (pupd->IsRectInvalid(&rcBounds))
-		panid->DrawFrame(4, ifrm, pbm, prc->right, prc->bottom, side);
-
-	rcBounds = rcBL;
-	rcBounds.Offset(prc->left, prc->bottom);
-	if (pupd->IsRectInvalid(&rcBounds))
-		panid->DrawFrame(6, ifrm, pbm, prc->left, prc->bottom, side);
-}
-#endif
 
 //
 // Basic string dictionary class. Limited to short keys and values.

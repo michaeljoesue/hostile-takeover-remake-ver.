@@ -84,11 +84,6 @@ bool Form::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 		else if (strcmp(szProp, "BITMAP") == 0) {
 			pctl = new BitmapControl;
 		}
-#if 0 // not used now
-		else if (strcmp(szProp, "PRESETBUTTON") == 0) {
-			pctl = new PresetButtonControl;
-		}
-#endif
 		else if (strcmp(szProp, "EDIT") == 0) {
 			pctl = new EditControl;
 		}
@@ -354,14 +349,9 @@ void Form::OnPaint(DibBitmap *pbm)
 
 void Form::OnPaintControls(DibBitmap *pbm, UpdateMap *pupd)
 {
-	HostSoundServiceProc();
-	int nServiceSfx = 0;
 	for (int n = 0; n < m_cctl; n++) {
 		if ((m_apctl[n]->m_wf & (kfCtlVisible | kfCtlRedraw)) != (kfCtlVisible | kfCtlRedraw))
 			continue;
-		nServiceSfx++;
-		if ((nServiceSfx & 3) == 0)
-			HostSoundServiceProc();
 		m_apctl[n]->OnPaint(pbm);
 		m_apctl[n]->SetFlags(m_apctl[n]->GetFlags() & ~kfCtlRedraw);
 	}

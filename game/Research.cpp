@@ -11,14 +11,14 @@ public:
 	ResearchGob *GetOwner() {
 		return m_pgobOwner;
 	}
-	void SetOwner(ResearchGob *pgobOwner) secStructures;
-	void UpdateUpgradeInfo(ListItem *pli) secStructures;
+	void SetOwner(ResearchGob *pgobOwner);
+	void UpdateUpgradeInfo(ListItem *pli);
 
 	// Form overrides
 
-	void EndForm(int nResult = kidcCancel) secStructures;
-	virtual void OnControlSelected(word idc) secStructures;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secStructures;
+	void EndForm(int nResult = kidcCancel);
+	virtual void OnControlSelected(word idc);
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
 
 private:
 	ResearchGob *m_pgobOwner;
@@ -31,7 +31,7 @@ private:
 // UNDONE: initialize this from upgrades.ini (mirror gobtemplates.ini structure)
 // UNDONE: tapping '?' icon hangs
 
-// Single player upgrades
+// Upgrades
 
 Upgrade gaupg[kupgtMax] = {
 	{
@@ -52,41 +52,6 @@ Upgrade gaupg[kupgtMax] = {
 		"Upgrade the VTS to gain access to more advanced vehicles.", 
 		"This upgrade requires a VTS." 
 	},
-};
-
-// Multiplayer upgrades
-
-Upgrade gaupgMP[kupgtMax] = {
-	{
-		kupgmAdvancedHRC,
-		"Advanced HRC", 
-		"hrc1", 
-		0, kumHumanResourceCenter,
-		1500, 4500, 
-		"Upgrade the HRC to gain access to more advanced infantry.", 
-		"This upgrade requires a HRC." 
-	},
-	{ 
-		kupgmAdvancedVTS,
-		"Advanced VTS", 
-		"vts1", 
-		0, kumVehicleTransportStation,
-		3000, 4500, 
-		"Upgrade the VTS to gain access to more advanced vehicles.", 
-		"This upgrade requires a VTS." 
-	},
-#if 0
-	{ 
-		kupgmIncreasedBullpupSpeed,
-		"Increased Bullpup Speed", 
-		"bullpup1",
-		0, kumProcessor,
-		3000, 4500,
-		"Increase Bullpup movement and mining speed by 10%. All existing and future Bullpups will "
-		"be retrofited with high efficiency triple-buffered fuel cores.",
-		"This upgrade requires a Processor."
-	}
-#endif
 };
 
 //
@@ -254,12 +219,6 @@ void ResearchGob::OnMenuItemSelected(int idc)
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *ResearchGob::GetName()
-{
-	return "ResearchCenter";
-}
-#endif
 
 int ResearchGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
@@ -316,16 +275,12 @@ BeginStateMachine
 			}
 			DefUpdate();
 
-#if 0
-EndStateMachineInherit(StructGob)
-#else
             return knHandled;
         }
     } else {
         return (int)StructGob::ProcessStateMachineMessage(st, pmsg); 
     }
     return (int)StructGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 void ResearchGob::UpgradeUpdate()
@@ -334,7 +289,7 @@ void ResearchGob::UpgradeUpdate()
 
 	// God can upgrade things instantly and for free
 
-	if (gfGodMode && !ggame.IsMultiplayer()) {
+	if (gfGodMode) {
 		m_nCreditsSpentOnUpgrade = nCost;
 		WaitingForCredits(false);
 	} else {
@@ -456,7 +411,7 @@ void UpgradeForm::SetOwner(ResearchGob *pgobOwner)
 	UpgradeMask upgmAllowed = pplr->GetAllowedUpgrades();
 
 	int cUpgrades = 0;
-	Upgrade *pupg = gfMultiplayer ? gaupgMP : gaupg;
+	Upgrade *pupg = gaupg;
 	for (int i = 0; i < kupgtMax; i++, pupg++) {
 
 		// Has the player already acquired this upgrade? If so, don't add it to the list
@@ -566,7 +521,7 @@ void UpgradeForm::OnControlSelected(word idc)
 
 	case kidcHelp:
 		// UNDONE: upgrade help text
-		Help("upgrades", !ggame.IsMultiplayer());
+		Help("upgrades", true);
 		break;
 
 	case kidcList:

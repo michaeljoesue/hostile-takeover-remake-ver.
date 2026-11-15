@@ -1,1 +1,0 @@
-cp bin/Debug/acrunch.exe ../bin

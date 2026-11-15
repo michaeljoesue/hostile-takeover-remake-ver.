@@ -1,11 +1,9 @@
-#include "base/md5.h"
 #include "mpshared/packfile.h"
 #include "mpshared/misc.h"
 #include "base/log.h"
 #include <inc/rip.h>
 #include <stdio.h>
 #include <string.h>
-#include <libgen.h>
 
 namespace wi {
 
@@ -367,36 +365,6 @@ void PackFileReader::UnmapFile(FileMap *pfmap)
     }
 }
 
-bool PackFileReader::HashFile(const char *pszFn, byte *hash)
-{
-    dword cb;
-    FileMap fmap;
-    byte *pb = (byte *)MapFile(pszFn, &fmap, &cb);
-    if (pb == NULL) {
-        return false;
-    }
-    MD5_CTX ctx;
-    MD5Init(&ctx);
-    MD5Update(&ctx, pb, cb);
-    MD5Final(hash, &ctx);
-    UnmapFile(&fmap);
-    return true;
-}
-
-bool PackFileReader::GetPdbName(const char *pszFn, char *pszPdb, int cbPdb,
-        char *pszDir, int cbDir)
-{
-	ReaderInfo *prnfo;
-	DirEntry dir;
-	if (!FindDirEntry(pszFn, &dir, &prnfo))
-		return false;
-    strncpyz(pszPdb, prnfo->pszFn, cbPdb);
-    if (pszDir != NULL) {
-        strncpyz(pszDir, prnfo->pszDir, cbDir);
-    }
-    return true;
-}
-
 bool PackFileReader::FindDirEntry(const char *psz, DirEntry *pdir,
         ReaderInfo **pprnfo) {
     // Convert to lower case
@@ -491,15 +459,18 @@ bool PackFileReader::Push(const char *pszDir, const char *pszFn,
     // If pszDir is NULL, split pszFn into directory and filename.
     // prnfo->pszFn must just point to the basename.
 	if (pszDir == NULL) {
-        char *pszBasename = basename((char *)pszFn);
-        int cchBase = (int)strlen(pszBasename);
-        int cchFn = (int)strlen(pszFn);
-        prnfo->pszDir = new char[cchFn - cchBase + 1];
-        strncpyz(prnfo->pszDir, pszFn, cchFn - cchBase + 1);
-        int cch = (int)strlen(prnfo->pszDir);
-        if (cch >= 1 && prnfo->pszDir[cch - 1] == '/') {
-            prnfo->pszDir[cch - 1] = 0;
+        const char *pszBasename = pszFn;
+        for (const char *pch = pszFn; *pch != 0; pch++) {
+            if (*pch == '/' || *pch == '\\') {
+                pszBasename = pch + 1;
+            }
         }
+        int cchDir = (int)(pszBasename - pszFn);
+        if (cchDir > 0) {
+            cchDir--; // drop the separator
+        }
+        prnfo->pszDir = new char[cchDir + 1];
+        strncpyz(prnfo->pszDir, pszFn, cchDir + 1);
         pszFn = pszBasename;
 	} else {
 		prnfo->pszDir = new char[strlen(pszDir) + 1];
@@ -541,30 +512,6 @@ void PackFileReader::RemoveReader(int rnfo)
 	memcpy(&m_arnfo[rnfo], &m_arnfo[rnfo + 1],
             (m_crnfo - 1 - rnfo) * ELEMENTSIZE(m_arnfo));
 	m_crnfo--;
-}
-
-bool PackFileReader::Delete(const char *pszDir, const char *pszFn)
-{
-	// See if pszFn is pushed. If so is it in use?
-	// If pushed and in use, can't delete
-
-	for (int n = 0; n < m_crnfo; n++) {
-		ReaderInfo *prnfo = &m_arnfo[n];
-		if (pszDir != NULL) {
-			if (stricmp(pszDir, prnfo->pszDir) != 0)
-				continue;
-		}
-		if (stricmp(pszFn, prnfo->pszFn) != 0)
-			continue;
-		if (prnfo->cOpen != 0)
-			return false;
-		RemoveReader(n);
-		break;
-	}
-
-	// Reader removed. Now the file needs to be deleted
-
-    return DeletePdb(pszDir, pszFn);
 }
 
 bool PackFileReader::Push(const char *pszDir, const char *pszFn)

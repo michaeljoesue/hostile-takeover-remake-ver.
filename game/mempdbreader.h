@@ -13,19 +13,19 @@ namespace wi {
 class MemPdbReader : public PdbReader
 {
 public:
-	MemPdbReader() secPackFile;
-	~MemPdbReader() secPackFile;
-	bool Open(char *pszFn) secPackFile;
+	MemPdbReader();
+	~MemPdbReader();
+	bool Open(const char *pszFn);
 
-	virtual void Close() secPackFile;
-	virtual bool GetRecordSize(word nRec, word *pcb) secPackFile;
-	virtual bool ReadRecord(word nRec, word n, word cb, void *pv) secPackFile;
-	virtual byte *MapRecord(word nRec, void **ppvCookie, word *pcb = NULL) secPackFile;
-	virtual void UnmapRecord(word nRec, void *pvCookie) secPackFile;
+	virtual void Close();
+	virtual bool GetRecordSize(word nRec, word *pcb);
+	virtual bool ReadRecord(word nRec, word n, word cb, void *pv);
+	virtual byte *MapRecord(word nRec, void **ppvCookie, word *pcb = NULL);
+	virtual void UnmapRecord(word nRec, void *pvCookie);
 
 private:
-	bool GetRecordEntry(word nRec, int cRec, RecordEntryType *prece, dword *pcb) secPackFile;
-	dword GetCompressionHeader(word nRec, CompressionHeader *pcoh) secPackFile;
+	bool GetRecordEntry(word nRec, int cRec, RecordEntryType *prece, dword *pcb);
+	dword GetCompressionHeader(word nRec, CompressionHeader *pcoh);
 
 	dword m_cb;
 	byte *m_pb;

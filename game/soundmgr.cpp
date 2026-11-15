@@ -14,7 +14,6 @@ SoundMgr::SoundMgr()
 	m_psndd = NULL;
 	m_cChannels = 0;
 	memset(m_anPriorityChannel, 0, sizeof(m_anPriorityChannel));
-	m_fStateSaved = false;
 }
 
 SoundMgr::~SoundMgr()
@@ -122,29 +121,6 @@ bool SoundMgr::IsEnabled()
 	return false;
 }
 
-void SoundMgr::RestoreState()
-{
-	if (m_fStateSaved) {
-		m_fStateSaved = false;
-		if (m_psndd == NULL)
-			m_psndd = HostOpenSoundDevice();
-		Enable(m_fEnabledSav);
-		SetVolume(m_nVolumeSav);
-	}
-}
-
-bool SoundMgr::SaveStateAndClear()
-{
-	if (m_fStateSaved)
-		return false;
-	m_fStateSaved = true;
-	m_fEnabledSav = IsEnabled();
-	m_nVolumeSav = GetVolume();
-	delete m_psndd;
-	m_psndd = NULL;
-	return true;
-}
-
 void SoundMgr::PlaySfx(Sfx sfx)
 {
 	// Get the sfx entry and channel
@@ -168,18 +144,6 @@ void SoundMgr::PlaySfx(Sfx sfx)
 	int ichnlUse = -1;
 	byte nPriorityLowest = 0;
 
-#if 0
-// Problem: This'll cause one equal priority sound effect to replace another
-// of the same priority even if there are free channels to use.
-
-	for (int ichnl = 0; ichnl < m_cChannels; ichnl++) {
-		if (m_anPriorityChannel[ichnl] == psfxe->nPriority) {
-			nPriorityLowest = 255;
-			ichnlUse = ichnl;
-			break;
-		}
-	}
-#endif
 
 	// If not playing, see if there is an empty channel. Keep track of lowest
 	// priority channel
@@ -218,7 +182,6 @@ void SoundMgr::WaitSilence()
 		return;
 	while (!m_psndd->IsSilent()) {
 		HostSleep(1);
-		HostSoundServiceProc();
 	}
 }
 
@@ -229,14 +192,6 @@ long SoundMgr::FilterSleepTicks(long ct)
     // limit sleeping Further, if we DO limit sleeping we will cause problems
     // for the background Bluetooth communications threads.
 
-#if !defined(CE) && !defined(IPHONE) && !defined(SDL)
-	// If we have sound effects to play, don't sleep
-
-	if (m_psndd != NULL) {
-		if (!m_psndd->IsSilent())
-			return 0;
-	}
-#endif
 	return ct;
 }
 

@@ -395,17 +395,6 @@ bool Level::LoadLevelVariables(IniReader *pini)
 	}
 
 // In terrain for the moment (forever?)
-#if 0
-	// Enumerate all Wall positions and add them to the Fog/Galaxite/Wall map
-
-	Status("Load walls...");
-	FindProp find3;
-	while (pini->FindNextProperty(&find3, "Walls", szName, sizeof(szName))) {
-		int nHealth, tx, ty;
-		pini->GetPropertyValue(&find3, "%d,%d,%d", &nHealth, &tx, &ty);
-		m_pfogm->SetWallHealth(nHealth, tx, ty);
-	}
-#endif
 
 	// Instantiate the "CreateAtLevelLoad" UnitGroups
 

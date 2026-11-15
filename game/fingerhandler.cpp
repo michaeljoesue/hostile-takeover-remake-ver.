@@ -38,37 +38,6 @@ SimUIForm::FingerHandler::~FingerHandler() {
 }
 
 bool SimUIForm::FingerHandler::OnPenEvent(Event *pevt, bool fScrollOnly) {
-#if 0
-    switch (pevt->eType) {
-    case penDownEvent:
-        IPhone::Log("penDownEvent x=%d y=%d", pevt->x, pevt->y);
-        break;
-
-    case penDownEvent2:
-        IPhone::Log("penDownEvent2 x=%d y=%d", pevt->x, pevt->y);
-        break;
-
-    case penUpEvent:
-        IPhone::Log("penUpEvent x=%d y=%d", pevt->x, pevt->y);
-        break;
-
-    case penUpEvent2:
-        IPhone::Log("penUpEvent2 x=%d y=%d", pevt->x, pevt->y);
-        break;
-
-    case penMoveEvent:
-        IPhone::Log("penMoveEvent x=%d y=%d", pevt->x, pevt->y);
-        break;
-
-    case penMoveEvent2:
-        IPhone::Log("penMoveEvent2 x=%d y=%d", pevt->x, pevt->y);
-        break;
-
-    case penHoldEvent:
-        IPhone::Log("penHoldEvent x=%d y=%d", pevt->x, pevt->y);
-        break;
-    }
-#endif
 
     switch (pevt->eType) {
     case penDownEvent:
@@ -712,12 +681,6 @@ void SimUIForm::FingerHandler::SetSelection() {
             fSelect = false;
         }
 
-#if 0
-        // No miners, by popular request
-        if (punt->GetType() == kgtGalaxMiner) {
-            fSelect = false;
-        }
-#endif
 
         // If center not in bounding rect, discard
         WPoint wptCenter;

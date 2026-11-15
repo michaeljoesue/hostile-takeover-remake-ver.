@@ -42,13 +42,6 @@ bool StructGob::InitClass(StructConsts *pstruc, IniReader *pini)
 
 	// Optional properties
 
-	if (pini->GetPropertyValue(szTemplate, "ArmorStrengthMP", "%d", &nArmorStrength) != 1) {
-		pstruc->fxArmorStrengthMP = pstruc->fxArmorStrength;
-	} else {
-		Assert(nArmorStrength < 1 << 10);
-		pstruc->fxArmorStrengthMP = itofx(nArmorStrength);
-	}
-
 	if (pini->GetPropertyValue(szTemplate, "ReserveDimensions", "%d,%d", 
 			&pstruc->ctxReserve, &pstruc->ctyReserve) != 2) {
 		pstruc->ctxReserve = pstruc->ctx;

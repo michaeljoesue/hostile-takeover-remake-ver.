@@ -5,33 +5,12 @@ namespace wi {
 
 #define HOSTILE_TAKEOVER
 
-// Beta timeout
-//#define BETA_TIMEOUT
-
 #ifdef DEBUG
 #define INCL_TRACE
-#define MP_DEBUG	// Multiplayer debugging
 #endif
 
 // Build types
-// These flags are passed in by makefiles / devenv configurations
-
-//#define ESD_BUILD // ESD release builds
-//#define RETAIL_BUILD // Retail release builds
-//#define DEV_BUILD // Developer build
-
-// ESD_BUILD settings
-
-#if defined(ESD_BUILD)
-#define DRM
-#endif
-
-// RETAIL_BUILD settings
-
-#if defined(RETAIL_BUILD)
-#define DRM
-#define DRM_KEYONLY
-#endif
+// DEV_BUILD is defined by the build for Debug configurations
 
 // DEV_BUILD settings
 
@@ -41,16 +20,6 @@ namespace wi {
 //#define INCL_TESTS
 //#define INCL_MEMTRACE
 
-#if defined(WIN) && !defined(CE)
-//#define MP_DEBUG_SHAREDMEM
-#define DEBUG_HELPERS
-#endif
-#endif
-
-// MP stress
-
-#if !defined(PIL) && !defined(CE) && !defined(IPHONE) && !defined(SDL)
-#define MP_STRESS
 #endif
 
 // Enable stress testing
@@ -75,16 +44,7 @@ namespace wi {
 // Draw rects around invalid tiles
 #define DRAW_UPDATERECTS
 
-// Enable this to have HostOutputDebugString echo to hotsync log on Palm devices
-//#define TRACE_TO_HOTSYNC_LOG
-
-// Enable this to have HostOutputDebugString echo to database log
-#define TRACE_TO_DB_LOG
-
 // Maintain and check a ring buffer of old allocs
-#if defined(WIN) && defined(DEBUG)
-//#define CHECK_OLD_ALLOCS
-#endif
 #endif // defined(DEV_BULD)
 
 // Things that are permanently on
@@ -93,16 +53,6 @@ namespace wi {
 #define STATUS_LINE // Enable this to get certain status displayed at the bottom of the screen
 //#define RALLY_POINTS
 
-// Enable this to sychronize Updates between server and all clients and validate
-// the Update results
-//#define DETECT_SYNC_ERRORS
-
-#ifdef DEBUG_HELPERS
-class TriggerViewer;
-class UnitGroupViewer;
-class DelayedMessageViewer;
-class CommandQueueViewer;
-#endif
 
 } // namespace wi
     
@@ -115,15 +65,11 @@ class CommandQueueViewer;
 #include "mpshared/ini.h"
 #include "mpshared/decompress.h"
 #include "game/missionlist.h"
-#include "mpshared/netmessage.h"
 #include "game/dragrect.h"
 #include "base/thread.h"
-//#include "yajl/wrapper/jsontypes.h"
 
 namespace wi {
 
-class StateFrame;
-class StateTracker;
 class RefMap;
 
 typedef void *FileHandle;	// hf
@@ -134,137 +80,6 @@ typedef word CacheHandle; // hc
 #define knVersion 1
 
 #define MAKEDWORD(x) ((((dword)x) << 24) | (((dword)x) << 16) | (((dword)x) << 8) | (x))
-
-#if defined(PIL) && defined(__CPU_68K) && defined(__GNUC__)
-#define secCode1
-#define secCode2 __attribute__((section("code2")))
-#define secCode3 __attribute__((section("code3")))
-#define secCode4 __attribute__((section("code4")))
-#define secCode5 __attribute__((section("code5")))
-#define secCode6 __attribute__((section("code6")))
-#define secCode7 __attribute__((section("code7")))
-#define secCode8 __attribute__((section("code8")))
-#define secCode9 __attribute__((section("code9")))
-#define secCode10 __attribute__((section("code10")))
-#define secCode11 __attribute__((section("code11")))
-#define secCode12 __attribute__((section("code12")))
-#define secCode13 __attribute__((section("code13")))
-#define secCode14 __attribute__((section("code14")))
-#define secCode15 __attribute__((section("code15")))
-#define secCode16 __attribute__((section("code16")))
-#define secCode17 __attribute__((section("code17")))
-#else
-#define secCode1
-#define secCode2
-#define secCode3
-#define secCode4
-#define secCode5
-#define secCode6
-#define secCode7
-#define secCode8
-#define secCode9
-#define secCode10
-#define secCode11
-#define secCode12
-#define secCode13
-#define secCode14
-#define secCode15
-#define secCode16
-#define secCode17
-#endif
-
-#define secGame secCode9
-#define secHost secCode17
-#define secRect secCode5
-#define secDibBitmap secCode5
-#define secTBitmap secCode16
-#define secIni secCode16
-#define secFormMgr secCode5
-#define secForm secCode10
-#define secControl secCode2
-#define secTimer secCode16
-#define secTimerMgr secCode11
-#define secEventMgr secCode4
-#define secEmptyForm secCode4
-#define secFont secCode6
-#define secButtonControl secCode4
-#define secPresetButtonControl secCode8
-#define secLabelControl secCode4
-#define secEditControl secCode4
-#define secHelpControl secCode16
-#define secHelpForm secCode13
-#define secListControl secCode6
-#define secSliderControl secCode13
-#define secMisc secCode16
-#define secGameOptionsForm secCode2
-#define secInputPanelForm secCode2
-#define secTileMap secCode2
-#define secSimulation secCode12
-#define secSimUIForm secCode8
-#define secGob secCode12
-#define secTankGob secCode5
-#define secInfantryGob secCode5
-#define secStructures secCode3
-#define secLevel secCode11
-#define secStateMachine secCode13
-#define secAnimation secCode12
-#define secFogMap secCode4
-#define secTerrainMap secCode2
-#define secSoundMgr secCode6
-#define secSoundDevice secCode6
-#define secColorMgr secCode2
-#define secPackFile secCode13
-#define secCacheMgr secCode13
-#define secCheckBoxControl secCode11
-#define secDisplay secCode7
-#define secWaveOut secCode2
-#define secMemMgr secCode16
-#define secMultiplayer secCode7
-#define secCommandQueue secCode11
-#define secComm secCode7
-#define secPlayer secCode13
-#define secBitmapControl secCode2
-#define secMiner secCode6
-#define secUpdateMap secCode4
-#define secGraffitiScrollControl secCode10
-#define secInputUIForm secCode10
-#define secMiniMapControl secCode10
-#define secThunks secCode11
-#define secArmThunks secCode11
-#define secLoadSave secCode5
-#define secStream secCode5
-#define secOvermindGob secCode8
-#define secGobMgr secCode4
-#define secAnimGob secCode11
-#define secScorchGob secCode11
-#define secSurfaceDecalGob secCode4
-#define secSceneryGob secCode4
-#define secUnitGob secCode15
-#define secTrigger secCode16
-#define secAction secCode14
-#define secCondition secCode11
-#define secUnitGroup secCode13
-#define secBuildMgr secCode14
-#define secShell secCode13
-#define secRawBitmap secCode13
-#define secEcom secCode12
-#define secPipMeterControl secCode13
-#define secDamageMeterControl secCode13
-#define secTowers secCode13
-#define secStringTable secCode5
-#define secAlertControl secCode16
-#define secArtilleryGob secCode5
-#define secCreditsControl secCode16
-#define secPowerControl secCode16
-#define secRadar secCode14
-#define secWarehouse secCode14
-#define secReplicatorGob secCode4
-#define secObjectives secCode14
-#define secCutScene secCode14
-#define secBuildQueue secCode12
-#define secBuilderGob secCode12
-#define secDrm secCode16
-#define secBtTransport secCode17
 
 // Performance options
 
@@ -315,20 +130,20 @@ class UpdateMap;
 class DibBitmap // bm
 {
 public:
-	DibBitmap() secDibBitmap;
-	virtual ~DibBitmap() secDibBitmap;
-	bool Init(byte *pb, int cx, int cy) secDibBitmap;
-	virtual byte *GetBits() secDibBitmap;
-	virtual void Clear(Color clr) secDibBitmap;
-	virtual void Fill(int x, int y, int cx, int cy, Color clr) secDibBitmap;
-	virtual void Shadow(int x, int y, int cx, int cy) secDibBitmap;
-	virtual void GetSize(Size *psiz) secDibBitmap;
-	virtual int GetRowBytes() secDibBitmap;
-	virtual void DrawLine(short x1, short y1, short x2, short y2, Color clr) secDibBitmap;
-	virtual void Blt(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst) secDibBitmap;
-	virtual void BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst) secDibBitmap;
+	DibBitmap();
+	virtual ~DibBitmap();
+	bool Init(byte *pb, int cx, int cy);
+	virtual byte *GetBits();
+	virtual void Clear(Color clr);
+	virtual void Fill(int x, int y, int cx, int cy, Color clr);
+	virtual void Shadow(int x, int y, int cx, int cy);
+	virtual void GetSize(Size *psiz);
+	virtual int GetRowBytes();
+	virtual void DrawLine(short x1, short y1, short x2, short y2, Color clr);
+	virtual void Blt(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst);
+	virtual void BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst);
     virtual void Scroll(Rect *prcSrc, int xDst, int yDst);
-	virtual DibBitmap *Suballoc(int yTop, int cy) secDibBitmap;
+	virtual DibBitmap *Suballoc(int yTop, int cy);
 	word GetFlags() {
 		return m_wf;
 	}
@@ -340,146 +155,7 @@ protected:
 	dword m_cb;
 	int m_cbRow;
 };
-DibBitmap *CreateDibBitmap(byte *pb, int cx, int cy) secDibBitmap;
-
-// Network stuff
-
-class ITransportCallback;
-class IRoomCallback;
-class ILobbyCallback;
-class NetMessage;
-class Transport;
-
-const int kcbTransportName = 100;
-
-enum TransportType {
-	ktratBluetoothPAN,
-	ktratBluetoothSer,
-	ktratIR,
-	ktratIP,
-	ktratX,
-};
-
-const dword knTransportOpenResultSuccess = 0;
-const dword knTransportOpenResultFail = 1;
-const dword knTransportOpenResultNoNetwork = 2;
-const dword knTransportOpenResultCantConnect = 3;
-const dword knTransportOpenResultNotResponding = 4;
-const dword knTransportOpenResultProtocolMismatch = 5;
-const dword knTransportOpenResultServerFull = 6;
-
-struct TransportDescription // trad
-{
-	TransportType trat;
-	char szName[kcbTransportName];
-	dword (*pfnOpen)(TransportDescription *ptrad, Transport **pptra);
-	dword dwTransportSpecific;
-};
-
-struct DeleteRecord {
-	DeleteRecord *pdrNext;
-	bool fDeleted;
-};
-
-#define knWaitStrConnectToHost 1
-#define knWaitStrClientDisconnecting 2
-#define knWaitStrDisconnectingClients 3
-#define knWaitStrDisconnectingClient 4
-#define knWaitStrClosingTransport 5
-#define knWaitStrBeginGameSearch 6
-#define knWaitStrAdvertisingGame 7
-
-const int kcbBluetoothMtuMin = 100;	// something >= our largest message but less than BT_L2CAP_MTU (672)
-const int kctradMax = 10;
-
-class Event;
-class IGameCallback;
-class Transport // tra
-{
-public:
-    Transport();
-	virtual ~Transport() {}
-	virtual dword Open() = 0;
-	virtual void Close() = 0;
-    virtual bool IsClosed() = 0;
-    virtual dword Login(const char *username, const char *token) = 0;
-    virtual dword SignOut() = 0;
-    virtual const char *GetAnonymousUsername() = 0;
-    virtual dword JoinLobby(ILobbyCallback *plcb) = 0;
-    virtual bool LeaveLobby() = 0;
-    virtual dword CreateRoom(const char *roomname, const char *password,
-            dword *roomid) = 0;
-    virtual dword CanJoinRoom(dword roomid, const char *password) = 0;
-    virtual dword JoinRoom(dword roomid, const char *password,
-            IRoomCallback *prcb) = 0;
-    virtual bool SendChat(const char *chat) = 0;
-	virtual dword CreateGame(GameParams *params, PackId *ppackidUpgrade,
-            dword *gameid) = 0;
-    virtual dword CanJoinGame(dword gameid) = 0;
-    virtual void LeaveRoom(dword hint) = 0;
-    virtual dword JoinGame(dword gameid, dword roomid) = 0;
-    virtual bool SendNetMessage(NetMessage *pnm) = 0;
-    virtual void LeaveGame() = 0;
-    virtual void OnEvent(Event *pevt) = 0;
-    virtual void UpdateAllies(Side side, SideMask sidmAllies) = 0;
-    virtual void DisconnectSharedAccounts() = 0;
-	virtual ITransportCallback *SetCallback(ITransportCallback *ptcb);
-    virtual ITransportCallback *GetCallback();
-	virtual IGameCallback *SetGameCallback(IGameCallback *pgcb);
-	virtual IGameCallback *GetGameCallback();
-
-protected:
-    ITransportCallback *m_ptcb;
-    ILobbyCallback *m_plcb;
-    IRoomCallback *m_prcb;
-    IGameCallback *m_pgcb;
-};
-
-class TransportMgr // tram
-{
-public:
-	virtual int GetTransportDescriptions(TransportDescription *atrad, int ctradMax);
-};
-extern TransportMgr gtram;
-
-class IGameCallback {
-public:
-    virtual void OnReceiveChat(const char *player, const char *chat) = 0;
-    virtual void OnNetMessage(NetMessage **ppnm) = 0;
-    virtual void OnGameDisconnect() = 0;
-};
-
-class IRoomCallback {
-public:
-    virtual void OnAddGame(const char *player, dword gameid,
-            const GameParams& params, dword minplayers, dword maxplayers,
-            const char *title, dword ctotal) = 0;
-    virtual void OnRemoveGame(dword gameid, dword ctotal) = 0;
-    virtual void OnGameInProgress(dword gameid) = 0;
-    virtual void OnGamePlayerNames(dword gameid, dword cnames,
-            const PlayerName *anames) = 0;
-    virtual void OnAddPlayer(const char *player) = 0;
-    virtual void OnRemovePlayer(dword hint, const char *player) = 0;
-    virtual void OnReceiveChat(const char *player, const char *chat) = 0;
-    virtual void OnStatusComplete() = 0;
-};
-
-class ILobbyCallback {
-public:
-    virtual void OnLurkerCount(dword count) = 0;
-    virtual void OnAddRoom(const char *name, dword roomid, bool priv,
-            dword cPlayers, dword cGames) = 0;
-    virtual void OnRemoveRoom(dword roomid) = 0;
-    virtual void OnUpdateRoom(dword roomid, dword cPlayers, dword cGames) = 0;
-    virtual void OnReceiveChat(const char *player, const char *chat) = 0;
-};
-
-class ITransportCallback {
-public:
-	virtual void OnStatusUpdate(char *pszStatus) = 0;
-    virtual void OnConnectionClose() = 0;
-    virtual void OnShowMessage(const char *message) = 0;
-};
+DibBitmap *CreateDibBitmap(byte *pb, int cx, int cy);
 
 // Timer support
 
@@ -487,20 +163,20 @@ class Timer;
 class TimerMgr // timm
 {
 public:
-	TimerMgr() secTimerMgr;
-	~TimerMgr() secTimerMgr;
+	TimerMgr();
+	~TimerMgr();
 
-	void AddTimer(Timer *ptmr, long ct) secTimerMgr;
-	void RemoveTimer(Timer *ptmr) secTimerMgr;
-	void SetTimerRate(Timer *ptmr, long ct) secTimerMgr;
+	void AddTimer(Timer *ptmr, long ct);
+	void RemoveTimer(Timer *ptmr);
+	void SetTimerRate(Timer *ptmr, long ct);
     void BoostTimer(Timer *ptmr, long ct);
-	long ScanDispatch(long tCurrent) secTimerMgr;
-	virtual long GetTickCount() secTimerMgr;
+	long ScanDispatch(long tCurrent);
+	virtual long GetTickCount();
 	void Enable(bool fEnable) {
 		m_fEnabled = fEnable;
 	}
-	void TriggerTimer(Timer *ptmr) secTimerMgr;
-    bool IsAdded(Timer *ptmr) secTimerMgr;
+	void TriggerTimer(Timer *ptmr);
+    bool IsAdded(Timer *ptmr);
 
 private:
 	Timer *m_ptmrFirst;
@@ -539,7 +215,7 @@ public:
 
 class TimeoutTimer : public Timer {
 public:
-	TimeoutTimer() secMisc;
+	TimeoutTimer();
 
 	~TimeoutTimer() {
 		if (m_ptimo != NULL) {
@@ -603,16 +279,16 @@ public:
 	int right;
 	int bottom;
 
-	bool Intersect(Rect *prcSrc1, Rect *prcSrc2) secRect;
-	void Set(Point pt1, Point pt2) secRect;
-	bool Subtract(Rect *prcSrc1, Rect *prcSrc2) secRect;
-	void Add(Rect *prcSrc1, Rect *prcSrc2) secRect;
-	void FromWorldRect(WRect *pwrc) secRect;
-	void FromTileRect(TRect *ptrc) secRect;
-	void Union(Rect *prc) secRect;
-	bool Equal(Rect *prc) secRect;
-	void GetCenter(Point *ppt) secRect;
-    int GetDistance(int x, int y) secRect;
+	bool Intersect(Rect *prcSrc1, Rect *prcSrc2);
+	void Set(Point pt1, Point pt2);
+	bool Subtract(Rect *prcSrc1, Rect *prcSrc2);
+	void Add(Rect *prcSrc1, Rect *prcSrc2);
+	void FromWorldRect(WRect *pwrc);
+	void FromTileRect(TRect *ptrc);
+	void Union(Rect *prc);
+	bool Equal(Rect *prc);
+	void GetCenter(Point *ppt);
+    int GetDistance(int x, int y);
 
 	void Offset(int dx, int dy)
 	{
@@ -693,12 +369,6 @@ namespace wi {
 
 // PalmOS sdk 3.5 has min/max but sdk 4.0 doesn't
 
-#if 0
-#undef min
-#undef max
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-#endif
 
 // Ensures the same types are being compared
 template<class T> inline T _min(const T a, const T b) { return (a > b) ? b : a; }
@@ -721,20 +391,7 @@ class UnitGroup;
 
 const StateMachineId ksmidNull = (word)-1;
 
-#ifdef MP_DEBUG_SHAREDMEM
-extern Side gsideCurrent;
-extern Gid ggidCurrent;
-extern long gcupdCurrent;
-extern GobType ggtCurrent;
-extern bool gfInsideUpdate;
-#endif
-extern bool gfMultiplayer;
-extern bool gfLockStep;
 
-#ifdef DEBUG_HELPERS
-char *PszFromUnitMask(UnitMask um);
-char *PszFromCaSideMask(word wfCaSideMask);
-#endif
 
 class UpdateInterval // unvl
 {
@@ -754,14 +411,6 @@ public:
 	}
 
 	bool Decrement() {
-		if (gfMultiplayer) {
-            // Can't gracefully support update intervals in the multiplayer
-            // version due to synchronization issues caused by differing
-            // client-side state such as visibility and gpplrLocal conditionals
-
-			return true;
-		}
-
 		if (m_cSkip <= 0) {
 			m_cSkip = 0x7fff;
 			m_cDecrementsLast = m_cDecrements;
@@ -802,12 +451,7 @@ const WCoord kwcTile = 0x0100;
 const WCoord kwcTileHalf = kwcTile / 2;
 const WCoord kwcTile16th = kwcTile / 16;
 
-#ifdef IPHONE
-// IPhone titlebar area eats input; this is compensation
-#define kwcScrollLeftExtra WcFromTile16ths(5) 
-#else
 #define kwcScrollLeftExtra 0
-#endif
 
 #define kwcScrollBorderSize WcFromTile16ths(5)
 #define kwcScrollStepSize	kwcTileHalf
@@ -894,17 +538,14 @@ struct TPoint // pt
 class WRect : public Rect
 {
 public:
-	void Set(WPoint wpt1, WPoint wpt2) secRect;
-#if 0 // UNUSED
-	void FromPixelRect(Rect *prc) secRect;
-#endif
-	void FromTileRect(TRect *ptrc) secRect;
+	void Set(WPoint wpt1, WPoint wpt2);
+	void FromTileRect(TRect *ptrc);
 };
 
 class TRect : public Rect
 {
 public:
-	void FromWorldRect(WRect *wrc) secRect;
+	void FromWorldRect(WRect *wrc);
 };
 
 // Specialized TRect. Its specialty is being 1/2 the size
@@ -970,16 +611,16 @@ typedef short fix;	// INTBITS integer bits, FRACBITS fractional bits
 #define addfx32(x, y) ((fix32)(x) + (fix32)(y))
 #define subfx(x, y) ((x) - (y))
 #define fracfx(x) ((x) & ((1 << FRACBITS) - 1)) // Fraction of a fixed point
-fix32 sqrtfx(fix32 x) secMisc;
-unsigned int isqrt(unsigned long val) secMisc;
-int isqrt(int val1, int val2) secMisc;
+fix32 sqrtfx(fix32 x);
+unsigned int isqrt(unsigned long val);
+int isqrt(int val1, int val2);
 
 #ifdef OLD_LINE_ITERATOR
 // For iterating along a line at arbitrary (possibly fractional) increments
 
 class LineIterator {
 public:
-	void Init(int x1, int y1, int x2, int y2, fix nStep) secMisc;
+	void Init(int x1, int y1, int x2, int y2, fix nStep);
 
 	bool Step() {
 		if (m_cStepsRemaining == 0)
@@ -1018,7 +659,7 @@ private:
 
 class WLineIterator {
 public:
-	void Init(WCoord wx1, WCoord wy1, WCoord wx2, WCoord wy2, int nIncr) secMisc;
+	void Init(WCoord wx1, WCoord wy1, WCoord wx2, WCoord wy2, int nIncr);
 
 	bool Step() {
 		if (m_cStepsRemaining == 0)
@@ -1099,7 +740,7 @@ struct TBitmapHeader // tbh
 class HtBitmap
 {
 public:
-	virtual ~HtBitmap() secRawBitmap;
+	virtual ~HtBitmap();
 	virtual bool Init(char *pszFn) = 0;
 	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Rect *prcSrc = NULL) = 0;
 	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Side side, Rect *prcSrc = NULL) = 0;
@@ -1114,13 +755,13 @@ public:
 class TBitmap : public HtBitmap
 {
 public:
-	TBitmap() secTBitmap;
+	TBitmap();
 
-	bool Init(File *pfil, word ib) secTBitmap;
-	void BltTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, Side side = ksideNeutral, Rect *prcSrc = NULL) secTBitmap;
-	void GetSize(int itbm, Size *psiz) secTBitmap;
+	bool Init(File *pfil, word ib);
+	void BltTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, Side side = ksideNeutral, Rect *prcSrc = NULL);
+	void GetSize(int itbm, Size *psiz);
 	void FillTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst,
-            int cxDst, int cyDst, int xOrigin = 0, int yOrigin = 0) secTBitmap;
+            int cxDst, int cyDst, int xOrigin = 0, int yOrigin = 0);
 
 	int GetBaseline() {
 		return (int)m_atbe[0].yBaseline;
@@ -1139,20 +780,20 @@ public:
 		m_wf &= ~kfTbShared;
 	}
 
-	static bool InitClass() secTBitmap;
-	static void ExitClass() secTBitmap;
+	static bool InitClass();
+	static void ExitClass();
 
 	// HtBitmap overrides
 
-	virtual ~TBitmap() secTBitmap;
-	virtual bool Init(char *pszFn) secTBitmap;
-	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Rect *prcSrc = NULL) secTBitmap;
-	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Side side, Rect *prcSrc = NULL) secTBitmap;
-	virtual void GetSize(Size *psiz) secTBitmap;
+	virtual ~TBitmap();
+	virtual bool Init(char *pszFn);
+	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Rect *prcSrc = NULL);
+	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Side side, Rect *prcSrc = NULL);
+	virtual void GetSize(Size *psiz);
 
 private:
-	byte *GetCompiledBits(int itbm, bool fOdd) secTBitmap;
-	static void MakeSideCodeMapping(Color *aclr, dword *mpscaiclrSide) secTBitmap;
+	byte *GetCompiledBits(int itbm, bool fOdd);
+	static void MakeSideCodeMapping(Color *aclr, dword *mpscaiclrSide);
     void BltToScan(byte *pbDraw, int cx, int cy, DibBitmap *pbmDst,
             int xDst, int yDst, Side side, Rect *prcSrc);
 
@@ -1166,32 +807,32 @@ private:
 public:
 	static dword *s_ampscaiclrSide[kcColoredSides];
 };
-TBitmap *LoadTBitmap(char *pszFn) secTBitmap;
-void FreeSharedTBitmaps() secTBitmap;
-TBitmap *GetSharedTBitmap(char *pszFn) secTBitmap;
-void FindSharedTBitmapFilename(TBitmap *ptbm, char *psz, int cb) secTBitmap;
+TBitmap *LoadTBitmap(char *pszFn);
+void FreeSharedTBitmaps();
+TBitmap *GetSharedTBitmap(char *pszFn);
+void FindSharedTBitmapFilename(TBitmap *ptbm, char *psz, int cb);
 
 // For bltting raw bitmaps in a non-clipped, streamed manner
 
 class RawBitmap : public HtBitmap // rbm
 {
 public:
-	RawBitmap() secRawBitmap;
+	RawBitmap();
 
 	// HtBitmap overrides
 
-	virtual ~RawBitmap() secRawBitmap;
-	virtual bool Init(char *pszFn) secRawBitmap;
-	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Rect *prcSrc = NULL) secRawBitmap;
-	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Side side, Rect *prcSrc = NULL) secRawBitmap;
-	virtual void GetSize(Size *psiz) secRawBitmap;
+	virtual ~RawBitmap();
+	virtual bool Init(char *pszFn);
+	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Rect *prcSrc = NULL);
+	virtual void BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Side side, Rect *prcSrc = NULL);
+	virtual void GetSize(Size *psiz);
 
 public:
 	File *m_pfil;
 	int m_cx;
 	int m_cy;
 };
-RawBitmap *LoadRawBitmap(char *pszFn) secRawBitmap;
+RawBitmap *LoadRawBitmap(char *pszFn);
 
 // Font / Text output
 
@@ -1206,10 +847,10 @@ struct FontHeader // fnth
 class Font // fnt
 {
 public:
-	Font() secFont;
-	~Font() secFont;
+	Font();
+	~Font();
 
-	bool Load(char *pszFont) secFont;
+	bool Load(char *pszFont);
 
 	int GetHeight() {
 		return BigWord(m_pfnth->cy);
@@ -1231,19 +872,19 @@ public:
 		return m_nLineOverlap;
 	}
 
-	int GetTextExtent(const char *psz) secFont;
-	int GetTextExtent(const char *psz, int cch) secFont;
+	int GetTextExtent(const char *psz);
+	int GetTextExtent(const char *psz, int cch);
 	int DrawText(DibBitmap *pbm, char *psz, int x, int y, int cch = -1,
-            dword *mpscaiclr = NULL) secFont;
+            dword *mpscaiclr = NULL);
 	void DrawText(DibBitmap *pbm, char *psz, int x, int y, int cx,
-            int cy, bool fEllipsis = false) secFont;
+            int cy, bool fEllipsis = false);
     void DrawTextWithEllipsis(DibBitmap *pbm, char *psz, int cch,
             int x, int y, int cx, bool fForce = false);
-	int CalcMultilineHeight(char *psz, int cxMultiline) secFont;
-	int CalcBreak(int cx, char **psz, bool fChop = true) secFont;
+	int CalcMultilineHeight(char *psz, int cxMultiline);
+	int CalcBreak(int cx, char **psz, bool fChop = true);
 
 private:
-	char *FindNextNonBreakingChar(char *psz) secFont;
+	char *FindNextNonBreakingChar(char *psz);
 
 	FileMap m_fmap;
 	FontHeader *m_pfnth;
@@ -1253,7 +894,7 @@ private:
 	int m_nLineOverlap;
     int m_cxEllipsis;
 };
-Font *LoadFont(char *pszFont) secFont;
+Font *LoadFont(char *pszFont);
 
 struct TileSetHeader // tseth
 {
@@ -1286,18 +927,18 @@ struct TileMapHeader // tmaph
 class TileMap // tmap
 {
 public:
-	TileMap() secTileMap;
-	~TileMap() secTileMap;
+	TileMap();
+	~TileMap();
 
-	bool Load(char *psz, Size *psizPlayfield) secTileMap;
-	void GetMapSize(Size *psiz) secTileMap;
+	bool Load(char *psz, Size *psizPlayfield);
+	void GetMapSize(Size *psiz);
 	void GetTCoordMapSize(Size *psiz) {
 		psiz->cx = BigWord(m_ptmaph->ctx);
 		psiz->cy = BigWord(m_ptmaph->cty);
 	}
-	void GetTileSize(Size *psiz) secTileMap;
-	void Draw(DibBitmap *pbm, int x, int y, int cx, int cy, int xMap, int yMap, byte *pbFogMap, UpdateMap *pupd) secTileMap;
-	MiniTileSetHeader *GetMiniTileSetHeader(int nScale) secTileMap;
+	void GetTileSize(Size *psiz);
+	void Draw(DibBitmap *pbm, int x, int y, int cx, int cy, int xMap, int yMap, byte *pbFogMap, UpdateMap *pupd);
+	MiniTileSetHeader *GetMiniTileSetHeader(int nScale);
 
 private:
 	FileMap m_fmapTmap;
@@ -1319,7 +960,7 @@ public:
 	int m_cty;
 	byte **m_apbDrawMap;
 };
-TileMap *LoadTileMap(char *pszFn, Size *psizPlayfield) secTileMap;
+TileMap *LoadTileMap(char *pszFn, Size *psizPlayfield);
 
 // Fog map
 
@@ -1350,18 +991,18 @@ class AnimationData;
 class FogMap // fogm
 {
 public:
-	FogMap() secFogMap;
-	~FogMap() secFogMap;
+	FogMap();
+	~FogMap();
 
-	bool Init(Size *psizTile, Size *psizMap) secFogMap;
-	bool LoadState(Stream *pstm) secFogMap;
-	bool SaveState(Stream *pstm) secFogMap;
-    bool IsCovered(TRect *ptrc) secFogMap;
-	void RevealAll(UpdateMap *pupd) secFogMap;
-	void Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap *pupd, WCoord wxView, WCoord wyView) secFogMap;
-	void Reveal(TRect *ptrc, UpdateMap *pupd, WCoord wxView, WCoord wyView) secFogMap;
-	void Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd) secFogMap;
-	void DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, byte *pbTrMap) secFogMap;
+	bool Init(Size *psizTile, Size *psizMap);
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+    bool IsCovered(TRect *ptrc);
+	void RevealAll(UpdateMap *pupd);
+	void Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap *pupd, WCoord wxView, WCoord wyView);
+	void Reveal(TRect *ptrc, UpdateMap *pupd, WCoord wxView, WCoord wyView);
+	void Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd);
+	void DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, byte *pbTrMap);
 
 	byte *GetMapPtr() {
 		return m_pbMap;
@@ -1369,16 +1010,16 @@ public:
 
 	// Galaxite methods
 
-	int GetGalaxite(TCoord tx, TCoord ty) secFogMap;
-	void SetGalaxite(int nGx, TCoord tx, TCoord ty) secFogMap;
-	bool DecGalaxite(TCoord tx, TCoord ty) secFogMap;
-	void IncGalaxite(TCoord tx, TCoord ty) secFogMap;
-	bool FindNearestGalaxite(TCoord tx, TCoord ty, TPoint *ptpt, bool fIgnoreFog) secFogMap;
+	int GetGalaxite(TCoord tx, TCoord ty);
+	void SetGalaxite(int nGx, TCoord tx, TCoord ty);
+	bool DecGalaxite(TCoord tx, TCoord ty);
+	void IncGalaxite(TCoord tx, TCoord ty);
+	bool FindNearestGalaxite(TCoord tx, TCoord ty, TPoint *ptpt, bool fIgnoreFog);
 
 	// Wall methods
 
-	int GetWallHealth(TCoord tx, TCoord ty) secFogMap;
-	void SetWallHealth(int nHealth, TCoord tx, TCoord ty) secFogMap;
+	int GetWallHealth(TCoord tx, TCoord ty);
+	void SetWallHealth(int nHealth, TCoord tx, TCoord ty);
 
 
 private:
@@ -1434,11 +1075,11 @@ class Path;
 class TrackPoint
 {
 public:
-	bool Init(Path *ppath, TCoord txFrom, TCoord tyFrom, int itptStart, int ctptFurtherStop) secTerrainMap;
-	void InitFrom(TrackPoint *ptrkp) secTerrainMap;
-	bool IsProgress(TrackPoint *ptrkpA) secTerrainMap;
-	bool IsCloser(TrackPoint *ptrkpA) secTerrainMap;
-	bool IsBetterSort(TrackPoint *ptrkpA) secTerrainMap;
+	bool Init(Path *ppath, TCoord txFrom, TCoord tyFrom, int itptStart, int ctptFurtherStop);
+	void InitFrom(TrackPoint *ptrkp);
+	bool IsProgress(TrackPoint *ptrkpA);
+	bool IsCloser(TrackPoint *ptrkpA);
+	bool IsBetterSort(TrackPoint *ptrkpA);
 	void GetClosestPoint(TPoint *ptpt) {
 		*ptpt = m_tptClosest;
 	}
@@ -1466,27 +1107,27 @@ class TerrainMap;
 class Path
 {
 public:
-	Path() secTerrainMap;
-	~Path() secTerrainMap;
+	Path();
+	~Path();
 
-	bool Init(TerrainMap *ptrmap, TCoord txStart, TCoord tyStart, Direction *adir, int cdir) secTerrainMap;
-	int GetCount() secTerrainMap;
-	bool GetPoint(int itpt, TPoint *ptpt, byte bf) secTerrainMap;
-	bool GetPointRaw(int itpt, TPoint *ptpt) secTerrainMap;
-	void SetCacheIndex(int itpt) secTerrainMap;
-	int FindClosestPoint(TCoord txFrom, TCoord tyFrom, int itptStart, int ctptFurtherStop, TPoint *ptptClosest) secTerrainMap;
-	bool LoadState(TerrainMap *ptrmap, Stream *pstm) secTerrainMap;
-	bool SaveState(Stream *pstm) secTerrainMap;
-	bool Append(Path *ppath) secTerrainMap;
-	bool TrimEnd(int itptStart) secTerrainMap;
-	Path *Clone() secTerrainMap;
-	void GetStartPoint(TPoint *ptpt) secTerrainMap;
+	bool Init(TerrainMap *ptrmap, TCoord txStart, TCoord tyStart, Direction *adir, int cdir);
+	int GetCount();
+	bool GetPoint(int itpt, TPoint *ptpt, byte bf);
+	bool GetPointRaw(int itpt, TPoint *ptpt);
+	void SetCacheIndex(int itpt);
+	int FindClosestPoint(TCoord txFrom, TCoord tyFrom, int itptStart, int ctptFurtherStop, TPoint *ptptClosest);
+	bool LoadState(TerrainMap *ptrmap, Stream *pstm);
+	bool SaveState(Stream *pstm);
+	bool Append(Path *ppath);
+	bool TrimEnd(int itptStart);
+	Path *Clone();
+	void GetStartPoint(TPoint *ptpt);
 #ifdef DRAW_PATHS
-	void Draw(DibBitmap *pbm, int xView, int yView, Side side) secTerrainMap;
+	void Draw(DibBitmap *pbm, int xView, int yView, Side side);
 #endif
 
 protected:
-	void CalcTo(int idir, TCoord *ptx, TCoord *pty) secTerrainMap;
+	void CalcTo(int idir, TCoord *ptx, TCoord *pty);
 
 	TerrainMap *m_ptrmap;
 	int m_cdirs;
@@ -1495,8 +1136,8 @@ protected:
 	int m_idirCache;
 	TCoord m_txCache, m_tyCache;
 };
-Path *CreatePath(TerrainMap *ptrmap, TCoord txStart, TCoord tyStart, TPoint *ptpt, int ctpt) secTerrainMap;
-Path *CreatePath(TerrainMap *ptrmap, TCoord txStart, TCoord tyStart, Direction *adir, int cdir) secTerrainMap;
+Path *CreatePath(TerrainMap *ptrmap, TCoord txStart, TCoord tyStart, TPoint *ptpt, int ctpt);
+Path *CreatePath(TerrainMap *ptrmap, TCoord txStart, TCoord tyStart, Direction *adir, int cdir);
 
 // 0 = area
 // 1 = open
@@ -1517,24 +1158,24 @@ struct TerrainMapHeader // trmaph
 class TerrainMap // trmap
 {
 public:
-	TerrainMap() secTerrainMap;
-	~TerrainMap() secTerrainMap;
+	TerrainMap();
+	~TerrainMap();
 
-	bool Init(char *pszFn) secTerrainMap;
-	bool LoadState(Stream *pstm) secTerrainMap;
-	bool SaveState(Stream *pstm) secTerrainMap;
-	void SetFlags(int tx, int ty, int ctx, int cty, byte bf) secTerrainMap;
-	bool TestFlags(int tx, int ty, int ctx, int cty, byte bf) secTerrainMap;
-	void ClearFlags(int tx, int ty, int ctx, int cty, byte bf) secTerrainMap;
-	bool IsOccupied(int tx, int ty, int ctx, int cty, byte bf) secTerrainMap;
-	Path *FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTerrainAvoid) secTerrainMap;
-	Path *FindLinePath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, byte bfTerrainAvoid) secTerrainMap;
-	bool IsLineOccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, byte bfTerrainAvoid) secTerrainMap;
-	bool FindFirstUnoccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, TCoord *ptxFree, TCoord *ptyFree) secTerrainMap;
-	bool FindLastUnoccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, TCoord *ptxFree, TCoord *ptyFree) secTerrainMap;
-	bool IsBlocked(TCoord tx, TCoord ty, byte bf) secTerrainMap;
-	bool GetFlags(int tx, int ty, byte *pbf) secTerrainMap;
-	int GetTerrainType(TCoord tx, TCoord ty) secTerrainMap;
+	bool Init(char *pszFn);
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	void SetFlags(int tx, int ty, int ctx, int cty, byte bf);
+	bool TestFlags(int tx, int ty, int ctx, int cty, byte bf);
+	void ClearFlags(int tx, int ty, int ctx, int cty, byte bf);
+	bool IsOccupied(int tx, int ty, int ctx, int cty, byte bf);
+	Path *FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTerrainAvoid);
+	Path *FindLinePath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, byte bfTerrainAvoid);
+	bool IsLineOccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, byte bfTerrainAvoid);
+	bool FindFirstUnoccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, TCoord *ptxFree, TCoord *ptyFree);
+	bool FindLastUnoccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, TCoord *ptxFree, TCoord *ptyFree);
+	bool IsBlocked(TCoord tx, TCoord ty, byte bf);
+	bool GetFlags(int tx, int ty, byte *pbf);
+	int GetTerrainType(TCoord tx, TCoord ty);
 
 	byte *GetMapPtr() {
 		return (byte *)(m_ptrmaph + 1);
@@ -1547,14 +1188,11 @@ public:
 		return m_cty;
 	}
 
-#ifdef MP_DEBUG
-	dword GetChecksum() secTerrainMap;
-#endif
 
 private:
-	PathHead *AddPathHead(word wScoreKnown, word wScore, int cSteps, word offHead, int txNew, int tyNew) secTerrainMap;
-	void RemovePathHead(PathHead *ppathh) secTerrainMap;
-	Path *MakePath(TCoord txStart, TCoord tyStart, word off) secTerrainMap;
+	PathHead *AddPathHead(word wScoreKnown, word wScore, int cSteps, word offHead, int txNew, int tyNew);
+	void RemovePathHead(PathHead *ppathh);
+	Path *MakePath(TCoord txStart, TCoord tyStart, word off);
 
 	FileMap m_fmap;
 	TerrainMapHeader *m_ptrmaph;
@@ -1632,26 +1270,26 @@ struct AnimationFileHeader // anih
 class AnimationData // anid
 {
 public:
-	AnimationData() secAnimation;
-	~AnimationData() secAnimation;
+	AnimationData();
+	~AnimationData();
 
-	bool Init(const char *pszAniName) secAnimation;
-	int GetStripCount() secAnimation;
-	int GetFrameCount(int nStrip) secAnimation;
-	int GetStripIndex(const char *pszStripName) secAnimation;
-	void GetFrameOrigin(int nStrip, int nFrame, Point *pptOrigin) secAnimation;
-	void GetSpecialPoint(int nStrip, int nFrame, Point *pptSpecial) secAnimation;
-	void GetBounds(int nStrip, int nFrame, Rect *prc) secAnimation;
-	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL) secAnimation;
-	int GetStripDelay(int nStrip) secAnimation;
-	int GetFrameDelay(int nStrip, int nFrame) secAnimation;
+	bool Init(const char *pszAniName);
+	int GetStripCount();
+	int GetFrameCount(int nStrip);
+	int GetStripIndex(const char *pszStripName);
+	void GetFrameOrigin(int nStrip, int nFrame, Point *pptOrigin);
+	void GetSpecialPoint(int nStrip, int nFrame, Point *pptSpecial);
+	void GetBounds(int nStrip, int nFrame, Rect *prc);
+	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL);
+	int GetStripDelay(int nStrip);
+	int GetFrameDelay(int nStrip, int nFrame);
 
 private:
 	TBitmap *m_ptbm;
 	FileMap m_fmap;
 	AnimationFileHeader *m_panih;
 };
-AnimationData *LoadAnimationData(const char *pszAniName) secAnimation;
+AnimationData *LoadAnimationData(const char *pszAniName);
 
 const word kfAniLoop = 0x0001;
 const word kfAniDone = 0x0002;
@@ -1675,14 +1313,11 @@ public:
 			delete m_panid;
 	}
 
-	void Init(AnimationData *panid) secAnimation;
-	bool Start(int nStrip = 0, int nFrame = 0, word wf = 0) secAnimation;
-	bool Start(const char *pszStripName, word wf = 0) secAnimation;
-	bool LoadState(Stream *pstm) secAnimation;
-	bool SaveState(Stream *pstm) secAnimation;
-#ifdef MP_DEBUG_SHAREDMEM
-	void MPValidate(Animation *paniRemote);
-#endif
+	void Init(AnimationData *panid);
+	bool Start(int nStrip = 0, int nFrame = 0, word wf = 0);
+	bool Start(const char *pszStripName, word wf = 0);
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
 
 	void Stop() {
 		m_wf |= kfAniDone;
@@ -1697,7 +1332,7 @@ public:
 		m_nStrip = nStrip;
 	}
 
-	void SetStrip(const char *pszStripName) secAnimation;
+	void SetStrip(const char *pszStripName);
 
 	int GetStrip() {
 		return m_nStrip;
@@ -1742,8 +1377,8 @@ public:
 		return m_panid;
 	}
 
-	bool Advance(int cAdvance) secAnimation;
-	long GetRemainingStripTime() secAnimation;
+	bool Advance(int cAdvance);
+	long GetRemainingStripTime();
 
 private:
 	AnimationData *m_panid;
@@ -1778,23 +1413,10 @@ struct Event { // evt
 #define gameOverEvent 0x6002
 #define penHoverEvent 0x6003
 #define updateTriggersEvent 0x6004
-#define gameSuspendEvent 0x6005
-#define gameResumeEvent 0x6006
 #define resizeEvent 0x6007
 #define hidePinEvent 0x6008
 #define cancelModeEvent 0x6009
 #define nullEvent 0x600a
-#define transportEvent 0x600b
-#define runUpdatesNowEvent 0x600c
-#define askStringEvent 0x600d
-#define mpEndMissionWinEvent 0x600e
-#define mpEndMissionLoseEvent 0x600f
-#define mpShowObjectivesEvent 0x6010
-#define checkGameOverEvent 0x6011
-#define connectionCloseEvent 0x6012
-#define showMessageEvent 0x6013
-#define enableSoundEvent 0x6014
-#define disableSoundEvent 0x6015
 
 // gameOverEvent constants (placed in Event::dw)
 
@@ -1830,17 +1452,17 @@ struct FlickVector {
 class EventMgr // evm
 {
 public:
-	EventMgr() secEventMgr;
-	~EventMgr() secEventMgr;
+	EventMgr();
+	~EventMgr();
 
-	bool PeekEvent(Event *pevt, long cWait = 0) secEventMgr;
-	bool GetEvent(Event *pevt, long cWait = -1, bool fCheckPaints = true) secEventMgr;
-	void PostEvent(Event *pevt, bool fCoalesce = true) secEventMgr;
-	void PostEvent(int eType, bool fCoalesce = true) secEventMgr;
-	bool DispatchEvent(Event *pevt) secEventMgr;
-	void Init() secEventMgr;
-	void SetPenEventInterval(word ctInterval) secEventMgr;
-	void ClearAppStopping() secEventMgr;
+	bool PeekEvent(Event *pevt, long cWait = 0);
+	bool GetEvent(Event *pevt, long cWait = -1, bool fCheckPaints = true);
+	void PostEvent(Event *pevt, bool fCoalesce = true);
+	void PostEvent(int eType, bool fCoalesce = true);
+	bool DispatchEvent(Event *pevt);
+	void Init();
+	void SetPenEventInterval(word ctInterval);
+	void ClearAppStopping();
     bool GetFlickVector(int nPen, FlickVector *pfliv);
 
 	void SetAppStopping() {
@@ -1867,7 +1489,7 @@ public:
 	}
 
 private:
-    void UpdatePenHistory(Event *pevt) secEventMgr;    
+    void UpdatePenHistory(Event *pevt);    
     bool QueryPenHistory(int nPen, long t, Point *ppt);
 
     int m_ievtPen1Next;
@@ -2000,18 +1622,6 @@ ENDLABEL(GobTypes)
 // Helper macros for sending messages
 // (would be better as inline functions but I don't trust gcc to do the right thing)
 
-#if 0 // not used
-#define SendHitMsg(_gidReceiver, _pplrAttacker, _nDamage) { \
-	Message msgT; \
-	msgT.mid = kmidHit; \
-	msgT.smidSender = _gidAttacker; \
-	msgT.smidReceiver = _gidReceiver; \
-	msgT.Hit.gidAssailant = _pplrAttacker->GetId(); \
-	msgT.Hit.sideAttacker = _pplrAttacker->GetSide(); \
-	msgT.Hit.nDamage = _nDamage; \
-	gsmm.SendMsg(&msgT); \
-}
-#endif
 
 #define SendMoveAction(_gidReceiver, _wx, _wy, _tcRadius, _wcMoveDistPerUpdate) { \
 	Message msgT; \
@@ -2092,54 +1702,25 @@ const int knDeleted = -1;
 #define BeginStateMachine   if (st == kstReservedGlobal) { if(0) {
 #define State(stTest)       return knHandled; } } else if (st == stTest) { if(0) {
 
-#if defined(DEBUG_HELPERS)
-void Log(StateMachine *psm, Message *pmsg);
-void Log(StateMachine *psm, State stOld, State stNew);
-
-#define OnEnter             return knHandled; } else if (pmsg->mid == kmidReservedEnter) { \
-							Log(this, pmsg);
-#define OnExit              return knHandled; } else if (pmsg->mid == kmidReservedExit) { \
-							Log(this, pmsg);
-#define OnUpdate            return knHandled; } else if (pmsg->mid == kmidReservedUpdate) { \
-							Log(this, pmsg); \
-							if (m_fDebug) DebugBreak();
-#define OnMsg(midTest)		return knHandled; } else if (pmsg->mid == midTest) { \
-							Log(this, pmsg); \
-							if (m_fDebug) DebugBreak();
-#define SetState(stNext)    { m_stNext = stNext; m_fForceStateChange = true; m_unvl.MinSkip(); \
-							Log(this, m_st, stNext); }
-#define DiscardMsgs			return knHandled; } else { \
-							Log(this, pmsg); \
-							if (m_fDebug) DebugBreak();
-#else
 #define OnEnter             return knHandled; } else if (pmsg->mid == kmidReservedEnter) {
 #define OnExit              return knHandled; } else if (pmsg->mid == kmidReservedExit) {
 #define OnUpdate            return knHandled; } else if (pmsg->mid == kmidReservedUpdate) {
 #define OnMsg(midTest)		return knHandled; } else if (pmsg->mid == midTest) {
 #define SetState(stNext)    { m_stNext = stNext; m_fForceStateChange = true; m_unvl.MinSkip(); }
 #define DiscardMsgs			return knHandled; } else {
-#endif
 
 #define EndStateMachineInherit(base)     return knHandled; } } else { \
 							return (int)##base::ProcessStateMachineMessage(st, pmsg); } return (int)##base::ProcessStateMachineMessage(st, pmsg);
-#if 0
-#define EndStateMachine		return knHandled; } } else { Assert("Invalid State"); \
-                            return knNotHandled; } return knNotHandled;
-#else
 #define EndStateMachine		return knHandled; } } else { return knNotHandled; } return knNotHandled;
-#endif
 
 class StateMachine // sm
 {
 	friend class StateMachineMgr;
 
 public:
-	StateMachine() secStateMachine;
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStateMachine;
+	StateMachine();
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() = 0;
-#endif
 
 	UpdateInterval *GetUpdateInterval() {
 		return &m_unvl;
@@ -2151,63 +1732,41 @@ protected:
     }
 
 	UpdateInterval m_unvl;
-#ifdef MP_STRESS
-public:
-#endif
 	State m_st;
-#ifdef MP_STRESS
-protected:
-#endif
 	State m_stNext;
 	bool m_fForceStateChange;
-#ifdef DEBUG_HELPERS
-public:
-	friend void Log(StateMachine *psm, Message *pmsg);
-	bool m_fDebug;
-	void EnableDebug(bool fDebug) {
-		m_fDebug = fDebug;
-	}
-
-	friend void paint();
-#endif
 };
 
 class StateMachineMgr // smm
 {
 public:
-	StateMachineMgr() secStateMachine;
-	~StateMachineMgr() secStateMachine;
-	bool Init(TimerMgr *ptimm) secStateMachine;
-	bool SaveState(Stream *pstm) secStateMachine;
-	bool LoadState(Stream *pstm) secStateMachine;
-	void ClearDelayedMessages() secStateMachine;
-	void SendMsg(MessageId mid, StateMachineId smidReceiver) secStateMachine;
-	void SendMsg(MessageId mid, StateMachineId smidSender, StateMachineId smidReceiver) secStateMachine;
-	void SendMsg(Message *pmsg) secStateMachine;
-	void PostMsg(Message *pmsg) secStateMachine;
-	void PostMsg(MessageId mid, StateMachineId smidSender, StateMachineId smidReceiver) secStateMachine;
-	void SendDelayedMsg(Message *pmsg, long tDelay) secStateMachine;
-	void SendDelayedMsg(MessageId mid, long tDelay, StateMachineId smidSender, StateMachineId smidReceiver) secStateMachine;
-	void DispatchDelayedMessages() secStateMachine;
-	void RouteMessage(Message *pmsg) secStateMachine;
+	StateMachineMgr();
+	~StateMachineMgr();
+	bool Init(TimerMgr *ptimm);
+	bool SaveState(Stream *pstm);
+	bool LoadState(Stream *pstm);
+	void ClearDelayedMessages();
+	void SendMsg(MessageId mid, StateMachineId smidReceiver);
+	void SendMsg(MessageId mid, StateMachineId smidSender, StateMachineId smidReceiver);
+	void SendMsg(Message *pmsg);
+	void PostMsg(Message *pmsg);
+	void PostMsg(MessageId mid, StateMachineId smidSender, StateMachineId smidReceiver);
+	void SendDelayedMsg(Message *pmsg, long tDelay);
+	void SendDelayedMsg(MessageId mid, long tDelay, StateMachineId smidSender, StateMachineId smidReceiver);
+	void DispatchDelayedMessages();
+	void RouteMessage(Message *pmsg);
 	virtual StateMachineId GetId(StateMachine *psm) = 0;
 	virtual StateMachine *GetStateMachine(StateMachineId smid) = 0;
 
 private:
-	void ProcessStateChange(StateMachine *psm) secStateMachine;
-	bool StoreDelayedMessage(Message *pmsg) secStateMachine;
+	void ProcessStateChange(StateMachine *psm);
+	bool StoreDelayedMessage(Message *pmsg);
 
 private:
 	DelayedMessage *m_pdmsgHead;
 	TimerMgr *m_ptimm;
 
-#ifdef DEBUG_HELPERS
-	friend class DelayedMessageViewer;
-#endif
 
-#ifdef TRACKSTATE
-    void TrackState(StateFrame *frame, Message *pmsg);
-#endif 
 };
 
 const int kcmsgCommandQueueMax = 300;
@@ -2215,16 +1774,16 @@ const int kcmsgCommandQueueMax = 300;
 class CommandQueue // cmdq
 {
 public:
-	CommandQueue() secCommandQueue;
-	~CommandQueue() secCommandQueue;
+	CommandQueue();
+	~CommandQueue();
 
-	bool Init(int cmsgMax = kcmsgCommandQueueMax) secCommandQueue;
-	void Exit() secCommandQueue;
+	bool Init(int cmsgMax = kcmsgCommandQueueMax);
+	void Exit();
 
-	bool LoadState(Stream *pstm) secCommandQueue;
-	bool SaveState(Stream *pstm) secCommandQueue;
-	void Enqueue(MessageId mid, StateMachineId smidReceiver) secCommandQueue;
-	void Enqueue(Message *pmsg) secCommandQueue;
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	void Enqueue(MessageId mid, StateMachineId smidReceiver);
+	void Enqueue(Message *pmsg);
 
 	void Clear() {
         m_cmsg = 0;
@@ -2239,7 +1798,7 @@ public:
 	}
 
 private:
-	void SetEntry(Message *pqmsg) secCommandQueue;
+	void SetEntry(Message *pqmsg);
 
 private:
 	int m_cmsg;
@@ -2261,18 +1820,18 @@ struct DictionaryEntry // de
 class Dictionary // dict
 {
 public:
-	Dictionary() secMisc;
-	~Dictionary() secMisc;
-	bool Init(Dictionary *pdict) secMisc;
-	void Clear() secMisc;
-	const char *Get(const char *pszName) secMisc;
-	bool Set(const char *pszName, const char *pszValue) secMisc;
-	bool Remove(const char *pszName) secMisc;
-	bool LoadState(Stream *pstm) secMisc;
-	bool SaveState(Stream *pstm) secMisc;
+	Dictionary();
+	~Dictionary();
+	bool Init(Dictionary *pdict);
+	void Clear();
+	const char *Get(const char *pszName);
+	bool Set(const char *pszName, const char *pszValue);
+	bool Remove(const char *pszName);
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
 
 private:
-	DictionaryEntry **Find(const char *pszName) secMisc;
+	DictionaryEntry **Find(const char *pszName);
 
 	int m_cde;
 	DictionaryEntry *m_pdeHead;
@@ -2287,8 +1846,6 @@ struct ModeMatch
 	int nSizeData;
 };
 
-#define kfGameRoleServer 2
-#define kfGameMultiplayer 4
 #define kfGameInitFonts 0x10
 #define kfGameInitBitmap 0x20
 #define kfGameInitDone 0x40
@@ -2296,47 +1853,40 @@ struct ModeMatch
 class MultiFormMgr;
 class InputUIForm;
 class Form;
-class Chatter;
-struct PreferencesV100;
-struct PreferencesV101;
 class Game // game
 {
 public:
-	Game() secGame;
-	~Game() secGame;
+	Game();
+	~Game();
 
-	bool Init(int imm) secGame;
-	void Exit() secGame;
-	void Shell() secGame;
-	int RunSimulation(Stream *pstm, char *pszLevel, word wfRole, dword gameid,
-            Chatter *chatter);
-	bool FilterEvent(Event *pevt) secGame;
-	void GetPlayfieldSize(Size *psiz) secGame;
-	void RequestModeChange(int imm) secGame;
-	SimUIForm *GetSimUIForm() secGame;
-	InputUIForm *GetInputUIForm() secGame;
-    Form *GetMiniMapForm() secGame;
-	void SaveGame(Stream *pstm = NULL) secGame;
-	char *GetNextLevel() secGame;
-	void SetNextLevel(char *pszLevel) secGame;
+	bool Init(int imm);
+	void Exit();
+	void Shell();
+	int RunSimulation(Stream *pstm, char *pszLevel);
+	bool FilterEvent(Event *pevt);
+	void GetPlayfieldSize(Size *psiz);
+	void RequestModeChange(int imm);
+	SimUIForm *GetSimUIForm();
+	InputUIForm *GetInputUIForm();
+    Form *GetMiniMapForm();
+	void SaveGame(Stream *pstm = NULL);
+	char *GetNextLevel();
+	void SetNextLevel(char *pszLevel);
 	int PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame = NULL,
-            int nRank = 0) secGame;
-	int PlaySavedGame(Stream *pstm) secGame;
-	bool IsMultiplayer() secGame;
-	void SetGameSpeed(int t) secGame;
-	void SavePreferences() secGame;
-	bool SaveReinitializeGame() secGame;
-	bool GetFormattedVersionString(char *pszVersion, char *pszOut) secGame;
-	void ClearDisplay() secGame;
-	bool GetVar(const char *pszName, char *pszBuff, int cbBuff) secGame;
-	bool SetVar(const char *pszName, const char *pszValue) secGame;
-	void CalcUnitCountDeltas(Level *plvl) secGame;
-	bool IsVersionCompatibleWithExe(int nVersionCompareShip, int nVersionCompareMajor, char chVersionCompareMinor, bool fUpwardCompatOK) secGame;
-	void ParseVersion(char *pszVersion, int *pnShipVersion, int *pnMajorVersion, char *pchMinorVersion) secGame;
-	bool AskResignGame(bool fTellHost = true) secGame;
-	bool AskObserveGame() secGame;
+            int nRank = 0);
+	int PlaySavedGame(Stream *pstm);
+	void SetGameSpeed(int t);
+	void SavePreferences();
+	bool SaveReinitializeGame();
+	bool GetFormattedVersionString(char *pszVersion, char *pszOut);
+	void ClearDisplay();
+	bool GetVar(const char *pszName, char *pszBuff, int cbBuff);
+	bool SetVar(const char *pszName, const char *pszValue);
+	void CalcUnitCountDeltas(Level *plvl);
+	bool IsVersionCompatibleWithExe(int nVersionCompareShip, int nVersionCompareMajor, char chVersionCompareMinor, bool fUpwardCompatOK);
+	void ParseVersion(char *pszVersion, int *pnShipVersion, int *pnMajorVersion, char *pchMinorVersion);
 	bool CheckDatabaseVersion(const char *pszDir, char *pszPdb,
-            bool fUpwardCompatOK) secGame;
+            bool fUpwardCompatOK);
     void GamePause(bool fpause);
 
 	// ModeMatch helpers
@@ -2369,34 +1919,24 @@ public:
         m_fSkipSaveReinitialize = true;
     }
 
-    dword GetGameId() {
-        return m_gameid;
-    }
-
     void ScheduleUpdateTriggers();
     void UpdateTriggers();
 
 private:
-	bool CheckMemoryAvailable() secGame;
-	void Suspend() secGame;
-	void LoadPreferences() secGame;
-	bool LoadPreferences2() secGame;
-	bool LoadPreferencesV100(PreferencesV100 *pprefsV100);
-	bool LoadPreferencesV101(PreferencesV101 *pprefsV101);
-	bool InitDisplay(int imm) secGame;
-	int FindBestModeMatch2(int nDepthData, int nSizeData, int nDepthMode, int cxWidthModeMin, int cxWidthModeMax, byte bfMatch) secGame;
-	int FindBestModeMatch(int nSizeDataAbove) secGame;
-	void AddModeMatches(int nDepthData, int nSizeData, int nDepthOrGreater, int cxWidthOrGreater) secGame;
-	bool LoadGameData() secGame;
-	bool InitCoordMappingTables() secGame;
-	bool InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
-            dword gameid, Chatter *chatter);
-	void ExitSimulation() secGame;
-	ddword IsDataPresent(int cBpp) secGame;
-	bool InitMemMgr() secGame;
-	bool InitMultiFormMgr() secGame;
+	bool CheckMemoryAvailable();
+	void LoadPreferences();
+	bool InitDisplay(int imm);
+	int FindBestModeMatch2(int nDepthData, int nSizeData, int nDepthMode, int cxWidthModeMin, int cxWidthModeMax, byte bfMatch);
+	int FindBestModeMatch(int nSizeDataAbove);
+	void AddModeMatches(int nDepthData, int nSizeData, int nDepthOrGreater, int cxWidthOrGreater);
+	bool LoadGameData();
+	bool InitCoordMappingTables();
+	bool InitSimulation(Stream *pstm, char *pszLevel);
+	void ExitSimulation();
+	ddword IsDataPresent(int cBpp);
+	bool InitMemMgr();
+	bool InitMultiFormMgr();
 
-    dword m_gameid;
 	int m_cmm;
 	int m_cmmAlloc;
 	ModeMatch *m_amm;
@@ -2416,7 +1956,7 @@ private:
 };
 extern Game ggame;
 
-void GameMain(char *psz) secGame;
+void GameMain(char *psz);
 
 enum PlayMode {
 	kpmSavedGame,
@@ -2426,22 +1966,18 @@ enum PlayMode {
 class Shell
 {
 public:
-	Shell() secShell;
-	bool Init() secShell;
-	void Exit() secShell;
+	Shell();
+	bool Init();
+	void Exit();
 	void Launch(bool fLoadReinitializeSave = false,
-            MissionIdentifier *pmiid = NULL) secShell;
+            MissionIdentifier *pmiid = NULL);
 	int PlayGame(PlayMode pm, MissionIdentifier *pmiid, Stream *pstm,
-            int nRank) secShell;
-	void SetPalette() secShell;
+            int nRank);
+	void SetPalette();
 
 private:
     bool DoPlay();
-	bool PlayChallengeLevel(bool fStory = false) secShell;
-	bool BeginNewGame() secShell;
-	bool PlaySinglePlayer(const PackId *ppackid) secShell;
-	bool PlayMultiplayer(const PackId *ppackid) secShell;
-    void DownloadMissionPack() secShell;
+	bool PlaySinglePlayer();
 
 	FileMap m_fmapPalette;
 	FileMap m_fmapShadowMap;
@@ -2469,24 +2005,24 @@ struct MapInfo
 class UpdateMap
 {
 public:
-	UpdateMap() secUpdateMap;
-	~UpdateMap() secUpdateMap;
+	UpdateMap();
+	~UpdateMap();
 
-	bool Init(Size *psiz) secUpdateMap;
-	void Reset() secUpdateMap;
-	void InvalidateRect(Rect *prc = NULL) secUpdateMap;
-	void InvalidateMapTileRect(TRectSmall *ptrc) secUpdateMap;
-	bool EnumUpdateRects(bool fFirst, Rect *prcBounds, Rect *prc) secUpdateMap;
-	bool Scroll(int dx, int dy) secUpdateMap;
-	bool *GetInvalidMap() secUpdateMap;
-	void GetMapSize(Size *psiz) secUpdateMap;
-	MapInfo *GetMapInfo() secUpdateMap;
-	bool IsInvalid() secUpdateMap;
-	void SetViewOrigin(int xOrigin, int yOrigin) secUpdateMap;
-	void Validate() secUpdateMap;
-	void InvalidateTile(TCoord tx, TCoord ty) secUpdateMap;
-	void StartMergeDamagedInvalid() secUpdateMap;
-	void EndMergeDamagedInvalid() secUpdateMap;
+	bool Init(Size *psiz);
+	void Reset();
+	void InvalidateRect(Rect *prc = NULL);
+	void InvalidateMapTileRect(TRectSmall *ptrc);
+	bool EnumUpdateRects(bool fFirst, Rect *prcBounds, Rect *prc);
+	bool Scroll(int dx, int dy);
+	bool *GetInvalidMap();
+	void GetMapSize(Size *psiz);
+	MapInfo *GetMapInfo();
+	bool IsInvalid();
+	void SetViewOrigin(int xOrigin, int yOrigin);
+	void Validate();
+	void InvalidateTile(TCoord tx, TCoord ty);
+	void StartMergeDamagedInvalid();
+	void EndMergeDamagedInvalid();
 
 	bool IsDamagedInvalid()
 	{
@@ -2507,15 +2043,15 @@ public:
 		bool fNewInvalid;
 		return IsTileRectInvalidAndTrackDamage(&trc, &fNewInvalid);
 	}
-	bool IsMapTileRectInvalidAndTrackDamage(TRectSmall *ptrc, bool *pfNewInvalid) secUpdateMap;
+	bool IsMapTileRectInvalidAndTrackDamage(TRectSmall *ptrc, bool *pfNewInvalid);
 
 private:
-	bool EnumRowRects(bool fFirst, Rect *prcBounds, Rect *prc) secUpdateMap;
-	void InvalidateTileRect(TRectSmall *ptrc) secUpdateMap;
-	bool IsTileRectInvalidAndTrackDamage(TRectSmall *ptrc, bool *pfNewInvalid) secUpdateMap;
-	bool IsTileRectInvalid(TRectSmall *ptrc) secUpdateMap;
-	void CalcTileRect(Rect *prc, TRectSmall *ptrc) secUpdateMap;
-	void SetMapOffset(int xMapOffset, int yMapOffset, bool fInvalidate = true) secUpdateMap;
+	bool EnumRowRects(bool fFirst, Rect *prcBounds, Rect *prc);
+	void InvalidateTileRect(TRectSmall *ptrc);
+	bool IsTileRectInvalidAndTrackDamage(TRectSmall *ptrc, bool *pfNewInvalid);
+	bool IsTileRectInvalid(TRectSmall *ptrc);
+	void CalcTileRect(Rect *prc, TRectSmall *ptrc);
+	void SetMapOffset(int xMapOffset, int yMapOffset, bool fInvalidate = true);
 
 	Rect m_rcDib;
 	int m_ctx;
@@ -2566,27 +2102,27 @@ class Form;
 class FormMgr // frmm
 {
 public:
-	FormMgr() secFormMgr;
-	virtual ~FormMgr() secFormMgr;
+	FormMgr();
+	virtual ~FormMgr();
 
-	virtual bool Init(DibBitmap *pbm, bool fFreeDib) secFormMgr;
-	virtual void AddForm(Form *pfrm) secFormMgr;
-	virtual void RemoveForm(Form *pfrm) secFormMgr;
-	virtual bool EcomSuppressed() secFormMgr;
-	virtual bool CookEvent(Event *pevt) secFormMgr;
-	virtual Form *GetFormPtr(word idf) secFormMgr;
-	virtual Form *LoadForm(IniReader *pini, word idf, Form *pfrm) secFormMgr;
-	virtual void Paint(bool fScrolled, Rect *prcOpaqueStart) secFormMgr;
-	virtual void Scroll(int dx, int dy) secFormMgr;
-	virtual bool HasCapture() secFormMgr;
-    virtual Form *GetFormCapture() secFormMgr;
-	virtual Form *GetModalForm() secFormMgr;
-	virtual void InvalidateRect(Rect *prc) secFormMgr;
-	virtual DibBitmap *GetDib() secFormMgr;
-	virtual void CalcOpaqueRect(Form *pfrmStop, Rect *prcOpaqueStart, Rect *prcResult) secFormMgr;
-	virtual Form *GetFocus() secFormMgr;
-    virtual void FrameStart() secFormMgr;
-    virtual void FrameComplete() secFormMgr;
+	virtual bool Init(DibBitmap *pbm, bool fFreeDib);
+	virtual void AddForm(Form *pfrm);
+	virtual void RemoveForm(Form *pfrm);
+	virtual bool EcomSuppressed();
+	virtual bool CookEvent(Event *pevt);
+	virtual Form *GetFormPtr(word idf);
+	virtual Form *LoadForm(IniReader *pini, word idf, Form *pfrm);
+	virtual void Paint(bool fScrolled, Rect *prcOpaqueStart);
+	virtual void Scroll(int dx, int dy);
+	virtual bool HasCapture();
+    virtual Form *GetFormCapture();
+	virtual Form *GetModalForm();
+	virtual void InvalidateRect(Rect *prc);
+	virtual DibBitmap *GetDib();
+	virtual void CalcOpaqueRect(Form *pfrmStop, Rect *prcOpaqueStart, Rect *prcResult);
+	virtual Form *GetFocus();
+    virtual void FrameStart();
+    virtual void FrameComplete();
     virtual void BreakCapture();
     
 	void SetFlags(word wf) {
@@ -2601,10 +2137,10 @@ public:
 
 protected:
     Form *FindPen2Form();
-	bool CookPenEvent(Event *pevt) secFormMgr;
-	bool CookKeyEvent(Event *pevt) secFormMgr;
-	virtual bool BltTo(DibBitmap *pbmDst, int yTop, bool fScrolled) secFormMgr;
-	virtual bool ScrollBits() secFormMgr;
+	bool CookPenEvent(Event *pevt);
+	bool CookKeyEvent(Event *pevt);
+	virtual bool BltTo(DibBitmap *pbmDst, int yTop, bool fScrolled);
+	virtual bool ScrollBits();
 
 	word m_wf;
 	word m_idfCapture;
@@ -2629,35 +2165,35 @@ public:
 class MultiFormMgr : public FormMgr
 {
 public:
-	MultiFormMgr() secFormMgr;
-	virtual ~MultiFormMgr() secFormMgr;
+	MultiFormMgr();
+	virtual ~MultiFormMgr();
 
-	void AddFormMgr(FormMgr *pfrmm, Rect *prc) secFormMgr;
-	void RemoveFormMgr(FormMgr *pfrmm) secFormMgr;
-	void DrawFrame(bool fForceBackBufferValid, bool fPaint = true) secFormMgr;
-	void CheckSetRedrawDirty() secFormMgr;
-    bool IsInvalid() secFormMgr;
-	bool GetFormMgrRect(FormMgr *pfrmm, Rect *prc) secFormMgr;
+	void AddFormMgr(FormMgr *pfrmm, Rect *prc);
+	void RemoveFormMgr(FormMgr *pfrmm);
+	void DrawFrame(bool fForceBackBufferValid, bool fPaint = true);
+	void CheckSetRedrawDirty();
+    bool IsInvalid();
+	bool GetFormMgrRect(FormMgr *pfrmm, Rect *prc);
 
 #ifdef STATS_DISPLAY
-	int GetUpdateRectCount() secFormMgr;
+	int GetUpdateRectCount();
 #endif
 
-	virtual void AddForm(Form *pfrm) secFormMgr;
-	virtual void RemoveForm(Form *pfrm) secFormMgr;
-	virtual bool EcomSuppressed() secFormMgr;
-	virtual bool CookEvent(Event *pevt) secFormMgr;
-	virtual Form *GetFormPtr(word idf) secFormMgr;
-	virtual bool Paint(bool fForceBackBufferValid) secFormMgr;
-	virtual void InvalidateRect(Rect *prc) secFormMgr;
-	virtual void CalcOpaqueRect(Form *pfrmStop, Rect *prcOpaqueStart, Rect *prcResult) secFormMgr;
-	virtual Form *GetFocus() secFormMgr;
+	virtual void AddForm(Form *pfrm);
+	virtual void RemoveForm(Form *pfrm);
+	virtual bool EcomSuppressed();
+	virtual bool CookEvent(Event *pevt);
+	virtual Form *GetFormPtr(word idf);
+	virtual bool Paint(bool fForceBackBufferValid);
+	virtual void InvalidateRect(Rect *prc);
+	virtual void CalcOpaqueRect(Form *pfrmStop, Rect *prcOpaqueStart, Rect *prcResult);
+	virtual Form *GetFocus();
 
 private:
 #ifdef DRAW_UPDATERECTS
-	void DrawUpdateRects(UpdateMap *pupd, int yTop) secFormMgr;
+	void DrawUpdateRects(UpdateMap *pupd, int yTop);
 #endif
-	virtual bool BltTo(DibBitmap *pbmDst, int yTop, bool fScrolled) secFormMgr;
+	virtual bool BltTo(DibBitmap *pbmDst, int yTop, bool fScrolled);
     bool StealCapturePen2(Event *pevt, FormMgr *pfrmmChildCapture);
 
 	int m_cfrmm;
@@ -2698,48 +2234,48 @@ class Control;
 class Form : public IControlEventHandler
 {
 public:
-	Form() secForm;
-	virtual ~Form() secForm;
+	Form();
+	virtual ~Form();
 
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
     virtual bool OnFilterEvent(Event *pevt) { return false; }
-	virtual bool EventProc(Event *pevt) secForm;
-	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide) secForm;
-	virtual bool OnHitTest(Event *pevt) secForm;
-	virtual bool OnKeyTest(Event *pevt) secForm;
-	virtual bool OnPenEvent(Event *pevt) secForm;
-	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque) secForm;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secForm;
-	virtual void OnPaint(DibBitmap *pbm) secForm;
-	virtual void OnPaintControls(DibBitmap *pbm, UpdateMap *pupd) secForm;
-	virtual void OnScroll(int dx, int dy) secForm;
-	virtual void ScrollInvalidate(UpdateMap *pupd) secForm;
-	virtual void InvalidateRect(Rect *prc) secForm;
-    virtual void FrameStart() secForm;
-    virtual void FrameComplete() secForm;
+	virtual bool EventProc(Event *pevt);
+	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide);
+	virtual bool OnHitTest(Event *pevt);
+	virtual bool OnKeyTest(Event *pevt);
+	virtual bool OnPenEvent(Event *pevt);
+	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque);
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnPaintControls(DibBitmap *pbm, UpdateMap *pupd);
+	virtual void OnScroll(int dx, int dy);
+	virtual void ScrollInvalidate(UpdateMap *pupd);
+	virtual void InvalidateRect(Rect *prc);
+    virtual void FrameStart();
+    virtual void FrameComplete();
     virtual Control *HitTestControls(Event *pevt);
     virtual void BreakCapture();
 
 	// IControlEventHandler methods
 
-	virtual void OnControlSelected(word idc) secForm;
-	virtual bool OnControlHeld(word idc) secForm;
-	virtual void OnControlNotify(word idc, int nNotify) secForm;
+	virtual void OnControlSelected(word idc);
+	virtual bool OnControlHeld(word idc);
+	virtual void OnControlNotify(word idc, int nNotify);
 
-	FormMgr *GetFormMgr() secForm;
+	FormMgr *GetFormMgr();
 
-	word GetId() secForm;
-	word GetFlags() secForm;
-	void SetFlags(word wf) secForm;
-	void GetRect(Rect *prc) secForm;
-	void SetRect(Rect *prc) secForm;
-	void Show(bool fShow) secForm;
-	void EndForm(int nResult = 0) secForm;
-	Control *GetControlPtr(word idc) secForm;
-	bool IsControlInside(Control *pctl) secForm;
-	bool AddControl(Control *pctl) secForm;
-	void SetUserDataPtr(void *pUserData) secForm;
-	void *GetUserDataPtr() secForm;
+	word GetId();
+	word GetFlags();
+	void SetFlags(word wf);
+	void GetRect(Rect *prc);
+	void SetRect(Rect *prc);
+	void Show(bool fShow);
+	void EndForm(int nResult = 0);
+	Control *GetControlPtr(word idc);
+	bool IsControlInside(Control *pctl);
+	bool AddControl(Control *pctl);
+	void SetUserDataPtr(void *pUserData);
+	void *GetUserDataPtr();
     Form *FindPen2Form();
 
     bool HasCapture() {
@@ -2755,7 +2291,7 @@ public:
     }
 
 protected:
-	bool InitFromProperties(FormMgr *pfrmm, word idf, IniReader *pini, char *pszForm) secForm;
+	bool InitFromProperties(FormMgr *pfrmm, word idf, IniReader *pini, char *pszForm);
 
 	FormMgr *m_pfrmm;
 	TBitmap *m_ptbm;
@@ -2790,20 +2326,20 @@ inline FormMgr *Form::GetFormMgr()
 class DialogForm : public Form
 {
 public:
-	DialogForm() secForm;
-	~DialogForm() secForm;
+	DialogForm();
+	~DialogForm();
 
-	void SetBackgroundColorIndex(int iclr) secForm;
-	void SetTitleColor(Color clr) secForm;
-	void SetBorderColorIndex(int iclr) secForm;
-	void SetClearDibFlag() secForm;
+	void SetBackgroundColorIndex(int iclr);
+	void SetTitleColor(Color clr);
+	void SetBorderColorIndex(int iclr);
+	void SetClearDibFlag();
 
 	// Form overrides
 
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secForm;
-	virtual void OnPaint(DibBitmap *pbm) secForm;
-	virtual bool OnPenEvent(Event *pevt) secForm;
-	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide) secForm;
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual bool OnPenEvent(Event *pevt);
+	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide);
 
 private:
 	Color m_clrTitle;
@@ -2829,21 +2365,21 @@ inline void DialogForm::SetClearDibFlag() {
 class ShellForm : public Form, public Timer
 {
 public:
-	ShellForm() secForm;
-	virtual ~ShellForm() secForm;
+	ShellForm();
+	virtual ~ShellForm();
 
 	// Doesn't match Form's DoModal signature so it's not really an override
 
-	virtual bool DoModal(int *pnResult = NULL, bool fAnimate = true, bool fShowSound = true) secForm;
+	virtual bool DoModal(int *pnResult = NULL, bool fAnimate = true, bool fShowSound = true);
 
 	// Form overrides
 
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secForm;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
 
 	// Timer interface
 
-	virtual void OnTimer(long tCurrent) secForm;
+	virtual void OnTimer(long tCurrent);
     virtual void OnZipDone() {}
 
 protected:
@@ -2893,28 +2429,28 @@ private:
 class Control
 {
 public:
-	Control() secControl;
-	virtual ~Control() secControl;
+	Control();
+	virtual ~Control();
 
-	virtual bool Init(Form *pfrm, word idc, int x, int y, int cx, int cy) secControl;
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secControl;
-	virtual void OnPaint(DibBitmap *pbm) secControl;
-	virtual void OnPenEvent(Event *pevt) secControl;
-	virtual void OnSelect(int nSelect) secControl;
-    virtual int OnHitTest(Event *pevt) secControl;
-	virtual void Invalidate() secControl;
-    virtual void GetFingerRect(Rect *prc) secControl;
-    virtual void OnBreakCapture() secControl;
+	virtual bool Init(Form *pfrm, word idc, int x, int y, int cx, int cy);
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnPenEvent(Event *pevt);
+	virtual void OnSelect(int nSelect);
+    virtual int OnHitTest(Event *pevt);
+	virtual void Invalidate();
+    virtual void GetFingerRect(Rect *prc);
+    virtual void OnBreakCapture();
 
-	word GetId() secControl;
-	void GetRect(Rect *prc) secControl;
-	void SetRect(Rect *prc, bool fCompareRect = true) secControl;
-	void SetPosition(int x, int y) secControl;
-	void Show(bool fShow) secControl;
-	word GetFlags() secControl;
-	void SetFlags(word wf) secControl;
-	void SetEventHandler(IControlEventHandler *pceh) secControl;
-	void Enable(bool fEnable) secControl;
+	word GetId();
+	void GetRect(Rect *prc);
+	void SetRect(Rect *prc, bool fCompareRect = true);
+	void SetPosition(int x, int y);
+	void Show(bool fShow);
+	word GetFlags();
+	void SetFlags(word wf);
+	void SetEventHandler(IControlEventHandler *pceh);
+	void Enable(bool fEnable);
 
 protected:
 	Rect m_rc;
@@ -2935,22 +2471,22 @@ inline void Control::SetEventHandler(IControlEventHandler *pceh) {
 class ButtonControl : public Control // btn
 {
 public:
-	static bool InitClass() secButtonControl;
-	static void ExitClass() secButtonControl;
+	static bool InitClass();
+	static void ExitClass();
 
-	ButtonControl() secButtonControl;
-	virtual ~ButtonControl() secButtonControl;
+	ButtonControl();
+	virtual ~ButtonControl();
 
 	virtual bool Init(Form *pfrm, word idc, int x, int y, int cx, int cy,
-			char *pszLabel, int nfnt, char *szFnUp = NULL, char *szFnDown = NULL, char *szFnDisabled = NULL) secButtonControl;
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secButtonControl;
-	virtual void OnPaint(DibBitmap *pbm) secButtonControl;
-	virtual void OnSelect(int nSelect) secButtonControl;
+			char *pszLabel, int nfnt, char *szFnUp = NULL, char *szFnDown = NULL, char *szFnDisabled = NULL);
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnSelect(int nSelect);
 
-	void SetText(char *psz) secButtonControl;
+	void SetText(char *psz);
 
 private:
-	virtual bool Init(char *pszLabel, int nfnt, char *szFnUp, char *szFnDown, char *szFnDisabled, bool fCenter) secButtonControl;
+	virtual bool Init(char *pszLabel, int nfnt, char *szFnUp, char *szFnDown, char *szFnDisabled, bool fCenter);
 
 protected:
 	TBitmap *m_ptbmUp;
@@ -2996,52 +2532,37 @@ private:
 class SilkButtonControl : public Control
 {
 public:
-	~SilkButtonControl() secButtonControl;
+	~SilkButtonControl();
 
 public:
-	virtual void OnSelect(int nSelect) secButtonControl;
+	virtual void OnSelect(int nSelect);
 };
 
 inline SilkButtonControl::~SilkButtonControl() {
 }
 
-#if 0 // not used now
-// PresetButtonControl
-
-class PresetButtonControl : public ButtonControl // btn
-{
-public:
-	virtual void OnPaint(DibBitmap *pbm) secPresetButtonControl;
-
-	static bool InitClass() secPresetButtonControl;
-	static void ExitClass() secPresetButtonControl;
-
-private:
-	virtual bool Init(char *pszLabel, int nfnt, char *szFnUp, char *szFnDown, bool fCenter) secPresetButtonControl;
-};
-#endif
 
 // Checkbox Control
 
 class CheckBoxControl : public Control // cbox
 {
 public:
-	CheckBoxControl() secCheckBoxControl;
-	virtual ~CheckBoxControl() secCheckBoxControl;
+	CheckBoxControl();
+	virtual ~CheckBoxControl();
 
-	virtual bool Init(Form *pfrm, word idc, int x, int y, char *pszLabel, int nfnt, bool fChecked) secCheckBoxControl;
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secCheckBoxControl;
-	virtual void OnPaint(DibBitmap *pbm) secCheckBoxControl;
-	virtual void OnSelect(int nSelect) secCheckBoxControl;
+	virtual bool Init(Form *pfrm, word idc, int x, int y, char *pszLabel, int nfnt, bool fChecked);
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnSelect(int nSelect);
 
-	void SetText(char *psz) secCheckBoxControl;
-	bool IsChecked() secCheckBoxControl;
-	void SetChecked(bool fChecked) secCheckBoxControl;
-	static bool InitClass() secCheckBoxControl;
-	static void ExitClass() secCheckBoxControl;
+	void SetText(char *psz);
+	bool IsChecked();
+	void SetChecked(bool fChecked);
+	static bool InitClass();
+	static void ExitClass();
 
 private:
-	bool Init(char *pszLabel, int nfnt, bool fChecked) secButtonControl;
+	bool Init(char *pszLabel, int nfnt, bool fChecked);
 
 	static TBitmap *s_ptbmOnUp;
 	static TBitmap *s_ptbmOnDown;
@@ -3066,19 +2587,19 @@ const int kcbLabelTextMax = 1000;
 class LabelControl : public Control // lbl
 {
 public:
-	LabelControl() secLabelControl;
-	virtual ~LabelControl() secLabelControl;
-	bool Init(int nfnt, char *pszLabel, char *pszFlags1, char *pszFlags2) secLabelControl;
+	LabelControl();
+	virtual ~LabelControl();
+	bool Init(int nfnt, char *pszLabel, char *pszFlags1, char *pszFlags2);
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secLabelControl;
-	virtual void OnPaint(DibBitmap *pbm) secLabelControl;
-	virtual int OnHitTest(Event *pevt) secLabelControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual int OnHitTest(Event *pevt);
 
-	virtual void SetText(const char *psz) secLabelControl;
-	const char *GetText() secLabelControl;
+	virtual void SetText(const char *psz);
+	const char *GetText();
 
 protected:
-	virtual void CalcRect() secLabelControl;
+	virtual void CalcRect();
 
 	char *m_szLabel;
 	int m_nfnt;
@@ -3091,22 +2612,22 @@ inline const char *LabelControl::GetText() {
 class EcomTextControl : public LabelControl // ect
 {
 public:
-	EcomTextControl() secEcom;
-	virtual ~EcomTextControl() secEcom;
+	EcomTextControl();
+	virtual ~EcomTextControl();
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secEcom;
-	virtual void OnPaint(DibBitmap *pbm) secEcom;
-	virtual int OnHitTest(Event *pevt) secEcom;
-	virtual void SetText(char *psz) secEcom;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual int OnHitTest(Event *pevt);
+	virtual void SetText(char *psz);
 
 	// new methods
 
-	bool ShowMoreText() secEcom;
-	void ShowAll() secEcom;
-	void DrawText(DibBitmap *pbm, Font *pfnt, char *psz, int x, int y, int cx, int cchMax) secEcom;
+	bool ShowMoreText();
+	void ShowAll();
+	void DrawText(DibBitmap *pbm, Font *pfnt, char *psz, int x, int y, int cx, int cchMax);
 
 private:
-	void CalcRect() secEcom;
+	void CalcRect();
 
 	int m_cchCur;
 	dword m_aiclrEcom[4];
@@ -3177,30 +2698,30 @@ typedef bool (*ChunkProc)(int x,int y, int cx, int cy, int nchBuffer, int yCurre
 class HelpControl : public Control, Timer
 {
 public:
-	HelpControl() secHelpControl;
-	~HelpControl() secHelpControl;
+	HelpControl();
+	~HelpControl();
 
-	bool FollowLink(const char *pszLink, int cch = -1) secHelpControl;
-	void DoNextPage() secHelpControl;
-	void DoPrevPage() secHelpControl;
-	void DoIndex() secHelpControl;
-	void DoBack() secHelpControl;
-	bool SetFile(const char *pszFile) secHelpControl;
+	bool FollowLink(const char *pszLink, int cch = -1);
+	void DoNextPage();
+	void DoPrevPage();
+	void DoIndex();
+	void DoBack();
+	bool SetFile(const char *pszFile);
 
 	// Control overrides
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secHelpControl;
-	virtual void OnPaint(DibBitmap *pbm) secHelpControl;
-	virtual void OnPenEvent(Event *pevt) secHelpControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnPenEvent(Event *pevt);
 
 private:
     virtual void OnTimer(long tCurrent);
 
-	bool Layout(dword nchStart, bool fLargeFont, DibBitmap *pbm, ChunkProc pfn, void *pv) secHelpControl;
-	int LineHeight(bool) secHelpControl;
-	int FindPrevPosition(int nchFrom, int cyAmount, bool *pfLargeFont) secHelpControl;
+	bool Layout(dword nchStart, bool fLargeFont, DibBitmap *pbm, ChunkProc pfn, void *pv);
+	int LineHeight(bool);
+	int FindPrevPosition(int nchFrom, int cyAmount, bool *pfLargeFont);
 	int FindNextPosition(int nchFrom, int cySpan, bool *pfLargeFont,
-            bool fCondition, bool fSmooth) secHelpControl;
+            bool fCondition, bool fSmooth);
     void GetSubRects(Rect *prcInterior, Rect *prcScrollPos = NULL);
     void DragScroll(int y);
 
@@ -3219,22 +2740,22 @@ private:
     HitTest m_hittest;
 };
 
-void Help(const char *pszAnchor = NULL, bool fPauseSimulation = false, const char *pszFile = NULL) secHelpControl;
-void CutScene(const char *pszScene, bool fPauseSimulation) secCutScene;
+void Help(const char *pszAnchor = NULL, bool fPauseSimulation = false, const char *pszFile = NULL);
+void CutScene(const char *pszScene, bool fPauseSimulation);
 
 // Edit Control
 
 class EditControl : public Control // edc
 {
 public:
-	EditControl() secEditControl;
-	~EditControl() secEditControl;
+	EditControl();
+	~EditControl();
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secEditControl;
-	virtual void OnPaint(DibBitmap *pbm) secEditControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
 
-	void SetText(const char *psz) secEditControl;
-	void GetText(char *psz, int cb) secEditControl;
+	void SetText(const char *psz);
+	void GetText(char *psz, int cb);
 
 private:
 	char m_szText[100];
@@ -3260,25 +2781,25 @@ struct ListItem;
 class ListControl : public Control, IControlEventHandler, Timer // lstc
 {
 public:
-	static bool InitClass() secListControl;
-	static void ExitClass() secListControl;
+	static bool InitClass();
+	static void ExitClass();
 
-	ListControl() secListControl;
-	virtual ~ListControl() secListControl;
+	ListControl();
+	virtual ~ListControl();
 
-    Font *GetFont() secListControl;
-	void Clear() secListControl;
-	bool Add(ListItem *pli) secListControl;
-	bool Add(const char *psz, void *pvData = NULL) secListControl;
-//	ListItem *EnumItemPtr(Enum *penum) secListControl;
-	int GetSelectedItemIndex() secListControl;
-	ListItem *GetSelectedItem() secListControl;
-	void *GetSelectedItemData() secListControl;
-	void SetSelectedItemData(void *pvData) secListControl;
-	bool GetSelectedItemText(char *psz, int cb) secListControl;
-	bool SetSelectedItemText(const char *psz) secListControl;
-	void Select(int iItem, bool fOnly = false, bool fMakeCenter = false) secListControl;
-	int GetCount() secListControl;
+    Font *GetFont();
+	void Clear();
+	bool Add(ListItem *pli);
+	bool Add(const char *psz, void *pvData = NULL);
+//	ListItem *EnumItemPtr(Enum *penum);
+	int GetSelectedItemIndex();
+	ListItem *GetSelectedItem();
+	void *GetSelectedItemData();
+	void SetSelectedItemData(void *pvData);
+	bool GetSelectedItemText(char *psz, int cb);
+	bool SetSelectedItemText(const char *psz);
+	void Select(int iItem, bool fOnly = false, bool fMakeCenter = false);
+	int GetCount();
     void SetTabStops(int x0, int x1 = -1, int x2 = -1, int x3 = -1);
     void SetTabFlags(word wf0, word wf1 = 0, word wf2 = 0, word wf3 = 0);
 	virtual void GetSubRects(Rect *prcInterior, Rect *prcUpArrow = NULL,
@@ -3287,16 +2808,16 @@ public:
 
 	// IControlEventHandler methods
 
-	virtual void OnControlSelected(word idc) secForm;
-	virtual bool OnControlHeld(word idc) secForm;
-	virtual void OnControlNotify(word idc, int nNotify) secForm;
+	virtual void OnControlSelected(word idc);
+	virtual bool OnControlHeld(word idc);
+	virtual void OnControlNotify(word idc, int nNotify);
 
 	// Control overrides
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secListControl;
-	virtual void OnPaint(DibBitmap *pbm) secListControl;
-	virtual void OnSelect(int nSelect) secListControl;
-	virtual void OnPenEvent(Event *pevt) secListControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnSelect(int nSelect);
+	virtual void OnPenEvent(Event *pevt);
 
     // Timer methods
 
@@ -3310,14 +2831,14 @@ public:
 protected:
     virtual void OnPenEvent2(Event *pevt);
 	virtual void DrawItem(DibBitmap *pbm, ListItem *pli, int x, int y,
-            int cx, int cy) secListControl;
+            int cx, int cy);
     virtual void DrawText(DibBitmap *pbm, char *psz, int x, int y,
             int cx, int cy, word wf);
 
 private:
-	bool NeedsScrollUpArrow() secListControl;
-	bool NeedsScrollDownArrow() secListControl;
-	int GetVisibleItemCount() secListControl;
+	bool NeedsScrollUpArrow();
+	bool NeedsScrollDownArrow();
+	int GetVisibleItemCount();
     void DragScroll(int y);
 
 private:
@@ -3369,13 +2890,13 @@ class BuildListControl : public ListControl // alc
 public:
 	// ListControl overrides
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secListControl;
-	virtual void OnPaint(DibBitmap *pbm) secListControl;
-	virtual void DrawItem(DibBitmap *pbm, ListItem *pli, int x, int y, int cx, int cy) secListControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void DrawItem(DibBitmap *pbm, ListItem *pli, int x, int y, int cx, int cy);
 	virtual void GetSubRects(Rect *prcInterior, Rect *prcUpArrow = NULL,
             Rect *prcDownArrow = NULL, Rect *prcScrollPos = NULL);
 
-	bool Add(AnimationData *panid, int nStrip, int nFrame, void *pvData, bool fDisabled = false) secListControl;
+	bool Add(AnimationData *panid, int nStrip, int nFrame, void *pvData, bool fDisabled = false);
 	void SetQueueInfo(BuilderGob *pbldr, BuildQueue *pbq) { m_pbldr = pbldr; m_pbq = pbq;}
 
 private:
@@ -3388,13 +2909,13 @@ private:
 class BitmapControl : public Control // bmc
 {
 public:
-	BitmapControl() secBitmapControl;
-	virtual ~BitmapControl() secBitmapControl;
+	BitmapControl();
+	virtual ~BitmapControl();
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secBitmapControl;
-	virtual void OnPaint(DibBitmap *pbm) secBitmapControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
 
-	void SetBitmap(HtBitmap *phtbm) secBitmapControl;
+	void SetBitmap(HtBitmap *phtbm);
 
 private:
 	HtBitmap *m_phtbm;
@@ -3405,16 +2926,16 @@ private:
 class SliderControl : public Control // sldr
 {
 public:
-	SliderControl() secSliderControl;
-	~SliderControl() secSliderControl;
+	SliderControl();
+	~SliderControl();
 
-	virtual void OnPaint(DibBitmap *pbm) secSliderControl;
-	virtual void OnSelect(int nSelect) secSliderControl;
-	virtual void OnPenEvent(Event *pevt) secSliderControl;
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnSelect(int nSelect);
+	virtual void OnPenEvent(Event *pevt);
 
-	void SetRange(int nMin, int nMax) secSliderControl;
-	void SetValue(int n) secSliderControl;
-	int GetValue() secSliderControl;
+	void SetRange(int nMin, int nMax);
+	void SetValue(int n);
+	int GetValue();
 
 private:
 	int m_nMin, m_nMax;
@@ -3427,12 +2948,12 @@ inline SliderControl::~SliderControl() {
 class GraffitiScrollControl : public Control // grfs
 {
 public:
-	GraffitiScrollControl() secGraffitiScrollControl;
-	bool IsPainting() secGraffitiScrollControl;
+	GraffitiScrollControl();
+	bool IsPainting();
 
-	virtual void OnPenEvent(Event *pevt) secGraffitiScrollControl;
-	virtual void OnPaint(DibBitmap *pbm) secGraffitiScrollControl;
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secGraffitiScrollControl;
+	virtual void OnPenEvent(Event *pevt);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
 
 private:
 	int m_nScale;
@@ -3453,21 +2974,21 @@ private:
 class MiniMapControl : public Control // mmc
 {
 public:
-	MiniMapControl() secMiniMapControl;
-	virtual ~MiniMapControl() secMiniMapControl;
+	MiniMapControl();
+	virtual ~MiniMapControl();
 
-    virtual int OnHitTest(Event *pevt) secMiniMapControl;
-	virtual void OnPaint(DibBitmap *pbm) secMiniMapControl;
-	virtual void OnPenEvent(Event *pevt) secMiniMapControl;
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secMiniMapControl;
+    virtual int OnHitTest(Event *pevt);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnPenEvent(Event *pevt);
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
     virtual void OnBreakCapture();
 
-	void Redraw() secMiniMapControl;
-	void RedrawTRect(TRect *ptrc) secMiniMapControl;
-	void RedrawTile(TCoord tx, TCoord ty) secMiniMapControl;
-	void Update() secMiniMapControl;
-	bool CalcPoweredRadar() secMiniMapControl;
-	static int CalcWidth() secMiniMapControl;
+	void Redraw();
+	void RedrawTRect(TRect *ptrc);
+	void RedrawTile(TCoord tx, TCoord ty);
+	void Update();
+	bool CalcPoweredRadar();
+	static int CalcWidth();
 
 private:
     void OnPenEvent2(Event *pevt);
@@ -3499,21 +3020,21 @@ private:
 class PipMeterControl : public Control // btn
 {
 public:
-	static bool InitClass() secPipMeterControl;
-	static void ExitClass() secPipMeterControl;
+	static bool InitClass();
+	static void ExitClass();
 
-	PipMeterControl() secPipMeterControl;
-	virtual ~PipMeterControl() secPipMeterControl;
+	PipMeterControl();
+	virtual ~PipMeterControl();
 
 	virtual bool Init(Form *pfrm, word idc, int x, int y, int cx, int cy,
-			char *szPip = NULL) secPipMeterControl;
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secPipMeterControl;
-	virtual void OnPaint(DibBitmap *pbm) secPipMeterControl;
+			char *szPip = NULL);
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
 
-	void SetValue(int nValue) secPipMeterControl;
+	void SetValue(int nValue);
 
 private:
-	virtual bool Init(char *szPip) secPipMeterControl;
+	virtual bool Init(char *szPip);
 
 protected:
 	TBitmap *m_ptbmPip;
@@ -3530,15 +3051,15 @@ struct UnitConsts;
 class DamageMeterControl : public Control // btn
 {
 public:
-	static bool InitClass() secDamageMeterControl;
-	static void ExitClass() secDamageMeterControl;
+	static bool InitClass();
+	static void ExitClass();
 
-	DamageMeterControl() secDamageMeterControl;
-	virtual ~DamageMeterControl() secDamageMeterControl;
+	DamageMeterControl();
+	virtual ~DamageMeterControl();
 
-	virtual void OnPaint(DibBitmap *pbm) secDamageMeterControl;
+	virtual void OnPaint(DibBitmap *pbm);
 
-	void SetUnitConsts(UnitConsts *puntc) secDamageMeterControl;
+	void SetUnitConsts(UnitConsts *puntc);
 
 private:
 	UnitConsts *m_puntc;
@@ -3553,10 +3074,10 @@ class CreditsControl : public Control
 {
 public:
 	CreditsControl() {m_cCreditNeeders = 0;m_fDrawCreditSymbol = true;};
-	void Update(long nCredits, word cCreditNeeders) secCreditsControl;
+	void Update(long nCredits, word cCreditNeeders);
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secCreditsControl;
-	virtual void OnPaint(DibBitmap *pbm) secCreditsControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
 
 private:
 	long m_nCredits;
@@ -3570,10 +3091,10 @@ class PowerControl : public Control
 {
 public:
 	PowerControl() {m_fShowPowerSymbol = true; m_fPowerLow = false;};
-	void Update(int nDemand, int nSupply) secPowerControl;
+	void Update(int nDemand, int nSupply);
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secPowerControl;
-	virtual void OnPaint(DibBitmap *pbm) secPowerControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
+	virtual void OnPaint(DibBitmap *pbm);
 
 private:
 
@@ -3588,28 +3109,27 @@ private:
 class InputUIForm : public Form, public Timer
 {
 public:
-	InputUIForm(Chatter *chatter) secInputUIForm;
-	~InputUIForm() secInputUIForm;
-	void Update() secInputUIForm;
+	InputUIForm();
+	~InputUIForm();
+	void Update();
 
 	// form
 
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secInputUIForm;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secInputUIForm;
-	virtual bool EventProc(Event *pevt) secInputUIForm;
-	virtual void OnControlSelected(word idc) secInputUIForm;
-	virtual bool OnControlHeld(word idc) secInputUIForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual bool EventProc(Event *pevt);
+	virtual void OnControlSelected(word idc);
+	virtual bool OnControlHeld(word idc);
 
 	// timer
 
-	virtual void OnTimer(long tCurrent) secInputUIForm;
+	virtual void OnTimer(long tCurrent);
 
 private:
-    Chatter *m_pchatter;
 	bool m_fTimerAdded;
 
-	void InGameMenu() secInputUIForm;
-	void TestOptions() secInputUIForm;
+	void InGameMenu();
+	void TestOptions();
 };
 
 const int kfMasSelect = 1;
@@ -3619,13 +3139,6 @@ const int kfMasShowMenu = 8;
 
 // SimUIForm
 
-struct UpdateNetMessageRecord { // unmr
-    long msReceived;
-    UpdateNetMessage *punm;
-    UpdateNetMessageRecord *punmrNext;
-};
-
-class CommandQueue;
 class MobileUnitGob;
 class UnitMenu;
 
@@ -3634,32 +3147,25 @@ enum UIType { kuitFinger, kuitStylus };
 const dword kfPhFinger1Down = 0x8000;
 const dword kfPhFinger2Down = 0x4000;
 
-class SimUIForm : public Form, public Timer, IGameCallback, ITransportCallback
+class SimUIForm : public Form, public Timer
 {
 public:
-	SimUIForm(word wfRole, dword gameid, Chatter *chatter);
-	virtual ~SimUIForm() secSimUIForm;
-	void Update() secSimUIForm;
-	void SendUpdateResult(int cUpdatesBlock, int cmsLatency, dword hash);
-	void CalcLevelSpecificConstants() secSimUIForm;
-	void InvalidateDragSelection() secSimUIForm;
+	SimUIForm();
+	virtual ~SimUIForm();
+	void Update();
+	void CalcLevelSpecificConstants();
+	void InvalidateDragSelection();
     Gob *HitTestGob(int x, int y, bool fFinger, WCoord *pwx, WCoord *pwy,
             bool *pfHitSurrounding);
-	void MoveOrAttackOrSelect(int x, int y, dword ff) secSimUIForm;
+	void MoveOrAttackOrSelect(int x, int y, dword ff);
     void MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget, WCoord wyTarget,
             dword ff);
     bool HasSelectedUnits();
     void ShowUnitMenu(Gob *pgob);
     void SelectSameUnitTypes(Gob *pgob, bool fSfx);
     bool IsSelectionCommand(Gob *pgobHit);
-	void ClearSelection() secSimUIForm;
+	void ClearSelection();
     void SetUIType(UIType uit);
-    void CheckMultiplayerGameOver(Pid pid);
-    void SetObserving();
-
-	word GetRole() {
-		return m_wfRole;
-	}
 
     class PenHandler {
     public:
@@ -3677,30 +3183,21 @@ public:
 
 	// Form methods
 
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secSimUIForm;
-    virtual bool OnFilterEvent(Event *pevt);
-	virtual bool OnPenEvent(Event *pevt) secSimUIForm;
-	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque) secSimUIForm;
-	virtual void OnPaint(DibBitmap *pbm) secSimUIForm;
-	virtual void OnPaintControls(DibBitmap *pbm, UpdateMap *pupd) secSimUIForm;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secSimUIForm;
-	virtual void ScrollInvalidate(UpdateMap *pupd) secSimUIForm;
-	virtual bool EventProc(Event *pevt) secSimUIForm;
-    virtual void FrameComplete() secSimUIForm;
-	virtual void OnControlSelected(word idc);
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual bool OnPenEvent(Event *pevt);
+	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnPaintControls(DibBitmap *pbm, UpdateMap *pupd);
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual void ScrollInvalidate(UpdateMap *pupd);
+    virtual void FrameComplete();
     
 	// Timer methods
 
-	virtual void OnTimer(long tCurrent) secSimUIForm;
-
-    void OnChatButtonBlink(bool fOn);
-    void OnPlayersButton();
+	virtual void OnTimer(long tCurrent);
 
 private:
-    UpdateNetMessageRecord *m_punmrFirst;
     PenHandler *m_ppenh;
-    dword m_gameid;
-    Chatter *m_pchatter;
 
     class StylusHandler : public PenHandler {
     public:
@@ -3780,27 +3277,7 @@ private:
     };
 
 	MobileUnitGob *SetSelectionTargets(Gid gid, WCoord wxTarget,
-            WCoord wyTarget) secSimUIForm;
-	void OnLagNotify(Pid pidLagging, int cSeconds) secSimUIForm;
-	void ReportLaggingPlayer(Player *pplrBehind) secSimUIForm;
-	void ShowKillLaggyPlayerForm(Pid pidLaggy) secSimUIForm;
-	void TrackLocalLag() secSimUIForm;
-    void QueueUpdateMessage(UpdateNetMessage *punm);
-    bool ProcessUpdateMessage(CommandQueue *pcmdq);
-    void RunUpdatesNow();
-    void CheckLagForm();
-	void OnPlayerDisconnectNotify(Pid pid, int nReason);
-    void OnCheckWin(Pid pid);
-
-    // IGameCallback
-    void OnReceiveChat(const char *player, const char *chat);
-    void OnNetMessage(NetMessage **ppnm);
-    void OnGameDisconnect();
-
-    // ITransportCallback
-	void OnStatusUpdate(char *pszStatus);
-    void OnConnectionClose();
-    void OnShowMessage(const char *message);
+            WCoord wyTarget);
 
 	static bool s_fReadyForPaint;
     
@@ -3808,62 +3285,10 @@ private:
 #ifdef STATS_DISPLAY
 	bool m_fShowStats;
 #endif
-	word m_wfRole;
-    CommandQueue *m_pcmdqServer;
-	Form *m_pfrmWaitingForAllPlayers;
-	long m_tLastCommunication;
-	long m_tStartTimeout;
 	Animation m_aniMoveTarget;
 	WCoord m_wxMoveTarget;
 	WCoord m_wyMoveTarget;
 	int m_nStateMoveTarget;
-    int m_cUpdatesBlock;
-    long m_msUpdatesBlock;
-    DialogForm *m_pfrmLag;
-    Pid m_pidLagging;
-
-#ifdef TRACKSTATE
-    void ReportSyncError();
-    void BeginTrackState();
-    void EndTrackState();
-    StateTracker *m_ptracker;
-    bool m_fSyncError;
-#endif
-};
-
-// Role defaults to single player client unless these flags are specified
-// It is possible to be the creator, but not the server, when connecting to a dedicated game server
-
-const word kfRoleMultiplayer = 0x0001; // client of a multiplayer game
-const word kfRoleServer = 0x0002; // server of a multiplayer game
-const word kfRoleCreator = 0x0004; // creator of a multiplayer game
-
-// Pick a level form
-
-enum LevelType // lt
-{
-	kltMultiplayer,
-	kltChallenge,
-	kltStory,
-};
-
-int CreateLevelList(char **asz) secGame;
-
-class PickLevelForm : public ShellForm
-{
-public:
-	PickLevelForm(LevelType lt) secGame;
-
-	// Form overrides
-
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGame;
-	virtual void OnControlSelected(word idc) secGame;
-
-public:
-	char m_szLevel[kcbFilename];
-
-private:
-	LevelType m_lt;
 };
 
 class MissionList;
@@ -3876,8 +3301,8 @@ public:
 
 	// Form overrides
 
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGame;
-	virtual void OnControlSelected(word idc) secGame;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnControlSelected(word idc);
 	virtual void OnControlNotify(word idc, int nNotify);
     virtual bool OnPenEvent(Event *pevt);
 
@@ -3885,7 +3310,6 @@ private:
     MissionType InitLists(int iMissionSelect);
     int IndexFromMissionType(MissionType mt);
     MissionType MissionTypeFromIndex(int i);
-    void SwitchMissionType(MissionType mt);
     int GetSelectedMissionIndex(ListControl *plstc);
     bool IsSelectedMissionLocked(ListControl *plstc);
     void SwitchToMissionType(MissionType mt);
@@ -3896,7 +3320,7 @@ private:
     MissionList *m_pml;
     const MissionIdentifier *m_pmiidFind;
     MissionType m_mt;
-    ListControl *m_aplstc[3];
+    ListControl *m_aplstc[2];
 };
 
 // LoadGameForm
@@ -3904,13 +3328,13 @@ private:
 class LoadGameForm : public ShellForm
 {
 public:
-	LoadGameForm() secLoadSave;
-	void SelectLast(bool fLast) secLoadSave;
+	LoadGameForm();
+	void SelectLast(bool fLast);
 
 	// Form overrides
 
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secLoadSave;
-	virtual void OnControlSelected(word idc) secLoadSave;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnControlSelected(word idc);
 
 private:
 	int m_nGameLast;
@@ -3919,18 +3343,18 @@ private:
 class TestOptionsForm : public DialogForm
 {
 public:
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGameOptionsForm;
-	virtual void OnControlSelected(word idc) secGameOptionsForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnControlSelected(word idc);
 };
 
 class MemoryUseForm : public DialogForm
 {
 public:
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGameOptionsForm;
-	virtual void OnControlSelected(word idc) secGameOptionsForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnControlSelected(word idc);
 
 private:
-	void UpdateLabels() secGameOptionsForm;
+	void UpdateLabels();
 };
 
 //
@@ -3942,31 +3366,8 @@ private:
 class QualifiedNumber
 {
 public:
-	bool Parse(char **ppsz) secTrigger;
-	bool Compare(long nNumber) secTrigger;
-#ifdef DEBUG_HELPERS
-	char *ToString() {
-		char *pszQualifier = "???";
-		switch (m_nQualifier) {
-		case knQualifierAtLeast:
-			pszQualifier = "at least";
-			break;
-
-		case knQualifierAtMost:
-			pszQualifier = "at most";
-			break;
-
-		case knQualifierExactly:
-			pszQualifier = "exactly";
-			break;
-		}
-
-		sprintf(s_szDebugHelpers, "%s %d", pszQualifier, m_nNumber);
-		return s_szDebugHelpers;
-	}
-
-	static char s_szDebugHelpers[200];
-#endif
+	bool Parse(char **ppsz);
+	bool Compare(long nNumber);
 
 	int m_nQualifier;
 	long m_nNumber;
@@ -3981,23 +3382,23 @@ public:
 class CountdownTimer
 {
 public:
-	CountdownTimer() secTrigger;
+	CountdownTimer();
 
-	bool LoadState(Stream *pstm) secTrigger;
-	bool SaveState(Stream *pstm) secTrigger;
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
 
-	void SetTimer(int csecs, char *pszFormatString) secTrigger;
-	bool GetTimer(int *psecs) secTrigger;
-	void StartTimer(bool fStart) secTrigger;
-	void ShowTimer(bool fShow) secTrigger;
-	void Update() secTrigger;
+	void SetTimer(int csecs, char *pszFormatString);
+	bool GetTimer(int *psecs);
+	void StartTimer(bool fStart);
+	void ShowTimer(bool fShow);
+	void Update();
 
 	word GetFlags() {
 		return m_wf;
 	}
 
 private:
-	void UpdateString() secTrigger;
+	void UpdateString();
 
 	int m_secs;
 	char m_szFormat[80];
@@ -4010,17 +3411,10 @@ private:
 class Condition // cdn
 {
 public:
-	Condition() secCondition;
+	Condition();
 	virtual ~Condition() {}
-	virtual bool Init(char *psz) secCondition;
+	virtual bool Init(char *psz);
 	virtual bool IsTrue(Side side) = 0;
-#ifdef DEBUG_HELPERS
-	virtual bool SafeIsTrue(Side side) secCondition;
-	virtual char *ToString() {
-		return "Base";
-	}
-	static char s_szDebugHelpers[300];
-#endif
 	Condition *m_pcdnNext;
 };
 
@@ -4028,28 +3422,17 @@ class MissionLoadedCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	MissionLoadedCondition() secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Mission loaded";
-	}
-#endif
+	MissionLoadedCondition();
+	virtual bool IsTrue(Side side);
 };
 
 class CreditsCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	CreditsCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s has %s credits", PszFromCaSideMask(m_wfCaSideMask), m_qnum.ToString());
-		return s_szDebugHelpers;
-	}
-#endif
+	CreditsCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4060,15 +3443,9 @@ class OwnsUnitsCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	OwnsUnitsCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s owns %s %s", PszFromCaSideMask(m_wfCaSideMask), m_qnum.ToString(), PszFromUnitMask(m_um));
-		return s_szDebugHelpers;
-	}
-#endif
+	OwnsUnitsCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4080,12 +3457,9 @@ class AreaContainsUnitsCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	AreaContainsUnitsCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	AreaContainsUnitsCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4099,29 +3473,17 @@ class PlaceStructureModeCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	PlaceStructureModeCondition() secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "place structure mode");
-		return s_szDebugHelpers;
-	}
-#endif
+	PlaceStructureModeCondition();
+	virtual bool IsTrue(Side side);
 };
 
 class MinerCantFindGalaxiteCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	MinerCantFindGalaxiteCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s's Miner can't find Galaxite", PszFromCaSideMask(m_wfCaSideMask));
-		return s_szDebugHelpers;
-	}
-#endif
+	MinerCantFindGalaxiteCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4131,15 +3493,9 @@ class GalaxiteCapacityReachedCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	GalaxiteCapacityReachedCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s's Galaxite capacity reached", PszFromCaSideMask(m_wfCaSideMask));
-		return s_szDebugHelpers;
-	}
-#endif
+	GalaxiteCapacityReachedCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4149,12 +3505,9 @@ class ElapsedTimeCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	ElapsedTimeCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	ElapsedTimeCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	QualifiedNumber m_qnum;
@@ -4164,12 +3517,9 @@ class SwitchCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	SwitchCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	SwitchCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	int m_iSwitch;
@@ -4180,13 +3530,9 @@ class PeriodicTimerCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	PeriodicTimerCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual bool SafeIsTrue(Side side) secCondition;
-	virtual char *ToString();
-#endif
+	PeriodicTimerCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	int m_iTimer;
@@ -4195,14 +3541,8 @@ private:
 class CountdownTimerCondition : public Condition
 {
 public:
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "Coundown Timer is %s", m_qnum.ToString());
-		return s_szDebugHelpers;
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	QualifiedNumber m_qnum;
@@ -4212,17 +3552,9 @@ class DiscoversSideCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	DiscoversSideCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		char szSideA[100];
-		strcpy(szSideA, PszFromCaSideMask(m_wfCaSideMaskA));
-		sprintf(s_szDebugHelpers, "%s discovers %s", szSideA, PszFromCaSideMask(m_wfCaSideMaskB));
-		return s_szDebugHelpers;
-	}
-#endif
+	DiscoversSideCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	word m_wfCaSideMaskA;
@@ -4233,15 +3565,9 @@ class TestPvarCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	TestPvarCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "Pvar \"%s\": is %s", m_szName, m_qnum.ToString());
-		return s_szDebugHelpers;
-	}
-#endif
+	TestPvarCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	char m_szName[kcbPvarNameMax];
@@ -4252,15 +3578,9 @@ class HasUpgradesCondition : public Condition
 {
 public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
-	HasUpgradesCondition() secCondition;
-	virtual bool Init(char *psz) secCondition;
-	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s has ??? upgrades", PszFromCaSideMask(m_wfCaSideMask));
-		return s_szDebugHelpers;
-	}
-#endif
+	HasUpgradesCondition();
+	virtual bool Init(char *psz);
+	virtual bool IsTrue(Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4272,39 +3592,30 @@ private:
 class TriggerAction // actn
 {
 public:
-	TriggerAction() secAction;
-	virtual ~TriggerAction() secAction;
-	virtual bool LoadState(Stream *pstm) secAction;
-	virtual bool SaveState(Stream *pstm) secAction;
-	virtual bool Init(char *psz) secAction;
+	TriggerAction();
+	virtual ~TriggerAction();
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
 	virtual bool Perform(Trigger *ptgr, Side side) = 0;
 	TriggerAction *m_pactnNext;
 
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Action";
-	}
-	static char s_szDebugHelpers[200];
-#endif
 };
 
 class PreserveTriggerAction : public TriggerAction
 {
 public:
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
+	virtual bool Perform(Trigger *ptgr, Side side);
 };
 
 class WaitAction : public TriggerAction
 {
 public:
-	WaitAction() secAction;
-	virtual bool LoadState(Stream *pstm) secAction;
-	virtual bool SaveState(Stream *pstm) secAction;
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	WaitAction();
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	dword m_ctWait;
@@ -4315,13 +3626,8 @@ private:
 class CenterViewAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Center view";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_nArea;
@@ -4330,13 +3636,8 @@ private:
 class SetNextMissionAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set next mission";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	char m_szLevel[kcbFilename];
@@ -4345,15 +3646,9 @@ private:
 class EndMissionAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "End mission";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
-   static void OnMPEndMissionActionEvent(int nWinLose, Side side);
 
 private:
 	int m_nWinLose;
@@ -4362,14 +3657,9 @@ private:
 class EcomAction : public TriggerAction
 {
 public:
-	virtual ~EcomAction() secAction;
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Ecom";
-	}
-#endif
+	virtual ~EcomAction();
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_nBackground;
@@ -4382,13 +3672,8 @@ private:
 class SetAllowedUnitsAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set allowed units";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4398,13 +3683,8 @@ private:
 class SetAllowedUpgradesAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set allowed upgrades";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4414,13 +3694,8 @@ private:
 class SetUpgradesAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set upgrades";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4430,13 +3705,8 @@ private:
 class AlliesAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Allies";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMaskA;
@@ -4446,16 +3716,11 @@ private:
 class SetObjectiveAction : public TriggerAction
 {
 public:
-	SetObjectiveAction() secAction;
-	virtual ~SetObjectiveAction() secAction;
+	SetObjectiveAction();
+	virtual ~SetObjectiveAction();
 
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set objective";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4465,13 +3730,8 @@ private:
 class SetSwitchAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set switch";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_iSwitch;
@@ -4481,13 +3741,8 @@ private:
 class DefogAreaAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Defog area";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_nArea;
@@ -4498,13 +3753,8 @@ private:
 class CreateUnitGroupAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Create unit group";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_nUnitGroup;
@@ -4513,13 +3763,8 @@ private:
 class HuntAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Hunt";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask1;
@@ -4533,13 +3778,8 @@ private:
 class CreateRandomUnitGroupAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Create random unit group";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 };
 
 // Start Countdown Action
@@ -4547,11 +3787,11 @@ public:
 class StartCountdownAction : public TriggerAction
 {
 public:
-	StartCountdownAction() secAction;
-	virtual ~StartCountdownAction() secAction;
+	StartCountdownAction();
+	virtual ~StartCountdownAction();
 
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_nSecs;
@@ -4563,11 +3803,8 @@ private:
 class ModifyCountdownAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_nAction;
@@ -4576,13 +3813,8 @@ private:
 class RepairAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Repair";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4592,13 +3824,8 @@ private:
 class EnableReplicatorAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Enable Replicator";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4610,11 +3837,8 @@ private:
 class ModifyCreditsAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4627,13 +3851,8 @@ private:
 class MoveUnitsInAreaAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "MoveUnitsInArea";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	word m_wfCaSideMask;
@@ -4651,16 +3870,11 @@ const int kcchObjectiveInfoMax = 350;
 class SetFormalObjectiveTextAction : public TriggerAction
 {
 public:
-	SetFormalObjectiveTextAction() secAction;
-	virtual ~SetFormalObjectiveTextAction() secAction;
+	SetFormalObjectiveTextAction();
+	virtual ~SetFormalObjectiveTextAction();
 
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "SetFormalObjectiveText";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_iObjective;
@@ -4672,16 +3886,11 @@ private:
 class SetFormalObjectiveStatusAction : public TriggerAction
 {
 public:
-	SetFormalObjectiveStatusAction() secAction;
-	~SetFormalObjectiveStatusAction() secAction;
+	SetFormalObjectiveStatusAction();
+	~SetFormalObjectiveStatusAction();
 
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "SetFormalObjectiveStatus";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	int m_iObjective;
@@ -4693,16 +3902,11 @@ private:
 class SetFormalObjectiveInfoAction : public TriggerAction
 {
 public:
-	SetFormalObjectiveInfoAction() secAction;
-	virtual ~SetFormalObjectiveInfoAction() secAction;
+	SetFormalObjectiveInfoAction();
+	virtual ~SetFormalObjectiveInfoAction();
 
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "SetFormalObjectiveInfo";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	char *m_szInfo;
@@ -4713,8 +3917,7 @@ private:
 class ShowObjectivesAction : public TriggerAction
 {
 public:
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-    static void OnMPShowObjectivesEvent(Side side);
+	virtual bool Perform(Trigger *ptgr, Side side);
 };
 
 // Show Cut Scene action
@@ -4722,15 +3925,10 @@ public:
 class CutSceneAction : public TriggerAction
 {
 public:
-	CutSceneAction() secAction;
-	virtual ~CutSceneAction() secAction;
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Cut scene";
-	}
-#endif
+	CutSceneAction();
+	virtual ~CutSceneAction();
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	char *m_pszMessage;
@@ -4741,13 +3939,8 @@ private:
 class JumpToMissionAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Jump to mission";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	char m_szLevel[kcbFilename];
@@ -4759,28 +3952,24 @@ private:
 class Trigger
 {
 public:
-	Trigger() secTrigger;
-	~Trigger() secTrigger;
+	Trigger();
+	~Trigger();
 
-	bool LoadState(Stream *pstm) secTrigger;
-	bool SaveState(Stream *pstm) secTrigger;
-	bool Init(IniReader *pini, FindProp *pfind) secTrigger;
-	void Execute(Side side, bool fForce = false) secTrigger;
-	void Arm(Side side) secTrigger;
-	void SetCurrentActionComplete(Side side) secTrigger;
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	bool Init(IniReader *pini, FindProp *pfind);
+	void Execute(Side side, bool fForce = false);
+	void Arm(Side side);
 
 private:
-	bool LoadCondition(IniReader *pini, FindProp *pfind) secCondition;
-	bool LoadAction(IniReader *pini, FindProp *pfind) secAction;
+	bool LoadCondition(IniReader *pini, FindProp *pfind);
+	bool LoadAction(IniReader *pini, FindProp *pfind);
 
 	Condition *m_pcdn;
 	TriggerAction *m_pactn;
 	TriggerAction *m_apactnLast[kcSides];
 	bool m_afArmed[kcSides];
 
-#ifdef DEBUG_HELPERS
-	friend class TriggerViewer;
-#endif
 };
 
 // Modify Persistent Variable action
@@ -4788,11 +3977,8 @@ private:
 class ModifyPvarAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	char m_szName[kcbPvarNameMax];
@@ -4805,13 +3991,8 @@ private:
 class SetPvarTextAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set Pvar Text";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	char m_szName[kcbPvarNameMax];
@@ -4823,13 +4004,8 @@ private:
 class ShowAlertAction : public TriggerAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Show Alert";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
 
 private:
 	char m_szAlert[80];
@@ -4843,16 +4019,16 @@ private:
 class TriggerMgr // tgrm
 {
 public:
-	TriggerMgr() secTrigger;
-	~TriggerMgr() secTrigger;
+	TriggerMgr();
+	~TriggerMgr();
 
-	bool LoadState(Stream *pstm) secTrigger;
-	bool SaveState(Stream *pstm) secTrigger;
-	bool Init(IniReader *pini) secTrigger;
-	void Exit() secTrigger;
-	void Update() secTrigger;
-	void SetConditionTrue(int nCondition, SideMask sidm) secTrigger;
-	bool IsConditionTrue(int nCondition, SideMask sidm) secTrigger;
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	bool Init(IniReader *pini);
+	void Exit();
+	void Update();
+	void SetConditionTrue(int nCondition, SideMask sidm);
+	bool IsConditionTrue(int nCondition, SideMask sidm);
 
 	CountdownTimer *GetCountdownTimer() {
 		return &m_cdt;
@@ -4886,26 +4062,13 @@ public:
 		return m_actCountdown[iTimer] <= 0;
 	}
 
-#ifdef DEBUG_HELPERS
-	long GetTimerCountdown(int iTimer) {
-		return m_actCountdown[iTimer];
-	}
-
-	long GetTimerPeriod(int iTimer) {
-		return m_actPeriod[iTimer];
-	}
-
-	char *GetSwitchName(int iSwitch) {
-		return m_aszSwitchNames[iSwitch];
-	}
-#endif
 
 	void Enable(bool fEnable) {
 		m_fEnabled = fEnable;
 	}
 
 private:
-	bool AssignTriggerSides(int ntgr, char *psz) secTrigger;
+	bool AssignTriggerSides(int ntgr, char *psz);
 
 	int m_ctgr;
 	Trigger *m_atgr;
@@ -4919,10 +4082,6 @@ private:
 	bool m_fEnabled;
 	CountdownTimer m_cdt;
 
-#ifdef DEBUG_HELPERS
-	char m_aszSwitchNames[kcSwitchMax][50];
-	friend TriggerViewer;
-#endif
 };
 
 // UnitGroup
@@ -4945,17 +4104,17 @@ class UnitGroupAction;	// forward declaration
 class UnitGroup
 {
 public:
-	UnitGroup() secUnitGroup;
-	~UnitGroup() secUnitGroup;
+	UnitGroup();
+	~UnitGroup();
 
-	bool LoadState(Stream *pstm) secUnitGroup;
-	bool SaveState(Stream *pstm) secUnitGroup;
-	bool Init(IniReader *pini, int iug) secUnitGroup;
-	void Activate() secUnitGroup;
-	void Update() secUnitGroup;
-	void OnBuilt(UnitGob *punt) secUnitGroup;
-	void AddUnit(UnitGob *punt, bool fReplicant) secUnitGroup;
-	void RemoveReplicants() secUnitGroup;
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	bool Init(IniReader *pini, int iug);
+	void Activate();
+	void Update();
+	void OnBuilt(UnitGob *punt);
+	void AddUnit(UnitGob *punt, bool fReplicant);
+	void RemoveReplicants();
 
 	word GetFlags() {
 		return m_wf;
@@ -4983,7 +4142,7 @@ public:
 #endif
 
 private:
-	bool LoadAction(IniReader *pini, FindProp *pfind) secUnitGroup;
+	bool LoadAction(IniReader *pini, FindProp *pfind);
 
 	word m_wf;
 	UnitGroupAction *m_pactn;
@@ -4998,9 +4157,6 @@ private:
 	char m_szName[64];
 #endif
 
-#ifdef DEBUG_HELPERS
-	friend class UnitGroupViewer;
-#endif
 };
 
 const word kfUgNeedsUnit = 0x0001;
@@ -5023,26 +4179,23 @@ const word kfUgNotRecentlyActivated = 0x0200;
 class UnitGroupMgr // tgrm
 {
 public:
-	UnitGroupMgr() secUnitGroup;
-	~UnitGroupMgr() secUnitGroup;
+	UnitGroupMgr();
+	~UnitGroupMgr();
 
-	bool LoadState(Stream *pstm) secUnitGroup;
-	bool SaveState(Stream *pstm) secUnitGroup;
-	bool Init(IniReader *pini) secUnitGroup;
-	void Exit() secUnitGroup;
-	void Update() secUnitGroup;
-	void ActivateUnitGroup(int iug) secUnitGroup;
-	void ActivateRandomUnitGroup() secUnitGroup;
-	bool CreateAtLevelLoadGroups() secUnitGroup;
-	UnitGroup *GetUnitGroup(Gid gid) secUnitGroup;
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	bool Init(IniReader *pini);
+	void Exit();
+	void Update();
+	void ActivateUnitGroup(int iug);
+	void ActivateRandomUnitGroup();
+	bool CreateAtLevelLoadGroups();
+	UnitGroup *GetUnitGroup(Gid gid);
 
 private:
 	int m_cug;
 	UnitGroup *m_aug;
 
-#ifdef DEBUG_HELPERS
-	friend class UnitGroupViewer;
-#endif
 };
 
 // UnitGroup Actions
@@ -5050,37 +4203,27 @@ private:
 class UnitGroupAction
 {
 public:
-	UnitGroupAction() secAction;
+	UnitGroupAction();
 	virtual ~UnitGroupAction() {}
-	virtual bool LoadState(Stream *pstm) secAction;
-	virtual bool SaveState(Stream *pstm) secAction;
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
 	virtual bool Init(char *psz) = 0;
-	virtual void Reset() secAction;
+	virtual void Reset();
 	virtual bool Perform(UnitGroup *pug) = 0;
 
 	UnitGroupAction *m_pactnNext;
 
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "UnitGroupAction";
-	}
-
-	static char s_szDebugHelpers[200];
-#endif
 };
 
 class WaitUnitGroupAction : public UnitGroupAction
 {
 public:
-	WaitUnitGroupAction() secAction;
-	virtual bool LoadState(Stream *pstm) secAction;
-	virtual bool SaveState(Stream *pstm) secAction;
-	virtual bool Init(char *psz) secAction;
-	virtual void Reset() secAction;
-	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	WaitUnitGroupAction();
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual void Reset();
+	virtual bool Perform(UnitGroup *pug);
 
 private:
 	dword m_ctWait;
@@ -5091,13 +4234,8 @@ private:
 class SetSwitchUnitGroupAction : public UnitGroupAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set switch";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(UnitGroup *pug);
 
 private:
 	int m_iSwitch;
@@ -5107,14 +4245,11 @@ private:
 class MoveUnitGroupAction : public UnitGroupAction
 {
 public:
-	virtual bool LoadState(Stream *pstm) secAction;
-	virtual bool SaveState(Stream *pstm) secAction;
-	virtual bool Init(char *psz) secAction;
-	virtual void Reset() secAction;
-	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual void Reset();
+	virtual bool Perform(UnitGroup *pug);
 
 private:
 	bool m_fWaiting;
@@ -5124,14 +4259,11 @@ private:
 class AttackUnitGroupAction : public UnitGroupAction
 {
 public:
-	virtual bool LoadState(Stream *pstm) secAction;
-	virtual bool SaveState(Stream *pstm) secAction;
-	virtual bool Init(char *psz) secAction;
-	virtual void Reset() secAction;
-	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual void Reset();
+	virtual bool Perform(UnitGroup *pug);
 
 private:
 	// These are initialized from the loaded level
@@ -5150,16 +4282,11 @@ private:
 class GuardUnitGroupAction : public UnitGroupAction
 {
 public:
-	virtual bool LoadState(Stream *pstm) secAction;
-	virtual bool SaveState(Stream *pstm) secAction;
-	virtual bool Init(char *psz) secAction;
-	virtual void Reset() secAction;
-	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Guard";
-	}
-#endif
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual void Reset();
+	virtual bool Perform(UnitGroup *pug);
 
 private:
 	// These are initialized from the loaded level
@@ -5175,28 +4302,18 @@ private:
 class MineUnitGroupAction : public UnitGroupAction
 {
 public:
-	virtual bool Init(char *psz) secAction;
-	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Mine";
-	}
-#endif
+	virtual bool Init(char *psz);
+	virtual bool Perform(UnitGroup *pug);
 };
 
 class GuardVicinityUnitGroupAction : public UnitGroupAction
 {
 public:
-	virtual bool LoadState(Stream *pstm) secAction;
-	virtual bool SaveState(Stream *pstm) secAction;
-	virtual bool Init(char *psz) secAction;
-	virtual void Reset() secAction;
-	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Guard vicinity";
-	}
-#endif
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual void Reset();
+	virtual bool Perform(UnitGroup *pug);
 
 private:
 	// These are initialized from the loaded level
@@ -5226,11 +4343,11 @@ struct BuildEntry {
 class BuildMgr
 {
 public:
-	BuildMgr() secBuildMgr;
-	~BuildMgr() secBuildMgr;
-	bool BuildUnit(UnitType ut, UnitGroup *pug, int nArea) secBuildMgr;
-	void OnBuilt(UnitGob *punt, BuilderGob *pbldr) secBuildMgr;
-	void Update() secBuildMgr;
+	BuildMgr();
+	~BuildMgr();
+	bool BuildUnit(UnitType ut, UnitGroup *pug, int nArea);
+	void OnBuilt(UnitGob *punt, BuilderGob *pbldr);
+	void Update();
 
 private:
 	BuildEntry *m_pbldeFirst;
@@ -5240,30 +4357,26 @@ private:
 
 // Use min gob count for 68K build because of stack variables
 
-#ifdef __CPU_68K
-#define kcpgobMax 512
-#else
 #define kcpgobMax 768
-#endif
 #define kcpgobVisibleMax 200
 
 class Simulation : public TimerMgr // sim
 {
 public:
-	Simulation() secSimulation;
-	~Simulation() secSimulation;
+	Simulation();
+	~Simulation();
 
-	bool OneTimeInit() secSimulation;
-	void OneTimeExit() secSimulation;
-	bool PerLevelInit() secSimulation;
-	void PerLevelExit() secSimulation;
+	bool OneTimeInit();
+	void OneTimeExit();
+	bool PerLevelInit();
+	void PerLevelExit();
 
-	bool LoadLevel(const char *pszLevelName) secSimulation;
-	bool LoadState(Stream *pstm) secSimulation;
-	bool SaveState(Stream *pstm) secSimulation;
-	void ClearGobSelection() secSimulation;
-	void SetGobSelected(Gob *pgob) secSimulation;
-	void SelectSameUnitTypes(UnitGob *punt, TRect *ptrc) secSimulation;
+	bool LoadLevel(const char *pszLevelName);
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	void ClearGobSelection();
+	void SetGobSelected(Gob *pgob);
+	void SelectSameUnitTypes(UnitGob *punt, TRect *ptrc);
 
 	Level *GetLevel() {
 		return m_plvl;
@@ -5285,30 +4398,26 @@ public:
 		return m_pbldm;
 	}
 
-	void Update(CommandQueue *pcmdq) secSimulation;
-	void Draw(UpdateMap *pupd, DibBitmap *pbm) secSimulation;
-	void DrawBackground(UpdateMap *pupd, DibBitmap *pbm) secSimulation;
-	void DrawFog(UpdateMap *pupd, DibBitmap *pbm) secSimulation;
-	bool SetViewPos(WCoord wx, WCoord wy, bool fInit = false) secSimulation;
-	void GetViewPos(WCoord *pwx, WCoord *pwy) secSimulation;
-	bool HitTest(Enum *penm, WCoord wx, WCoord wy, word wf, Gob **ppgob) secSimulation;
-    Gob *FingerHitTest(WCoord wx, WCoord wy, word wf, bool *pfHitSurrounding) secSimulation;
-	void Pause(bool fPause) secSimulation;
-	bool IsPaused() secSimulation;
-	void FindVisibleGobs(Gob ***pppgobVisible = NULL, int *pcgobVisible = NULL) secSimulation;
-	void SetSelection(Rect *prc) secSimulation;
+	void Update(CommandQueue *pcmdq);
+	void Draw(UpdateMap *pupd, DibBitmap *pbm);
+	void DrawBackground(UpdateMap *pupd, DibBitmap *pbm);
+	void DrawFog(UpdateMap *pupd, DibBitmap *pbm);
+	bool SetViewPos(WCoord wx, WCoord wy, bool fInit = false);
+	void GetViewPos(WCoord *pwx, WCoord *pwy);
+	bool HitTest(Enum *penm, WCoord wx, WCoord wy, word wf, Gob **ppgob);
+    Gob *FingerHitTest(WCoord wx, WCoord wy, word wf, bool *pfHitSurrounding);
+	void Pause(bool fPause);
+	bool IsPaused();
+	void FindVisibleGobs(Gob ***pppgobVisible = NULL, int *pcgobVisible = NULL);
+	void SetSelection(Rect *prc);
 
 	// TimerMgr override
 
-	virtual long GetTickCount() secSimulation;
-	virtual void AddTimer(Timer *ptmr, long ct) secSimulation; //stub
+	virtual long GetTickCount();
+	virtual void AddTimer(Timer *ptmr, long ct); //stub
 
-#ifdef TRACKSTATE
-    void TrackState(StateFrame *frame);
-#endif
 
 private:
-    void HandlePlayerDisconnect(Message *pmsg);
 
 	Level *m_plvl;
 	WCoord m_wxView, m_wyView;
@@ -5353,13 +4462,13 @@ struct SideInfo	// sidi
 class Level // lvl
 {
 public:
-	Level() secLevel;
-	~Level() secLevel;
-	bool Init(const char *pszLevelName, bool fConstantsOnly = false) secLevel;
+	Level();
+	~Level();
+	bool Init(const char *pszLevelName, bool fConstantsOnly = false);
 
-	bool LoadState(Stream *pstm) secLevel;
-	bool SaveState(Stream *pstm) secLevel;
-	bool LoadLevelInfo(const char *pszLevelName, IniReader *piniLoaded = NULL) secLevel;
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	bool LoadLevelInfo(const char *pszLevelName, IniReader *piniLoaded = NULL);
 
 	TileMap *GetTileMap() {
 		return m_ptmap;
@@ -5422,9 +4531,9 @@ public:
 	}
 
 private:
-	bool LoadSideInfo(IniReader *pini, char *pszSideName, SideInfo *psidi) secLevel;
-	bool LoadLevelConstants(const char *pszLevelName, IniReader *pini) secLevel;
-	bool LoadLevelVariables(IniReader *pini) secLevel;
+	bool LoadSideInfo(IniReader *pini, char *pszSideName, SideInfo *psidi);
+	bool LoadLevelConstants(const char *pszLevelName, IniReader *pini);
+	bool LoadLevelVariables(IniReader *pini);
 
 private:
 	char m_szTitle[kcbLevelTitle];
@@ -5547,32 +4656,25 @@ class Player // plr
 	friend class PlayerMgr;
 
 public:
-	Player() secPlayer;
-	~Player() secPlayer;
+	Player();
+	~Player();
 
-	void Init(Pid pid) secPlayer;
-	bool LoadState(Stream *pstm) secPlayer;
-	bool SaveState(Stream *pstm) secPlayer;
-	void SetName(const char *pszName) secPlayer;
-	UnitMask GetUnitMask() secPlayer;
-	void SetCredits(int nCredits, bool fAffectTotals, int nConsumer = knConsumerGeneric) secPlayer;
-	int GetCreditsDirection() secPlayer;
-	int GetCreditsConsumer() secPlayer;
-	void AddPowerSupplyAndDemand(int nPowerSupply, int nPowerDemand) secPlayer;
-	void Repair(bool fOn) secPlayer;
-	void Update(int cUpdates) secPlayer;
-	void SetFormalObjectiveText(int iObjective, char *pszText) secPlayer;
-	void SetFormalObjectiveStatus(int iObjective, char *pszStatus) secPlayer;
-	void SetFormalObjectiveInfo(char *pszInfo) secPlayer;
-	int ShowObjectives(int so, bool fForceInfoDisplay = false, bool fAborting = false) secObjectives;
-	void ModifyNeedCreditsCount(int cDelta)secPlayer;
-	bool IsBehind(int cUpdates) secPlayer;
-    void SetLeftGame() {
-        m_fLeftGame = true;
-    }
-    bool GetLeftGame() {
-        return m_fLeftGame;
-    }
+	void Init(Pid pid);
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	void SetName(const char *pszName);
+	UnitMask GetUnitMask();
+	void SetCredits(int nCredits, bool fAffectTotals, int nConsumer = knConsumerGeneric);
+	int GetCreditsDirection();
+	int GetCreditsConsumer();
+	void AddPowerSupplyAndDemand(int nPowerSupply, int nPowerDemand);
+	void Repair(bool fOn);
+	void Update(int cUpdates);
+	void SetFormalObjectiveText(int iObjective, char *pszText);
+	void SetFormalObjectiveStatus(int iObjective, char *pszStatus);
+	void SetFormalObjectiveInfo(char *pszInfo);
+	int ShowObjectives(int so, bool fForceInfoDisplay = false, bool fAborting = false);
+	void ModifyNeedCreditsCount(int cDelta);
 	char *GetFormalObjectiveText(int iObjective) {
 		return m_aszFormalObjectiveText[iObjective];
 	}
@@ -5683,14 +4785,14 @@ public:
         }
     }
 
-	int GetUnitActiveCountFromMask(UnitMask um) secPlayer;
-	int GetUnitInstanceCountFromMask(UnitMask um) secPlayer;
+	int GetUnitActiveCountFromMask(UnitMask um);
+	int GetUnitInstanceCountFromMask(UnitMask um);
 
 	word GetUpgrades() {
 		return m_wfUpgrades;
 	}
 
-	void SetUpgrades(word wfUpgrades) secPlayer;
+	void SetUpgrades(word wfUpgrades);
 
 	UnitMask GetAllowedUnits() {
 		return m_umAllowed;
@@ -5700,7 +4802,7 @@ public:
 		m_umAllowed = um;
 	}
 
-	void SetObjective(char *psz) secSimulation;
+	void SetObjective(char *psz);
 
 	char *GetObjective() {
 		return m_szObjective;
@@ -5774,24 +4876,6 @@ public:
 		m_wfHandicap = wf;
 	}
 
-	// Only valid for server-side Player proxies
-
-	long GetUpdateCount() {
-		return m_cUpdates;
-	}
-
-	void SetUpdateCount(int cUpdates) {
-		m_cUpdates = cUpdates;
-	}
-
-	bool IsLagging(long cUpdates) secPlayer;
-	int GetLagState() secPlayer;
-	void SetLagState(int nLagState) secPlayer;
-	int GetLagTimeout() secPlayer;
-
-#ifdef TRACKSTATE
-    void TrackState(StateFrame *frame);
-#endif
 
 private:
 	word m_wfUpgrades;
@@ -5826,39 +4910,26 @@ private:
 	int m_cUpdatesRepairLast;
 	word m_cStructsNeedCredits;
 	word m_wfHandicap;
-	int m_cUpdates;	// only valid for server-side Player proxies
-	int m_nLagState;
-	long m_tLagStart;
-	long m_tLastLag;
-    bool m_fLeftGame;
-
-#ifdef DETECT_SYNC_ERRORS
-public:
-	UpdateResult m_ur;
-#endif
 };
-
-class PlayersUpdateNetMessage;
 
 class PlayerMgr // plrm
 {
 public:
-	PlayerMgr() secPlayer;
-	~PlayerMgr() secPlayer;
-	void Reset() secPlayer;
-	void Init(PlayersUpdateNetMessage *ppunm) secPlayer;
-	bool Init(char *pszLevel) secPlayer;
-	bool LoadState(Stream *pstm) secPlayer;
-	bool SaveState(Stream *pstm) secPlayer;
-	Player *AllocPlayer(word wf = 0) secPlayer;
-	void Update(int cUpdates) secPlayer;
-	void SetAllies(Player **applr, int cplrs, SideMask sidmAllies) secPlayer;
+	PlayerMgr();
+	~PlayerMgr();
+	void Reset();
+	bool Init(char *pszLevel);
+	bool LoadState(Stream *pstm);
+	bool SaveState(Stream *pstm);
+	Player *AllocPlayer(word wf = 0);
+	void Update(int cUpdates);
+	void SetAllies(Player **applr, int cplrs, SideMask sidmAllies);
 
 	void FreePlayer(Player *pplr) {
 		pplr->m_wf = 0;
 	}
 
-	Player *GetPlayer(Side side) secPlayer;
+	Player *GetPlayer(Side side);
 
 	Player *GetPlayerFromPid(Pid pid) {
         // Pid is unsigned 
@@ -5868,23 +4939,13 @@ public:
         return NULL;
 	}
 
-	Player* GetNextPlayer(Player *pplr) secPlayer;
-	Player* GetNextHumanPlayer(Player *pplr) secPlayer;
-    Player* GetNextObservingPlayer(Player *pplr) secPlayer;
-    const char *GetCreatorName();
+	Player* GetNextPlayer(Player *pplr);
+	Player* GetNextHumanPlayer(Player *pplr);
 
-	int GetPlayerCount() secPlayer;
-	bool DetectTransitionToSingleHumanTeam(Pid pidLeft) secPlayer;
-	int GetUnitInstanceCountFromMask(UnitMask um, word wfPlr) secPlayer;
-    void SendWinStats();
-
-#ifdef TRACKSTATE
-    void TrackState(StateFrame *frame);
-#endif
+	int GetPlayerCount();
+	int GetUnitInstanceCountFromMask(UnitMask um, word wfPlr);
 
 protected:
-    int GetHumanTeamCount(bool fExtra, Pid pidExtra);
-
 	Player *m_aplr;
 };
 
@@ -5944,56 +5005,47 @@ class Gob : public StateMachine // gob
 	friend class GobMgr;
 
 public:
-	Gob() secGob;
-	virtual ~Gob() secGob;
+	Gob();
+	virtual ~Gob();
 
-	dword GetFlags() secGob;
-	void Flash() secGob;
-	void MarkRedraw() secGob;
-	bool Invalidate() secGob;
-	bool AdvanceAnimation(Animation *pani) secGob;
-	void StartAnimation(Animation *pani, int nStrip, int nFrame, word wfAni) secGob;
-	void SetAnimationStrip(Animation *pani, int nStrip) secGob;
-	void SetAnimationFrame(Animation *pani, int nFrame) secGob;
-	void SetFlags(dword ff) secGob;
-	Gid GetId() secGob;
-	Side GetSide() secGob;
-	Player *GetOwner() secGob;
-	void SetOwner(Player *pplr) secGob;
+	dword GetFlags();
+	void Flash();
+	void MarkRedraw();
+	bool Invalidate();
+	bool AdvanceAnimation(Animation *pani);
+	void StartAnimation(Animation *pani, int nStrip, int nFrame, word wfAni);
+	void SetAnimationStrip(Animation *pani, int nStrip);
+	void SetAnimationFrame(Animation *pani, int nFrame);
+	void SetFlags(dword ff);
+	Gid GetId();
+	Side GetSide();
+	Player *GetOwner();
+	void SetOwner(Player *pplr);
 
-	bool IsGobWithinRange(Gob *pgobTarget, TCoord tcRange) secGob;
-	bool IsTargetWithinRange(WPoint *pwptTarget, Gob *pgobTarget, TCoord tcRange) secGob;
+	bool IsGobWithinRange(Gob *pgobTarget, TCoord tcRange);
+	bool IsTargetWithinRange(WPoint *pwptTarget, Gob *pgobTarget, TCoord tcRange);
 
-	virtual void SetPosition(WCoord wx, WCoord wy) secGob;
+	virtual void SetPosition(WCoord wx, WCoord wy);
 	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) = 0;
-	virtual bool LoadState(Stream *pstm) secGob;
-	virtual bool SaveState(Stream *pstm) secGob;
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
 	virtual bool IsSavable();
 	virtual GobType GetType() = 0;
 	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) = 0;
-	virtual dword GetSortKey() secGob;
-	virtual void GetClippingBounds(Rect *prc) secGob;
-	virtual void GetUIBounds(WRect *pwrc) secGob;
-	virtual void GetPosition(WPoint *pwpt) secGob;
-	virtual void GetTilePosition(TPoint *ptpt) secGob;
-	virtual void GetTileRect(TRect *ptrc) secGob;
-	virtual void GetTilePaddedWRect(WRect *pwrc) secGob;
-	virtual void GetCenter(WPoint *pwpt) secGob;
-	virtual void PopupMenu() secGob;
-	virtual void InitMenu(Form *pfrm) secGob;
-	virtual void OnMenuItemSelected(int id) secGob;
-#if defined(WIN) && defined(DEBUG)
-	virtual void ToString(char *psz);
-#endif
-#ifdef TRACKSTATE
-    virtual void TrackState(StateFrame *frame);
-#endif
+	virtual dword GetSortKey();
+	virtual void GetClippingBounds(Rect *prc);
+	virtual void GetUIBounds(WRect *pwrc);
+	virtual void GetPosition(WPoint *pwpt);
+	virtual void GetTilePosition(TPoint *ptpt);
+	virtual void GetTileRect(TRect *ptrc);
+	virtual void GetTilePaddedWRect(WRect *pwrc);
+	virtual void GetCenter(WPoint *pwpt);
+	virtual void PopupMenu();
+	virtual void InitMenu(Form *pfrm);
+	virtual void OnMenuItemSelected(int id);
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 	// Used for tracking visibility
 
@@ -6039,7 +5091,7 @@ inline void Gob::SetOwner(Player *pplr) {
 	m_pplr = pplr;
 }
 
-Gob *CreateGob(GobType gt) secGob;
+Gob *CreateGob(GobType gt);
 
 // GobMgr stuff
 
@@ -6082,36 +5134,30 @@ struct Area // ar
 class GobMgr // gobm
 {
 public:
-	GobMgr() secGobMgr;
-	~GobMgr() secGobMgr;
+	GobMgr();
+	~GobMgr();
 
-	bool Init(TCoord ctx, TCoord cty, int cpgobMax) secGobMgr;
-	void Reset() secGobMgr;
-	bool SaveState(Stream *pstm) secGobMgr;
-	bool LoadState(Stream *pstm) secGobMgr;
-	void AddGob(Gob *pgob, Gid gid = kgidNull) secGobMgr;
-	void RemoveGob(Gob *pgob) secGobMgr;
-	bool MoveGob(Gob *pgob, WCoord wxOld, WCoord wyOld, WCoord wxNew, WCoord wyNew) secGobMgr;
-	Gob *GetGob(Gid gid, bool fActiveOnly = true) secGobMgr;
-	UnitGob *GetUnitGob(TCoord tx, TCoord ty) secGobMgr;
-	void ShadowGob(Gob *pgob, TCoord tx, TCoord ty, int ctx, int cty) secGobMgr;
-	void UnshadowGob(Gob *pgob, TCoord tx, TCoord ty, int ctx, int cty) secGobMgr;
-	Gob *GetShadowGob(TCoord tx, TCoord ty) secGobMgr;
-	void GetAreaRect(int nArea, TRect *ptrc, Side side = ksideNeutral) secGobMgr;
-	bool LoadAreas(IniReader *pini) secGobMgr;
-	Gob *EnumGobsInArea(Enum *penm, int nArea, SideMask sidm, UnitMask um) secGobMgr;
-	void MoveGobBetweenAreas(Gid gid, AreaMask amOld, AreaMask amNew) secGobMgr;
-	AreaMask CalcAreaMask(TCoord tx, TCoord ty) secGobMgr;
-	AreaMask CalcAreaMask(TCoord tx, TCoord ty, int ctx, int cty) secGobMgr;
-	bool CheckUnitsInArea(int nArea, SideMask sidm, UnitMask um) secGobMgr;
-	bool IsGobWithinArea(Gob *pgobTarget, int nArea) secGobMgr;
+	bool Init(TCoord ctx, TCoord cty, int cpgobMax);
+	void Reset();
+	bool SaveState(Stream *pstm);
+	bool LoadState(Stream *pstm);
+	void AddGob(Gob *pgob, Gid gid = kgidNull);
+	void RemoveGob(Gob *pgob);
+	bool MoveGob(Gob *pgob, WCoord wxOld, WCoord wyOld, WCoord wxNew, WCoord wyNew);
+	Gob *GetGob(Gid gid, bool fActiveOnly = true);
+	UnitGob *GetUnitGob(TCoord tx, TCoord ty);
+	void ShadowGob(Gob *pgob, TCoord tx, TCoord ty, int ctx, int cty);
+	void UnshadowGob(Gob *pgob, TCoord tx, TCoord ty, int ctx, int cty);
+	Gob *GetShadowGob(TCoord tx, TCoord ty);
+	void GetAreaRect(int nArea, TRect *ptrc, Side side = ksideNeutral);
+	bool LoadAreas(IniReader *pini);
+	Gob *EnumGobsInArea(Enum *penm, int nArea, SideMask sidm, UnitMask um);
+	void MoveGobBetweenAreas(Gid gid, AreaMask amOld, AreaMask amNew);
+	AreaMask CalcAreaMask(TCoord tx, TCoord ty);
+	AreaMask CalcAreaMask(TCoord tx, TCoord ty, int ctx, int cty);
+	bool CheckUnitsInArea(int nArea, SideMask sidm, UnitMask um);
+	bool IsGobWithinArea(Gob *pgobTarget, int nArea);
 
-#ifdef DEBUG_HELPERS
-	char m_aszAreaNames[kcAreasMax][50];
-	char *GetAreaName(int nArea) {
-		return m_aszAreaNames[nArea];
-	}
-#endif
 
 	Gob *GetFirstGob() {
 		return m_pgobHead;
@@ -6149,20 +5195,17 @@ public:
 		return m_cpgobActive;
 	}
 
-	int FindGobs(const Rect *prcBounds, Gob **apgob, int cpgobMax, byte *pbFogMap) secGobMgr;
-	bool IsStructurePlacementValid(StructConsts *pstruc, TCoord tx, TCoord ty, Player *pplr) secGobMgr;
-#if defined(DEBUG) && defined(WIN)
-	Gob *FindEnemyWithinRange(UnitGob *punt, TCoord tcRange, bool fStructures = false) secGobMgr;
-#endif
-	int FindGobs(const TRect *ptrcBounds, Gob **apgob, int cpgobMax) secGobMgr;
-	void TrackGobCounts(Gob *pgob, bool fIncrement) secGobMgr;
-	bool IsBelowLimit(int nLimit, Player *pplr = NULL) secGobMgr;
+	int FindGobs(const Rect *prcBounds, Gob **apgob, int cpgobMax, byte *pbFogMap);
+	bool IsStructurePlacementValid(StructConsts *pstruc, TCoord tx, TCoord ty, Player *pplr);
+	int FindGobs(const TRect *ptrcBounds, Gob **apgob, int cpgobMax);
+	void TrackGobCounts(Gob *pgob, bool fIncrement);
+	bool IsBelowLimit(int nLimit, Player *pplr = NULL);
 
 private:
-	void AddGobToAreas(Gid gid, AreaMask am) secGobMgr;
-	void RemoveGobFromAreas(Gid gid, AreaMask am) secGobMgr;
-	int GetAreasFromMask(AreaMask am, int *pnArea) secGobMgr;
-	void FreeAreas() secGobMgr;
+	void AddGobToAreas(Gid gid, AreaMask am);
+	void RemoveGobFromAreas(Gid gid, AreaMask am);
+	int GetAreasFromMask(AreaMask am, int *pnArea);
+	void FreeAreas();
 
 	Gob *m_pgobHead;
 	Gid *m_pgidMap;
@@ -6177,9 +5220,6 @@ private:
 	int m_cScorchGobs;
 	int m_cSupportGobs;
 
-#ifdef MP_DEBUG_SHAREDMEM
-public:
-#endif
 	Gob **m_apgobMaster;
 };
 extern GobMgr ggobm;
@@ -6203,25 +5243,22 @@ extern GobStateMachineMgr gsmm;
 class OvermindGob : public Gob // ovr
 {
 public:
-	OvermindGob() secOvermindGob;
-	virtual ~OvermindGob() secOvermindGob;
-	static bool InitClass(IniReader *pini) secOvermindGob;
-	bool Init(const char *pszName = NULL) secOvermindGob;
-	void Toggle() secOvermindGob;
+	OvermindGob();
+	virtual ~OvermindGob();
+	static bool InitClass(IniReader *pini);
+	bool Init(const char *pszName = NULL);
+	void Toggle();
 
 	// Gob methods
 
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secOvermindGob;
-	virtual bool IsSavable() secOvermindGob;
-	virtual GobType GetType() secOvermindGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secOvermindGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual bool IsSavable();
+	virtual GobType GetType();
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secOvermindGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secOvermindGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 private:
 	bool m_fEnabled;
@@ -6233,18 +5270,18 @@ private:
 class SurfaceDecalGob : public Gob // dcl
 {
 public:
-	SurfaceDecalGob() secSurfaceDecalGob;
-	virtual ~SurfaceDecalGob() secSurfaceDecalGob;
-	static bool InitClass(IniReader *pini) secSurfaceDecalGob;
-	bool Init(WCoord wx, WCoord wy, dword ff, const char *pszBitmap, TBitmap *ptbm = NULL, const char *pszName = NULL) secSurfaceDecalGob;
+	SurfaceDecalGob();
+	virtual ~SurfaceDecalGob();
+	static bool InitClass(IniReader *pini);
+	bool Init(WCoord wx, WCoord wy, dword ff, const char *pszBitmap, TBitmap *ptbm = NULL, const char *pszName = NULL);
 
 	// Gob methods
 
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secSurfaceDecalGob;
-	virtual bool IsSavable() secSurfaceDecalGob;
-	virtual GobType GetType() secSurfaceDecalGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secSurfaceDecalGob;
-	virtual void GetClippingBounds(Rect *prc) secSurfaceDecalGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual bool IsSavable();
+	virtual GobType GetType();
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void GetClippingBounds(Rect *prc);
 
 protected:
 	TBitmap *m_ptbm;
@@ -6255,19 +5292,19 @@ protected:
 class ScorchGob : public SurfaceDecalGob
 {
 public:
-	ScorchGob() secScorchGob;
-	bool Init(WCoord wx, WCoord wy, int nScorch) secScorchGob;
+	ScorchGob();
+	bool Init(WCoord wx, WCoord wy, int nScorch);
 
 	// Scorch methods
 
-	int GetSequence() secScorchGob;
+	int GetSequence();
 
 	// Gob methods
 
-	virtual GobType GetType() secScorchGob;
-	virtual bool LoadState(Stream *pstm) secScorchGob;
-	virtual bool SaveState(Stream *pstm) secScorchGob;
-	virtual bool IsSavable() secScorchGob;
+	virtual GobType GetType();
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool IsSavable();
 
 private:
 	int m_nScorch;
@@ -6277,20 +5314,20 @@ private:
 class SceneryGob : public Gob // scn
 {
 public:
-	SceneryGob() secSceneryGob;
-	virtual ~SceneryGob() secSceneryGob;
-	static bool InitClass(IniReader *pini) secSceneryGob;
-	bool Init(WCoord wx, WCoord wy, dword ff, const char *pszBitmap, const char *pszName = NULL) secSceneryGob;
+	SceneryGob();
+	virtual ~SceneryGob();
+	static bool InitClass(IniReader *pini);
+	bool Init(WCoord wx, WCoord wy, dword ff, const char *pszBitmap, const char *pszName = NULL);
 
 	// Gob methods
 
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secSceneryGob;
-	virtual bool LoadState(Stream *pstm) secSceneryGob;
-	virtual bool SaveState(Stream *pstm) secSceneryGob;
-	virtual GobType GetType() secSceneryGob;
-	virtual dword GetSortKey() secSceneryGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secSceneryGob;
-	virtual void GetClippingBounds(Rect *prc) secSceneryGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual GobType GetType();
+	virtual dword GetSortKey();
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void GetClippingBounds(Rect *prc);
 
 private:
 	TBitmap *m_ptbm;
@@ -6299,26 +5336,23 @@ private:
 class AnimGob : public Gob // anm
 {
 public:
-	AnimGob() secAnimGob;
-	virtual ~AnimGob() secAnimGob;
+	AnimGob();
+	virtual ~AnimGob();
 	bool Init(WCoord wx, WCoord wy, word wfAnm, const char *pszAniName, AnimationData *panid = NULL,
-			int nStrip = 0, StateMachineId smidNotify = ksmidNull, const char *pszName = NULL) secAnimGob;
-	virtual bool OnStripDone() secAnimGob;
+			int nStrip = 0, StateMachineId smidNotify = ksmidNull, const char *pszName = NULL);
+	virtual bool OnStripDone();
 
 	// Gob methods
 
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secAnimGob;
-	virtual bool IsSavable() secAnimGob;
-	virtual GobType GetType() secAnimGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secAnimGob;
-	virtual void GetClippingBounds(Rect *prc) secAnimGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual bool IsSavable();
+	virtual GobType GetType();
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void GetClippingBounds(Rect *prc);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secAnimGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secAnimGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 protected:
 	StateMachineId m_smidNotify;
@@ -6326,7 +5360,7 @@ protected:
 	Animation m_ani;
 };
 AnimGob *CreateAnimGob(WCoord wx, WCoord wy, word wfAnm, const char *pszAniName, AnimationData *panid,
-		int nStrip = 0, StateMachineId smidNotify = ksmidNull, const char *pszName = NULL) secAnimGob;
+		int nStrip = 0, StateMachineId smidNotify = ksmidNull, const char *pszName = NULL);
 
 const word kfAnmDeleteWhenDone = 0x0001;
 const word kfAnmLoop = 0x0002;
@@ -6339,8 +5373,8 @@ struct GobConsts { // gobc
 	GobType gt;
 };
 
-#define GetUnitCostMin() (gfMultiplayer ? gnUnitCostMPMin : gnUnitCostMin)
-#define GetUnitCostMax() (gfMultiplayer ? gnUnitCostMPMax : gnUnitCostMax)
+#define GetUnitCostMin() (gnUnitCostMin)
+#define GetUnitCostMax() (gnUnitCostMax)
 
 #define kfUntcNotifyEnemyNearby	0x0001	// wants to be notified of nearby mobile enemies
 #define kfUntcNotifyPowerLowHigh 0x0002 // bld is power sensitive, needs notifications
@@ -6356,19 +5390,13 @@ struct UnitConsts : public GobConsts { // untc
 	UpgradeMask upgmPrerequisites;
 	Sfx sfxImpact;
 	int nCost;
-	int nCostMP;
 	fix fxArmorStrength;
-	fix fxArmorStrengthMP;
 	int nInfantryDamage;
-	int nInfantryDamageMP;
 	int nVehicleDamage;
-	int nVehicleDamageMP;
 	int nStructureDamage;
-	int nStructureDamageMP;
 	int ctFiringRate;
 	int tcFiringRange;	// kept as int instead of TCoord to accommodate Ini::GetPropertyValue
 	int cupdTimeToBuild;
-	int cupdTimeToBuildMP;
 	char szAniName[kcbFilename];
 	AnimationData *panid;
 	WRect wrcUIBounds;
@@ -6381,22 +5409,22 @@ struct UnitConsts : public GobConsts { // untc
 	char *szDescription;
 
 	int GetCost() {
-		return gfMultiplayer ? nCostMP : nCost;
+		return nCost;
 	}
 	fix GetArmorStrength() {
-		return gfMultiplayer ? fxArmorStrengthMP : fxArmorStrength;
+		return fxArmorStrength;
 	}
 	int GetTimeToBuild() {
-		return gfMultiplayer ? cupdTimeToBuildMP : cupdTimeToBuild;
+		return cupdTimeToBuild;
 	}
 	int GetInfantryDamage() {
-		return gfMultiplayer ? nInfantryDamageMP : nInfantryDamage;
+		return nInfantryDamage;
 	}
 	int GetVehicleDamage() {
-		return gfMultiplayer ? nVehicleDamageMP : nVehicleDamage;
+		return nVehicleDamage;
 	}
 	int GetStructureDamage() {
-		return gfMultiplayer ? nStructureDamageMP : nStructureDamage;
+		return nStructureDamage;
 	}
 };
 
@@ -6436,13 +5464,12 @@ struct MobileUnitConsts : public UnitConsts { // muntc
 	SfxCategory sfxcMove;
 	SfxCategory sfxcAttack;
 	WCoord wcMoveDistPerUpdate;
-	WCoord wcMoveDistPerUpdateMP;
 	int *anFiringStripIndices;
 	int *anMovingStripIndices;
 	int *anIdleStripIndices;
 
 	WCoord GetMoveDistPerUpdate() {
-		return gfMultiplayer ? wcMoveDistPerUpdateMP : wcMoveDistPerUpdate;
+		return wcMoveDistPerUpdate;
 	}
 };
 
@@ -6475,34 +5502,31 @@ const WCoord kwcFullnessPip = WcFromTile16ths(2);
 class UnitGob : public Gob // unt
 {
 public:
-	UnitGob(UnitConsts *puntc) secUnitGob;
-    ~UnitGob() secUnitGob;
+	UnitGob(UnitConsts *puntc);
+    ~UnitGob();
 
-	static bool InitClass(UnitConsts *psubc, IniReader *pini) secUnitGob;
+	static bool InitClass(UnitConsts *psubc, IniReader *pini);
     static void InitFingerUIBounds(UnitConsts *psubc);
-	static void ExitClass(UnitConsts *psubc) secUnitGob;
-	static bool LoadMenu(UnitConsts *psubc, IniReader *pini, char *pszTemplate, int idfDefault) secUnitGob;
-	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName) secUnitGob;
-	virtual void Delete() secUnitGob;
-	virtual void DefUpdate() secUnitGob;
-	virtual void Activate() secUnitGob;
-	virtual void Deactivate() secUnitGob;
-	virtual bool IsIdle() secUnitGob;
-	virtual bool IsValidTarget(Gob *pgobTarget) secUnitGob;
-	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0) secUnitGob;
-	virtual void GetAttackPoint(WPoint *pwpt) secUnitGob;
-    virtual dword GetAnimationHash() secUnitGob;
-    virtual void GetAnimationBounds(Rect *prc, bool fBase) secUnitGob;
-    virtual void DrawAnimation(DibBitmap *pbm, int x, int y) secUnitGob;
-    virtual AnimSprite *CreateHilightSprite(); secUnitGob;
-#ifdef MP_DEBUG_SHAREDMEM
-	virtual void MPValidate() secUnitGob;
-#endif
-	void NotifyNearbyAlliesOfHit(Gid gidAssailant) secUnitGob;
-	void ShowDamageIndicator() secUnitGob;
-	void ClearDamageIndicator() secUnitGob;
-	int GetDamageTo(UnitGob *puntTarget) secUnitGob;
-	void RecalcEnemyNearby(bool fClearOnly) secUnitGob;
+	static void ExitClass(UnitConsts *psubc);
+	static bool LoadMenu(UnitConsts *psubc, IniReader *pini, char *pszTemplate, int idfDefault);
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
+	virtual void Delete();
+	virtual void DefUpdate();
+	virtual void Activate();
+	virtual void Deactivate();
+	virtual bool IsIdle();
+	virtual bool IsValidTarget(Gob *pgobTarget);
+	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0);
+	virtual void GetAttackPoint(WPoint *pwpt);
+    virtual dword GetAnimationHash();
+    virtual void GetAnimationBounds(Rect *prc, bool fBase);
+    virtual void DrawAnimation(DibBitmap *pbm, int x, int y);
+    virtual AnimSprite *CreateHilightSprite();
+	void NotifyNearbyAlliesOfHit(Gid gidAssailant);
+	void ShowDamageIndicator();
+	void ClearDamageIndicator();
+	int GetDamageTo(UnitGob *puntTarget);
+	void RecalcEnemyNearby(bool fClearOnly);
 
 	UnitConsts *GetConsts() {
 		return m_puntc;
@@ -6520,7 +5544,7 @@ public:
 		m_wfUnit = wf;
 	}
 
-	bool IsAlly(Side side) secUnitGob;
+	bool IsAlly(Side side);
 
 	fix GetHealth() {
 		return m_fxHealth;
@@ -6530,29 +5554,29 @@ public:
         return m_panispr;
     }
 
-	void Select(bool fSelect) secUnitGob;
-    void Hilight(bool fHilight) secUnitGob;
+	void Select(bool fSelect);
+    void Hilight(bool fHilight);
 
-	virtual void SetHealth(fix fxHealth) secUnitGob;
+	virtual void SetHealth(fix fxHealth);
 
 	// Gob overrides
 
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secUnitGob;
-	virtual bool LoadState(Stream *pstm) secUnitGob;
-	virtual bool SaveState(Stream *pstm) secUnitGob;
-	virtual GobType GetType() secUnitGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secUnitGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual GobType GetType();
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
 	virtual dword GetSortKey();
-	virtual void GetClippingBounds(Rect *prc) secUnitGob;
-	virtual void GetUIBounds(WRect *pwrc) secUnitGob;
-	virtual void GetCenter(WPoint *pwpt) secUnitGob;
-	virtual void PopupMenu() secUnitGob;
+	virtual void GetClippingBounds(Rect *prc);
+	virtual void GetUIBounds(WRect *pwrc);
+	virtual void GetCenter(WPoint *pwpt);
+	virtual void PopupMenu();
 
 protected:
-	void RememberEnemyNearby(Gid gidEnemy) secUnitGob;
-	TCoord CalcRange(TCoord tx, TCoord ty, Gob *pgob) secUnitGob;
-	virtual UnitGob *FindEnemyNearby(TCoord tc) secUnitGob;
-	void NotifyEnemyNearby() secUnitGob;
+	void RememberEnemyNearby(Gid gidEnemy);
+	TCoord CalcRange(TCoord tx, TCoord ty, Gob *pgob);
+	virtual UnitGob *FindEnemyNearby(TCoord tc);
+	void NotifyEnemyNearby();
 
 	union {
 		UnitConsts *m_puntc;
@@ -6585,59 +5609,59 @@ const word kfUnitHilighted = 0x0080;
 class StructGob : public UnitGob // stru
 {
 public:
-	StructGob(StructConsts *pstruc) secStructures;
-	virtual ~StructGob() secStructures;
-	static bool InitClass(StructConsts *pstruc, IniReader *pini) secStructures;
-	static void ExitClass(StructConsts *pstruc) secStructures;
+	StructGob(StructConsts *pstruc);
+	virtual ~StructGob();
+	static bool InitClass(StructConsts *pstruc, IniReader *pini);
+	static void ExitClass(StructConsts *pstruc);
 
-	void Repair(bool fOn) secStructures;
-	bool NeedsRepair() secStructures;
-	void EnableOrDisableSymbolLayer() secStructures;
-	virtual bool IsTakeoverable(Player *pplr) secStructures;
-	virtual void Takeover(Player *pplr) secStructures;
+	void Repair(bool fOn);
+	bool NeedsRepair();
+	void EnableOrDisableSymbolLayer();
+	virtual bool IsTakeoverable(Player *pplr);
+	virtual void Takeover(Player *pplr);
 
-	static bool LoadConfirmation() secStructures;
-	bool PopupConfirmation(char *pszTitle) secStructures;
-	void TakedownConfirmation() secStructures;
-	void SelfDestruct(bool fRecycleValue = true) secStructures;
-	bool IsAccessible(TCoord tx, TCoord ty) secStructures;
+	static bool LoadConfirmation();
+	bool PopupConfirmation(char *pszTitle);
+	void TakedownConfirmation();
+	void SelfDestruct(bool fRecycleValue = true);
+	bool IsAccessible(TCoord tx, TCoord ty);
 
 	// UnitGob overrides
 
-	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName) secStructures;
-	virtual void Delete() secStructures;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secStructures;
-	virtual void DefUpdate() secStructures;
-	virtual void Activate() secStructures;
-	virtual void Deactivate() secStructures;
-	virtual bool IsValidTarget(Gob *pgobTarget) secStructures;
-	virtual void SetHealth(fix fxHealth) secStructures;
-	virtual void GetAttackPoint(WPoint *pwpt) secStructures;
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
+	virtual void Delete();
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void DefUpdate();
+	virtual void Activate();
+	virtual void Deactivate();
+	virtual bool IsValidTarget(Gob *pgobTarget);
+	virtual void SetHealth(fix fxHealth);
+	virtual void GetAttackPoint(WPoint *pwpt);
 
 	// Gob overrides
 
-	virtual bool LoadState(Stream *pstm) secStructures;
-	virtual bool SaveState(Stream *pstm) secStructures;
-	virtual void GetTileRect(TRect *ptrc) secStructures;
-	virtual void GetTilePaddedWRect(WRect *pwrc) secStructures;
-	virtual void InitMenu(Form *pfrm) secStructures;
-	virtual void OnMenuItemSelected(int id) secStructures;
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual void GetTileRect(TRect *ptrc);
+	virtual void GetTilePaddedWRect(WRect *pwrc);
+	virtual void InitMenu(Form *pfrm);
+	virtual void OnMenuItemSelected(int id);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 	// Used to track visibility in FindGobs
 
 	word m_nSeqLastVisible;
 
 protected:
-	void OnPowerLowHigh() secStructures;
-	void DrawSymbol(TBitmap *ptbm, DibBitmap *pbm, int xViewOrigin, int yViewOrigin) secStructures;
-	virtual void WaitingForCredits(bool fNeed, bool fOverride = false, Player *pplr = NULL) secStructures;
+	void OnPowerLowHigh();
+	void DrawSymbol(TBitmap *ptbm, DibBitmap *pbm, int xViewOrigin, int yViewOrigin);
+	virtual void WaitingForCredits(bool fNeed, bool fOverride = false, Player *pplr = NULL);
 
 private:
-	ScorchGob *GetScorchGob() secStructures;
+	ScorchGob *GetScorchGob();
 
 	long m_tLastSmoke;
 
@@ -6656,19 +5680,19 @@ const long kcupdSymbolFlashRate = 8; // ideally a power of 2
 class UnitMenu : public Form, public Timer
 {
 public:
-	void SetOwner(UnitGob *punt, bool fPerUnitInit = true) secUnitGob;
-	UnitGob *GetOwner() secUnitGob;
+	void SetOwner(UnitGob *punt, bool fPerUnitInit = true);
+	UnitGob *GetOwner();
 
 	// Form overrides
 
-	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide) secUnitGob;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secUnitGob;
-	virtual void OnPaint(DibBitmap *pbm) secUnitGob;
-	virtual bool OnHitTest(Event *pevt) secUnitGob;
+	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide);
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual bool OnHitTest(Event *pevt);
 
 	// Timer overrides
 
-	virtual void OnTimer(long tCurrent) secUnitGob;
+	virtual void OnTimer(long tCurrent);
 
 protected:
 	UnitGob *m_punt;
@@ -6723,16 +5747,16 @@ extern bool gfGodMode;
 class MobileUnitGob : public UnitGob // munt
 {
 public:
-	MobileUnitGob(MobileUnitConsts *pmuntc) secUnitGob;
-	virtual ~MobileUnitGob() secUnitGob;
+	MobileUnitGob(MobileUnitConsts *pmuntc);
+	virtual ~MobileUnitGob();
 	// NOTE: derivatives should initialize the an*StripIndices arrays of the MobileUnitConsts
-	static bool InitClass(MobileUnitConsts *pmuntc, IniReader *pini) secUnitGob;
-	static void ExitClass(MobileUnitConsts *pmuntc) secUnitGob;
-	static MobileUnitGob *AnyTransitionsIntoTile(TCoord tx, TCoord ty, Gob *pgobIgnore) secUnitGob;
-	static void FreeCachedPaths() secUnitGob;
-	bool IsReadyForCommand() secUnitGob;
-	bool IsMobile() secUnitGob;
-	bool IsStandingOnActivator() secUnitGob;
+	static bool InitClass(MobileUnitConsts *pmuntc, IniReader *pini);
+	static void ExitClass(MobileUnitConsts *pmuntc);
+	static MobileUnitGob *AnyTransitionsIntoTile(TCoord tx, TCoord ty, Gob *pgobIgnore);
+	static void FreeCachedPaths();
+	bool IsReadyForCommand();
+	bool IsMobile();
+	bool IsStandingOnActivator();
 
 	bool HasAttackTarget() {
 		return m_gidTarget != kgidNull;
@@ -6757,79 +5781,76 @@ public:
 	bool IsMoveWaiting() {
 		return (m_wfMunt & kfMuntMoveWait) != 0;
 	}
-#ifdef MP_DEBUG_SHAREDMEM
-	virtual void MPValidate() secUnitGob;
-#endif
 
 	// UnitGob overrides
 
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secUnitGob;
-	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName) secUnitGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
 #ifdef DRAW_PATHS
-	void DrawPath(DibBitmap *pbm, WCoord wxViewOrigin, WCoord wyViewOrigin) secUnitGob;
+	void DrawPath(DibBitmap *pbm, WCoord wxViewOrigin, WCoord wyViewOrigin);
 #endif
 #ifdef DRAW_LINES
-	void DrawTargetLine(DibBitmap *pbm, int xViewOrigin, int yViewOrigin) secUnitGob;
+	void DrawTargetLine(DibBitmap *pbm, int xViewOrigin, int yViewOrigin);
 #endif
-	virtual bool IsIdle() secUnitGob;
-	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0) secUnitGob;
-	virtual void Activate() secUnitGob;
-	virtual void Deactivate() secUnitGob;
-	virtual void GetAttackPoint(WPoint *pwpt) secUnitGob;
+	virtual bool IsIdle();
+	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0);
+	virtual void Activate();
+	virtual void Deactivate();
+	virtual void GetAttackPoint(WPoint *pwpt);
 
 	// Gob overrides
 
-	virtual bool LoadState(Stream *pstm) secUnitGob;
-	virtual bool SaveState(Stream *pstm) secUnitGob;
-	virtual void SetPosition(WCoord wx, WCoord wy) secUnitGob;
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual void SetPosition(WCoord wx, WCoord wy);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secUnitGob;
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 protected:
-	void MoveEnter(bool fReset = false) secUnitGob;
-	void MoveExit() secUnitGob;
-	int MoveUpdate() secUnitGob;
+	void MoveEnter(bool fReset = false);
+	void MoveExit();
+	int MoveUpdate();
 
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secUnitGob;
-	virtual void Idle() secUnitGob;
-	virtual void PerformAction(char *szAction) secUnitGob;
-	bool InTransition() secUnitGob;
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
+	virtual void Idle();
+	virtual void PerformAction(char *szAction);
+	bool InTransition();
 
 private:
-	bool IsAttackPointWithinFiringRangeOfTarget(UnitGob *puntTarget) secUnitGob;
-	bool PendOrProcessCommand(Message *pmsg, State stNew) secUnitGob;
-	bool PendOrProcessAction(Message *pmsg, State stNew, MobileUnitAction mua) secUnitGob;
-	bool IsTargetInRange() secUnitGob;
-	void SetStatePendingFireComplete(State st) secUnitGob;
-	void ContinueActionPendingFireComplete() secUnitGob;
-	void ReserveTile(TCoord tx, TCoord ty, bool fReserve) secUnitGob;
-	bool IsTileReserved(TCoord tx, TCoord ty) secUnitGob;
-	byte GetTileFlags(TCoord tx, TCoord ty) secUnitGob;
-	MobileUnitGob *GetReservingUnit(TCoord tx, TCoord ty) secUnitGob;
-	int GetNextLocations(TPoint *atpt) secUnitGob;
-	int GetNextLocations2(Path *ppath, int *pitptStart, int cStepsFurtherStop, TPoint *atpt) secUnitGob;
-	int FindClosestPoint(TPoint *ptptClosest, int ctptFurtherStop) secUnitGob;
-	bool PrepPath(WCoord wxDst, WCoord wyDst) secUnitGob;
-	Path *FindPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo) secUnitGob;
-	bool PrepareNextTransition(TPoint *ptptNext, int *pnMoveResult) secUnitGob;
-	void EnterTransition(TPoint *ptptNext) secUnitGob;
-	void ContinueTransition() secUnitGob;
-	bool HandleCollision(MobileUnitGob **apmunt, byte *abf, TPoint *atpt, int ctpt) secUnitGob;
-	bool PlanMoveAsidePath(MobileUnitGob *pmunt, TCoord tx, TCoord ty) secUnitGob;
-	bool GetMoveAsideDirections(Direction dirMover, MoveDirections *pmovd) secUnitGob;
-	bool AcceptMoveAsideRequest(Direction dir) secUnitGob;
-	MobileUnitGob *GetMobileUnitAt(TCoord tx, TCoord ty) secUnitGob;
-	bool CheckDestinationReached() secUnitGob;
-	bool IsMoveWaitCycle(MobileUnitGob *pmunt) secUnitGob;
-	bool MoveWaitForUnit(MobileUnitGob *pmunt, TCoord tx, TCoord ty) secUnitGob;
-	bool ContinueMoveWaiting(MobileUnitGob **apmunt, byte *abf, TPoint *atpt, int ctpt, TPoint *ptptNext) secUnitGob;
-	void NotifyMoveWaitingNearby(WCoord wx, WCoord wy) secUnitGob;
-	bool FindLocalAvoidPath(TCoord tx, TCoord ty) secUnitGob;
-	int FindCloserTrackPoint(TrackPoint *ptrkpStart, Direction dirBlocked, bool fClockwise, int ctpt, TPoint *atpt, TrackPoint *ptrkp) secUnitGob;
-	bool CheckReplicatorPoint() secUnitGob;
-	UnitGob *FindValidTargetInArea(int nArea) secUnitGob;
+	bool IsAttackPointWithinFiringRangeOfTarget(UnitGob *puntTarget);
+	bool PendOrProcessCommand(Message *pmsg, State stNew);
+	bool PendOrProcessAction(Message *pmsg, State stNew, MobileUnitAction mua);
+	bool IsTargetInRange();
+	void SetStatePendingFireComplete(State st);
+	void ContinueActionPendingFireComplete();
+	void ReserveTile(TCoord tx, TCoord ty, bool fReserve);
+	bool IsTileReserved(TCoord tx, TCoord ty);
+	byte GetTileFlags(TCoord tx, TCoord ty);
+	MobileUnitGob *GetReservingUnit(TCoord tx, TCoord ty);
+	int GetNextLocations(TPoint *atpt);
+	int GetNextLocations2(Path *ppath, int *pitptStart, int cStepsFurtherStop, TPoint *atpt);
+	int FindClosestPoint(TPoint *ptptClosest, int ctptFurtherStop);
+	bool PrepPath(WCoord wxDst, WCoord wyDst);
+	Path *FindPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo);
+	bool PrepareNextTransition(TPoint *ptptNext, int *pnMoveResult);
+	void EnterTransition(TPoint *ptptNext);
+	void ContinueTransition();
+	bool HandleCollision(MobileUnitGob **apmunt, byte *abf, TPoint *atpt, int ctpt);
+	bool PlanMoveAsidePath(MobileUnitGob *pmunt, TCoord tx, TCoord ty);
+	bool GetMoveAsideDirections(Direction dirMover, MoveDirections *pmovd);
+	bool AcceptMoveAsideRequest(Direction dir);
+	MobileUnitGob *GetMobileUnitAt(TCoord tx, TCoord ty);
+	bool CheckDestinationReached();
+	bool IsMoveWaitCycle(MobileUnitGob *pmunt);
+	bool MoveWaitForUnit(MobileUnitGob *pmunt, TCoord tx, TCoord ty);
+	bool ContinueMoveWaiting(MobileUnitGob **apmunt, byte *abf, TPoint *atpt, int ctpt, TPoint *ptptNext);
+	void NotifyMoveWaitingNearby(WCoord wx, WCoord wy);
+	bool FindLocalAvoidPath(TCoord tx, TCoord ty);
+	int FindCloserTrackPoint(TrackPoint *ptrkpStart, Direction dirBlocked, bool fClockwise, int ctpt, TPoint *atpt, TrackPoint *ptrkp);
+	bool CheckReplicatorPoint();
+	UnitGob *FindValidTargetInArea(int nArea);
 
 protected:
 	Direction m_dir, m_dirNext;
@@ -6851,13 +5872,7 @@ public:
 protected:
 #endif
 
-#ifdef DEBUG_HELPERS
-public:
-#endif
 	TCoord m_txDst, m_tyDst;
-#ifdef DEBUG_HELPERS
-protected:
-#endif
 
 #ifdef DRAW_LINES
 public:
@@ -6878,10 +5893,6 @@ public:
 	static Path *s_apathCached[kcPathsCache];
 	static int s_cpathCached;
 
-#ifdef DEBUG_HELPERS
-	friend void paint();
-	friend class UnitGroupViewer;
-#endif
 };
 
 // Values returned by UnitGob::MoveUpdate()
@@ -6899,22 +5910,22 @@ const word kcBuildQueueMax = 10;
 class BuildQueue
 {
 public:
-	BuildQueue() secBuildQueue;
-	BuildQueue &operator=( BuildQueue &bqRHS) secBuildQueue;
-	void SetSize(word cutMax) secBuildQueue;
-	int GetRemainingCapacity() secBuildQueue;
-	void Enqueue(UnitType ut) secBuildQueue;
-	void Dequeue() secBuildQueue;
-	bool RemoveUnit(UnitType ut) secBuildQueue;
-	UnitType Peek() secBuildQueue;
-	bool IsEmpty() secBuildQueue;
-	bool IsFull() secBuildQueue;
-	void Clear() secBuildQueue;
-	int GetUnitCount(UnitType ut) secBuildQueue;
+	BuildQueue();
+	BuildQueue &operator=( BuildQueue &bqRHS);
+	void SetSize(word cutMax);
+	int GetRemainingCapacity();
+	void Enqueue(UnitType ut);
+	void Dequeue();
+	bool RemoveUnit(UnitType ut);
+	UnitType Peek();
+	bool IsEmpty();
+	bool IsFull();
+	void Clear();
+	int GetUnitCount(UnitType ut);
 
 	// called by builder gob
-	virtual bool LoadState(Stream *pstm) secBuildQueue;
-	virtual bool SaveState(Stream *pstm) secBuildQueue;
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
 
 private:
 	char m_achBuildQueue[kcBuildQueueMax];
@@ -6924,14 +5935,14 @@ private:
 class BuilderGob : public StructGob // bldr
 {
 public:
-	BuilderGob(BuilderConsts *pbldrc) secBuilderGob;
-	virtual ~BuilderGob() secBuilderGob;
-	static bool InitClass(BuilderConsts *pbldrc, IniReader *pini) secBuilderGob;
-	static void ExitClass(BuilderConsts *pbldrc) secBuilderGob;
-	void DrawUpgradeEffect(DibBitmap *pbm, int xViewOrigin, int yViewOrigin) secBuilderGob;
-	void AbortBuild(bool fRefundCreditsSpent = false, UnitType ut = kutNone) secBuilderGob;
-	static int GetGlobalQueuedCount(Player *pplr, word wfTest) secBuilderGob;
-	static int GetQueuedCount(Player *pplr, word wfTest) secBuilderGob;
+	BuilderGob(BuilderConsts *pbldrc);
+	virtual ~BuilderGob();
+	static bool InitClass(BuilderConsts *pbldrc, IniReader *pini);
+	static void ExitClass(BuilderConsts *pbldrc);
+	void DrawUpgradeEffect(DibBitmap *pbm, int xViewOrigin, int yViewOrigin);
+	void AbortBuild(bool fRefundCreditsSpent = false, UnitType ut = kutNone);
+	static int GetGlobalQueuedCount(Player *pplr, word wfTest);
+	static int GetQueuedCount(Player *pplr, word wfTest);
 
 	void SetRallyPoint(TCoord tx, TCoord ty) {
 		m_tptRally.tx = tx;
@@ -6945,29 +5956,29 @@ public:
 
 	// Build management methods
 
-	virtual void FindInitPosition(WPoint *pwpt) secBuilderGob;
-	virtual void Build(UnitType ut, Gid gid = kgidNull) secBuilderGob;
+	virtual void FindInitPosition(WPoint *pwpt);
+	virtual void Build(UnitType ut, Gid gid = kgidNull);
 	bool IsBuildInProgress() {
 		return !m_bq.IsEmpty();
 	}
 	UnitType UnitBuildInProgress() {return m_bq.Peek();}
-	void DrawBuildProgress(DibBitmap *pbm, Rect *prc) secBuilderGob;
-	void SyncBuildQueue(BuildQueue *pbq) secBuilderGob;
+	void DrawBuildProgress(DibBitmap *pbm, Rect *prc);
+	void SyncBuildQueue(BuildQueue *pbq);
 
-	UnitGob *GetBuiltGob() secBuilderGob;
-	void ClearBuiltGob() secBuilderGob;
+	UnitGob *GetBuiltGob();
+	void ClearBuiltGob();
 
 	// UnitGob overrides
 
-	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName) secBuilderGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secBuilderGob;
-	virtual void DefUpdate() secBuilderGob;
-	virtual void Deactivate() secBuilderGob;
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void DefUpdate();
+	virtual void Deactivate();
 
 	// Gob overrides
 
-	virtual bool LoadState(Stream *pstm) secBuilderGob;
-	virtual bool SaveState(Stream *pstm) secBuilderGob;
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
     virtual void GetClippingBounds(Rect *prc);
 
 protected:
@@ -6980,9 +5991,6 @@ protected:
  	int m_nCostRemainder;
 	TPoint m_tptRally;
 
-#ifdef MP_STRESS
-public:
-#endif
 	BuildQueue m_bq;
 };
 
@@ -6993,19 +6001,19 @@ public:
 		return m_pbldr;
 	}
 
-	void SetOwner(BuilderGob *pbldr) secStructures;
-	void UpdateUnitInfo(ListItem *pli) secStructures;
-	void OnUnitCompleted(BuilderGob *pbldr, UnitType ut) secStructures;
-	void DefUpdate(BuilderGob *pbldr, bool fBuildInProgress) secStructures;
-	int CountQueue(UnitType ut) secStructures;
-	void UpdateOrderButton(bool fCalcLimit) secStructures;
+	void SetOwner(BuilderGob *pbldr);
+	void UpdateUnitInfo(ListItem *pli);
+	void OnUnitCompleted(BuilderGob *pbldr, UnitType ut);
+	void DefUpdate(BuilderGob *pbldr, bool fBuildInProgress);
+	int CountQueue(UnitType ut);
+	void UpdateOrderButton(bool fCalcLimit);
 
 	// Form overrides
 
-	void EndForm(int nResult = 0) secStructures;
-	virtual void OnControlSelected(word idc) secStructures;
+	void EndForm(int nResult = 0);
+	virtual void OnControlSelected(word idc);
 	virtual void OnControlNotify(word idc, int nNotify);
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secStructures;
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
 
 private:
 	int m_cupdLast;
@@ -7020,30 +6028,30 @@ private:
 class TankGob : public MobileUnitGob // tnk
 {
 public:
-	TankGob(MobileUnitConsts *pmuntc) secTankGob;
-	static bool InitClass(MobileUnitConsts *pmuntc, IniReader *pini) secTankGob;
-	static void ExitClass(MobileUnitConsts *pmuntc) secTankGob;
-	virtual void LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget) secTankGob;
+	TankGob(MobileUnitConsts *pmuntc);
+	static bool InitClass(MobileUnitConsts *pmuntc, IniReader *pini);
+	static void ExitClass(MobileUnitConsts *pmuntc);
+	virtual void LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget);
 
 	// UnitGob overrides
 
-	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName) secTankGob;
-	virtual void DefUpdate() secTankGob;
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
+	virtual void DefUpdate();
 
 	// UnitGob overrides
 
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secTankGob;
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secTankGob;
-	virtual void Idle() secTankGob;
-    virtual dword GetAnimationHash() secTankGob;
-    virtual void GetAnimationBounds(Rect *prc, bool fBase) secTankGob;
-    virtual void DrawAnimation(DibBitmap *pbm, int x, int y) secTankGob;
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
+	virtual void Idle();
+    virtual dword GetAnimationHash();
+    virtual void GetAnimationBounds(Rect *prc, bool fBase);
+    virtual void DrawAnimation(DibBitmap *pbm, int x, int y);
 
 	// Gob overrides
 
-	virtual void GetClippingBounds(Rect *prc) secTankGob;
-	virtual bool LoadState(Stream *pstm) secTankGob;
-	virtual bool SaveState(Stream *pstm) secTankGob;
+	virtual void GetClippingBounds(Rect *prc);
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
 
 protected:
 	Animation m_aniTurret;
@@ -7058,73 +6066,61 @@ protected:
 class SRInfantryGob : public MobileUnitGob // sri
 {
 public:
-	SRInfantryGob() secInfantryGob;
-	static bool InitClass(IniReader *pini) secInfantryGob;
-	static void ExitClass() secInfantryGob;
+	SRInfantryGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// UnitGob overrides
 
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secInfantryGob;
-	virtual void Idle() secInfantryGob;
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
+	virtual void Idle();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secInfantryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 class LRInfantryGob : public MobileUnitGob // lri
 {
 public:
-	LRInfantryGob() secInfantryGob;
-	static bool InitClass(IniReader *pini) secInfantryGob;
-	static void ExitClass() secInfantryGob;
+	LRInfantryGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// UnitGob overrides
 
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secInfantryGob;
-	virtual void Idle() secInfantryGob;
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
+	virtual void Idle();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secInfantryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 class SpInfantryGob : public MobileUnitGob // lri
 {
 public:
-	SpInfantryGob() secInfantryGob;
-	static bool InitClass(IniReader *pini) secInfantryGob;
-	static void ExitClass() secInfantryGob;
+	SpInfantryGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// UnitGob overrides
 
-	virtual bool IsValidTarget(Gob *pgobTarget) secInfantryGob;
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secInfantryGob;
-	virtual void Idle() secInfantryGob;
+	virtual bool IsValidTarget(Gob *pgobTarget);
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
+	virtual void Idle();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secInfantryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 class LTankGob : public TankGob // ltnk
 {
 public:
-	LTankGob() secTankGob;
-	static bool InitClass(IniReader *pini) secTankGob;
-	static void ExitClass() secTankGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
+	LTankGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 };
 
 class TankShotGob; // it's down there
@@ -7132,19 +6128,16 @@ class TankShotGob; // it's down there
 class MTankGob : public TankGob // mtnk
 {
 public:
-	MTankGob() secTankGob;
-	~MTankGob() secTankGob;
-	static bool InitClass(IniReader *pini) secTankGob;
-	static void ExitClass() secTankGob;
-	void LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget) secTankGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
+	MTankGob();
+	~MTankGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+	void LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget);
 
 	// UnitGob overrides
 
-	virtual void DefUpdate() secTankGob;
-	virtual void Deactivate() secTankGob;
+	virtual void DefUpdate();
+	virtual void Deactivate();
 
 private:
 	TankShotGob *m_pgobSecondShot;
@@ -7154,48 +6147,42 @@ private:
 class RTankGob : public TankGob // rtnk
 {
 public:
-	RTankGob() secTankGob;
-	static bool InitClass(IniReader *pini) secTankGob;
-	static void ExitClass() secTankGob;
-	void LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget) secTankGob;
+	RTankGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+	void LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget);
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 };
 
 class GTankGob : public TankGob // gtnk
 {
 public:
-	GTankGob() secTankGob;
-	static bool InitClass(IniReader *pini) secTankGob;
-	static void ExitClass() secTankGob;
+	GTankGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// MobileUnitGob overrides
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secTankGob;
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 	// TankGob overrides
 
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secTankGob;
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 };
 
 class MinerGob : public MobileUnitGob // mnr
 {
 public:
-	MinerGob() secMiner;
-	static bool InitClass(IniReader *pini) secMiner;
-	static void ExitClass() secMiner;
+	MinerGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
-	int GetGalaxiteAmount() secMiner;
-	void SetGalaxiteAmount(int nAmount) secMiner;
-	void SetFavoriteProcessor(Gid gid) secMiner;
-	void Hide(bool fHide) secMiner;
-	void SendDeliverCommand(Gid gidProcessor) secMiner;
+	int GetGalaxiteAmount();
+	void SetGalaxiteAmount(int nAmount);
+	void SetFavoriteProcessor(Gid gid);
+	void Hide(bool fHide);
+	void SendDeliverCommand(Gid gidProcessor);
 
 	bool IsAttemptingToDeliver(Gid gid) {
 		if (m_fAttemptingToDeliver && gid == m_gidFavoriteProcessor)
@@ -7205,37 +6192,31 @@ public:
 
 	// Gob overrides
 
-	virtual void InitMenu(Form *pfrm) secMiner;
-	virtual void OnMenuItemSelected(int id) secMiner;
-	virtual bool LoadState(Stream *pstm) secMiner;
-	virtual bool SaveState(Stream *pstm) secMiner;
-	virtual void GetClippingBounds(Rect *prc) secMiner;
+	virtual void InitMenu(Form *pfrm);
+	virtual void OnMenuItemSelected(int id);
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual void GetClippingBounds(Rect *prc);
 
 	// UnitGob overrides
 
-	virtual bool IsValidTarget(Gob *pgobTarget) secMiner;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secMiner;
-	virtual void Deactivate() secMiner;
-	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0) secMiner;
+	virtual bool IsValidTarget(Gob *pgobTarget);
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void Deactivate();
+	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0);
 
-#ifdef MP_DEBUG_SHAREDMEM
-	virtual void MPValidate() secMiner;
-#endif
 
 	// MobileUnitGob overrides
 
-	void PerformAction(char *szAction) secMiner;
+	void PerformAction(char *szAction);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secMiner;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 private:
-	void Mine(WCoord wx, WCoord wy) secMiner;
-	Gid FindClosestProcessor() secMiner;
+	void Mine(WCoord wx, WCoord wy);
+	Gid FindClosestProcessor();
 
 private:
 	Animation m_aniVacuum;
@@ -7246,9 +6227,6 @@ private:
 	bool m_fMinerUnderAttack;
 	static AnimationData *s_panidVacuum;
 	bool m_fAttemptingToDeliver;
-#ifdef MP_STRESS
-public:
-#endif
 	bool m_fHidden;
 };
 
@@ -7276,64 +6254,55 @@ const int kcMinerSuckDelay = 7; // number of updates between Galaxite decrements
 class MobileHqGob : public MobileUnitGob // mhq
 {
 public:
-	MobileHqGob() secGob;
-	static bool InitClass(IniReader *pini) secGob;
-	static void ExitClass() secGob;
-	bool CanTransform(TPoint *ptp = NULL) secGob;
+	MobileHqGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+	bool CanTransform(TPoint *ptp = NULL);
 
 	// Gob overrides
 
-	virtual void InitMenu(Form *pfrm) secGob;
-	virtual void OnMenuItemSelected(int id) secGob;
+	virtual void InitMenu(Form *pfrm);
+	virtual void OnMenuItemSelected(int id);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 class MobileUnitBuilderGob : public BuilderGob // mub
 {
 public:
-	MobileUnitBuilderGob(MobileUnitBuilderConsts *pmubc) secStructures;
+	MobileUnitBuilderGob(MobileUnitBuilderConsts *pmubc);
 
 	// Gob overrides
 
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secStructures;
-	virtual void InitMenu(Form *pfrm) secStructures;
-	virtual void OnMenuItemSelected(int id) secStructures;
-	virtual void DefUpdate() secStructures;
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void InitMenu(Form *pfrm);
+	virtual void OnMenuItemSelected(int id);
+	virtual void DefUpdate();
 
 	// UnitGob overrides
 
-	virtual void Deactivate() secStructures;
+	virtual void Deactivate();
 
 	// StructGob overrides
 
-	virtual void Takeover(Player *pplr) secStructures;
+	virtual void Takeover(Player *pplr);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 class HrcGob : public MobileUnitBuilderGob // hrc
 {
 public:
-	HrcGob() secStructures;
-	static bool InitClass(IniReader *pini) secStructures;
-	static void ExitClass() secStructures;
+	HrcGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
 private:
 	static MobileUnitBuildForm *s_pfrmBuild;
 };
@@ -7341,23 +6310,20 @@ private:
 class ReactorGob : public StructGob // rctr
 {
 public:
-	ReactorGob() secStructures;
-	static bool InitClass(IniReader *pini) secStructures;
-	static void ExitClass() secStructures;
+	ReactorGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
 };
 
 class ProcessorGob : public StructGob // prcr
 {
 public:
-	ProcessorGob() secStructures;
-	static bool InitClass(IniReader *pini) secStructures;
-	static void ExitClass() secStructures;
+	ProcessorGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
     // UnitGob overrides
 
@@ -7367,25 +6333,22 @@ public:
 
 	// StructGob overrides
 
-	virtual bool IsTakeoverable(Player *pplr) secStructures;
-	virtual void Takeover(Player *pplr) secStructures;
+	virtual bool IsTakeoverable(Player *pplr);
+	virtual void Takeover(Player *pplr);
 
 	// Gob overrides
 
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secStructures;
-	virtual bool LoadState(Stream *pstm) secStructures;
-	virtual bool SaveState(Stream *pstm) secStructures;
-	virtual void GetClippingBounds(Rect *prc) secStructures;
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual void GetClippingBounds(Rect *prc);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 private:
-	void NotifyMinersAttemptingDelivery(bool fDying) secStructures;
+	void NotifyMinersAttemptingDelivery(bool fDying);
 
 	Animation m_aniOverlay;
 	Gid m_gidMiner;
@@ -7399,30 +6362,27 @@ class StructureBuildForm;
 class HqGob : public BuilderGob // hq
 {
 public:
-	HqGob() secStructures;
-	virtual ~HqGob() secStructures;
+	HqGob();
+	virtual ~HqGob();
 
-	static bool InitClass(IniReader *pini) secStructures;
-	static void ExitClass() secStructures;
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// Gob overrides
 
-	virtual void InitMenu(Form *pfrm) secGob;
-	virtual void OnMenuItemSelected(int id) secGob;
+	virtual void InitMenu(Form *pfrm);
+	virtual void OnMenuItemSelected(int id);
 
 	// UnitGob overrides
 
-	virtual void Deactivate() secStructures;
+	virtual void Deactivate();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 private:
 
-	void RemoveScorch(StructGob *pstru) secStructures;
+	void RemoveScorch(StructGob *pstru);
 
 	static StructureBuildForm *s_pfrmBuild;
 };
@@ -7430,30 +6390,30 @@ private:
 class PlaceStructureForm : public Form, Timer
 {
 public:
-	PlaceStructureForm() secStructures;
+	PlaceStructureForm();
 
-	void SetOwner(BuilderGob *pgobOwner, UnitType ut) secStructures;
+	void SetOwner(BuilderGob *pgobOwner, UnitType ut);
 	BuilderGob *GetOwner() {
 		return m_pgobOwner;
 	}
-	void UpdatePlacementIndicator(WCoord wxViewStart, WCoord wyViewStart, WCoord wxView, WCoord wyView) secStructures;
+	void UpdatePlacementIndicator(WCoord wxViewStart, WCoord wyViewStart, WCoord wxView, WCoord wyView);
 
     void SetPassOnInput(bool fPassOn) { m_fPassOnInput = fPassOn; }
     bool IsBusy() { return m_pgobOwner != NULL; }
-	void OnPaintSimUI(DibBitmap *pbm) secStructures;
-	void OnPaintControlsSimUI(DibBitmap *pbm, UpdateMap *pupd) secStructures;
+	void OnPaintSimUI(DibBitmap *pbm);
+	void OnPaintControlsSimUI(DibBitmap *pbm, UpdateMap *pupd);
     void UpdatePosition(Event *pevt);
 
 	// Timer implementation
 
-	virtual void OnTimer(long tCurrent) secStructures;
+	virtual void OnTimer(long tCurrent);
 
 	// Form overrides
 
-	virtual void OnControlSelected(word idc) secStructures;
-	virtual bool OnPenEvent(Event *pevt) secStructures;
-	virtual void OnScroll(int dx, int dy) secStructures;
-	virtual bool OnHitTest(Event *pevt) secStructures;
+	virtual void OnControlSelected(word idc);
+	virtual bool OnPenEvent(Event *pevt);
+	virtual void OnScroll(int dx, int dy);
+	virtual bool OnHitTest(Event *pevt);
 
 private:
     bool FingerHitTest(Event *pevt);
@@ -7469,82 +6429,46 @@ private:
     bool m_fPassOnInput;
 };
 
-class WaitForm : public Form
-{
-public:
-	WaitForm(char *pszTitle, bool fFullScreen = false) secForm;
-
-	// Form overrides
-
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secForm;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secForm;
-
-private:
-	dword m_ctWaitPopup;
-	char *m_pszTitle;
-	bool m_fFullScreen;
-	Rect m_rcOrig;
-};
-
-class TransportWaitingUI
-{
-public:
-	TransportWaitingUI(int nWaitStr, bool fShow = true) secComm;
-	TransportWaitingUI(char *psz, bool fShow = true) secComm;
-	~TransportWaitingUI() secComm;
-	void Show() secComm;
-	void Hide() secComm;
-
-private:
-	Form *m_pfrm;
-	char *m_psz;
-};
 
 class RadarGob : public StructGob // rdr
 {
 public:
-	RadarGob() secRadar;
+	RadarGob();
 
-	static bool InitClass(IniReader *pini) secRadar;
-	static void ExitClass() secRadar;
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// Struct gob methods
 
-	virtual void Activate() secRadar;
-	virtual void Deactivate() secRadar;
+	virtual void Activate();
+	virtual void Deactivate();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secRadar;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secRadar;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 class ResearchGob : public StructGob // rsrch
 {
 public:
-	ResearchGob() secStructures;
-	static bool InitClass(IniReader *pini) secStructures;
-	static void ExitClass() secStructures;
-	virtual void UpgradeUpdate() secStructures;
-	virtual void AbortUpgrade() secStructures;
+	ResearchGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+	virtual void UpgradeUpdate();
+	virtual void AbortUpgrade();
 
 	// Gob overrides - these need to become virtual if this gets a derived class!
 
-	virtual void InitMenu(Form *pfrm) secStructures;
-	virtual void OnMenuItemSelected(int id) secStructures;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secStructures;
-	virtual void Deactivate() secStructures;
-	virtual bool LoadState(Stream *pstm) secStructures;
-	virtual bool SaveState(Stream *pstm) secStructures;
+	virtual void InitMenu(Form *pfrm);
+	virtual void OnMenuItemSelected(int id);
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void Deactivate();
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 private:
 	int m_nCreditsSpentOnUpgrade;
@@ -7554,9 +6478,9 @@ private:
 class VtsGob : public MobileUnitBuilderGob // vts
 {
 public:
-	VtsGob() secStructures;
-	static bool InitClass(IniReader *pini) secStructures;
-	static void ExitClass() secStructures;
+	VtsGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 private:
 	static MobileUnitBuildForm *s_pfrmBuild;
@@ -7569,26 +6493,23 @@ const WCoord kwcTankShotRate = kwcTile / 2;
 class TankShotGob : public Gob
 {
 public:
-	TankShotGob() secGob;
-	static bool InitClass(IniReader *pini) secGob;
-	static void ExitClass() secGob;
-	bool Init(AnimationData *panid, WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget, WCoord wcMoveRate) secGob;
-	void Launch() secGob;
+	TankShotGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+	bool Init(AnimationData *panid, WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget, WCoord wcMoveRate);
+	void Launch();
 
 	// Gob methods
 
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secGob;
-	virtual GobType GetType() secGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secGob;
-	virtual void GetClippingBounds(Rect *prc) secGob;
-	virtual bool IsSavable() secGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual GobType GetType();
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void GetClippingBounds(Rect *prc);
+	virtual bool IsSavable();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 private:
 	Gid m_gidOwner;
@@ -7600,72 +6521,63 @@ private:
 public:
 	static AnimationData *s_panidShot;
 };
-TankShotGob *CreateTankShotGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord yTarget, int nDamage, Gid gidOwner, Gid gidTarget) secGob;
+TankShotGob *CreateTankShotGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord yTarget, int nDamage, Gid gidOwner, Gid gidTarget);
 
 class BulletGob : public TankShotGob
 {
 public:
-	static bool InitClass(IniReader *pini) secGob;
-	static void ExitClass() secGob;
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// Gob methods
 
-	virtual GobType GetType() secGob;
+	virtual GobType GetType();
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 public:
 	static AnimationData *s_panidShot;
 };
-BulletGob *CreateBulletGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord yTarget, int nDamage, Gid gidOwner, Gid gidTarget, bool fEagle = false) secGob;
+BulletGob *CreateBulletGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord yTarget, int nDamage, Gid gidOwner, Gid gidTarget, bool fEagle = false);
 
 class AndyShotGob : public TankShotGob
 {
 public:
-	static bool InitClass(IniReader *pini) secGob;
-	static void ExitClass() secGob;
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// Gob methods
 
-	virtual GobType GetType() secGob;
+	virtual GobType GetType();
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 public:
 	static AnimationData *s_panidShot;
 };
-AndyShotGob *CreateAndyShotGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord yTarget, int nDamage, Gid gidOwner, Gid gidTarget, bool fEagle = false) secGob;
+AndyShotGob *CreateAndyShotGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord yTarget, int nDamage, Gid gidOwner, Gid gidTarget, bool fEagle = false);
 
 class RocketGob : public Gob
 {
 public:
-	RocketGob() secGob;
-	static bool InitClass(IniReader *pini) secGob;
-	static void ExitClass() secGob;
-	bool Init(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget) secGob;
+	RocketGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+	bool Init(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget);
 
 	// Gob methods
 
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secGob;
-	virtual bool IsSavable() secGob;
-	virtual GobType GetType() secGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secGob;
-	virtual void GetClippingBounds(Rect *prc) secGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual bool IsSavable();
+	virtual GobType GetType();
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void GetClippingBounds(Rect *prc);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 private:
 	Gid m_gidOwner;
@@ -7677,26 +6589,26 @@ private:
 	static AnimationData *s_panidRocket;
 	static int s_nTrailStrip;
 };
-RocketGob *CreateRocketGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget) secGob;
+RocketGob *CreateRocketGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget);
 
 // SmokeGob
 
 class SmokeGob : public AnimGob
 {
 public:
-	SmokeGob(int cLoops) secGob;
-	bool Init(WCoord wx, WCoord wy, StateMachineId smidNotify) secGob;
+	SmokeGob(int cLoops);
+	bool Init(WCoord wx, WCoord wy, StateMachineId smidNotify);
 
 	// Gob overrides
 
-	virtual bool LoadState(Stream *pstm) secGob;
-	virtual bool SaveState(Stream *pstm) secGob;
-	virtual bool IsSavable() secGob;
-	virtual GobType GetType() secGob;
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool IsSavable();
+	virtual GobType GetType();
 
 	// AnimGob overrides
 
-	virtual bool OnStripDone() secGob;
+	virtual bool OnStripDone();
 
 private:
 	int m_cLoops;
@@ -7707,53 +6619,35 @@ private:
 class PuffGob : public AnimGob
 {
 public:
-	PuffGob() secGob;
-	bool Init(WCoord wx, WCoord wy, StateMachineId smidNotify) secGob;
+	PuffGob();
+	bool Init(WCoord wx, WCoord wy, StateMachineId smidNotify);
 
 	// Gob overrides
 
-	virtual bool LoadState(Stream *pstm) secGob;
-	virtual bool SaveState(Stream *pstm) secGob;
-	virtual bool IsSavable() secGob;
-	virtual GobType GetType() secGob;
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool IsSavable();
+	virtual GobType GetType();
 };
 
-#if 0 // not used anymore
-class RicochetGob : public AnimGob
-{
-public:
-	bool Init(WCoord wx, WCoord wy, word wfAnm, const char *pszAniName, AnimationData *panid = NULL,
-			StateMachineId smidNotify = ksmidNull, const char *pszName = NULL) secGob;
-
-	// AnimGob overrides
-
-	virtual bool OnStripDone() secGob;
-
-private:
-	bool m_fNew;
-};
-#endif
 
 // WarehouseGob
 
 class WarehouseGob : public StructGob
 {
 public:
-	WarehouseGob() secWarehouse;
-	static bool InitClass(IniReader *pini) secWarehouse;
-	static void ExitClass() secWarehouse;
+	WarehouseGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// StructGob overrides
 
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secWarehouse;
-	virtual void Takeover(Player *pplr) secWarehouse;
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void Takeover(Player *pplr);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secWarehouse;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secWarehouse;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 // TowerGob
@@ -7761,44 +6655,44 @@ public:
 class TowerGob : public StructGob
 {
 public:
-	TowerGob(TowerConsts *ptwrc) secTowers;
-	static bool InitClass(TowerConsts *ptwrc, IniReader *pini) secTowers;
-	static void ExitClass(TowerConsts *ptwrc) secTowers;
+	TowerGob(TowerConsts *ptwrc);
+	static bool InitClass(TowerConsts *ptwrc, IniReader *pini);
+	static void ExitClass(TowerConsts *ptwrc);
 	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) = 0;
 #ifdef DRAW_LINES
-	void DrawTargetLine(DibBitmap *pbm, int xViewOrigin, int yViewOrigin) secTowers;
+	void DrawTargetLine(DibBitmap *pbm, int xViewOrigin, int yViewOrigin);
 #endif
 
 	// Gob overrides
 
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secTowers;
-	virtual bool LoadState(Stream *pstm) secTowers;
-	virtual bool SaveState(Stream *pstm) secTowers;
-	virtual void GetClippingBounds(Rect *prc) secTowers;
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual void GetClippingBounds(Rect *prc);
 
 	// UnitGob overrides
 
-	virtual void Activate() secTowers;
-	virtual void DefUpdate() secTowers;
-	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0) secTowers;
-	virtual bool IsValidTarget(Gob *pgobTarget) secTowers;
-    virtual dword GetAnimationHash() secTowers;
-    virtual void GetAnimationBounds(Rect *prc, bool fBase) secTowers;
-    virtual void DrawAnimation(DibBitmap *pbm, int x, int y) secTowers;
+	virtual void Activate();
+	virtual void DefUpdate();
+	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0);
+	virtual bool IsValidTarget(Gob *pgobTarget);
+    virtual dword GetAnimationHash();
+    virtual void GetAnimationBounds(Rect *prc, bool fBase);
+    virtual void DrawAnimation(DibBitmap *pbm, int x, int y);
 
 	// StructGob override
 
-	virtual bool IsTakeoverable(Player *pplr) secTowers;
+	virtual bool IsTakeoverable(Player *pplr);
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secTowers;
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 protected:
 
 	// UnitGob protected override
 
-	virtual UnitGob *FindEnemyNearby(TCoord tcRange) secTowers;
+	virtual UnitGob *FindEnemyNearby(TCoord tcRange);
 
 	// members
 
@@ -7819,17 +6713,14 @@ public:
 class GunTowerGob : public TowerGob
 {
 public:
-	GunTowerGob() secTowers;
-	static bool InitClass(IniReader *pini) secTowers;
-	static void ExitClass() secTowers;
+	GunTowerGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// TowerGob overrides
 
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secTowers;
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secTowers;
-#endif
 };
 
 // RocketTowerGob
@@ -7837,122 +6728,104 @@ public:
 class RocketTowerGob : public TowerGob
 {
 public:
-	RocketTowerGob() secTowers;
-	static bool InitClass(IniReader *pini) secTowers;
-	static void ExitClass() secTowers;
+	RocketTowerGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// TowerGob overrides
 
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secTowers;
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secTowers;
-#endif
 };
 
 class ArtilleryGob : public MobileUnitGob // art
 {
 public:
-	ArtilleryGob() secArtilleryGob;
-	static bool InitClass(IniReader *pini) secArtilleryGob;
-	static void ExitClass() secArtilleryGob;
+	ArtilleryGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// UnitGob overrides
 
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secArtilleryGob;
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
 
 	// StateMachine methods
 
-//	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secArtilleryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secArtilleryGob;
-#endif
+//	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 class ArtilleryShotGob : public TankShotGob
 {
 public:
-	static bool InitClass(IniReader *pini) secArtilleryGob;
-	static void ExitClass() secArtilleryGob;
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// Gob methods
 
-	virtual GobType GetType() secArtilleryGob;
+	virtual GobType GetType();
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secArtilleryGob;
-#endif
 
 public:
 	static AnimationData *s_panidShot;
 };
-ArtilleryShotGob *CreateArtilleryShotGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord yTarget, int nDamage, Gid gidOwner, Gid gidTarget) secArtilleryGob;
+ArtilleryShotGob *CreateArtilleryShotGob(WCoord wx, WCoord wy, WCoord wxTarget, WCoord yTarget, int nDamage, Gid gidOwner, Gid gidTarget);
 
 class AndyGob : public MobileUnitGob
 {
 public:
-	AndyGob() secInfantryGob;
-	AndyGob(MobileUnitConsts *pmuntc) secInfantryGob;
-	static bool InitClass(IniReader *pini) secInfantryGob;
-	static void ExitClass() secInfantryGob;
+	AndyGob();
+	AndyGob(MobileUnitConsts *pmuntc);
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
 	// UnitGob overrides
 
-	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName) secInfantryGob;
-	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secInfantryGob;
-	virtual void Idle() secInfantryGob;
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
+	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy);
+	virtual void Idle();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secInfantryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 class FoxGob : public AndyGob // fox
 {
 public:
-	FoxGob() secInfantryGob;
-	static bool InitClass(IniReader *pini) secInfantryGob;
-	static void ExitClass() secInfantryGob;
+	FoxGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
 };
 
 class ReplicatorGob : public StructGob // rep
 {
 public:
-	ReplicatorGob() secReplicatorGob;
-	static bool InitClass(IniReader *pini) secReplicatorGob;
-	static void ExitClass() secReplicatorGob;
-	void GetInputTilePosition(TPoint *ptpt) secReplicatorGob;
-	void Enable(bool fEnable) secReplicatorGob;
+	ReplicatorGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+	void GetInputTilePosition(TPoint *ptpt);
+	void Enable(bool fEnable);
 
 	// UnitGob overrides
 
-	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName) secReplicatorGob;
-	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer) secReplicatorGob;
-	virtual void GetClippingBounds(Rect *prc) secReplicatorGob;
-	virtual bool LoadState(Stream *pstm) secReplicatorGob;
-	virtual bool SaveState(Stream *pstm) secReplicatorGob;
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void GetClippingBounds(Rect *prc);
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
     virtual AnimSprite *CreateHilightSprite() { return NULL; }
 
 	// StructGob overrides
 
-	virtual void Activate() secReplicatorGob;
-	virtual void Deactivate() secReplicatorGob;
+	virtual void Activate();
+	virtual void Deactivate();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secReplicatorGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secReplicatorGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 	// For query of replicator input points
 
@@ -7968,10 +6841,10 @@ public:
 	}
 
 protected:
-	virtual void WaitingForCredits(bool fNeed, bool fOverride = false, Player *pplr = NULL) secReplicatorGob;
+	virtual void WaitingForCredits(bool fNeed, bool fOverride = false, Player *pplr = NULL);
 
 private:
-	bool ClearOutputBay(TCoord txBay, TCoord tyBay, TCoord txOut, TCoord tyOut) secReplicatorGob;
+	bool ClearOutputBay(TCoord txBay, TCoord tyBay, TCoord txOut, TCoord tyOut);
 
 	bool m_fEnabled;
 	bool m_fReplicating;
@@ -7980,8 +6853,8 @@ private:
 
 	// For management of replicator input points
 
-	static void AddReplicatorInputPoint(TCoord tx, TCoord ty) secReplicatorGob;
-	static void RemoveReplicatorInputPoint(TCoord tx, TCoord ty) secReplicatorGob;
+	static void AddReplicatorInputPoint(TCoord tx, TCoord ty);
+	static void RemoveReplicatorInputPoint(TCoord tx, TCoord ty);
 	static int s_cReplicators;
 	static TPoint s_atptInput[10];
 };
@@ -8001,18 +6874,15 @@ public:
 	// Gob overrides
 
 	ActivatorGob() {m_fActivated = false;};
-	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secReplicatorGob;
-	virtual bool LoadState(Stream *pstm) secReplicatorGob;
-	virtual bool SaveState(Stream *pstm) secReplicatorGob;
-	virtual bool IsSavable() secReplicatorGob;
-	virtual GobType GetType() secReplicatorGob;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName);
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool IsSavable();
+	virtual GobType GetType();
 
 	// StateMachine methods
 
-	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secReplicatorGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secReplicatorGob;
-#endif
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 
 private:
 	bool m_fActivated;
@@ -8059,46 +6929,46 @@ struct Heap
 class MemMgr
 {
 public:
-	MemMgr() secMemMgr;
-	~MemMgr() secMemMgr;
+	MemMgr();
+	~MemMgr();
 
-	void Init(dword cbDynReserve, dword cbMaxNeeded, dword *pcbTotal) secMemMgr;
-	void Exit() secMemMgr;
+	void Init(dword cbDynReserve, dword cbMaxNeeded, dword *pcbTotal);
+	void Exit();
 
-	HMem AllocHandle(word cb, word wfHints = 0) secMemMgr;
-	void FreeHandle(HMem hmem) secMemMgr;
-	void SetLocked(HMem hmem) secMemMgr;
-	void ClearLocked(HMem hmem) secMemMgr;
-	void *GetPtr(HMem hmem) secMemMgr;
-	void WriteHandle(HMem hmem, word ib, void *pvSrc, word cb) secMemMgr;
+	HMem AllocHandle(word cb, word wfHints = 0);
+	void FreeHandle(HMem hmem);
+	void SetLocked(HMem hmem);
+	void ClearLocked(HMem hmem);
+	void *GetPtr(HMem hmem);
+	void WriteHandle(HMem hmem, word ib, void *pvSrc, word cb);
 
-	void *AllocPtr(word cb) secMemMgr;
-	void FreePtr(void *pv) secMemMgr;
-	void WritePtr(void *pvDst, word ib, void *pvSrc, word cb) secMemMgr;
+	void *AllocPtr(word cb);
+	void FreePtr(void *pv);
+	void WritePtr(void *pvDst, word ib, void *pvSrc, word cb);
 
-	dword GetFreeSize(word *pcbLargestFree = NULL) secMemMgr;
-	dword GetTotalSize(dword *pcbDyn, dword *pcbDb) secMemMgr;
-	static void GetInitSize(dword cbDynReserve, dword *pcbDyn, dword *pcbStorage) secMemMgr;
+	dword GetFreeSize(word *pcbLargestFree = NULL);
+	dword GetTotalSize(dword *pcbDyn, dword *pcbDb);
+	static void GetInitSize(dword cbDynReserve, dword *pcbDyn, dword *pcbStorage);
 	static void OnRebootFreeStorageDatabase(); // must remain in .text section
 
 #ifdef INCL_VALIDATEHEAP
-	void Validate() secMemMgr;
-	void ValidateHandleTableFreeEntries() secMemMgr;
+	void Validate();
+	void ValidateHandleTableFreeEntries();
 #endif
 
 private:
-	HandleTable *NewHandleTable() secMemMgr;
-	bool AllocHandleEntry(word *pher) secMemMgr;
-	void FreeHandleEntry(word her) secMemMgr;
-	Heap *NewHeap(void *pvHeap, word cbHeap, bool fDbRam, word nRec, void *hMem) secMemMgr;
-	void WriteHeader(Heap *pheap, MemHeader *pmhdrDst, MemHeader *pmhdrSrc, word cb = sizeof(MemHeader)) secMemMgr;
-	HMem AllocBlock(int iheap, MemHeader *pmhdr, MemHeader *pmhdrFreeLast, word cbBlock, word wfHints) secMemMgr;
-	MemHeader *Compact(Heap *pheap, word cbBlock, MemHeader **ppmhdrFreeLast, word wfHints) secMemMgr;
-	MemHeader *SplitFreeBlock(Heap *pheap, MemHeader *pmhdr, MemHeader *pmhdrFreeLast, MemHeader *pmhdrNew, word wfHints) secMemMgr;
-	word GetLargestFreeBlockSize(Heap *pheap) secMemMgr;
+	HandleTable *NewHandleTable();
+	bool AllocHandleEntry(word *pher);
+	void FreeHandleEntry(word her);
+	Heap *NewHeap(void *pvHeap, word cbHeap, bool fDbRam, word nRec, void *hMem);
+	void WriteHeader(Heap *pheap, MemHeader *pmhdrDst, MemHeader *pmhdrSrc, word cb = sizeof(MemHeader));
+	HMem AllocBlock(int iheap, MemHeader *pmhdr, MemHeader *pmhdrFreeLast, word cbBlock, word wfHints);
+	MemHeader *Compact(Heap *pheap, word cbBlock, MemHeader **ppmhdrFreeLast, word wfHints);
+	MemHeader *SplitFreeBlock(Heap *pheap, MemHeader *pmhdr, MemHeader *pmhdrFreeLast, MemHeader *pmhdrNew, word wfHints);
+	word GetLargestFreeBlockSize(Heap *pheap);
 
 #ifdef INCL_VALIDATEHEAP
-	void ValidateHandle(HMem hmem) secMemMgr;
+	void ValidateHandle(HMem hmem);
 #endif
 
 	Heap *m_apheap[64];
@@ -8108,10 +6978,6 @@ private:
 	int m_chtabAlloced;
 	dword m_cbTotalFreeBlocks;
 
-#ifdef PIL
-	LocalID m_lid;
-	DmOpenRef m_pdb;
-#endif
 };
 extern MemMgr gmmgr;
 
@@ -8136,22 +7002,22 @@ struct CacheEntry // ce
 
 class CacheMgr {
 public:
-	CacheMgr() secCacheMgr;
-	~CacheMgr() secCacheMgr;
-	bool Init() secCacheMgr;
-	void Exit() secCacheMgr;
+	CacheMgr();
+	~CacheMgr();
+	bool Init();
+	void Exit();
 
-	void *GetPtr(CacheHandle hc) secCacheMgr;
-	void *Lock(CacheHandle hc) secCacheMgr;
-	void Unlock(CacheHandle hc) secCacheMgr;
-	bool IsValid(CacheHandle hc) secCacheMgr;
-	CacheHandle NewObject(void *pv, word cb, word wfHints = 0) secCacheMgr;
-	void Write(CacheHandle hc, word ib, void *pvSrc, word cb) secCacheMgr;
-	word GetSize(CacheHandle hc) secCacheMgr;
-	bool MakeSpace(dword cb) secCacheMgr;
-	dword GetTotalSize() secCacheMgr;
-	dword GetLimit() secCacheMgr;
-	void SetLimit(dword cbLimit) secCacheMgr;
+	void *GetPtr(CacheHandle hc);
+	void *Lock(CacheHandle hc);
+	void Unlock(CacheHandle hc);
+	bool IsValid(CacheHandle hc);
+	CacheHandle NewObject(void *pv, word cb, word wfHints = 0);
+	void Write(CacheHandle hc, word ib, void *pvSrc, word cb);
+	word GetSize(CacheHandle hc);
+	bool MakeSpace(dword cb);
+	dword GetTotalSize();
+	dword GetLimit();
+	void SetLimit(dword cbLimit);
 
 private:
 	CacheEntry *m_pceList;
@@ -8228,7 +7094,7 @@ private:
 		}
 	}
 
-	void Discard(CacheEntry *pce) secCacheMgr;
+	void Discard(CacheEntry *pce);
 };
 extern CacheMgr gcam;
 
@@ -8259,20 +7125,18 @@ struct SfxEntry // sfxe
 class SoundMgr // sndm
 {
 public:
-	SoundMgr() secSoundMgr;
-	~SoundMgr() secSoundMgr;
+	SoundMgr();
+	~SoundMgr();
 
-	bool Init() secSoundMgr;
-	void Exit() secSoundMgr;
-	void Enable(bool fEnable) secSoundMgr;
-	bool IsEnabled() secSoundMgr;
-	void PlaySfx(Sfx sfx) secSoundMgr;
-	void WaitSilence() secSoundMgr;
-	long FilterSleepTicks(long ct) secSoundMgr;
-	void SetVolume(int nVolume) secSoundMgr;
-	int GetVolume() secSoundMgr;
-	bool SaveStateAndClear() secSoundMgr;
-	void RestoreState() secSoundMgr;
+	bool Init();
+	void Exit();
+	void Enable(bool fEnable);
+	bool IsEnabled();
+	void PlaySfx(Sfx sfx);
+	void WaitSilence();
+	long FilterSleepTicks(long ct);
+	void SetVolume(int nVolume);
+	int GetVolume();
 
 private:
 	int m_cChannels;
@@ -8284,9 +7148,6 @@ private:
 	int m_csfxe;
 	FileMap m_fmapSfxEntries;
 	SoundDevice *m_psndd;
-	bool m_fStateSaved;
-	bool m_fEnabledSav;
-	int m_nVolumeSav;
 };
 extern SoundMgr gsndm;
 
@@ -8295,11 +7156,11 @@ extern SoundMgr gsndm;
 class StringTable
 {
 public:
-	StringTable() secStringTable;
-	~StringTable() secStringTable;
+	StringTable();
+	~StringTable();
 
-	bool Init(char *pszFilename) secStringTable;
-	bool GetString(int id, char *psz, int cb) secStringTable;
+	bool Init(char *pszFilename);
+	bool GetString(int id, char *psz, int cb);
 
 private:
 	File *m_pfil;
@@ -8313,74 +7174,35 @@ extern StringTable *gpstrtbl;
 class AlertControl : public LabelControl, public Timer
 {
 public:
-	AlertControl() secAlertControl;
-	~AlertControl() secAlertControl;
+	AlertControl();
+	~AlertControl();
 
-	void AddText(const char *psz) secAlertControl;
+	void AddText(const char *psz);
 
 	// Control methods
 
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind) secAlertControl;
+	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
 
 	// Timer methods
 
-	virtual void OnTimer(long tCurrent) secAlertControl;
+	virtual void OnTimer(long tCurrent);
 
 private:
 	word m_wf;
 };
 
-// DRM stuff
-
-struct Key // key
-{
-	byte ab[9];
-};
-extern Key gkey;
-bool DrmValidate() secDrm;
-
 //
 // Preferences support
 //
 
-// Preferences structures change over time. They get backed up by HotSync.
-// By carefully versioning the structure HT can load older preference versions
-// successfully. Every prefs structure has a version; these are meant to be supported
-// versions of preferences; meaning HT will load older versions of each versioned prefs
-// structure. They are also sub-versioned by size; this allows us during development to
-// add / remove fields and not have HT crash because it is assuming the wrong thing.
+// Preferences are saved as is to prefs.bin. The version and size identify
+// the layout; a file with a different layout is ignored.
 
-// prefs flags
-
-#define kfPrefSoundMuted 1 // must be 1 for compatibility with fMute
-#define kfPrefIgnoreBluetoothWarning 2
-
-// Preferences is stored in pack 2 alignment
-#pragma pack(push, 2)
-
-// The header necessary on all preferences structures
-
-struct PreferencesVersion
+struct Preferences // prefs
 {
 	dword dwVersion;
 	dword cbSize;
-};
-
-// The versions of preferences structures HT can successfully read
-// Use fixed size datatypes
-
-struct PreferencesV100 // prefs
-{
-	PreferencesVersion prefv;
-    char szUsername[kcbPlayerName];
-    char szPassword[kcbPlayerName];
-    char szToken[kcbTokenMax];
-    word fAnonymous;
-	word nYearLastRun;				// demo time check
-	word nMonthLastRun;
-	word nDayLastRun;
 	word nVolume;					// volume
-	word wfPrefs;
 	word wfPerfOptions;
 	word wfHandicap;				// Difficulty-affecting flags
 	int ctGameSpeed;				// game speed
@@ -8400,54 +7222,23 @@ struct PreferencesV100 // prefs
 	word nDepthDataLast;
 	word nSizeDataLast;
 	word nDegreeOrientationLast;
-	Key key;						// DRM key
-	short nDemoRank;
-#if defined(WIN) && !defined(CE)
-	short nScale;
-#endif
-    double nScrollSpeed;
-    char szAskURL[512];
+	double nScrollSpeed;
 };
 
-struct PreferencesV101 : public PreferencesV100
-{
-    // md5 hash (16 bytes) to hex chars (32 bytes) plus zero terminator, rounded up to even number
-    char szDeviceId[34];
-};
-typedef PreferencesV101 Preferences;
-
-#pragma pack(pop)
-
-// The current version
-
-#define knVersionPreferencesV100 0x100
-#define knVersionPreferencesV101 0x101
-#define knVersionPreferences knVersionPreferencesV101
+#define knVersionPreferences 0x200
 extern Preferences gprefsInit;
-bool HostSavePreferences(void *pv, int cb) secHost;
-int HostLoadPreferences(void *pv, int cb) secHost;
+bool HostSavePreferences(void *pv, int cb);
+int HostLoadPreferences(void *pv, int cb);
 
 // Our in-game MessageBox
 
-bool HtMessageBox(word wf, const char *pszTitle, const char *pszFormat, ...) secMisc;
-bool HtMessageBox(word idf, word wf, const char *pszTitle, const char *pszBody) secMisc;
-DialogForm *CreateHtMessageBox(word idf, word wf, const char *pszTitle, const char *pszBody) secMisc;
+bool HtMessageBox(word wf, const char *pszTitle, const char *pszFormat, ...);
+bool HtMessageBox(word idf, word wf, const char *pszTitle, const char *pszBody);
+DialogForm *CreateHtMessageBox(word idf, word wf, const char *pszTitle, const char *pszBody);
 
 const word kfMbWhiteBorder = 0x0001;
 const word kfMbClearDib = 0x0002;
 const word kfMbKeepTimersEnabled = 0x0004;
-
-// For Wc14Transport.dll to utilize external functionality
-
-struct TransportHost
-{
-	void *(*New)(int size);
-	void (*Delete)(void *pv);
-	void (*strncpyz)(char *pszDst, const char *pszSrc, int cb);
-	void (*Status)(const char *psz);
-	bool (*HtMessageBox)(unsigned short wf, const char *pszTitle, const char *pszFormat, ...);
-	TimerMgr *ptimm;
-};
 
 // Globals
 
@@ -8481,11 +7272,6 @@ extern int g_mpDirToDy[8];
 extern int gcxTile;
 extern int gcyTile;
 extern int gcxyBorder;
-extern char gszPlayerName[kcbPlayerName];
-extern char gszUsername[kcbPlayerName];
-extern char gszPassword[kcbPlayerName];
-extern char gszToken[kcbTokenMax];
-extern bool gfAnonymous;
 extern bool gfDrawUpdateRects;
 extern bool gfAutosave;
 extern DibBitmap *gpbmClip;
@@ -8499,10 +7285,7 @@ extern long gcPathScoresCalced;
 extern int gnHueOffset;
 extern int gnSatMultiplier;
 extern int gnLumOffset;
-extern int gnDemoRank;
 extern double gnScrollSpeed;
-extern char gszAskURL[512];
-extern char gszDeviceId[34];
 extern int gtGameSpeed;
 extern AnimationData *g_panidMoveTarget;
 extern UpdateMap *gpupdSim;
@@ -8523,8 +7306,6 @@ extern int ganSquared[64];
 extern bool gfClearFog;
 extern int gnUnitCostMin;
 extern int gnUnitCostMax;
-extern int gnUnitCostMPMin;
-extern int gnUnitCostMPMax;
 extern fix gfxMobileUnitArmorStrengthMin;
 extern fix gfxMobileUnitArmorStrengthMax;
 extern fix gfxStructureArmorStrengthMin;
@@ -8544,6 +7325,7 @@ extern int gnPowerSupplyMax;
 extern int gnPowerDemandMin;
 extern int gnPowerDemandMax;
 extern int gaiclrSide[kcSides];
+extern int gatGameSpeeds[15];
 extern char *gszVersion;
 extern char gszBuildDate[];
 extern char gszBuildTime[];
@@ -8560,20 +7342,10 @@ extern int gcMuntGobsHumanLimitSP;
 extern int gcMuntGobsComputerLimitSP;
 extern int gcStructGobsComputerDeltaSP;
 extern int gcStructGobsHumanDeltaSP;
-extern int gcStructGobsLimitMP;
-extern int gcMuntGobsLimitMP;
 extern int gcSceneryGobsLimit;
 extern int gcScorchGobsLimit;
 extern int gcSupportGobsLimit;
 extern bool gfGrayscale;
-extern bool gfDemo;
-extern Transport *gptra;
-#ifdef MP_STRESS
-extern bool gfMPStress;
-extern int gnMPPos;
-#endif
-extern char *gpszDataDir;
-extern bool gfIgnoreBluetoothWarning;
 
 inline Color GetColor(int iclr) {
 	return gaclrFixed[iclr];
@@ -8597,110 +7369,75 @@ extern Stream *gpstmSavedGame;
 extern int gimodeReinitialize;
 extern bool gfLoadReinitializeSave;
 
-char *_fgets(char *psz, int cch, File *pfil) secMisc;
-void HtStrupr(char *psz) secMisc;
+char *_fgets(char *psz, int cch, File *pfil);
+void HtStrupr(char *psz);
 
 #ifdef DEBUG
-int _GetRandom(char *pszFile, int nLine) secMisc;
+int _GetRandom(char *pszFile, int nLine);
 #define GetRandom() _GetRandom(__FILE__, __LINE__)
 #else
-int _GetRandom() secMisc;
+int _GetRandom();
 #define GetRandom() _GetRandom()
 #endif
-void SetRandomSeed(unsigned long nSeed) secMisc;
-unsigned long GetRandomSeed() secMisc;
-int GetAsyncRandom() secMisc;
-void DrawBuildProgressIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator) secGob;
-void DrawSelectionIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator) secGob;
-void DrawHealthIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator) secGob;
-void DrawFullnessIndicator(DibBitmap *pbm, Rect *prc, int nPips, int nPipsMax) secMiner;
-void DrawBorder(DibBitmap *pbm, Rect *prc, int nThickness, Color clr, UpdateMap *pupd = NULL) secDibBitmap;
-void DrawBitmapBorder(DibBitmap *pbm, UpdateMap *pupd, Rect *prc, AnimationData *panid, int ifrm = 0, Side side = ksideNeutral) secDibBitmap;
-int DrawFancyText(DibBitmap *pbm, Font *pfntDefault, char *psz, int x, int y, int cch = 0) secLabelControl;
-int GetFancyTextExtent(Font *pfntDefault, char *psz, int cch = 0) secLabelControl;
-Direction CalcDir(int dx, int dy) secGob;
-Direction16 CalcDir16(int dx, int dy) secGob;
-bool FormDragger(Form *pfrm, Event *pevt) secForm;
-bool HostMultiplayerGame() secMultiplayer;
-bool JoinOrHostMultiplayerGame(const PackId *ppackid) secMultiplayer;
-Direction TurnToward(Direction dirTo, Direction dirFrom) secMisc;
-int CalcCreditsShare(Player *pplr) secStructures;
-void DrawTileMap(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile) secTileMap;
-FormMgr *CreateFormMgr(DibBitmap *pbm) secFormMgr;
-void ShadowHelper(DibBitmap *pbm, UpdateMap *pupd, Rect *prc) secForm;
-void FillHelper(DibBitmap *pbm, UpdateMap *pupd, Rect *prc, Color clr) secForm;
-void BltHelper(DibBitmap *pbm, HtBitmap *phtbm, UpdateMap *pupd, int xDst, int yDst) secForm;
-void RgbToHsl(byte bR, byte bG, byte bB, word *pnH, word *pnS, word *pnL) secMisc;
-void HslToRgb(word nH, word nS, word nL, byte *pbR, byte *pbG, byte *pbB) secMisc;
-void SetHslAdjustedPalette(Palette *ppal, short nHueOffset, short nSatMultiplier, short nLumOffset) secMisc;
-UnitConsts *GetUnitConsts(GobType gt) secGob;
-Sfx SfxFromCategory(SfxCategory sfxc) secMisc;
-bool ParseNumber(char **ppsz, int *pn) secTrigger;
-bool ParseLong(char **ppsz, long *pn) secTrigger;
-bool ParseArea(char **ppsz, int *pn) secTrigger;
-bool ParseUnitMask(char **ppsz, UnitMask *pum) secTrigger;
-bool ParseUpgradeMask(char **ppsz, UpgradeMask *pupgm) secTrigger;
-bool ParseString(char **ppsz, char *psz) secTrigger;
-SideMask GetSideMaskFromCaSideMask(Side sideCur, word wfCaSideMask) secTrigger;
-int GetPlayersListFromCaSideMask(Side sideCur, word wfMask, Player **applr) secTrigger;
-void Ecom(int nCharFrom, int nCharTo, char *pszMessage, int nBackground, bool fMore) secEcom;
-bool DoModalGameOptionsForm(Palette *ppal, bool fInGame) secGameOptionsForm;
-bool ShowDownloadMissionPackForm(PackId *ppackid);
-bool DownloadMissionPack(const PackId *ppackid, const char *pszTitle,
-        bool fPlayButton);
-bool DownloadMissionPackFromURL(const char *pszURL, PackId *ppackid,
-        bool *play);
-bool AskInstallMissionPack(const PackId *ppackid, const char *pszUITitle,
-        const char *pszPackTitle);
-bool IsTileFree(TCoord tx, TCoord ty, byte bf = kbfStructure, Gob **ppgob = NULL) secMisc;
-void ShowAlert(int id) secAlertControl;
-void ShowAlert(const char *psz) secAlertControl;
-void SendAttackCommand(Gid gidReceiver, Gid gidTarget) secUnitGob;
-word AggBitsFromAgg(int nAggressiveness) secUnitGob;
-void FindNearestFreeTile(TCoord tx, TCoord ty, WPoint *pwpt, byte bf = kbfStructure | kbfMobileUnit) secMisc;
-void GetPrerequisiteString(char *psz, UnitConsts *puntc) secUnitGob;
-void BringInBounds(WCoord *pwx, WCoord *pwy) secMisc;
-Direction DirectionFromLocations(TCoord txOld, TCoord tyOld, TCoord txNew, TCoord tyNew) secTerrainMap;
-int RadiusFromUnitCount(int cUnits) secMisc;
-void MoveUnitsToArea(MobileUnitGob **apmunt, int cpmunt, TRect *ptrc) secTrigger;
-void AddPointToLassoSelection(WPoint wpt) secSimUIForm;
-void ExpandVars(char *pszSrc, char *pszBuff, int cbBuff) secMisc;
-void GetRankTitle(char *psz, int cb) secMisc;
-void DoRegisterNowForm() secShell;
-bool PickTransport(Transport **pptra) secMultiplayer;
-void FormatButtons(Form *pfrm, word *aidc, int cidc, int idcRef, int idcRefNext) secGameOptionsForm;
+void SetRandomSeed(unsigned long nSeed);
+unsigned long GetRandomSeed();
+int GetAsyncRandom();
+void DrawBuildProgressIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator);
+void DrawSelectionIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator);
+void DrawHealthIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator);
+void DrawFullnessIndicator(DibBitmap *pbm, Rect *prc, int nPips, int nPipsMax);
+void DrawBorder(DibBitmap *pbm, Rect *prc, int nThickness, Color clr, UpdateMap *pupd = NULL);
+void DrawBitmapBorder(DibBitmap *pbm, UpdateMap *pupd, Rect *prc, AnimationData *panid, int ifrm = 0, Side side = ksideNeutral);
+int DrawFancyText(DibBitmap *pbm, Font *pfntDefault, char *psz, int x, int y, int cch = 0);
+int GetFancyTextExtent(Font *pfntDefault, char *psz, int cch = 0);
+Direction CalcDir(int dx, int dy);
+Direction16 CalcDir16(int dx, int dy);
+bool FormDragger(Form *pfrm, Event *pevt);
+Direction TurnToward(Direction dirTo, Direction dirFrom);
+int CalcCreditsShare(Player *pplr);
+void DrawTileMap(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile);
+FormMgr *CreateFormMgr(DibBitmap *pbm);
+void ShadowHelper(DibBitmap *pbm, UpdateMap *pupd, Rect *prc);
+void FillHelper(DibBitmap *pbm, UpdateMap *pupd, Rect *prc, Color clr);
+void BltHelper(DibBitmap *pbm, HtBitmap *phtbm, UpdateMap *pupd, int xDst, int yDst);
+void RgbToHsl(byte bR, byte bG, byte bB, word *pnH, word *pnS, word *pnL);
+void HslToRgb(word nH, word nS, word nL, byte *pbR, byte *pbG, byte *pbB);
+void SetHslAdjustedPalette(Palette *ppal, short nHueOffset, short nSatMultiplier, short nLumOffset);
+UnitConsts *GetUnitConsts(GobType gt);
+Sfx SfxFromCategory(SfxCategory sfxc);
+bool ParseNumber(char **ppsz, int *pn);
+bool ParseLong(char **ppsz, long *pn);
+bool ParseArea(char **ppsz, int *pn);
+bool ParseUnitMask(char **ppsz, UnitMask *pum);
+bool ParseUpgradeMask(char **ppsz, UpgradeMask *pupgm);
+bool ParseString(char **ppsz, char *psz);
+SideMask GetSideMaskFromCaSideMask(Side sideCur, word wfCaSideMask);
+int GetPlayersListFromCaSideMask(Side sideCur, word wfMask, Player **applr);
+void Ecom(int nCharFrom, int nCharTo, char *pszMessage, int nBackground, bool fMore);
+bool DoModalGameOptionsForm(Palette *ppal, bool fInGame);
+bool IsTileFree(TCoord tx, TCoord ty, byte bf = kbfStructure, Gob **ppgob = NULL);
+void ShowAlert(int id);
+void ShowAlert(const char *psz);
+void SendAttackCommand(Gid gidReceiver, Gid gidTarget);
+word AggBitsFromAgg(int nAggressiveness);
+void FindNearestFreeTile(TCoord tx, TCoord ty, WPoint *pwpt, byte bf = kbfStructure | kbfMobileUnit);
+void GetPrerequisiteString(char *psz, UnitConsts *puntc);
+void BringInBounds(WCoord *pwx, WCoord *pwy);
+Direction DirectionFromLocations(TCoord txOld, TCoord tyOld, TCoord txNew, TCoord tyNew);
+int RadiusFromUnitCount(int cUnits);
+void MoveUnitsToArea(MobileUnitGob **apmunt, int cpmunt, TRect *ptrc);
+void AddPointToLassoSelection(WPoint wpt);
+void ExpandVars(char *pszSrc, char *pszBuff, int cbBuff);
+void GetRankTitle(char *psz, int cb);
+void FormatButtons(Form *pfrm, word *aidc, int cidc, int idcRef, int idcRefNext);
 bool DoInputPanelForm(char **ppszChars, int cRows, const char *pszLabel,
         const char *pszEdit, char *pszOut, int cbOut,
-        bool (*pfnValidateInput)(const char *psz) = NULL) secInputPanelForm;
-void DoInputPanelForm(Form *pfrm, word idcLabel, word idcEdit) secInputPanelForm;
-void GetSpeedMultiplierString(char *psz, long tGameSpeed) secGameOptionsForm;
+        bool (*pfnValidateInput)(const char *psz) = NULL);
+void DoInputPanelForm(Form *pfrm, word idcLabel, word idcEdit);
+void GetSpeedMultiplierString(char *psz, long tGameSpeed);
 bool PtInPolygon(WPoint *awpt, int cwpt, WCoord wx, WCoord wy);
 void AddPointToLassoSelection(WPoint wpt);
-//const char *GetString(const json::JsonMap *map, const char *key);
 
-#ifdef MP_DEBUG_SHAREDMEM
-void MPInitSharedMemoryWindow(bool fServer);
-void MPExitSharedMemoryWindow(bool fServer);
-void MPUpdateState();
-void MPValidateState();
-Gob *MPGetGobPtr(Gid gid);
-void MPCopyMem(void *pvTo, void *pvFrom, int cb);
-void MPValidateMemory(void *pvRemote, void *pvLocal, int cb);
-void MPValidateMember2(void *pvLocal, void *pvRemote, int cbThis, int cbOffsetMem, int cbMem);
-#define MPValidateMember(c, m, pr) MPValidateMember2(this, pr, sizeof(c), OFFSETOF(c, m), sizeof(m))
-#define MPValidateGobMember(c, m) MPValidateMember(c, m, MPGetGobPtr(GetId()))
-
-struct SharedMemWindow
-{
-	bool fDetectSyncErrors;
-	DWORD pidProcess;
-	Gob *apgobMaster[kcpgobMax + 1];
-};
-
-extern SharedMemWindow gsmw;
-extern HANDLE ghSharedMem;
-extern SharedMemWindow *gpsmw;
-#endif
 
 // Misc runtime stuff
 
@@ -8708,14 +7445,11 @@ int strnicmp(const char *psz1, const char *psz2, int cch);
 char *itoa (int val, char *buf, int radix);
 
 #ifdef DRAW_PATHS
-void LoadArrows() secGob;
-void FreeArrows() secGob;
-void DrawArrow(DibBitmap *pbm, int x, int y, Direction dir, Side side) secGob;
+void LoadArrows();
+void FreeArrows();
+void DrawArrow(DibBitmap *pbm, int x, int y, Direction dir, Side side);
 #endif
 
-#ifdef BETA_TIMEOUT
-bool CheckBetaTimeout() secMisc;
-#endif
 
 struct ClipInfo
 {
@@ -8725,41 +7459,19 @@ struct ClipInfo
 	int cyClip;
 };
 
-#ifdef __CPU_68K
-extern "C" void DrawTileMap816(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode7;
-extern "C" void DrawTileMap824(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode9;
-extern "C" void CopyToScreen4bpp(byte *pbSrc, byte *pbDst, byte *mp8to4, int c) secCode14;
-extern "C" void FillShadow68K(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap) secCode14;
-extern "C" void Fill68K(byte *pbRow, int cx, int cy, int cbStride, byte bFill) secCode11;
-extern "C" void LeftToRightBlt68K(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy) secCode10;
-extern "C" void RightToLeftBlt68K(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy) secCode10;
-extern "C" dword DecodeAndMix8BitAdpcmChannelsBy4(MixerState *pmxst, bool fZeroSilence) secCode6;
-extern "C" void Decode8BitAdpcmTable() secCode6;
-extern "C" word Compile868K(byte *pb, ScanData *psd, bool fOdd) secCode8;
-extern "C" void DrawDispatch68K(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpscaiclrSide, byte *mpiclriclrShadow) secCode8;
-extern "C" void DrawSelection68k(byte *pbDst, int cxDib, int cxSel, int cySel, int cxTab, int cyTab, byte clrSel, int cxHealth, byte clrHealth, byte *mpclrclrShadow, bool fBrackets) secCode14;
-extern "C" void DebugBreak() secCode14;
-extern "C" void CopyToScreen2bpp(byte *pbSrc, byte *pbDst, byte *mp8to2Low, byte *mp8to2High) secCode14;
-extern "C" void CopyToScreen4bpp(byte *pbSrc, byte *pbDst, byte *mp8to4, int c) secCode14;
-extern "C" void CopyToScreen8bpp(byte *pbSrc, byte *pbDst, int cx, int cy) secCode14;
-extern "C" void FastMemSet(void *pv, long cb, byte b) secCode14;
-extern "C" void UpdateScreen824(bool *pfMap, int ctx, int cty, byte *pbSrc, byte *pbDst, int cbStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode10;
-extern "C" void UpdateScreen816(bool *pfMap, int ctx, int cty, byte *pbSrc, byte *pbDst, int cbStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode10;
-extern "C" void UpdateScreen416(byte *mp8to4, bool *pfMap, int ctx, int cty, byte *pbSrc, byte *pbDst, int cbStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode11;
-#endif
 
-extern "C" word DecompressChunk(byte **ppbCompressed, byte *pbDecompressed, byte *pbCacheEnd, word cbMax) secPackFile;
-extern "C" void DecompressToCache(byte *pbCompressed, CacheHandle hc, CompressionHeader *pcoh) secPackFile;
+extern "C" word DecompressChunk(byte **ppbCompressed, byte *pbDecompressed, byte *pbCacheEnd, word cbMax);
+extern "C" void DecompressToCache(byte *pbCompressed, CacheHandle hc, CompressionHeader *pcoh);
 
 // Thunks
 
-void FillShadowThunk(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap) secThunks;
-void FillThunk(byte *pbDst, int cx, int cy, int cbStride, byte bFill) secThunks;
-void LeftToRightBltThunk(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy) secThunks;
-void RightToLeftBltThunk(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy) secThunks;
-void DrawTileMapThunk(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile) secThunks;
-word Compile8Thunk(byte *pb, ScanData *psd, bool fOdd) secThunks;
-void DrawDispatchThunk(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpscaiclrSide, byte *mpiclriclrShadow) secThunks;
+void FillShadowThunk(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap);
+void FillThunk(byte *pbDst, int cx, int cy, int cbStride, byte bFill);
+void LeftToRightBltThunk(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy);
+void RightToLeftBltThunk(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy);
+void DrawTileMapThunk(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile);
+word Compile8Thunk(byte *pb, ScanData *psd, bool fOdd);
+void DrawDispatchThunk(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpscaiclrSide, byte *mpiclriclrShadow);
 
 int YClipToScan(int yClip, int cx, byte*& pop, byte*& pbSrc, word*& psc);
 int DrawScan(byte *pbDst, int cx, byte*& pbSrc, byte*& pop, word*& psc,
@@ -8767,62 +7479,35 @@ int DrawScan(byte *pbDst, int cx, byte*& pbSrc, byte*& pop, word*& psc,
 
 // ARM stuff
 
-void InitArmCode() secArmThunks;
-void ExitArmCode() secArmThunks;
-void DrawTileMapArm(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile) secArmThunks;
-void LeftToRightBltArm(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy) secArmThunks;
-void RightToLeftBltArm(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy) secArmThunks;
-void memsetArm(byte *pbDst, byte b, dword cb) secArmThunks;
-void FillArm(byte *pbDst, int cx, int cy, int cbStride, byte bFill) secArmThunks;
-void FillShadowArm(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap) secArmThunks;
-word Compile8Arm(byte *pb, ScanData *psd, bool fOdd) secArmThunks;
-void DrawDispatchArm(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpscaiclrSide, byte *mpiclriclrShadow) secArmThunks;
+void InitArmCode();
+void ExitArmCode();
+void DrawTileMapArm(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile);
+void LeftToRightBltArm(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy);
+void RightToLeftBltArm(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy);
+void memsetArm(byte *pbDst, byte b, dword cb);
+void FillArm(byte *pbDst, int cx, int cy, int cbStride, byte bFill);
+void FillShadowArm(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap);
+word Compile8Arm(byte *pb, ScanData *psd, bool fOdd);
+void DrawDispatchArm(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpscaiclrSide, byte *mpiclriclrShadow);
 extern bool gfArmPresent;
 
 // Host stuff
 
 bool HostInit();
 void HostExit();
-void HostOpenUrl(const char *pszUrl);
-bool HostGetEvent(Event *pevt, long ctWait = -1) secHost;
-void HostServiceGetEvent() secHost;
-void HostOutputDebugString(char *pszFormat, ...) secHost;
-long HostGetTickCount() secHost;
-long HostGetMillisecondCount() secHost;
-long HostRunSpeedTests(DibBitmap *pbmSrc) secHost;
-dword HostGetCurrentKeyState(dword keyBit) secHost;
-void HostMessageBox(TCHAR *pszFormat, ...) secHost;
-Display *HostCreateDisplay() secDisplay;
-bool HostIsPenDown() secHost;
-const char *HostGetMainDataDir() secHost;
-void HostSuspendModalLoop(DibBitmap *pbm) secHost;
-void HostNotEnoughMemory(bool fStorage, dword cbFree, dword cbNeed) secHost;
-bool HostGetOwnerName(char *pszBuff, int cb, bool fShowError) secHost;
-bool HostEnumAddonFiles(Enum *penm, char *pszAddonDir, int cbDir,
-        char *pszAddon, int cb) secHost;
-bool HostIsPOSE() secHost;
-void HostGetUserName(char *pszBuff, int cbMax) secHost;
-SoundDevice *HostOpenSoundDevice() secSoundDevice;
-bool HostSoundServiceProc() secSoundDevice;
-void HostSleep(dword ct) secHost;
+bool HostGetEvent(Event *pevt, long ctWait = -1);
+void HostOutputDebugString(char *pszFormat, ...);
+long HostGetTickCount();
+long HostGetMillisecondCount();
+dword HostGetCurrentKeyState(dword keyBit);
+void HostMessageBox(TCHAR *pszFormat, ...);
+Display *HostCreateDisplay();
+const char *HostGetMainDataDir();
+void HostNotEnoughMemory(bool fStorage, dword cbFree, dword cbNeed);
+SoundDevice *HostOpenSoundDevice();
+void HostSleep(dword ct);
 void HostSetGameThread(base::Thread *thread);
 base::Thread& HostGetGameThread();
-base::Thread *HostGetGameThreadPointer();
-void HostAppStop();
-
-const int knKeyboardAskDefault = 0;
-const int knKeyboardAskURL = 1;
-
-void HostInitiateAsk(const char *title, int max, const char *def,
-        int keyboard = knKeyboardAskDefault, bool secure = false);
-void HostGetAskString(char *psz, int cb);
-
-class IChatController;
-IChatController *HostGetChatController();
-
-void HostInitiateWebView(const char *title, const char *url);
-const char *HostGenerateDeviceId();
-const char *HostGetPlatformString();
 
 // Date
 
@@ -8832,9 +7517,9 @@ struct Date
 	int nMonth;
 	int nDay;
 };
-int CompareDates(Date *pdate1, Date *pdate2) secMisc;
+int CompareDates(Date *pdate1, Date *pdate2);
 
-void HostGetCurrentDate(Date *pdate) secHost;
+void HostGetCurrentDate(Date *pdate);
 
 // Silk rects
 
@@ -8844,17 +7529,17 @@ void HostGetCurrentDate(Date *pdate) secHost;
 #define kircSilkCalc 3
 #define kircSilkFind 4
 
-void HostGetSilkRect(int irc, Rect *prc) secHost;
+void HostGetSilkRect(int irc, Rect *prc);
 
 // Host file IO
 
 const word kfOfRead = 0x0001;		// same as "rb"
 const word kfOfWrite = 0x0002;		// same as "wb"
 
-FileHandle HostOpenFile(const char *pszFilename, word wf) secHost;
-void HostCloseFile(FileHandle hf) secHost;
-dword HostWriteFile(FileHandle hf, void *pv, dword cb) secHost;
-dword HostReadFile(FileHandle hf, void *pv, dword cb) secHost;
+FileHandle HostOpenFile(const char *pszFilename, word wf);
+void HostCloseFile(FileHandle hf);
+dword HostWriteFile(FileHandle hf, void *pv, dword cb);
+dword HostReadFile(FileHandle hf, void *pv, dword cb);
 
 // Save game
 
@@ -8869,8 +7554,8 @@ public:
 
 	// Helpers
 
-	void ReadString(char *psz, int cb) secStream;
-	void ReadBytesRLE(byte *pb, int cb) secStream;
+	void ReadString(char *psz, int cb);
+	void ReadBytesRLE(byte *pb, int cb);
 	inline byte ReadByte()
 	{
 		byte b = 0;
@@ -8890,8 +7575,8 @@ public:
 		return dw;
 	}
 
-	void WriteString(char *psz) secStream;
-	void WriteBytesRLE(byte *pb, int cb) secStream;
+	void WriteString(char *psz);
+	void WriteBytesRLE(byte *pb, int cb);
 	inline void WriteByte(byte b)
 	{
 		Write(&b, sizeof(b));
@@ -8906,32 +7591,30 @@ public:
 	}
 
 private:
-	byte *FindRLERepeat(byte *pbStart, byte *pbMax, int cbMin) secStream;
-	void WriteRLEChunk(byte *pb, int cb, bool fRepeat) secStream;
+	byte *FindRLERepeat(byte *pbStart, byte *pbMax, int cbMin);
+	void WriteRLEChunk(byte *pb, int cb, bool fRepeat);
 };
 
 const int knGameReinitializeSave = -3;
 const int knGameAutosave = 10;
 
 #define kszTempName "htsavetemp"
-int HostGetSaveGameCount() secHost;
-bool HostGetSaveGameName(int nGame, char *psz, int cb, Date *pdate, int *pnHours24, int *pnMinutes, int *pnSeconds) secHost;
-Stream *HostNewSaveGameStream(int nGame, char *pszName) secHost;
-Stream *HostOpenSaveGameStream(int nGame, bool fDelete = false) secHost;
-Stream *PickLoadGameStream() secLoadSave;
-bool PickSaveGameStream(Stream **ppstm) secLoadSave;
-void DeleteStaleSaveGames() secLoadSave;
-bool CheckSaveGameVersion(char *pszVersion, byte bPlatform) secLoadSave;
-bool HostDeleteSaveGame(char *psz, int nGame) secLoadSave;
+int HostGetSaveGameCount();
+bool HostGetSaveGameName(int nGame, char *psz, int cb, Date *pdate, int *pnHours24, int *pnMinutes, int *pnSeconds);
+Stream *HostNewSaveGameStream(int nGame, char *pszName);
+Stream *HostOpenSaveGameStream(int nGame, bool fDelete = false);
+Stream *PickLoadGameStream();
+bool PickSaveGameStream(Stream **ppstm);
+void DeleteStaleSaveGames();
+// Version of the saved game format. Saved games of other versions can't be
+// loaded.
+const byte knVerGameState = 10;
+bool CheckSaveGameVersion(char *pszVersion, byte bVer);
+bool HostDeleteSaveGame(char *psz, int nGame);
 
 // Debug stuff
 
-#if defined(MP_DEBUG) && defined(INCL_TRACE)
-#define MpTrace ::wi::HostOutputDebugString
-//#define MpTrace(fmt, args...) LOG() << base::Log::Format(fmt, ## args)
-#else
 #define MpTrace 1 ? (void)0 : ::wi::HostOutputDebugString
-#endif
 
 #ifdef INCL_TRACE
 #define Trace ::wi::HostOutputDebugString
@@ -8941,43 +7624,12 @@ bool HostDeleteSaveGame(char *psz, int nGame) secLoadSave;
 #endif
 
 #ifdef STATUS_LINE
-void Status(const char *psz) secMisc;
+void Status(const char *psz);
 #else
 #define Status(psz)
 #endif
 
-#ifdef DEBUG_HELPERS
-void InitDebugHelpers();
-void ExitDebugHelpers();
-#endif
 
-#if 0 
-// Don't need this now that we discovered CE's COREDLL takes care of this.
-// However, if we ever build a Windows desktop version of Wc14Transport.dll
-// we will want to do this.
-
-// Transport DLLs must call back to the WI .exe for memory management
-// This allows us to continue our practice of having the Transport and
-// its Connections perform 'new' operations and leave it to the rest
-// of the game to 'delete' them.
-
-#if defined(CE) && defined(DLL)
-extern TransportHost *gptrah;
-
-inline void* operator new(size_t size)
-{
-	if (size == 0) 
-		size = 1;
-	return gptrah->New(size);
-}
-
-inline void operator delete(void* ptr)
-{
-	if (ptr != NULL) 
-		gptrah->Delete(ptr);
-}
-#endif
-#endif
 
 } // namespace wi
 

@@ -1,5 +1,4 @@
 #include "ht.h"
-#include "mpshared/netmessage.h"
 
 namespace wi {
 
@@ -26,7 +25,6 @@ bool gfShowFPS = true;
 bool gfShowFPS = false;
 #endif
 
-bool gfLockStep = false;
 bool gfSuspendUpdates = false;
 bool gfSingleStep = false;
 bool gfGodMode = false;
@@ -41,8 +39,8 @@ bool gfStylusUI = false;
 class GameOptionsForm : public ShellForm
 {
 public:
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGameOptionsForm;
-	virtual void OnControlSelected(word idc) secGameOptionsForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnControlSelected(word idc);
 };
 
 // SoundOptions
@@ -50,12 +48,12 @@ public:
 class SoundOptionsForm : public ShellForm
 {
 public:
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGameOptionsForm;
-	virtual void OnControlSelected(word idc) secGameOptionsForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnControlSelected(word idc);
 
 private:
-	void InitResettableControls() secGameOptionsForm;
-	void UpdateLabels() secGameOptionsForm;
+	void InitResettableControls();
+	void UpdateLabels();
 
 	int m_nVolume;
 	bool m_fEnabled;
@@ -66,14 +64,14 @@ private:
 class ColorOptionsForm : public Form
 {
 public:
-	ColorOptionsForm(Palette *ppal) secGameOptionsForm;
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGameOptionsForm;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secGameOptionsForm;
-	virtual void OnControlSelected(word idc) secGameOptionsForm;
+	ColorOptionsForm(Palette *ppal);
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual void OnControlSelected(word idc);
 
 private:
-	void InitResettableControls() secGameOptionsForm;
-	void UpdateLabels() secGameOptionsForm;
+	void InitResettableControls();
+	void UpdateLabels();
 
 	Palette *m_ppal;
 	int m_nHueOffset;
@@ -86,11 +84,11 @@ private:
 class DisplayOptionsForm : public ShellForm
 {
 public:
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGameOptionsForm;
-	virtual void OnControlSelected(word idc) secGameOptionsForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnControlSelected(word idc);
 
 private:
-	void InitResettableControls() secGameOptionsForm;
+	void InitResettableControls();
 };
 
 // PerformanceOptions
@@ -98,26 +96,13 @@ private:
 class PerformanceOptionsForm : public ShellForm
 {
 public:
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGameOptionsForm;
-	virtual void OnControlSelected(word idc) secGameOptionsForm;
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual void OnControlSelected(word idc);
 
 private:
-	void InitResettableControls() secGameOptionsForm;
+	void InitResettableControls();
 
 	word m_wfPerfOptions;
-};
-
-// DeleteMissionPackForm
-
-class DeleteMissionPackForm : public ShellForm
-{
-public:
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGameOptionsForm;
-	virtual void OnControlSelected(word idc) secGameOptionsForm;
-	virtual void OnControlNotify(word idc, int nNotify) secGameOptionsForm;
-
-private:
-	void PopulateList() secGameOptionsForm;
 };
 
 // GobCountForm
@@ -125,42 +110,19 @@ private:
 class GobCountForm : public Form
 {
 public:
-	virtual void OnPaint(DibBitmap *pbm) secGameOptionsForm;
-	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque) secGameOptionsForm;
-	virtual bool OnPenEvent(Event *pevt) secGameOptionsForm;
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque);
+	virtual bool OnPenEvent(Event *pevt);
 
 private:
-	void OutputString(DibBitmap *pbm, char *psz, int *px, int *py) secGameOptionsForm;
-	void FormatSideString(char *pszIn, int *acPerSide, char *pszOut) secGameOptionsForm;
+	void OutputString(DibBitmap *pbm, char *psz, int *px, int *py);
+	void FormatSideString(char *pszIn, int *acPerSide, char *pszOut);
 };
 
 // +++
 
 bool DoModalGameOptionsForm(Palette *ppal, bool fInGame)
 {
-#if !defined(IPHONE) && !defined(SDL)
-	ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms, kidfGameOptions, new GameOptionsForm());
-	if (pfrm == NULL)
-		return false;
-	int nResult;
-	pfrm->DoModal(&nResult);
-
-	if (!fInGame)
-		pfrm->Show(true);
-
-	if (nResult == kidcColorOptions) {
-		gpmfrmm->InvalidateRect(NULL);
-		Form *pfrmT = gpmfrmm->LoadForm(gpiniForms, kidfColorOptions, new ColorOptionsForm(ppal));
-		if (pfrmT != NULL) {
-			pfrmT->DoModal();
-			delete pfrmT;
-		}
-	}
-
-	pfrm->Show(false);
-	delete pfrm;
-#else
-    // iPhone and SDL builds only have InGameOptions
     ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms,
             kidfInGameOptions, new InGameOptionsForm());
     if (pfrm == NULL) {
@@ -168,7 +130,6 @@ bool DoModalGameOptionsForm(Palette *ppal, bool fInGame)
     }
     pfrm->DoModal();
     delete pfrm;
-#endif
 
 	return true;
 }
@@ -226,26 +187,9 @@ bool GameOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	if (ggame.GetModeMatchCount() == 1)
 		GetControlPtr(kidcDisplayOptions)->Show(false);
 
-	// Multiplayer changes
-
-	if (gfMultiplayer) {
-		GetControlPtr(kidcInGameOptions)->Show(false);
-		GetControlPtr(kidcPerformanceOptions)->Show(false);
-		GetControlPtr(kidcDisplayOptions)->Show(false);
-	}
-
-	// Can't delete mission packs from here on Palm because they may have been bundle-bit copied
-	// from card to internal ram; deleting them here and then exiting causes the launcher to crash
-	// because it expects them still to be there. For Palm we have an external application that does
-	// mission pack management
-
-#ifdef PIL
-	GetControlPtr(kidcDeleteMissionPack)->Show(false);
-#endif
-
 	// Format the remaining visible buttons
 
-	word aidcFormat[] = { kidcInGameOptions, kidcSoundOptions, kidcPerformanceOptions, kidcColorOptions, kidcDisplayOptions, kidcDeleteMissionPack };
+	word aidcFormat[] = { kidcInGameOptions, kidcSoundOptions, kidcPerformanceOptions, kidcColorOptions, kidcDisplayOptions };
 	FormatButtons(this, aidcFormat, ARRAYSIZE(aidcFormat), kidcInGameOptions, kidcSoundOptions);
 
 	return true;
@@ -256,17 +200,6 @@ void GameOptionsForm::OnControlSelected(word idc)
 	// Remember what button was pressed - the caller will want this
 
 	switch (idc) {
-	case kidcDeleteMissionPack:
-		{
-			ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms, kidfDeleteMissionPack, new DeleteMissionPackForm());
-			if (pfrm != NULL) {
-				pfrm->DoModal();
-				delete pfrm;
-				return;
-			}
-		}
-		break;
-
 	case kidcInGameOptions:
 		{
 			ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms, kidfInGameOptions, new InGameOptionsForm());
@@ -333,9 +266,7 @@ bool InGameOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	m_wfHandicap = gwfHandicap;
     m_nScrollSpeed = gnScrollSpeed;
 
-#if defined(IPHONE) || defined(SDL)
     GetControlPtr(kidcLassoSelection)->Show(false);
-#endif
 
 	InitResettableControls();
 	return true;
@@ -644,9 +575,6 @@ void ColorOptionsForm::OnControlSelected(word idc)
 			// Some devices such as the PocketPC need the form redrawn because setting the palette
 			// is only setting an 8->16 bit translation table, and only the controls are redrawing.
 
-#ifdef CE
-			gpmfrmm->InvalidateRect(NULL);
-#endif
 		}
 		break;
 
@@ -681,9 +609,6 @@ void ColorOptionsForm::OnControlSelected(word idc)
 		// Some devices such as the PocketPC need the form redrawn because setting the palette
 		// is only setting an 8->16 bit translation table, and only the controls are redrawing.
 
-#ifdef CE
-		gpmfrmm->InvalidateRect(NULL);
-#endif
 		break;
 	}
 }
@@ -737,11 +662,7 @@ bool DisplayOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 
 		case 20:
 			// Don't want to insult PPC users
-#ifdef CE
-			strcat(szArt, " art");
-#else
 			strcat(szArt, " med-res art");
-#endif
 			break;
 
 		case 24:
@@ -782,7 +703,7 @@ void DisplayOptionsForm::OnControlSelected(word idc)
 		{
 			ListControl *plstc = (ListControl *)GetControlPtr(kidcModesList);
 			if (plstc->GetFlags() & kfCtlVisible) {
-				int immNew = (int)(long)plstc->GetSelectedItemData();
+				int immNew = (int)(pword)plstc->GetSelectedItemData();
 				ggame.RequestModeChange(immNew);
 			}
 
@@ -907,9 +828,6 @@ bool TestOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	pcbox->Show(false);
 #endif
 
-	pcbox = (CheckBoxControl *)GetControlPtr(kidcLockStep);
-	pcbox->SetChecked(gfLockStep);
-
 	SetControlChecked(kidcOvermind, gfOvermindEnabled);
 	SetControlChecked(kidcShowFPS, gfShowFPS);
 	SetControlChecked(kidcSuspendUpdates, gfSuspendUpdates);
@@ -930,9 +848,6 @@ void TestOptionsForm::OnControlSelected(word idc)
 {
 	switch (idc) {
 	case kidcBreak:
-#if defined(PIL) && !defined(PNO)
-		DebugBreak();
-#endif
 		break;
 
 	case kidcGobCount:
@@ -962,15 +877,6 @@ void TestOptionsForm::OnControlSelected(word idc)
 		gfDrawLines = !gfDrawLines;
 		break;
 #endif
-
-	case kidcLockStep:
-		gfLockStep = !gfLockStep;
-#ifdef MP_DEBUG_SHAREDMEM
-		extern bool gfMPServer;
-		if (gfMPServer)
-			gpsmw->fDetectSyncErrors = gfLockStep;
-#endif
-		break;
 
     case kidcStylusUI:
         gfStylusUI = !gfStylusUI;
@@ -1095,13 +1001,7 @@ void MemoryUseForm::UpdateLabels()
 	dword cbDyn, cbDb;
 	dword cbTotal = gmmgr.GetTotalSize(&cbDyn, &cbDb);
 
-#ifdef PIL
-	dword cbFree;
-	dword cbMax;
-	MemHeapFreeBytes(0, (UInt32 *)&cbFree, (UInt32 *)&cbMax);
-#else
 	dword cbFree = 0;
-#endif
 
 	char szT[128];
 
@@ -1156,13 +1056,7 @@ void GobCountForm::OnPaint(DibBitmap *pbm)
 	for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
 		GobType gt = pgobT->GetType();
 		acGobs[gt]++;
-#if defined(PIL)
-		acbGob[gt] = MemPtrSize(pgobT);
-#elif defined(IPHONE) || defined(SDL)
 		acbGob[gt] = 0;
-#else
-		acbGob[gt] = _msize(pgobT);
-#endif
 		if (pgobT->GetFlags() & kfGobUnit) {
 			afUnit[gt] = true;
 			UnitGob *punt = (UnitGob *)pgobT;
@@ -1251,14 +1145,6 @@ void GobCountForm::OnPaint(DibBitmap *pbm)
 	sprintf(szT, "gob mem:%ld", cbGobs);
 	OutputString(pbm, szT, &x, &y);
 
-#ifdef PIL
-	UInt32 cbFree, cbMax;
-	MemHeapFreeBytes(0, &cbFree, &cbMax);
-	sprintf(szT, "heap free:%ld", cbFree);
-	OutputString(pbm, szT, &x, &y);
-	sprintf(szT, "dyn use:%ld/%ld", gcbDynMemAtStart - cbFree, gcbDynMemAtStart);
-	OutputString(pbm, szT, &x, &y);
-#endif
 }
 
 void GobCountForm::OutputString(DibBitmap *pbm, char *psz, int *px, int *py)
@@ -1330,26 +1216,26 @@ bool GobCountForm::OnPenEvent(Event *pevt)
 class InputPanelForm : public ShellForm
 {
 public:
-	virtual void OnControlSelected(word idc) secInputPanelForm;
-	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque) secInputPanelForm;
-	virtual void OnPaint(DibBitmap *pbm) secInputPanelForm;
-	virtual bool OnPenEvent(Event *pevt) secInputPanelForm;
-	virtual bool EventProc(Event *pevt) secInputPanelForm;
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secInputPanelForm;
+	virtual void OnControlSelected(word idc);
+	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque);
+	virtual void OnPaint(DibBitmap *pbm);
+	virtual bool OnPenEvent(Event *pevt);
+	virtual bool EventProc(Event *pevt);
+	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
 
-	void SetLabel(const char *pszLabel) secInputPanelForm;
-	void SetEdit(const char *pszEdit) secInputPanelForm;
-	void GetEdit(char *psz, int cb) secInputPanelForm;
-	void SetChars(char **ppsz, int cRows) secInputPanelForm;
+	void SetLabel(const char *pszLabel);
+	void SetEdit(const char *pszEdit);
+	void GetEdit(char *psz, int cb);
+	void SetChars(char **ppsz, int cRows);
 	void SetValidateProc(bool (*pfnValidateInput)(const char *psz)) {
 		m_pfnValidateInput = pfnValidateInput;
 	}
 
 private:
-	char TrackPen(int x, int y, bool fDown) secInputPanelForm;
-	void OnChar(char ch) secInputPanelForm;
-	void OnBackspace() secInputPanelForm;
-	int GetCharRect(int iCol, int iRow, char *pch, Rect *prcChar) secInputPanelForm;
+	char TrackPen(int x, int y, bool fDown);
+	void OnChar(char ch);
+	void OnBackspace();
+	int GetCharRect(int iCol, int iRow, char *pch, Rect *prcChar);
 
 	char **m_ppszChars;
 	int m_cRows;
@@ -1650,69 +1536,6 @@ void InputPanelForm::GetEdit(char *psz, int cb)
 {
 	EditControl *pedt = (EditControl *)GetControlPtr(kidcInputEdit);
 	pedt->GetText(psz, cb);
-}
-
-// DeleteMissionPackForm
-
-bool DeleteMissionPackForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
-{
-	if (!ShellForm::Init(pfrmm, pini, idf))
-		return false;
-	PopulateList();
-	return true;
-}
-
-void DeleteMissionPackForm::PopulateList()
-{
-	ListControl *plstc = (ListControl *)GetControlPtr(kidcMissionPackList);
-	plstc->Clear();
-#if 0 // TODO:
-	Enum enm;
-	char szAddon[kcbFilename];
-	while (HostEnumAddonFiles(&enm, szAddon, sizeof(szAddon)))
-		plstc->Add(szAddon, NULL);
-#endif
-	GetControlPtr(kidcOk)->Show(false);
-}
-
-void DeleteMissionPackForm::OnControlNotify(word idc, int nNotify)
-{
-	if (idc != kidcMissionPackList)
-		return;
-
-	if (nNotify == knNotifySelectionChange || nNotify == knNotifySelectionTap) {
-		ListControl *plstc = (ListControl *)GetControlPtr(kidcMissionPackList);
-		ListItem *pli = plstc->GetSelectedItem(); 
-		GetControlPtr(kidcOk)->Show(pli != NULL);
-	}
-}
-
-void DeleteMissionPackForm::OnControlSelected(word idc)
-{
-	switch (idc) {
-	case kidcMissionPackList:
-		return;
-
-	case kidcOk:
-		// Delete
-		{
-			ListControl *plstc = (ListControl *)GetControlPtr(kidcMissionPackList);
-			char szFn[64];
-			plstc->GetSelectedItemText(szFn, sizeof(szFn));
-			if (true) { // TODO: !gpakr.Delete(gpszDataDir, szFn)) {
-				HtMessageBox(kfMbWhiteBorder, "Error", "Mission Pack in use!");
-			} else {
-				PopulateList();
-			}
-		}
-		return;
-
-	case kidcCancel:
-		// Back
-
-		ShellForm::OnControlSelected(idc);
-		break;
-	}
 }
 
 } // namespace wi

@@ -7,12 +7,6 @@ namespace wi {
 // base gob for VTS and HRC
 //
 
-#if defined(DEBUG_HELPERS)
-char *MobileUnitBuilderGob::GetName()
-{
-	return "MobileUnitBuilder";
-}
-#endif
 
 MobileUnitBuilderGob::MobileUnitBuilderGob(MobileUnitBuilderConsts *pmubc) : BuilderGob(pmubc)
 {
@@ -190,16 +184,12 @@ x units force others out of the way to get to the rally point
 		OnUpdate
 		OnExit
 
-#if 0
-EndStateMachineInherit(BuilderGob)
-#else
             return knHandled;
         }
     } else {
         return (int)BuilderGob::ProcessStateMachineMessage(st, pmsg);
     }
     return (int)BuilderGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 void MobileUnitBuilderGob::DefUpdate()

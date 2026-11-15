@@ -4,71 +4,6 @@
 #include <string.h>
 #include "ini.h"
 
-#ifndef WINDOWS
-#include <limits.h>
-#define _MAX_PATH PATH_MAX
-#define _MAX_FNAME NAME_MAX
-#define _MAX_DRIVE NAME_MAX
-#define _MAX_DIR (PATH_MAX-NAME_MAX)
-#define _MAX_EXT NAME_MAX
-#define _unlink remove
-#define _fullpath(resolved_path, path, length) realpath(path, resolved_path)
-
-void _splitpath(const char* path, char* drv, char* dir, char* name, char* ext)
-{
-    const char* end; /* end of processed string */
-	const char* p;	 /* search pointer */
-	const char* s;	 /* copy pointer */
-
-	/* extract drive name */
-	if (path[0] && path[1]==':') {
-		if (drv) {
-			*drv++ = *path++;
-			*drv++ = *path++;
-			*drv = '\0';
-		}
-	} else if (drv)
-		*drv = '\0';
-
-	/* search for end of string or stream separator */
-	for(end=path; *end && *end!=':'; )
-		end++;
-
-	/* search for begin of file extension */
-	for(p=end; p>path && *--p!='\\' && *p!='/'; )
-		if (*p == '.') {
-			end = p;
-			break;
-		}
-
-	if (ext)
-		for(s=end; (*ext=*s++); )
-			ext++;
-
-	/* search for end of directory name */
-	for(p=end; p>path; )
-		if (*--p=='\\' || *p=='/') {
-			p++;
-			break;
-		}
-
-	if (name) {
-		for(s=p; s<end; )
-			*name++ = *s++;
-
-		*name = '\0';
-	}
-
-	if (dir) {
-		for(s=path; s<p; )
-			*dir++ = *s++;
-
-		*dir = '\0';
-	}
-}
-#endif
-
-
 #define kcbRecordMax 0x8000
 #define SwapWord(x) ((((x)&0xFF)<<8) | (((x)&0xFF00)>>8))
 #define SwapDword(x) ((((x)&0xFF)<<24) | (((x)&0xFF00)<<8) | (((x)&0xFF0000)>>8) | (((x)&0xFF000000)>>24))
@@ -346,7 +281,6 @@ struct DatabaseHdrType {
 	RecordListType	recordList;	// first record list
 };		
 
-#ifdef WINDOWS
 #include <windows.h>
 dword GetCurrentTimePalmUnits()
 {
@@ -385,27 +319,8 @@ dword GetCurrentTimePalmUnits()
 	// Divide by 1e9 / (1024*1024)
 
 	return (dword)((double)dw / (10000000.0 / (double)(1024 * 1024)));
-
-#else // TODO(darrinm): maybe this is fine on Windows too?
-#include <ctime>
-dword GetCurrentTimePalmUnits()
-{
-	// Palm keeps time as a count of seconds from Jan 1, 1904.
-	struct tm tm1904;
-	tm1904.tm_year = 1904 - 1900; // tm_year 0=1900
-	tm1904.tm_mon = 1;
-	tm1904.tm_wday = 6;
-	tm1904.tm_mday = 1;
-	tm1904.tm_yday = 0;
-	tm1904.tm_hour = 0;
-	tm1904.tm_min = 0;
-	tm1904.tm_sec = 0;
-	tm1904.tm_isdst = -1;
-	time_t time1904 = mktime(&tm1904);
-	time_t timeCurrent = time(NULL);
-	return (dword)difftime(timeCurrent, time1904);
 }
-#endif
+
 
 bool WriteDatabase(char *pszFnPdb, RecordChunk *arck, int cChunks, long *pcbFile)
 {

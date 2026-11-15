@@ -307,9 +307,6 @@ void FormMgr::Paint(bool fScrolled, Rect *prcOpaqueStart)
 	if (fScrolled)
 		m_pupd->StartMergeDamagedInvalid();
 
-	// Give some time to sound servicing
-
-	HostSoundServiceProc();
 
 	// Invalidate UpdateMap for this frame
 
@@ -323,9 +320,6 @@ void FormMgr::Paint(bool fScrolled, Rect *prcOpaqueStart)
 			m_apfrm[j]->OnUpdateMapInvalidate(m_pupd, &rcOpaque);
 	}
 
-	// Give some time to sound servicing
-
-	HostSoundServiceProc();
 
 	// The merge is a two part process
 
@@ -346,11 +340,8 @@ void FormMgr::Paint(bool fScrolled, Rect *prcOpaqueStart)
 			CalcOpaqueRect(m_apfrm[j], prcOpaqueStart, &rcOpaque);
 			if (!rcOpaque.RectIn(&m_apfrm[j]->m_rc)) {
 				m_apfrm[j]->OnPaintBackground(m_pbm, m_pupd);
-				HostSoundServiceProc();
 				m_apfrm[j]->OnPaint(m_pbm);
-				HostSoundServiceProc();
 				m_apfrm[j]->OnPaintControls(m_pbm, m_pupd);
-				HostSoundServiceProc();
 			}
 		}
 	}
@@ -421,7 +412,6 @@ bool FormMgr::ScrollBits()
     // we can scroll the middle (rotated) dib rather than the back dib, giving
     // us a speedup.
 
-#if !defined(WIN)
 	DibBitmap *pbmFront = gpdisp->GetFrontDib();
 	if (pbmFront->GetFlags() & kfDibWantScrolls) {
 #if defined(PALM)
@@ -435,7 +425,6 @@ bool FormMgr::ScrollBits()
 		m_dyScrollAccumulate = 0;
 		return true;
 	}
-#endif
 
 	// Perform blt of the back buffer
 
@@ -954,10 +943,6 @@ void MultiFormMgr::DrawFrame(bool fForceBackBufferValid, bool fPaint)
 
 	// Save avi frame
 
-#if defined(WIN) && !defined(CE)
-	if (gpavir != NULL)
-		gpavir->AddFrame(gpdisp->GetFrontDib());
-#endif
 
 	// Draw update rects
 

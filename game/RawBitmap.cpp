@@ -65,72 +65,6 @@ void RawBitmap::GetSize(Size *psiz)
 	psiz->cy = m_cy;
 }
 
-#if 0
-// fread based blt
-
-void RawBitmap::BltTo(DibBitmap *pbmDst, int xDst, int yDst, Rect *prcSrc)
-{
-	// Get dib dimensions
-
-	Size sizDib;
-	pbmDst->GetSize(&sizDib);
-
-	// Src rect to blt from
-
-	if (prcSrc == NULL) {
-		Rect rcSrcT;
-		rcSrcT.Set(0, 0, sizDib.cx, sizDib.cy);
-		prcSrc = &rcSrcT;
-	}
-
-	// Right and bottom edge clipping
-
-	if (sizDib.cx - xDst < prcSrc->Width())
-		prcSrc->right = prcSrc->left + sizDib.cx - xDst;
-	if (sizDib.cy - yDst < prcSrc->Height())
-		prcSrc->bottom = prcSrc->top + sizDib.cy - yDst;
-
-	// Left and top edge clipping
-
-	int xDstT = xDst;
-	if (xDstT < 0) {
-		prcSrc->left -= xDstT;
-		xDstT = 0;
-	}
-	int yDstT = yDst;
-	if (yDstT < 0) {
-		prcSrc->top -= yDstT;
-		yDstT = 0;
-	}
-
-	// Anything to blt?
-
-	if (prcSrc->IsEmpty())
-		return;
-
-	// Get destination address and dest row bytes
-
-	int cbRow = pbmDst->GetRowBytes();
-	byte *pbDst = pbmDst->GetBits() + (long)yDstT * cbRow + xDstT;
-
-	// Seek to the start of bits
-
-	gpakr.fseek(m_pfil, sizeof(word) * 2 + (long)prcSrc->top * m_cx + prcSrc->left, SEEK_SET);
-
-	// Can't use the scratch buffer to chunk because the decompressor
-	// uses it! Use this lame approach for now.
-
-	int cbSrcReturn = m_cx - prcSrc->Width();
-	int cy = prcSrc->Height();
-	for (int y = 0; y < cy; y++) {
-		if (gpakr.fread(pbDst, prcSrc->Width(), 1, m_pfil) != 1)
-			return;
-		if (cbSrcReturn != 0)
-			gpakr.fseek(m_pfil, cbSrcReturn, SEEK_CUR);
-		pbDst += cbRow;
-	}
-}
-#else
 // Record mapping based blt
 
 void RawBitmap::BltTo(class DibBitmap *pbmDst, int xDst, int yDst, Side side, Rect *prcSrc)
@@ -252,6 +186,5 @@ void RawBitmap::BltTo(DibBitmap *pbmDst, int xDst, int yDst, Rect *prcSrc)
 	if (pbRec != NULL)
 		m_pfil->prnfo->ppdbReader->UnmapRecord(nRecCurrent, pvCookie);
 }
-#endif
 
 } // namespace wi

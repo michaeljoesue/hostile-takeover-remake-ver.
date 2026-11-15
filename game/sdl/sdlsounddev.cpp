@@ -108,11 +108,6 @@ void SdlSoundDevice::Enable(bool fEnable)
             memset(m_achnl, 0, sizeof(m_achnl));
             m_tSilence = 0;
             m_fEnable = true;
-			#if 0
-            for (int i = 0; i < kcBuffers; i++) {
-                InitAudioBuffer(m_apbBuffers[i]);
-            }
-			#endif
 			SDL_PauseAudio(0);
         }
     } else {
@@ -184,22 +179,11 @@ void SdlSoundDevice::SetVolume(int nVolume)
         nVolume = 0;
     if (nVolume > 255)
         nVolume = 255;
-#if 0 // TODO(darrinm): SDL has no volume control?
-    AudioQueueSetParameter(m_haq, kAudioQueueParam_Volume,
-            (Float32)nVolume / (Float32)255.0);
-#endif
 }
 
 int SdlSoundDevice::GetVolume()
 {
-#if 0 // TODO(darrinm): SDL has no volume control?
-    AudioQueueParameterValue value;
-    AudioQueueGetParameter(m_haq, kAudioQueueParam_Volume,
-            &value);
-    return (int)(value * 255.0);
-#else
 	return 255;
-#endif
 }
 
 void AudioCallback(void *pvUser, Uint8* stream, int len)

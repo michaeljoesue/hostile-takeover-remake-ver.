@@ -53,13 +53,10 @@ void DeleteStaleSaveGames()
 			szVersion[0] = 0;
 			pstm->ReadString(szVersion, sizeof(szVersion));
 			byte bVer = pstm->ReadByte();
-			byte bPlatform = 0;
-			if (bVer >= 6)
-				bPlatform = pstm->ReadByte();
 			pstm->Close();
 			delete pstm;
 
-			if (!CheckSaveGameVersion(szVersion, bPlatform))
+			if (!CheckSaveGameVersion(szVersion, bVer))
 				HostDeleteSaveGame(NULL, nGame);
 		}
 
@@ -77,19 +74,12 @@ void DeleteStaleSaveGames()
 	HostDeleteSaveGame(kszTempName, 0);
 }
 
-bool CheckSaveGameVersion(char *pszVersion, byte bPlatform)
+bool CheckSaveGameVersion(char *pszVersion, byte bVer)
 {
-#ifndef DEV_BUILD
-#ifdef PIL
-#ifdef PNO
-	if (bPlatform != 1)
+	// The saved game state format must match
+
+	if (bVer != knVerGameState)
 		return false;
-#else
-	if (bPlatform != 0)
-		return false;
-#endif
-#endif
-#endif
 
 	// If not upwardly compatible with ship version and major version, delete the save game.
 	// This is so v1.0a allows reading save game files from v1.0, etc.
@@ -196,7 +186,7 @@ void LoadGameForm::OnControlSelected(word idc)
 	case kidcOk:
 		{
 			ListControl *plstc = (ListControl *)GetControlPtr(kidcGameList);
-			int nGame = ((int)(long)plstc->GetSelectedItemData()) - 1;
+			int nGame = ((int)(pword)plstc->GetSelectedItemData()) - 1;
 			EndForm(nGame);
 		}
 		return;

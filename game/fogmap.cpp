@@ -383,10 +383,6 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 			if (cEmpty != 0) {
 				pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
 				cEmpty = 0;
-#ifdef PIL
-				if (gfOS5Pa1Device)
-					HostSoundServiceProc();
-#endif
 			}
 
 			// Not opaque; draw unique tile
@@ -404,10 +400,6 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 			pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
 			cEmpty = 0;
 
-#ifdef PIL
-			if (gfOS5Pa1Device)
-				HostSoundServiceProc();
-#endif
 		}
 
 		pbMapT += cbNextScan;
@@ -477,13 +469,6 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 				TBitmap *ptbm = m_aptbmGalax[s_abGxTranslate[(b & kbfGalaxiteMask) >> kcGalaxiteShift]];
 				ptbm->BltTo(pbm, xTile, yTile);
 
-#ifdef PIL
-				if (gfOS5Pa1Device) {
-					nServiceSfx++;
-					if ((nServiceSfx & 31) == 0)
-						HostSoundServiceProc();
-				}
-#endif
 
 			} 
 
@@ -520,13 +505,6 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 //				m_panidWalls->DrawFrame(w <= (kwfWallMask >> 1) ? 1 : 0, ifrm, pbm, xTile, yTile, ksideNeutral);
 				m_panidWalls->DrawFrame(0, ifrm, pbm, xTile, yTile, ksideNeutral);
 
-#ifdef PIL
-				if (gfOS5Pa1Device) {
-					nServiceSfx++;
-					if ((nServiceSfx & 31) == 0)
-						HostSoundServiceProc();
-				}
-#endif
 			}
 
 			xTile += gcxTile;
@@ -557,9 +535,6 @@ int FogMap::GetGalaxite(TCoord tx, TCoord ty)
 	byte *pb = &m_pbMap[(ty * m_ctxMap) + tx];
 	int nGx = (*pb & kbfGalaxiteMask) >> kcGalaxiteShift;
 
-#ifdef MP_DEBUG
-//	MpTrace("GetGalaxite:%d,%d amount %d", tx, ty, nGx);
-#endif
 
 	return nGx;
 }
@@ -586,9 +561,6 @@ bool FogMap::DecGalaxite(TCoord tx, TCoord ty)
 	byte *pb = &m_pbMap[(ty * m_ctxMap) + tx];
 	byte bNew = s_abGxDec[(*pb & kbfGalaxiteMask) >> kcGalaxiteShift] << kcGalaxiteShift;
 	*pb = (*pb & ~kbfGalaxiteMask) | bNew;
-#ifdef MP_DEBUG
-//	MpTrace("DecGalaxite:%d,%d now %d", tx, ty, bNew >> kcGalaxiteShift);
-#endif
 
 	// Cause this tile to redraw
 
@@ -604,12 +576,7 @@ bool FogMap::FindNearestGalaxite(TCoord txOrigin, TCoord tyOrigin, TPoint *ptpt,
 {
 	Assert(txOrigin >= 0 && tyOrigin >= 0 && txOrigin < m_ctxMap && tyOrigin < m_ctyMap);
 
-#if 1
 	TPoint *atptGx = (TPoint *)gpbScratch;
-#else
-	TPoint atptT[sizeof(TPoint) * ktcMax * 4]; // 1024 bytes, these days
-	TPoint *atptGx = atptT;
-#endif
 	TPoint *ptptGx = atptGx;
 	int ctptGx;
 
@@ -749,56 +716,5 @@ bool FogMap::FindNearestGalaxite(TCoord txOrigin, TCoord tyOrigin, TPoint *ptpt,
 // Wall methods
 //
 
-#if 0
-int FogMap::GetWallHealth(TCoord tx, TCoord ty)
-{
-	// Any attempt to look for wall off the edge of the map returns none
-
-	if (tx < 0 || ty < 0 || tx >= m_ctxMap || ty >= m_ctyMap)
-		return 0;
-
-	word *pw = &m_pwMap[(ty * m_ctxMap) + tx];
-	return (*pw & kwfWallMask) >> kcWallShift;
-}
-
-void FogMap::SetWallHealth(int nHealth, TCoord tx, TCoord ty)
-{
-	// If state changes between existing and not existing then the N/S/E/W
-	// neighbor cells need to be invalidated if they also contain a wall
-	// segment.
-
-	Assert(tx >= 0 && ty >= 0 && tx < m_ctxMap && ty < m_ctyMap);
-
-	word *pw = &m_pwMap[(ty * m_ctxMap) + tx];
-	word wOld = *pw;
-	word wNew = (wOld & ~kwfWallMask) | (word)(nHealth << kcWallShift);
-
-	if (wNew != wOld) {
-		*pw = wNew;
-
-		// UNDONE: whoa! Spaghetti! FogMap should not be reaching out to sim/level/etc
-		TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
-		if (nHealth == 0)
-			ptrmap->ClearFlags(tx, ty, 1, 1, kbfStructure);
-		else
-			ptrmap->SetFlags(tx, ty, 1, 1, kbfStructure);
-
-#if 0 
-		// UNDONE: right now there is no dynamic changing of a wall's health so we don't
-		// need this stuff. If we allow damaging/destroying walls or give the player the
-		// ability to create walls we'll need to deal with this.
-
-		// Cause this tile to redraw
-
-		if (gptrcMapOpaque == NULL || !gptrcMapOpaque->PtIn(tx, ty))
-			gpupdSim->InvalidateTile(tx, ty);
-		if (gpmm != NULL)
-			gpmm->RedrawTile(tx, ty);
-
-		// UNDONE: deal with neighbors
-#endif
-	}
-}
-#endif
 
 } // namespace wi

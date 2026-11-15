@@ -49,25 +49,6 @@ bool FlickScroller::GetPosition(Point *ppt)
     float dx = 0.0f;
     float dy = 0.0f;
     
-#if 0
-    float flDecayMultiplier = 1.0f;
-    
-    // Not exact, but close enough.
-    float flDecayPercent = ((float)m_fliv.cms / (float)m_cmsDecaySpan) * m_flDecayPercent;
-
-    dword cmsDelta = HostGetMillisecondCount() - m_msStart;        
-    int count = ((float)cmsDelta / (float)m_fliv.cms + 0.5f);
-    while (count-- != 0 && m_fHasMagnitude) {
-        float dxT = m_fliv.dx * flDecayMultiplier;
-        float dyT = m_fliv.dy * flDecayMultiplier;
-        flDecayMultiplier = flDecayMultiplier * (1.0f - flDecayPercent);
-        dx += dxT;
-        dy += dyT;
-        CheckMagnitude(dxT, dyT);
-    }
-    ppt->x = (int)(dx + 0.5f);
-    ppt->y = (int)(dy + 0.5f);
-#else
     
     float flDecayMultiplier = 1.0f * ((float)m_cmsDecaySpan / (float)m_fliv.cms);
     float flDecayPercent = m_flDecayPercent;
@@ -84,7 +65,6 @@ bool FlickScroller::GetPosition(Point *ppt)
     }
     ppt->x = (int)(dx + 0.5f);
     ppt->y = (int)(dy + 0.5f);
-#endif    
     
     //Trace("FS::GetPosition()-> x=%d y=%d ms=%ld", ppt->x, ppt->y, HostGetMillisecondCount());
     

@@ -4,12 +4,6 @@ namespace wi {
 
 static MobileUnitConsts gConsts;
 
-#if defined(DEBUG_HELPERS)
-char *SRInfantryGob::GetName()
-{
-	return "SRInfantry";
-}
-#endif
 
 static int s_anFiringStripIndices[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
 static int s_anMovingStripIndices[8] = { 17, 18, 19, 20, 21, 22, 23, 24 };
@@ -126,44 +120,14 @@ BeginStateMachine
 		OnUpdate
 			AdvanceAnimation(&m_ani);
 
-#if 0
-EndStateMachineInherit(MobileUnitGob)
-#else
             return knHandled;
         }
     } else {
         return (int)MobileUnitGob::ProcessStateMachineMessage(st, pmsg);
     }
     return (int)MobileUnitGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
-#if 0 // Not used anymore
-//
-// RicochetGob implementation
-//
-
-bool RicochetGob::Init(WCoord wx, WCoord wy, word wfAnm, const char *pszAniName, AnimationData *panid, 
-		StateMachineId smidNotify, const char *pszName)
-{
-	if (!AnimGob::Init(wx, wy, wfAnm, pszAniName, panid, GetRandom() % 3, smidNotify, pszName))
-		return false;
-
-	m_fNew = true;
-	return true;
-}
-
-bool RicochetGob::OnStripDone()
-{
-	if (m_fNew) {
-		m_fNew = false;
-		SetAnimationStrip(&m_ani, GetRandom() % 3);
-		return false;
-	} else {
-		return true;
-	}
-}
-#endif
 
 //
 // BulletGob implementation
@@ -210,11 +174,5 @@ GobType BulletGob::GetType()
 	return kgtBullet;
 }
 
-#if defined(DEBUG_HELPERS)
-char *BulletGob::GetName()
-{
-	return "Bullet";
-}
-#endif
 
 } // namespace wi

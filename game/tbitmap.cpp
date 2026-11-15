@@ -276,7 +276,6 @@ bool TBitmap::Init(File *pfil, word ib)
         if ((int)gpakr.fread(ptbeT, kcbTBitmapEntry, 1, pfil) != 1) {
             return false;
         }
-#ifndef __CPU_68K
         // Swap bytes (non-Palm only)
 
 		ptbeT->cx = BigWord(ptbeT->cx);
@@ -284,7 +283,6 @@ bool TBitmap::Init(File *pfil, word ib)
 		ptbeT->yBaseline = BigWord(ptbeT->yBaseline);
 		ptbeT->ibsd = BigWord(ptbeT->ibsd);
 		ptbeT->cbsd = BigWord(ptbeT->cbsd);
-#endif
     }
 
 	word cbAlloc = sizeof(TBitmapEntry) * m_ctbm;
@@ -317,38 +315,38 @@ void TBitmap::GetSize(int itbm, Size *psiz)
 }
 
 extern "C" {
-void CopyBits128Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits124Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits120Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits116Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits112Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits108Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits104Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits100Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits96Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits92Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits88Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits84Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits80Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits76Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits72Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits68Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits64Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits60Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits56Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits52Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits48Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits44Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits40Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits36Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits32Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits28Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits24Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits20Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits16Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits12Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits8Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
-void CopyBits4Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy) secCode8;
+void CopyBits128Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits124Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits120Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits116Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits112Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits108Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits104Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits100Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits96Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits92Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits88Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits84Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits80Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits76Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits72Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits68Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits64Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits60Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits56Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits52Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits48Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits44Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits40Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits36Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits32Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits28Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits24Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits20Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits16Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits12Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits8Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
+void CopyBits4Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
 };
 
 typedef void (*CopyBy4Proc)(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy);
@@ -426,13 +424,7 @@ void TBitmap::BltTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, Side 
 	gcBitmapsDrawn++;
 #endif
 
-#if 1
 	byte *pbBits = pbmDst->GetBits();
-#else
-	BitmapType *pbmpScreen = WinGetBitmap(WinGetDisplayWindow());
-	byte *pbBits = (byte *)BmpGetBits(pbmpScreen);
-	Fill(pbBits, 160, 160, 160, 1);
-#endif
 
 	// Look in the cache to see if this tbitmap has been compiled
 
@@ -733,7 +725,6 @@ void TBitmap::FillTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, int 
 
 // C code for compiling / drawing
 
-#ifndef __CPU_68K
 void CopyBits128Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy)
 {
 	dword *pdwSrc = (dword *)pbSrc;
@@ -1581,6 +1572,5 @@ void CopyBits4Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, i
 		pdwDst = (dword *)((byte *)pdwDst + cbDstReturn);
 	}
 }
-#endif
 
 } // namespace wi

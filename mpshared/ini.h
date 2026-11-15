@@ -7,15 +7,9 @@
 
 // Don't leave this on all the time because IniScanf uses
 // some non-standard format strings.
-#if 0 // defined(__GNUC__) || defined(__clang__)
-#define scanfFormat23 __attribute__((format(scanf, 2, 3)))
-#define scanfFormat34 __attribute__((format(scanf, 3, 4)))
-#define scanfFormat45 __attribute__((format(scanf, 4, 5)))
-#else
 #define scanfFormat23
 #define scanfFormat34
 #define scanfFormat45
-#endif
 
 namespace wi {
 

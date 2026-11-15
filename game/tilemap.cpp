@@ -232,15 +232,7 @@ void TileMap::Draw(DibBitmap *pbm, int x, int y, int cx, int cy, int xMap, int y
 	}
 					 
 	// Now draw this map
-#if 0
-	BitmapType *pbmpScreen = WinGetBitmap(WinGetDisplayWindow());
-	byte *pbDib = (byte *)BmpGetBits(pbmpScreen);
-	Size sizFill;
-	pbm->GetSize(&sizFill);
-	Fill(pbDib, sizFill.cx, sizFill.cy, sizFill.cx, 1);
-#else
 	byte *pbDib = pbm->GetBits();
-#endif
 
 	Size sizDib;
 	pbm->GetSize(&sizDib);

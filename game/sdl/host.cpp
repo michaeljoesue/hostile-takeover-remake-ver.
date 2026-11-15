@@ -3,189 +3,34 @@
 #include "base/tick.h"
 #include "base/log.h"
 #include "base/thread.h"
-#include "base/md5.h"
-#include "game/httppackmanager.h"
-#include "game/httppackinfomanager.h"
-#include "game/httpservice.h"
 #include "game/completemanager.h"
-#include <sys/types.h>
 #include <errno.h>
+#include <time.h>
 #include <SDL.h>
 
 namespace wi {
 
 SdlPackFileReader gpakr;
-HttpPackManager *gppackm;
-HttpPackInfoManager *gppim;
 CompleteManager *gpcptm;
 base::Thread *gpgt;
 
-SurfaceProperties gprops;
-SDL_FingerID gtouches[2];
-wi::Point gaptLast[2];
-bool gfWasBackgrounded;
-
-char *gpszUdid;
-
 bool HostInit()
 {
-    HostHelpers::Init();
-    HostHelpers::GetSurfaceProperties(&gprops);
+    if (!HostHelpers::Init()) {
+        return false;
+    }
 
-    gppackm = new HttpPackManager(gphttp, HostHelpers::GetMissionPacksDir(), HostHelpers::GetTempDir());
-    gppackm->InitFromInstalled();
-    gppim = new HttpPackInfoManager(gphttp, HostHelpers::GetMissionPackInfosDir(), HostHelpers::GetTempDir());
     gpcptm = new CompleteManager(HostHelpers::GetCompletesDir());
     gpcptm->Init();
-
-    // These initilize to 0 but are expected to be -1
-    // since 0 is a valid touch id on some devices
-    gtouches[0] = -1;
-    gtouches[1] = -1;
-
-	// TODO(darrinm): get user id (gpszUdid)
-
     return true;
 }
 
 void HostExit()
 {
-    delete gppim;
-    delete gppackm;
+    delete gpcptm;
+    gpcptm = NULL;
 
     HostHelpers::Cleanup();
-}
-
-const char *HostGenerateDeviceId() {
-    // Hash it so query params aren't obnoxious                                 
-    MD5_CTX md5;
-    MD5Init(&md5);
-    const char *udid = HostHelpers::GetUdid();
-    MD5Update(&md5, (const byte *)udid, strlen(udid));
-    byte hash[16];
-    MD5Final(hash, &md5);
-    return base::Format::ToHex(hash, 16);
-}
-
-const char *HostGetPlatformString() {
-    return HostHelpers::GetPlatformString();
-}
-
-void HostInitiateWebView(const char *title, const char *url) {
-    return HostHelpers::InitiateWebView(title, url);
-}
-
-IChatController *HostGetChatController() {
-    return HostHelpers::GetChatController();
-}
-
-void HostInitiateAsk(const char *title, int max, const char *def,
-        int keyboard, bool secure) {
-    return HostHelpers::InitiateAsk(title, max, def, keyboard, secure);
-}
-
-void HostGetAskString(char *psz, int cb) {
-    return HostHelpers::GetAskString(psz, cb);
-}
-
-void HostOpenUrl(const char *pszUrl) {
-    HostHelpers::OpenUrl(pszUrl);
-}
-
-void HostSuspendModalLoop(DibBitmap *pbm)
-{
-    // Wait for WI to become active again
-
-    LOG() << "Entering SuspendModalLoop";
-
-    base::Thread& thread = base::Thread::current();
-    while (true) {
-        base::Message msg;
-        thread.Get(&msg);
-        if (msg.id == kidmAppSetFocus) {
-            break;
-        }
-        if (msg.id == kidmAppTerminate) {
-            thread.Post(&msg);
-            break;
-        }
-        thread.Dispatch(&msg);
-    }
-
-    LOG() << "Leaving SuspendModalLoop";
-}
-
-//
-// Post motion events into the message queue in order
-// to handle event coalescing for kidmMoveEvent / kidmMoveEvent2.
-//
-void PostSdlMotionEvent(const SDL_Event &event)
-{
-    // Post these into the message queue with coalescing
-    // The second id is a special exception. Coalesce sequential
-    // events, but allow this exception. This allows coalescing
-    // to occur across an intermixed stream of finger 1 and finger 2
-    // move events.
-    for (int i = 0; i < 2; i++) {
-        if (gtouches[i] == event.tfinger.fingerId) {
-            base::Message msg;
-            msg.id = (i == 0) ? kidmFingerMoveEvent : kidmFingerMoveEvent2;
-            msg.x = (int)(event.tfinger.x * gprops.cxWidth);
-            msg.y = (int)(event.tfinger.y * gprops.cyHeight);
-            msg.ff = 0;
-            msg.ms = HostGetMillisecondCount();
-
-            gaptLast[i].x = (int)msg.x;
-            gaptLast[i].y = (int)msg.y;
-
-            HostGetGameThread().Post(&msg, i == 0 ? kidmFingerMoveEvent2 : kidmFingerMoveEvent);
-            break;
-        }
-    }
-}
-
-void CheckTouchTracking() {
-    // This is just in case - if we lose an up, this detects it and resets
-    // things.
-
-    int cTouchesTracking = 0;
-    for (int i = 0; i < 2; i++) {
-        if (gtouches[i] != -1) {
-            cTouchesTracking++;
-        }
-    }
-    int cTouchesFound = 0;
-
-    // Check each touch device
-
-    int ntd = SDL_GetNumTouchDevices();
-    for (int i = 0; i < ntd; i++) {
-        SDL_TouchID device = SDL_GetTouchDevice(i);
-
-        for (int n = 0; n < SDL_GetNumTouchFingers(device); n++) {
-            SDL_FingerID fingerId = SDL_GetTouchFinger(device, n)->id;
-            if (fingerId == gtouches[0] || fingerId == gtouches[1]) {
-                cTouchesFound++;
-            }
-        }
-    }
-
-    // If it's whacked, post an up and set the slot to -1.
-
-    if (cTouchesFound < cTouchesTracking) {
-        for (int i = 0; i < 2; i++) {
-            if (gtouches[i] != -1) {
-                gtouches[i] = -1;
-                base::Message msg;
-                msg.id = (i == 0) ? kidmFingerUpEvent : kidmFingerUpEvent2;
-                msg.x = gaptLast[i].x;
-                msg.y = gaptLast[i].y;
-                msg.ff = 0;
-                msg.ms = wi::HostGetMillisecondCount();
-                HostGetGameThread().Post(&msg);
-            }
-        }
-    }
 }
 
 bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
@@ -205,114 +50,24 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 
 	switch (event.type) {
 
-    /*
-    Note: SDL sees all mouse/touch input as "coursor input". Mouse events are 
-    processed as touch events and real touch events raise fake mosue events. 
-    Because WI supports multitouch, mouse events and finger events need to be 
-    processed separately. Until a better way is found, use macros to only 
-    process the input events appropriate for the given platform:
-
-    - OS X doesn't support touch input. Thus, only process SDL_MOUSE events.
-    - iOS doesn't support mouse input. Thus, only process SDL_FINGER events.
-    - Android supports both mouse and touch input. Fortunately,
-    SDL_HINT_ANDROID_SEPARATE_MOUSE_AND_TOUCH can be used to process mouse events
-    separately from touch events (it's a shame a similar hint doesn't exist for
-    other platforms). Thus, Android can process both input event types.
-    - Linux... We'll try only processing SDL_MOUSE events for now.
-    */
-
-#if defined(__IPHONEOS__) || defined(__ANDROID__)
-    case SDL_FINGERDOWN: {
-        for (int i = 0; i < 2; i++) {
-            if (gtouches[i] == -1) {
-                gtouches[i] = event.tfinger.fingerId;
-
-                pevt->eType = (i == 0) ? penDownEvent : penDownEvent2;
-                pevt->x = (int)(event.tfinger.x * gprops.cxWidth);
-                pevt->y = (int)(event.tfinger.y * gprops.cyHeight);
-                pevt->ff = kfEvtFinger;
-                pevt->ms = HostGetMillisecondCount();
-
-                gaptLast[i].x = (int)pevt->x;
-                gaptLast[i].y = (int)pevt->y;
-                break;
-            }
-        }
-
-        // Sometimes we won't get an up. Handle this case here.
-        CheckTouchTracking();
-
-        break;
-        }
-        
-    case SDL_FINGERUP: {
-        for (int i = 0; i < 2; i++) {
-            if (gtouches[i] == event.tfinger.fingerId) {
-                gtouches[i] = -1;
-
-                pevt->eType = (i == 0) ? penUpEvent : penUpEvent2;
-                pevt->x = (int)(event.tfinger.x * gprops.cxWidth);
-                pevt->y = (int)(event.tfinger.y * gprops.cyHeight);
-                pevt->ff = kfEvtFinger;
-                pevt->ms = HostGetMillisecondCount();
-
-                gaptLast[i].x = (int)pevt->x;
-                gaptLast[i].y = (int)pevt->y;
-
-                break;
-            }
-        }
-
-        break;
-        }
-        
-    case SDL_FINGERMOTION: {
-        // Eat the event if it's not one of the two fingers
-        if (event.tfinger.fingerId != gtouches[0] && event.tfinger.fingerId != gtouches[1]) {
-            break;
-        }
-
-        // Coalesce all sequential finger motion events.
-        PostSdlMotionEvent(event);
-        while (true) {
-            // Is the next event a motion event?
-            SDL_Event eventT;
-            int n = SDL_PeepEvents(&eventT, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT);
-            if (event.type != SDL_FINGERMOTION)
-                break;
-            
-            // Eat the motion event
-            n = SDL_PeepEvents(&eventT, 1, SDL_GETEVENT, SDL_FINGERMOTION, SDL_FINGERMOTION);
-            if (n != 1) {
-                break;
-            }
-            PostSdlMotionEvent(eventT);
-        }
-
-        }
-        break;
-#endif
-
-#if defined(__MACOSX__) || defined(__ANDROID__) || defined(__LINUX__)
 	case SDL_MOUSEBUTTONDOWN:
         pevt->eType = penDownEvent;
         pevt->x = event.button.x;
         pevt->y = event.button.y;
 		break;
-		
+
 	case SDL_MOUSEBUTTONUP:
         pevt->eType = penUpEvent;
 		pevt->x = event.button.x;
 		pevt->y = event.button.y;
 		break;
-		
+
 	case SDL_MOUSEMOTION:
         pevt->eType = penMoveEvent;
 		pevt->x = event.motion.x;
 		pevt->y = event.motion.y;
 		break;
-#endif
-		
+
 	case SDL_KEYDOWN:
         pevt->eType = keyDownEvent;
         switch (event.key.keysym.sym) {
@@ -339,32 +94,6 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 		case SDLK_DELETE:
 			pevt->chr = chrDelete;
 			break;
-
-        case SDLK_AC_BACK:
-            pevt->chr = vchrBack;
-            break;
-
-#if 0			
-		case SDLK_F7:
-			if (gpavir == NULL) {
-				gpavir = new AviRecorder();
-				Size siz;
-				gpdisp->GetFrontDib()->GetSize(&siz);
-				if (!gpavir->Start(siz.cx, siz.cy)) {
-					delete gpavir;
-					gpavir = NULL;
-				}
-			}
-			break;
-
-		case SDLK_F8:
-			if (gpavir != NULL) {
-				gpavir->Stop();
-				delete gpavir;
-				gpavir = NULL;
-			}
-			break;
-#endif
 
 		case SDLK_KP_MINUS:	// numpad
 			{
@@ -393,70 +122,9 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 			break;
 
         default:
-#ifdef DEBUG_HELPERS
-			extern void DebugHelperKeyHandler(word vk);
-			DebugHelperKeyHandler(pmsg->wParam);
-#endif
             pevt->chr = event.key.keysym.sym;
             break;
         }
-        break;
-
-    case SDL_APP_DIDENTERFOREGROUND:
-        // Allow the display to render
-        gpdisp->SetShouldRender(true);
-
-        // Unpause simulation
-        ggame.GamePause(false);
-
-        // The client was disconected in SDL_APP_DIDENTERBACKGROUND.
-        // Notify the callbacks about this to present the user with a message.
-        if (gfWasBackgrounded && gptra != NULL) {
-            if (gptra->GetGameCallback() != NULL) {
-                gptra->GetGameCallback()->OnGameDisconnect();
-            }
-
-            if (gptra->GetCallback() != NULL) {
-                gptra->GetCallback()->OnConnectionClose();
-            }
-
-            // This should already be closed from SDL_APP_DIDENTERBACKGROUND
-            gptra->Close();
-        }
-
-        // SDL may have released its graphics context if the app was previously
-        // backgrounded. This leaves the screen black when the user returns.
-        // Hack: Draw dib and render
-        gpmfrmm->DrawFrame(true);
-        gpdisp->RenderGameSurface();
-        break;
-
-    case SDL_APP_DIDENTERBACKGROUND:
-        gfWasBackgrounded = true;
-
-        // Pause simulation
-        ggame.GamePause(true);
-
-        // Close the connection to the server. If the user returns to the app,
-        // SDL_APP_DIDENTERFOREGROUND will notify gptra's callbacks.
-        if (gptra != NULL) {
-            gptra->Close();
-        }
-
-        // Stop display rendering; SDL may release its graphics context when
-        // backgrounded, so we don't want to try to render to a non-existant context.
-        gpdisp->SetShouldRender(false);
-        break;
-
-    case SDL_APP_WILLENTERFOREGROUND:
-        break;
-
-    case SDL_APP_WILLENTERBACKGROUND:
-        break;
-
-    case SDL_APP_TERMINATING:
-        // NOTE: The app seems to terminate before the code in this
-        // case can be executed (iOS and Android).
         break;
 
 	case SDL_QUIT:
@@ -472,58 +140,6 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         return false;
     }    
 
-#if 0 // TODO(scottlu)
-    - Add SDL processing for touch events.
-    - Generate penMoveEvent2, penDownEvent2, penUpEvent2
-    - add pevt->ff |= kfEvtFinger
-    - add SDL support for device turned off, or locked and return
-      gameSuspendEvent. If no SDL support for this, post kidmAppKillFocus
-      in native layer and translate into gameSuspendEvent in ProcessEvents.
-      old code:
-
-    case kidmAppKillFocus:
-        pevt->eType = gameSuspendEvent;
-        pevt->ff = 0;
-        break;
-#endif
-
-#if 0 // TODO(darrinm)
-    if (gpdisp != NULL) {
-        int x = pevt->x;
-        int y = pevt->y;
-
-        SurfaceProperties props;
-        HostHelpers::GetSurfaceProperties(&props);
-        int cx = props.cxWidth;
-        int cy = props.cyHeight;
-
-        ModeInfo mode;
-        gpdisp->GetMode(&mode);
-        switch (mode.nDegreeOrientation) {
-        case 0:
-            // Screen rotated 90 degrees but coordinates unrotated
-            pevt->x = y;
-            pevt->y = (cy - 1) - x;
-            break;
-
-        case 90:
-            pevt->x = (cy - 1) - y;
-            pevt->y = x;
-            break;
-
-        case 180:
-            pevt->x = (cx - 1) - x;
-            pevt->y = (cy - 1) - y;
-            break;
-
-        case 270:
-            pevt->x = y;
-            pevt->y = (cx - 1) - x;
-            break;
-        }
-    }
-#endif
-
     pevt->ms = pmsg->ms;
     if (pevt->ms == 0)
         pevt->ms = HostGetMillisecondCount();
@@ -533,43 +149,13 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 
 bool ProcessMessage(base::Message *pmsg, Event *pevt)
 {
-    memset(pevt, sizeof(*pevt), 0);
+    memset(pevt, 0, sizeof(*pevt));
     switch (pmsg->id) {
     case base::kidmNullEvent:
         pevt->eType = nullEvent;
         pevt->ff = 0;
         break;
 
-    case base::kidmTransportEvent:
-        pevt->eType = transportEvent;
-        pevt->ff = 0;
-        break;
-
-    case kidmAskStringEvent:
-        pevt->eType = askStringEvent;
-        pevt->ff = 0;
-        break;
-
-    case kidmFingerMoveEvent:
-        pevt->eType = penMoveEvent;
-        pevt->ff = kfEvtFinger;
-        break;
-
-    case kidmFingerMoveEvent2:
-        pevt->eType = penMoveEvent2;
-        pevt->ff = kfEvtFinger;
-        break;
-
-    case kidmFingerUpEvent:
-        pevt->eType = penUpEvent;
-        pevt->ff = kfEvtFinger;
-        break;
-
-    case kidmFingerUpEvent2:
-        pevt->eType = penUpEvent2;
-        pevt->ff = kfEvtFinger;
-        break;
-		
     default:
         return false;
     }
@@ -635,19 +221,21 @@ long HostGetMillisecondCount()
     return (long)base::GetMillisecondCount();
 }
     
-long HostRunSpeedTests(DibBitmap *pbmSrc)
-{
-	return 0;
-}
+// Map the arrow keys to the scroll keys the game polls (see InputUIForm)
 
 dword HostGetCurrentKeyState(dword keyBit)
 {
-    return 0;
-}
-
-bool HostIsPenDown()
-{
-    return false;
+    const Uint8 *pbKeys = SDL_GetKeyboardState(NULL);
+    dword dw = 0;
+    if (pbKeys[SDL_SCANCODE_UP])
+        dw |= keyBitRockerUp;
+    if (pbKeys[SDL_SCANCODE_DOWN])
+        dw |= keyBitRockerDown;
+    if (pbKeys[SDL_SCANCODE_LEFT])
+        dw |= keyBitRockerLeft;
+    if (pbKeys[SDL_SCANCODE_RIGHT])
+        dw |= keyBitRockerRight;
+    return dw & keyBit;
 }
 
 void HostMessageBox(TCHAR *pszFormat, ...)
@@ -656,17 +244,6 @@ void HostMessageBox(TCHAR *pszFormat, ...)
     va_start(va, pszFormat);
     HostHelpers::MessageBox(pszFormat, va);
     va_end(va);
-}
-
-void HostGetUserName(char *pszBuff, int cb)
-{
-    strncpyz(pszBuff, "anonymous", cb);
-}
-
-bool HostGetOwnerName(char *pszBuff, int cb, bool fShowError)
-{
-    strncpyz(pszBuff, "Player", cb);
-    return true;
 }
 
 // UNDONE: prefix directory?
@@ -701,11 +278,7 @@ dword HostReadFile(FileHandle hf, void *pv, dword cb)
 
 void HostSleep(dword ct)
 {
-    int cms = ct * 10;
-    struct timeval tvWait;
-    tvWait.tv_sec = cms / 1000;
-    tvWait.tv_usec = (cms % 1000) * 1000;
-    select(0, NULL, NULL, NULL, &tvWait);
+    SDL_Delay(ct * 10);
 }
 
 void HostGetSilkRect(int irc, Rect *prc)
@@ -725,11 +298,6 @@ SoundDevice::~SoundDevice()
 }
 
 // Used for sound buffer maintenance requirements
-
-bool HostSoundServiceProc()
-{
-    return true;
-}
 
 void HostGetCurrentDate(Date *pdate)
 {
@@ -787,31 +355,12 @@ void HostNotEnoughMemory(bool fStorage, dword cbFree, dword cbNeed)
 	HostMessageBox(TEXT((char *)"Need %ld bytes of memory but only %ld bytes are free!"), cbNeed, cbFree);
 }
 
-bool HostEnumAddonFiles(Enum *penm, char *pszAddonDir, int cbDir,
-        char *pszAddon, int cb)
-{
-    // PackManager is the way to do this now
-    return false;
-}
-
 void HostSetGameThread(base::Thread *thread) {
     gpgt = thread;
 }
 
 base::Thread& HostGetGameThread() {
     return *gpgt;
-}
-
-base::Thread *HostGetGameThreadPointer() {
-    return gpgt;
-}
-
-void HostAppStop() {
-    // Only use this function for when you can't post an appStopEvent
-
-    ggame.SaveReinitializeGame();
-    gevm.SetAppStopping();
-    ggame.AskResignGame();
 }
 
 } // namespace wi

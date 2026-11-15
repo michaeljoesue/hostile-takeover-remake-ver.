@@ -279,15 +279,6 @@ bool WaitAction::Perform(Trigger *ptgr, Side side)
 	return false;
 }
 
-#ifdef DEBUG_HELPERS
-char *WaitAction::ToString() 
-{
-	// UNDONE: remove hardcode kside1
-	sprintf(s_szDebugHelpers, "Wait %d [%d]", m_ctWait / 100, 
-			(gsim.GetTickCount() - m_atStartSide[kside1]) / 100);
-	return s_szDebugHelpers;
-}
-#endif
 
 // CenterViewAction
 // Immediately center the View on the specified Area
@@ -352,59 +343,11 @@ bool EndMissionAction::Perform(Trigger *ptgr, Side side)
 		Assert(strcmp(ggame.GetNextLevel(), gsim.GetLevel()->GetFilename()) != 0, "No Next Mission specified");
 #endif
 
-    // Treat local and remote players differently. In a single player game we
-    // don't allow non-local players to perform EndMission actions (bad
-    // scripting). 
+    // Non-local players aren't allowed to perform EndMission actions (bad
+    // scripting).
 
-	if (side != gpplrLocal->GetSide() && !gfMultiplayer)
+	if (side != gpplrLocal->GetSide())
 		return true;
-
-	// In a multiplayer game we want to notify the local player of the remote 
-	// player's demise. We also want to mark the 'EndMission'ed player as an 
-	// Observer and put them into observing 'mode'.
-
-	if (gfMultiplayer) {
-
-		Player *pplr = gplrm.GetPlayer(side);
-		if ((pplr->GetFlags() & (kfPlrUnfulfilled | kfPlrObserver)) == 0) {
-            // Show alert
-            char szT[100];
-            sprintf(szT, m_nWinLose == knWinLoseTypeWin ? "%s is victorious!" : "%s has been defeated!", pplr->GetName());
-            ShowAlert(szT);
-
-            // This player is now out, and an observer
-			pplr->SetFlags(pplr->GetFlags() | kfPlrObserver | kfPlrComputer);
-
-			if (pplr == gpplrLocal) {
-                // In MP, TriggerMgr::Update() is called synchronously in the
-                // simulation, so it is not possible to execute modal loops
-                // such the end mission forms. For this reason, this part is
-                // done asynchronously.
-
-                Event evt;
-                memset(&evt, 0, sizeof(evt));
-                if (m_nWinLose == knWinLoseTypeWin) {
-                    evt.eType = mpEndMissionWinEvent;
-                } else {
-                    evt.eType = mpEndMissionLoseEvent;
-                }
-                evt.dw = side;
-                gevm.PostEvent(&evt);
-            } else {
-                // A non-local player lost. Have the local player check to
-                // see if it won.
-                if (m_nWinLose == knWinLoseTypeLose) {
-                    Event evt;
-                    memset(&evt, 0, sizeof(evt));
-                    evt.eType = checkGameOverEvent;
-                    evt.dw = pplr->GetId();
-                    gevm.PostEvent(&evt);
-                }
-            }
-		}
-
-		return true;
-	}
 
 	// Keep any more triggers from executing
 	// NOTE: doesn't keep subsequent actions in the same trigger from executing
@@ -437,31 +380,6 @@ bool EndMissionAction::Perform(Trigger *ptgr, Side side)
 	return !gevm.IsAppStopping();
 }
 
-void EndMissionAction::OnMPEndMissionActionEvent(int nWinLose, Side side) {
-
-    Player *pplr = gplrm.GetPlayer(side);
-    if (pplr != gpplrLocal) {
-        return;
-    }
-
-    pplr->ShowObjectives(nWinLose == knWinLoseTypeWin ?
-            ksoWinSummary : ksoLoseSummary);
-
-    if (ggame.AskObserveGame()) {
-
-        // Cause modal forms to cancel such as build forms, help, options,
-        // etc.
-
-        gevm.PostEvent(cancelModeEvent);
-    } else {
-        Event evt;
-        memset(&evt, 0, sizeof(evt));
-        evt.eType = gameOverEvent;
-        evt.dw = knGoAbortLevel;
-        gevm.PostEvent(&evt);
-    }
-}
-
 // EcomAction
 
 EcomAction::~EcomAction()
@@ -492,18 +410,7 @@ bool EcomAction::Init(char *psz)
 
 bool EcomAction::Perform(Trigger *ptgr, Side side)
 {
-    // Does nothing in multiplayer
-    if (gfMultiplayer) {
-        return true;
-    }
-
 // Let any side bring up an ecom. Mission Authors request
-#if 0
-	// Only bother for the local player
-
-	if (side != gpplrLocal->GetSide())
-		return true;
-#endif
 
 	// if there's a build form up, pass and try again later
 	if (gpmfrmm->EcomSuppressed())
@@ -512,9 +419,7 @@ bool EcomAction::Perform(Trigger *ptgr, Side side)
 	// Bring up the Ecom
 
 	gsim.Pause(true);
-	//fixme
-	if (!gfMultiplayer)
-		Ecom(m_nCharFrom, m_nCharTo, m_pszMessage, m_nBackground, m_fMore);
+	Ecom(m_nCharFrom, m_nCharTo, m_pszMessage, m_nBackground, m_fMore);
 	gsim.Pause(false);
 
 	// if the app was exited while the ecom was up, return to this ecom.
@@ -675,12 +580,6 @@ bool DefogAreaAction::Init(char *psz)
 
 bool DefogAreaAction::Perform(Trigger *ptgr, Side side)
 {
-#if 0
-	// Only bother for the local player
-
-	if (side != gpplrLocal->GetSide())
-		return true;
-#endif
 
 	TRect trc;
 	Level *plvl = gsim.GetLevel();
@@ -818,28 +717,6 @@ bool ModifyCountdownAction::Perform(Trigger *ptgr, Side side)
 	return true;
 }
 
-#ifdef DEBUG_HELPERS
-char *ModifyCountdownAction::ToString()
-{
-	switch (m_nAction) {
-	case knModifyCountdownTypeStop:
-		sprintf(s_szDebugHelpers, "Stop Countdown");
-		break;
-	case knModifyCountdownTypeResume:
-		sprintf(s_szDebugHelpers, "Resume Countdown");
-		break;
-	case knModifyCountdownTypeHide:
-		sprintf(s_szDebugHelpers, "Hide Countdown");
-		break;
-	case knModifyCountdownTypeShow:
-		sprintf(s_szDebugHelpers, "Show Countdown");
-		break;
-	default:
-		Assert(false);
-	}
-	return s_szDebugHelpers;
-}
-#endif
 
 // RepairAction
 
@@ -952,28 +829,6 @@ bool ModifyCreditsAction::Perform(Trigger *ptgr, Side side)
 	return true;
 }
 
-#ifdef DEBUG_HELPERS
-char *ModifyCreditsAction::ToString()
-{
-	switch (m_nAction) {
-	case knModifyNumberTypeSet:
-		sprintf(s_szDebugHelpers, "Set Credits");
-		break;
-
-	case knModifyNumberTypeAdd:
-		sprintf(s_szDebugHelpers, "Add Credits");
-		break;
-
-	case knModifyNumberTypeSubtract:
-		sprintf(s_szDebugHelpers, "Subtract Credits");
-		break;
-
-	default:
-		Assert(false);
-	}
-	return s_szDebugHelpers;
-}
-#endif
 
 // MoveUnitsInAreaAction
 
@@ -1133,32 +988,13 @@ bool ShowObjectivesAction::Perform(Trigger *ptgr, Side side)
 
 	// Bring up the Objectives form
 
-	if (!gfMultiplayer) {
-		gsim.Pause(true);
-        gplrm.GetPlayer(side)->ShowObjectives(ksoObjectives, true);
-		gsim.Pause(false);
-    } else {
-		// Make sure this the action won't be executed again while 
-		// nested inside of Player::ShowObjective's input loop.
-
-		ptgr->SetCurrentActionComplete(side);
-
-        // Show asynchronously so TriggerMgr::Update() doesn't block
-        Event evt;
-        memset(&evt, 0, sizeof(evt));
-        evt.eType = mpShowObjectivesEvent;
-        evt.dw = side;
-        gevm.PostEvent(&evt);
-    }
+	gsim.Pause(true);
+	gplrm.GetPlayer(side)->ShowObjectives(ksoObjectives, true);
+	gsim.Pause(false);
 
 	// if the app was exited while the objectives screen was up, return to it.
 
 	return !gevm.IsAppStopping();
-}
-
-void ShowObjectivesAction::OnMPShowObjectivesEvent(Side side) {
-    // Don't pause the simulation
-    gplrm.GetPlayer(side)->ShowObjectives(ksoObjectives, true);
 }
 
 // SetFormalObjectiveInfoAction
@@ -1212,11 +1048,6 @@ bool CutSceneAction::Init(char *psz)
 
 bool CutSceneAction::Perform(Trigger *ptgr, Side side)
 {
-    // Does nothing in multiplayer
-    if (gfMultiplayer) {
-        return true;
-    }
-
 	// UNDONE: clear screen for cleaner palette transition?
 
 	CutScene(m_pszMessage, true);
@@ -1236,11 +1067,6 @@ bool JumpToMissionAction::Init(char *psz)
 
 bool JumpToMissionAction::Perform(Trigger *ptgr, Side side)
 {
-    // Does nothing in multiplayer
-    if (gfMultiplayer) {
-        return true;
-    }
-
 	Assert(m_pactnNext == NULL, "Action attempted after End Mission");
 
 	ggame.SetNextLevel(m_szLevel);
@@ -1301,13 +1127,6 @@ bool ModifyPvarAction::Perform(Trigger *ptgr, Side side)
 
 	case knModifyNumberTypeSet:
 // Not in v1.1 by accident
-#if 0
-		{
-			char szT[kcbPvarValueMax];
-			if (ggame.GetVar(m_szName, szT, sizeof(szT)))
-				nAmount = atoi(szT);
-		}
-#endif
 		break;
 
 	default:
@@ -1321,28 +1140,6 @@ bool ModifyPvarAction::Perform(Trigger *ptgr, Side side)
 	return true;
 }
 
-#ifdef DEBUG_HELPERS
-char *ModifyPvarAction::ToString()
-{
-	switch (m_nAction) {
-	case knModifyNumberTypeSet:
-		sprintf(s_szDebugHelpers, "Set Pvar");
-		break;
-
-	case knModifyNumberTypeAdd:
-		sprintf(s_szDebugHelpers, "Add to Pvar");
-		break;
-
-	case knModifyNumberTypeSubtract:
-		sprintf(s_szDebugHelpers, "Subtract from Pvar");
-		break;
-
-	default:
-		Assert(false);
-	}
-	return s_szDebugHelpers;
-}
-#endif
 
 // SetPvarTextAction
 

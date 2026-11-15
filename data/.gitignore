@@ -1,8 +1,9 @@
+# Data build output (python build.py)
 ini.tmp
 files.tmp
+_tmp.pal
+*.pdb.tmp
 832/
-824/
-trg/
 art824/desert_8bpp.pal
 art824/grassy_8bpp.pal
 art824/fixed_8bpp.pal

@@ -18,7 +18,7 @@ MemPdbReader::~MemPdbReader()
 	Assert(m_aphcRecordData == NULL);
 }
 
-bool MemPdbReader::Open(char *pszFn)
+bool MemPdbReader::Open(const char *pszFn)
 {
 	// Attempt to open
 

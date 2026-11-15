@@ -250,10 +250,8 @@ void SdlAnimSprite::Show(bool fShow) {
 
 void SdlAnimSprite::SetScaleAnimation(float nScaleStart, float nScaleEnd,
         dword cms, dword cmsRate, bool fAutoDestroy) {
-#if 1
     SetScale(nScaleEnd);
     return;
-#endif
 
     // If the current scale is inside the requested range, advance the
     // animation timing to that point. For example if while it is scaling

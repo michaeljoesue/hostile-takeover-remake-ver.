@@ -8,15 +8,15 @@ public:
 	BuilderGob *GetOwner() {
 		return m_pgobOwner;
 	}
-	void SetOwner(BuilderGob *pgobOwner) secStructures;
-	void UpdateStructureInfo(ListItem *pli) secStructures;
+	void SetOwner(BuilderGob *pgobOwner);
+	void UpdateStructureInfo(ListItem *pli);
 
 	// Form overrides
 
-	void EndForm(int nResult = kidcCancel) secStructures;
-	virtual void OnControlSelected(word idc) secStructures;
+	void EndForm(int nResult = kidcCancel);
+	virtual void OnControlSelected(word idc);
 	virtual void OnControlNotify(word idc, int nNotify);
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secStructures;
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
 
 private:
 	BuilderGob *m_pgobOwner;
@@ -183,12 +183,6 @@ void HqGob::Deactivate()
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *HqGob::GetName()
-{
-	return "Headquarters";
-}
-#endif
 
 void HqGob::RemoveScorch(StructGob *pstru)
 {
@@ -294,16 +288,12 @@ BeginStateMachine
 		OnUpdate
 		OnExit
 
-#if 0
-EndStateMachineInherit(BuilderGob)
-#else
             return knHandled;
         }
     } else {
         return (int)BuilderGob::ProcessStateMachineMessage(st, pmsg);
     }
     return (int)BuilderGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 //===========================================================================
@@ -380,7 +370,7 @@ void StructureBuildForm::SetOwner(BuilderGob *pgobOwner)
 
 void StructureBuildForm::UpdateStructureInfo(ListItem *pli)
 {
-	StructConsts *pstruc = (StructConsts *)gapuntc[(long)pli->pvData];
+	StructConsts *pstruc = (StructConsts *)gapuntc[(pword)pli->pvData];
 
 	// Update Cost
 
@@ -479,7 +469,7 @@ void StructureBuildForm::OnControlSelected(word idc)
 		return;
 
 	case kidcHelp:
-		Help("buildings", !ggame.IsMultiplayer());
+		Help("buildings", true);
 		break;
 
 	case kidcList:
@@ -696,11 +686,9 @@ void PlaceStructureForm::GetSubRects(WCoord wx, WCoord wy, Rect *prcInside,
     wrcInside.bottom = WcFromTc(m_ty + m_pstruc->ctyReserve);
     WRect wrcOutside = wrcInside;
 
-#if defined(IPHONE) || defined(SDL)
     if (wrcOutside.Width() < WcFromTc(3)) {
         wrcOutside.Inflate((WcFromTc(3) - wrcOutside.Width()) / 2, 0);
     }
-#endif
 
     Size siz;
     gsim.GetLevel()->GetTileMap()->GetMapSize(&siz);

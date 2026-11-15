@@ -88,19 +88,6 @@ bool MobileUnitGob::InitClass(MobileUnitConsts *pmuntc, IniReader *pini)
 
 	// Optional properties
 
-	if (pini->GetPropertyValue(szTemplate, "ArmorStrengthMP", "%d", &nArmorStrength) != 1) {
-		pmuntc->fxArmorStrengthMP = pmuntc->fxArmorStrength;
-	} else {
-		Assert(nArmorStrength < 1 << 10);
-		pmuntc->fxArmorStrengthMP = itofx(nArmorStrength);
-	}
-
-	if (pini->GetPropertyValue(szTemplate, "MoveRateMP", "%d", &nT) != 1)
-		pmuntc->wcMoveDistPerUpdateMP = pmuntc->wcMoveDistPerUpdate;
-	else
-		pmuntc->wcMoveDistPerUpdateMP = (WCoord)nT;
-	Assert(pmuntc->wcMoveDistPerUpdateMP < 64);	// gawcDiagonalDist only has 64 entries
-
 	// Preload the unit's menu form
 
 	if (!LoadMenu(pmuntc, pini, szTemplate, kidfUnitMenu))
@@ -183,12 +170,10 @@ void MobileUnitGob::Deactivate()
 		Assert(IsTileReserved(m_txDst, m_tyDst));
 		ReserveTile(m_txDst, m_tyDst, false);
 	} else {
-#ifndef MP_DEBUG_SHAREDMEM
 // DWM: We always hit it when a Processor containing a Bullpup is destroyed.
 // We should fix that but in the meantime I need to release a DEBUG build
 // that won't trip up on this case so I'm commenting it out for now.
 //		Assert(IsTileReserved(TcFromWc(m_wx), TcFromWc(m_wy)));
-#endif
 		ReserveTile(TcFromWc(m_wx), TcFromWc(m_wy), false);
 	}
 	UnitGob::Deactivate();
@@ -1245,17 +1230,6 @@ lbHitNoDamage:
 
 				m_gidTarget = kgidNull;
 
-#if 0
-// Causes looping problems (kstChase->kstAttack->kstChase). Plus "stuck" cases happen less often, so try
-// taking this out and revert to guard mode to see how it feels.
-
-				// Return to any action in progress
-
-				if (m_mua != kmuaNone) {
-					gsmm.SendMsg(&m_msgAction);
-					return knHandled;
-				}
-#endif
 
 				// UNDONE: Perhaps in this case try searching around waiting gobs.
 
@@ -1616,85 +1590,6 @@ Path *MobileUnitGob::FindPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord 
 {
 	TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
 
-#ifdef __CPU_68K
-	// See if we have a cached path that we can reuse - 68K only since this
-	// sucks
-
-#define ktcPathLengthReuse 35
-#define ktcPathEndPointReuse 7
-
-	word nDistT = ganSquared[abs(txFrom - txTo)] + ganSquared[abs(tyFrom - tyTo)];
-	if (GetType() != kgtGalaxMiner && nDistT >= ganSquared[ktcPathLengthReuse]) {
-		for (int nPath = 0; nPath < s_cpathCached; nPath++) {
-			// Long enough to be worth it?
-
-			Path *ppathT = s_apathCached[nPath];
-			if (ppathT->GetCount() < ktcPathLengthReuse)
-				continue;
-
-			// In the general vicinity of our start / end points
-
-			TPoint tptStart;
-			ppathT->GetStartPoint(&tptStart);
-			TPoint tptEnd;
-			ppathT->GetPointRaw(ppathT->GetCount() - 1, &tptEnd);
-			word nDistStart = ganSquared[abs(tptStart.tx - txFrom)] + ganSquared[abs(tptStart.ty - tyFrom)];
-			word nDistEnd = ganSquared[abs(tptEnd.tx - txTo)] + ganSquared[abs(tptEnd.ty - tyTo)];
-			word nDistReuse = ganSquared[ktcPathEndPointReuse] * 2;
-			if (nDistStart > nDistReuse || nDistEnd > nDistReuse)
-				continue;
-
-			// See if our closest approach is free of obstacles
-
-			TPoint tptClosest;
-			if (ppathT->FindClosestPoint(txFrom, tyFrom, 0, 5, &tptClosest) == -1)
-				continue;
-			if (ptrmap->IsLineOccupied(txFrom, tyFrom, tptClosest.tx, tptClosest.ty, 0))
-				continue;
-
-			// Looking good so far. See if our closest end point is free of obstacles
-
-			TPoint tptDestClosest;
-			int itptDestClosest = ppathT->FindClosestPoint(txTo, tyTo, 0, ppathT->GetCount(), &tptDestClosest);
-			if (itptDestClosest == -1)
-				continue;
-			if (ptrmap->IsLineOccupied(tptDestClosest.tx, tptDestClosest.ty, txTo, tyTo, 0))
-				continue;
-
-			// We're ready to use this path. First create a copy
-
-			ppathT = ppathT->Clone();
-			if (ppathT == NULL)
-				continue;
-
-			// If the ending is the same, use it
-
-			if (tptDestClosest.tx == txTo && tptDestClosest.ty == tyTo)
-				return ppathT;
-
-			// Now lop off the end and amend it with our new dest
-			// If this doesn't work, use it as is
-
-			if (!ppathT->TrimEnd(itptDestClosest))
-				return ppathT;
-
-			// Add our new ending. If we run into something, use the path as is
-
-			Path *ppathAppend = ptrmap->FindLinePath(tptDestClosest.tx, tptDestClosest.ty, txTo, tyTo, kbfStructure);
-			if (ppathAppend == NULL)
-				return ppathT;
-
-			// Append this to our ppath
-
-			ppathT->Append(ppathAppend);
-			delete ppathAppend;
-
-			// Done
-
-			return ppathT;
-		}
-	}
-#endif
 
 	// No cached paths that satisfy our needs. Make a new one.
 	// If it's close first try an easy path
@@ -1706,26 +1601,6 @@ Path *MobileUnitGob::FindPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord 
 	if (ppathT == NULL)
 		ppathT = ptrmap->FindPath(txFrom, tyFrom, txTo, tyTo, kbfStructure);
 
-#ifdef __CPU_68K
-	// Cache this path if it is long enough to be interesting
-
-	if (ppathT != NULL) {
-		if (ppathT->GetCount() >= ktcPathLengthReuse) {
-			// Move the existing paths that we have down one
-
-			Path *ppathCache = ppathT->Clone();
-			if (ppathCache != NULL) {
-				if (s_cpathCached == ARRAYSIZE(s_apathCached)) {
-					delete s_apathCached[ARRAYSIZE(s_apathCached) - 1];
-				} else {
-					s_cpathCached++;
-				}
-				memmove(&s_apathCached[1], &s_apathCached[0], (ARRAYSIZE(s_apathCached) - 1) * ELEMENTSIZE(s_apathCached));
-				s_apathCached[0] = ppathCache;
-			}
-		}
-	}
-#endif
 
 	return ppathT;
 }
@@ -1805,12 +1680,6 @@ int MobileUnitGob::MoveUpdate()
 		TPoint tptNext;
 		int nMoveResult;
 		if (!PrepareNextTransition(&tptNext, &nMoveResult)) {
-#if 0 // def DEBUG
-			static char *s_aszMoveResult[] = { "knMoveMoving", "knMoveTargetReached", "knMoveStuck", "knMoveWaiting" };
-			Trace("0x%08lx @ %d,%d returning %s", this, TcFromWc(m_wx), TcFromWc(m_wy), s_aszMoveResult[nMoveResult]);
-			if (nMoveResult == knMoveWaiting)
-				Trace("    (waiting on %d, %d, reserving munt: 0x%08lx)", m_txDst, m_tyDst, GetReservingUnit(m_txDst, m_tyDst));
-#endif
 			return nMoveResult;
 		}
 
@@ -2214,30 +2083,6 @@ bool MobileUnitGob::HandleCollision(MobileUnitGob **apmunt, byte *abf, TPoint *a
 bool MobileUnitGob::ContinueMoveWaiting(MobileUnitGob **apmunt, byte *abf, TPoint *atpt, int ctpt, TPoint *ptptNext)
 {
 	int itpt;
-#if 0
-	for (itpt = 0; itpt < ctpt; itpt++) {
-		// If the dest is not reserved, take it
-
-		byte bf = abf[itpt];
-		if (!(bf & (kbfStructure | kbfMobileUnit))) {
-			*ptptNext = atpt[itpt];
-			return true;
-		}
-
-		// If not a mobile unit, can't move wait on it
-
-		if (!(bf & kbfMobileUnit))
-			continue;
-
-		// Deprioritize moving waiting on a munt that is still in transition
-
-		MobileUnitGob *pmunt = apmunt[itpt];
-		if (!pmunt->InTransition() && pmunt->IsMobile()) {
-			if (MoveWaitForUnit(pmunt, atpt[itpt].tx, atpt[itpt].ty))
-				return true;
-		}
-	}
-#endif
 
 	// Didn't find anything; try move waiting on the first possible unit
 
@@ -2424,13 +2269,6 @@ int MobileUnitGob::FindCloserTrackPoint(TrackPoint *ptrkpStart, Direction dirBlo
 			// Remember this as the last best progress point
 
 			if (ptrkpNew->IsProgress(&trkpT)) {
-#if 0
-				// Remembers a "last best" progress point without knowing access to the unit
-				// path is possible from there
-
-				ptrkpNew->InitFrom(&trkpT);
-				ctptLastGood = itpt + 1;
-#else
 				// If the unit path is accessible from here, return this path
 
 				TPoint tptClosest;
@@ -2439,7 +2277,6 @@ int MobileUnitGob::FindCloserTrackPoint(TrackPoint *ptrkpStart, Direction dirBlo
 					ptrkpNew->InitFrom(&trkpT);
 					return itpt + 1;
 				}
-#endif
 			}
 		}
 
@@ -3014,35 +2851,5 @@ UnitGob *MobileUnitGob::FindValidTargetInArea(int nArea)
 	}
 }
 
-#ifdef MP_DEBUG_SHAREDMEM
-void MobileUnitGob::MPValidate()
-{
-	MPValidateGobMember(MobileUnitGob, m_dir);
-	MPValidateGobMember(MobileUnitGob, m_dirNext);
-	MPValidateGobMember(MobileUnitGob, m_gidTarget);
-	MPValidateGobMember(MobileUnitGob, m_tLastFire);
-	MPValidateGobMember(MobileUnitGob, m_msgPending);
-	MPValidateGobMember(MobileUnitGob, m_msgAction);
-	MPValidateGobMember(MobileUnitGob, m_cCountdown);
-	MPValidateGobMember(MobileUnitGob, m_cMoveStepsRemaining);
-	MPValidateGobMember(MobileUnitGob, m_tptChaseInitial);
-	MPValidateGobMember(MobileUnitGob, m_mua);
-	MPValidateGobMember(MobileUnitGob, m_muaPending);
-	MPValidateGobMember(MobileUnitGob, m_wfMunt);
-	MPValidateGobMember(MobileUnitGob, m_stPending);
-	MPValidateGobMember(MobileUnitGob, m_cupdLastHitOrNearbyAllyHit);
-	MPValidateGobMember(MobileUnitGob, m_wxDst);
-	MPValidateGobMember(MobileUnitGob, m_wyDst);
-	MPValidateGobMember(MobileUnitGob, m_txDst);
-	MPValidateGobMember(MobileUnitGob, m_tyDst);
-	MPValidateGobMember(MobileUnitGob, m_wptTarget);
-	MPValidateGobMember(MobileUnitGob, m_nSeqMoveAside);
-	MPValidateGobMember(MobileUnitGob, m_itptPath);
-	MPValidateGobMember(MobileUnitGob, m_wptTargetCenter);
-	MPValidateGobMember(MobileUnitGob, m_tcTargetRadius);
-	MPValidateGobMember(MobileUnitGob, m_wcMoveDistPerUpdate);
-	UnitGob::MPValidate();
-}
-#endif
 
 } // namespace wi

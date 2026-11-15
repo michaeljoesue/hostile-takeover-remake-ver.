@@ -9,24 +9,24 @@ namespace wi {
 class CutSceneForm : public ShellForm
 {
 public:
-	CutSceneForm() secCutScene;
+	CutSceneForm();
 	
 	// Form overrides
 
-	virtual bool DoModal(const char *pszScene = NULL) secCutScene;
-	virtual void OnControlSelected(word idc) secCutScene;
-//	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secCutScene;
-	virtual bool OnPenEvent(Event *pevt) secCutScene;
+	virtual bool DoModal(const char *pszScene = NULL);
+	virtual void OnControlSelected(word idc);
+//	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual bool OnPenEvent(Event *pevt);
 
 	// Timer interface
 
-	virtual void OnTimer(long tCurrent) secCutScene;
+	virtual void OnTimer(long tCurrent);
 
 private:
-	void More() secCutScene;
-	void Layout(char *pszBitmap) secCutScene;
-	void HideCutSceneBitmap() secCutScene;
-	void ShowCutSceneBitmap() secCutScene;
+	void More();
+	void Layout(char *pszBitmap);
+	void HideCutSceneBitmap();
+	void ShowCutSceneBitmap();
 
 	char *m_pszText;
 };
@@ -58,22 +58,6 @@ CutSceneForm::CutSceneForm()
 {
 }
 
-#if 0
-void CutSceneForm::OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd)
-{
-	ShellForm::OnPaintBackground(pbm, pupd);
-
-	EcomTextControl *pect = (EcomTextControl *)GetControlPtr(kidcMessage);
-	Rect rc;
-	pect->GetRect(&rc);
-	Font *pfnt = gapfnt[kifntDefault];
-	rc.left = 0;
-	rc.right = m_rc.Width();
-	rc.bottom = rc.top + rc.Height() - (rc.Height() % pfnt->GetHeight());
-
-	FillHelper(pbm, pupd, &rc, GetColor(kiclrBlack));
-}
-#endif
 
 bool CutSceneForm::DoModal(const char *pszText)
 {

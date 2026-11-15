@@ -70,14 +70,13 @@ way, or all clients need to animate the exact same way.
 Platform specific code directories
 ----------------------------------
 
-palm (removed)
-ce (removed)
-iphone (working. should of been named "ios")
-sdl (not too far from working. Expected to be future king).
-win (not working. Left for reference.)
-
-There are more details about the sdl port to discuss in a more direct way
-through email. Please contact Scott and Darrin.
+This version of the game builds for Windows only, and is single player
+only. The platform layer is the SDL layer in sdl/ (the Windows specific
+parts are in sdl/hosthelpers.cpp and sdl/win/). The palm, ce, iphone and win
+layers, the other SDL ports (Android, iOS, macOS, Linux, Native Client), and
+the multiplayer, online and mission pack download code were removed. They
+can be found in the history of this repository and in the original
+repository, https://github.com/spiffcode/hostile-takeover.
 
 Why are we releasing this
 -------------------------

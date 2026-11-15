@@ -93,15 +93,6 @@ bool TerrainMap::Init(char *pszFn)
 	return true;
 }
 
-#ifdef MP_DEBUG
-dword TerrainMap::GetChecksum()
-{
-	dword n = 0;
-	for (int i = 0; i < m_cbBuffer; i++)
-		n += m_abBuffer[i];
-	return n;
-}
-#endif
 
 #define knVerTerrainMapState 1
 bool TerrainMap::LoadState(Stream *pstm)
@@ -133,9 +124,6 @@ void TerrainMap::SetFlags(int tx, int ty, int ctx, int cty, byte bf)
 		}
 	}
 
-#ifdef MP_DEBUG
-//	MpTrace("Set Terrain Flags:%d,%d,%d,%d set 0x%02x", tx, ty, ctx, cty, bf);
-#endif
 }
 
 bool TerrainMap::TestFlags(int tx, int ty, int ctx, int cty, byte bf)
@@ -185,9 +173,6 @@ void TerrainMap::ClearFlags(int tx, int ty, int ctx, int cty, byte bf)
 		}
 	}
 
-#ifdef MP_DEBUG
-//	MpTrace("Clear Terrain Flags:%d,%d,%d,%d clear 0x%02x", tx, ty, ctx, cty, bf);
-#endif
 }
 
 bool TerrainMap::IsLineOccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, byte bfTerrainAvoid)
@@ -476,10 +461,6 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 
 	// Initialize.
 
-#if 0
-	for (int n = 0; n < m_cbBuffer; n++)
-		m_abBuffer[n] &= kbfMobileUnit | kbfStructure | kbfReserved;
-#else
 #define kbClear (kbfMobileUnit | kbfStructure | kbfReserved)
 #define kdwClear MakeDword(kbClear, kbClear, kbClear, kbClear)
 
@@ -541,7 +522,6 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 		Assert();
 		break;
 	}
-#endif
 
 	while (m_ppathhList != NULL)
 		RemovePathHead(m_ppathhList);
@@ -1197,16 +1177,6 @@ bool TrackPoint::IsCloser(TrackPoint *ptrkpA)
 bool TrackPoint::IsBetterSort(TrackPoint *ptrkpA)
 {
 	return IsProgress(ptrkpA);
-#if 0
-	TrackPoint *ptrkpB = this;
-	if (ptrkpA->m_n2After < ptrkpB->m_n2After)
-		return true;
-	if (ptrkpA->m_n2After == ptrkpB->m_n2After) {
-		if (ptrkpA->m_n2Before > ptrkpB->m_n2Before)
-			return true;
-	}
-	return false;
-#endif
 }
 
 } // namespace wi

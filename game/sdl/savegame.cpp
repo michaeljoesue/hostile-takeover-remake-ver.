@@ -1,13 +1,13 @@
 #include "../ht.h"
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <memory.h>
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
+#include <filesystem>
+#include <string>
+#include <vector>
 #include "hosthelpers.h"
 
 namespace wi {
@@ -68,7 +68,7 @@ void FileStream::Close()
 
 	if (m_fSuccess) {
 		if (m_szDelete[0] != 0) {
-            unlink(m_szDelete);
+            remove(m_szDelete);
 		}
 		if (m_szFinal[0] != 0) {
             rename(m_szFile, m_szFinal);
@@ -100,7 +100,7 @@ bool FileStream::IsSuccess()
 void PrependSavesDirectory(char *pszIn, char *pszOut)
 {
 	strcpy(pszOut, HostHelpers::GetSaveGamesDir());
-	strcat(pszOut, "/");
+	strcat(pszOut, "\\");
 	strcat(pszOut, pszIn);
 }
 
@@ -124,37 +124,38 @@ bool FindSaveGame(int nGame, char *psz, int cb, int *pc = NULL)
 
     // Enum files in this directory
 
-	char szFileSpec[PATH_MAX];
-	PrependSavesDirectory("", szFileSpec);
-    DIR *pdir = opendir(szFileSpec);
-    if (pdir == NULL) {
-        return false;
+    std::vector<std::string> vecNames;
+    std::error_code ec;
+    std::filesystem::directory_iterator it(
+            std::filesystem::u8path(HostHelpers::GetSaveGamesDir()), ec);
+    for (; !ec && it != std::filesystem::directory_iterator();
+            it.increment(ec)) {
+        vecNames.push_back(it->path().filename().u8string());
     }
 
     int c = 0;
-    dirent *pdent;
-    while ((pdent = readdir(pdir)) != NULL) {
+    for (size_t i = 0; i < vecNames.size(); i++) {
+        const char *pszName = vecNames[i].c_str();
+
         // Only consider save games, because if the desired save game is
         // not found, we need to count "slots".
 
-        if (strncmp("htsave", pdent->d_name, 6) != 0) {
+        if (strncmp("htsave", pszName, 6) != 0) {
             continue;
         }
 
         // Save game found?
 
-        if (strncmp(szCompare, pdent->d_name, cchCompare) == 0) {
+        if (strncmp(szCompare, pszName, cchCompare) == 0) {
 			if (psz != NULL)
-				strncpyz(psz, pdent->d_name, cb);
-			closedir(pdir);
+				strncpyz(psz, pszName, cb);
 			return true;
 		}
 
         // Count save games but don't count the temporary "Reinitialize"
         // saved game
 
-		if (strncmp(szReinitializeSave, pdent->d_name,
-                cchReinitializeSave) == 0) {
+		if (strncmp(szReinitializeSave, pszName, cchReinitializeSave) == 0) {
 			continue;
         }
 
@@ -162,7 +163,6 @@ bool FindSaveGame(int nGame, char *psz, int cb, int *pc = NULL)
 
 		c++;
     }
-    closedir(pdir);
 
     // Didn't find the saved game, but did count the number of occupied slots
 
@@ -194,15 +194,16 @@ bool HostGetSaveGameName(int nGame, char *psz, int cb, Date *pdate, int *pnHours
 	// Get the creation time in hours24, minutes
 
     struct stat st;
-    if (stat(szPath, &st) > 0) {
+    if (stat(szPath, &st) != 0) {
         return false;
     }
-    struct tm *ptm = localtime((const time_t *)&st.st_mtime);
+    time_t tModified = st.st_mtime;
+    struct tm *ptm = localtime(&tModified);
 	*pnHours24 = ptm->tm_hour;
 	*pnMinutes = ptm->tm_min;
 	*pnSeconds = ptm->tm_sec;
 	pdate->nDay = ptm->tm_mday;
-	pdate->nMonth = ptm->tm_mon;
+	pdate->nMonth = ptm->tm_mon + 1;
 	pdate->nYear = ptm->tm_year + 1900;
 
 	// Copy over filename, lose prefix
@@ -321,7 +322,7 @@ bool HostDeleteSaveGame(char *psz, int nGame)
 	PrependSavesDirectory(szSaveGame, szSaveGameFull);
 
 	if (psz != NULL) {
-        unlink(szSaveGameFull);
+        remove(szSaveGameFull);
 		return true;
 	}
 	return false;

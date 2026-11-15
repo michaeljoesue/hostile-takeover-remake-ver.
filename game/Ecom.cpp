@@ -18,23 +18,23 @@ namespace wi {
 class EcomForm : public Form, public Timer
 {
 public:
-	EcomForm() secEcom;
-	virtual ~EcomForm() secEcom;
+	EcomForm();
+	virtual ~EcomForm();
 	void SetAutoTakedown() {m_wfEcom |= kfEcomAutoTakedown;}
-	bool DoModal(char *pszMessage, int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide) secEcom;
+	bool DoModal(char *pszMessage, int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide);
 
 	// Form overrides
 
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secEcom;
-	virtual void OnControlSelected(word idc) secEcom;
-	virtual bool OnPenEvent(Event *pevt) secEcom;
+	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual void OnControlSelected(word idc);
+	virtual bool OnPenEvent(Event *pevt);
 
 	// Timer Overrides
 
-	virtual void OnTimer(long tCurrent) secEcom;
+	virtual void OnTimer(long tCurrent);
 
 private:
-	void More() secEcom;
+	void More();
 
 	word m_wfEcom;
 	char *m_pszText;
@@ -66,16 +66,11 @@ void Ecom(int nCharFrom, int nCharTo, char *pszMessage, int nBackground, bool fM
 	if (pfrm == NULL)
 		return;
 
-#if 0
-	if (nBackground != knSmallLargeTypeLarge && !fMore)
-		pfrm->SetAutoTakedown();
-#else
 	// Don't special case type large. Some resolutions the large ecom doesn't
 	// fill the whole screen, and autotakedown is desireable.
 	// Don't special case fMore since that is now automatically handled.
 
 	pfrm->SetAutoTakedown();
-#endif
 
 	Size sizPlayfield;
 	ggame.GetPlayfieldSize(&sizPlayfield);

@@ -3,11 +3,11 @@
 
 namespace base {
 
-MessageQueue::MessageQueue(SocketServer *ss) : ss_(ss), stop_(false),
+MessageQueue::MessageQueue(EventServer *es) : es_(es), stop_(false),
         pmsg_(NULL), pmsgDelayed_(NULL)
 {
-    if (ss_ == NULL) {
-        ss_ = SocketServer::Create();
+    if (es_ == NULL) {
+        es_ = EventServer::Create();
     }
 }
 
@@ -15,13 +15,13 @@ MessageQueue::~MessageQueue()
 {
     Clear();
     ClearDispose();
-    delete ss_;
+    delete es_;
 }
 
 void MessageQueue::Stop()
 {
     stop_ = true;
-    ss_->WakeUp();
+    es_->WakeUp();
 }
 
 bool MessageQueue::IsStopping()
@@ -120,7 +120,7 @@ bool MessageQueue::Get(Message *pmsg, long64 ctWait)
 
         // Wait and multiplex
 
-        ss_->Wait(ctNext, true);
+        es_->Wait(ctNext);
 
         // If the requested time has expired, return
 
@@ -179,7 +179,7 @@ void MessageQueue::Post(Message *pmsg, int idCoalesce, bool fEvenIfStopping)
     pmsgNew->pmsgNext = NULL;
     *ppmsgT = pmsgNew;
 
-    ss_->WakeUp();
+    es_->WakeUp();
 }
 
 void MessageQueue::PostDelayed(Message *pmsg, long ct, long ctBoost) {
@@ -197,7 +197,7 @@ void MessageQueue::PostDelayed(Message *pmsg, long ct, long ctBoost) {
     pmsgNew->tTrigger = GetTickCount() + ct + ctBoost;
     InsertDelayedMessage(pmsgNew);
 
-    ss_->WakeUp();
+    es_->WakeUp();
 }
 
 void MessageQueue::BoostTimer(int id, MessageHandler *handler, long ctBoost) {
@@ -325,6 +325,49 @@ bool MessageQueue::FindDispose(void *pv) {
         }
     }
     return false;
+}
+
+} // namespace base
+
+#include <condition_variable>
+#include <chrono>
+
+namespace base {
+
+// Default EventServer: waits on a condition variable
+
+class CondVarEventServer : public EventServer {
+public:
+    CondVarEventServer() : woken_(false) {}
+
+    virtual bool Wait(long64 ctWait) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (ctWait == kctForever) {
+            cv_.wait(lock, [this] { return woken_; });
+        } else {
+            cv_.wait_for(lock, std::chrono::milliseconds(ctWait * 10),
+                    [this] { return woken_; });
+        }
+        woken_ = false;
+        return true;
+    }
+
+    virtual void WakeUp() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            woken_ = true;
+        }
+        cv_.notify_one();
+    }
+
+private:
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    bool woken_;
+};
+
+EventServer *EventServer::Create() {
+    return new CondVarEventServer();
 }
 
 } // namespace base

@@ -10,7 +10,6 @@ class SdlPackFileReader : public PackFileReader
 {
 private:
     virtual PdbReader *OpenPdb(const char *pszDir, const char *pszFn);
-    virtual bool DeletePdb(const char *pszDir, const char *pszFn);
 };
 
 } // namespace wi

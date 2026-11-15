@@ -1,6 +1,5 @@
 #include "game/ht.h"
 #include "game/wistrings.h"
-#include "game/stateframe.h"
 
 namespace wi {
 
@@ -186,10 +185,6 @@ void Simulation::OneTimeExit()
 
 bool Simulation::PerLevelInit()
 {
-#ifdef DEBUG_HELPERS
-    void ClearLog();
-    ClearLog();
-#endif
 
     if (!gcmdq.Init())
         return false;
@@ -402,9 +397,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     if (m_fPaused)
         return;
 
-    // Give some time to sound servicing
-
-    HostSoundServiceProc();
 
     // Advance Simulation time
 
@@ -439,10 +431,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     m_pbldm->Update();
 
     // Process all queued commands
-#ifdef DEBUG_HELPERS
-    extern void UpdateCommandQueueViewer();
-    UpdateCommandQueueViewer();
-#endif
 
     int cmsg = pcmdq->GetCount();
 #ifdef STATS_DISPLAY
@@ -452,13 +440,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     int i = 0;
     Message *pmsg = pcmdq->GetFirst();
     for (; i < cmsg; i++, pmsg++) {
-        // Disconnect is processed in order, by all clients, at the same time.
-        // To do this, it is turned into a message, since messages have a
-        // synchronization mechanism.
-        if (pmsg->mid == kmidPlayerDisconnect) {
-            HandlePlayerDisconnect(pmsg);
-            continue;
-        }
         gsmm.RouteMessage(pmsg);
     }
     pcmdq->Clear();
@@ -499,24 +480,12 @@ void Simulation::Update(CommandQueue *pcmdq)
         if (pgobT == NULL)
             continue;
 
-#ifdef MP_DEBUG_SHAREDMEM
-        gsideCurrent = pgobT->GetOwner()->GetSide();
-        ggidCurrent = pgobT->GetId();
-        gcupdCurrent = m_cUpdates;
-        ggtCurrent = pgobT->GetType();
-#endif
 
         UpdateInterval *punvl = pgobT->GetUpdateInterval();
         if (punvl->Decrement()) {
             msgUpdate.smidReceiver = *pgidT;
             gsmm.SendMsg(&msgUpdate);
 
-#ifdef PIL
-            if (gfOS5Pa1Device) {
-                if ((i & 15) == 0)
-                    HostSoundServiceProc();
-            }
-#endif
         }
     }
 
@@ -524,10 +493,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     // respondants create new Gobs they won't receive an immediate Update
     // before their first paint. This is important for cases like delayed shots.
 
-#ifdef DEBUG_HELPERS
-    extern void UpdateDelayedMessageViewer();
-    UpdateDelayedMessageViewer();
-#endif
     gsmm.DispatchDelayedMessages();
 
     long tCurrent = HostGetTickCount();
@@ -535,32 +500,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     // Sound effects
 
     // Credits increasing or decreasing?
-#if 0
-    switch (gpplrLocal->GetCreditsDirection()) {
-    case 0:
-        break;
-
-    case 1:
-        gsndm.PlaySfx(ksfxGameCreditsIncreasing);
-        break;
-
-    case -1:
-        // If the credits user is for repair, only play decrease sound over a longer interval
-        // TODO: figure out ultimate approach for managing interval for credit spending
-// TUNE:
-#define kctIntervalRepairNotify (75)
-        if (true) { // gpplrLocal->GetCreditsConsumer() == knConsumerRepair) {
-            static long s_tLastRepairNotify = 0;
-            if (s_tLastRepairNotify == 0 || abs(tCurrent - s_tLastRepairNotify) >= kctIntervalRepairNotify) {
-                s_tLastRepairNotify = tCurrent;
-                gsndm.PlaySfx(ksfxGameCreditsDecreasing);
-            }
-        } else {
-            gsndm.PlaySfx(ksfxGameCreditsDecreasing);
-        }
-        break;
-    }
-#endif
 
     // Base under attack?
 
@@ -590,61 +529,9 @@ void Simulation::Update(CommandQueue *pcmdq)
     }
 
 
-#ifdef MP_STRESS
-    // Has to be at the end of Update() because gcmdq serves the needs of both
-    // collecting client commands and collecting multiplayer commands. This
-    // role switching occurs in in knmidScUpdate handling in
-    // SimUIForm::OnReceive.
-
-    extern void MPStressUpdate();
-    MPStressUpdate();
-#endif
 
 }
 
-void Simulation::HandlePlayerDisconnect(Message *pmsg) {
-    // Re-route this as a NetMessage to get proper handling
-    if (gptra == NULL) {
-        return;
-    }
-    IGameCallback *pgcb = gptra->GetGameCallback();
-    if (pgcb == NULL) {
-        return;
-    }
-
-    // This must not be modal
-    PlayerDisconnectNetMessage pdnm;
-    pdnm.pid = pmsg->PlayerDisconnect.pid;
-    pdnm.nReason = pmsg->PlayerDisconnect.nReason;
-    NetMessage *pnm = &pdnm;
-    pgcb->OnNetMessage(&pnm);
-}
-
-#ifdef TRACKSTATE
-void Simulation::TrackState(StateFrame *frame) {
-    // Sim stuff
-
-    int i = frame->AddCountedValue('SIMU');
-    frame->AddValue('SEED', (dword)GetRandomSeed(), i);
-    frame->AddValue('CMPU', (dword)gcMessagesPerUpdate, i);
-    frame->AddValue('CUPD', (dword)m_cUpdates, i);
-
-    // gobs
-
-    Gob *pgobT;
-    for (pgobT = ggobm.GetFirstGob(); pgobT != NULL;
-            pgobT = ggobm.GetNextGob(pgobT)) {
-        if (!(pgobT->GetFlags() & kfGobStateMachine)) {
-            continue;
-        }
-        pgobT->TrackState(frame);
-    }
-
-    // players
-
-    gplrm.TrackState(frame);
-}
-#endif
 
 void Simulation::SetSelection(Rect *prc)
 {
@@ -765,12 +652,10 @@ void Simulation::DrawBackground(UpdateMap *pupd, DibBitmap *pbm)
     pbm->GetSize(&sizDib);
     ptmap->Draw(pbm, 0, 0, sizDib.cx, sizDib.cy, xView, yView, pfogm->GetMapPtr(), pupd);
 
-    HostSoundServiceProc();
 
     // Draw galaxite where the updatemap is invalid
 
     pfogm->DrawGalaxite(pbm, xView, yView, pupd, m_plvl->GetTerrainMap()->GetMapPtr());
-    HostSoundServiceProc();
 }
 
 void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
@@ -791,9 +676,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
 
     pupd->SetViewOrigin(xView, yView);
 
-    // Give some time to sound servicing
-
-    HostSoundServiceProc();
 
     // Find visible Gobs
 
@@ -815,7 +697,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
     }
 #endif
 
-    HostSoundServiceProc();
 
     // Figure out what layers are in use. Much of the time only 1 or 2 layers are in use
 
@@ -851,21 +732,11 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
                 if (ff & ffLayerT) {
                     pgobT->Draw(pbm, xView, yView, nLayer);
 
-#ifdef PIL
-                    if (gfOS5Pa1Device) {
-                        cT++;
-                        if ((cT & 15) == 0)
-                            HostSoundServiceProc();
-                    }
-#endif
                 }
             }
         }
     }
 
-    // Give some time to sound servicing
-
-    HostSoundServiceProc();
 
     // Clear kfGobRedraw since the gobs are now "valid".
     // Do this after painting because some painting code ends up setting this bit
@@ -930,7 +801,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
 #endif
 
     pupd->SetViewOrigin(0, 0);
-    HostSoundServiceProc();
 
 	// If the screen is larger than the map size we clear those areas to black color
 
@@ -958,7 +828,6 @@ void Simulation::DrawFog(UpdateMap *pupd, DibBitmap *pbm)
     short xView = PcFromUwc(m_wxView) & 0xfffe;
     short yView = PcFromUwc(m_wyView) & 0xfffe;
     m_plvl->GetFogMap()->Draw(pbm, xView, yView, pupd);
-    HostSoundServiceProc();
 }
 
 bool Simulation::SetViewPos(WCoord wx, WCoord wy, bool fInit)

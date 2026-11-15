@@ -1,17 +1,6 @@
 #include "game/ht.h"
 #include "game/wistrings.h"
-#include "mpshared/netmessage.h"
-#include "game/httppackmanager.h"
 #include "game/completemanager.h"
-#include "game/chatter.h"
-
-#if 0
-//temp
-#include "base/bytebuffer.h"
-#include "game/serviceurls.h"
-#include "game/uploader.h"
-#include "game/httpservice.h"
-#endif
 
 namespace wi {
 
@@ -46,10 +35,7 @@ MultiFormMgr *gpmfrmm;
 int gnHueOffset = 0;
 int gnSatMultiplier = 0;
 int gnLumOffset = 0;
-int gnDemoRank = 0;
 double gnScrollSpeed = 1.0;
-char gszAskURL[512];
-char gszDeviceId[34];
 Stream *gpstmSavedGame;
 UpdateMap *gpupdSim;
 int gtGameSpeed = kcmsUpdate / 10;	// 80 ms/frame or 12.5 FPS (1000/80)
@@ -63,32 +49,31 @@ int gcMuntGobsHumanLimitSP;
 int gcMuntGobsComputerLimitSP;
 int gcStructGobsComputerDeltaSP;
 int gcStructGobsHumanDeltaSP;
-int gcStructGobsLimitMP;
-int gcMuntGobsLimitMP;
 int gcSceneryGobsLimit;
 int gcScorchGobsLimit;
 int gcSupportGobsLimit;
-bool gfMultiplayer;
-bool gfIgnoreBluetoothWarning;
 SpriteManager *gpsprm;
+
+// Game speeds, in 1/100ths of a second per update
+int gatGameSpeeds[15] = {
+    64, 48, 32, 24, 16, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1
+};
 
 #ifdef STRESS
 bool gfStress = false;
 long gtStressTimeout;
 #endif
 
-#ifndef PIL
-#if (defined(IPHONE) || defined(SDL)) && (!defined(DEV_BUILD) && !defined(BETA_TIMEOUT))
+#if !defined(DEV_BUILD)
 char *gszVersion = "1.6";
 #else
 char *gszVersion = "+++VERSION+++";
 #endif
-#endif
 
 // Forward declarations
 
-bool AllocComputerPlayers() secGame;
-void FreeComputerPlayers() secGame;
+bool AllocComputerPlayers();
+void FreeComputerPlayers();
 
 //
 //
@@ -96,14 +81,8 @@ void FreeComputerPlayers() secGame;
 
 void GameMain(char *pszCmds)
 {
-#if defined(DEBUG) && !defined(CE) && !defined(PIL) && !defined(IPHONE) && !defined(SDL)
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
 	char *pszLevel = NULL;
 	char szLevel[kcbFilename];
-#ifdef WIN
-	char szData[_MAX_PATH];
-#endif
 
 	// Parse command line
 
@@ -142,44 +121,9 @@ void GameMain(char *pszCmds)
 		} else if (strcmp(szT, "-nofog") == 0) {
 			gfClearFog = true;
 
-#if defined(MP_STRESS) && !defined(PIL) && !defined(CE) && !defined(IPHONE)
-		// -mp-spawn <count>
-		// TODO: -mp-spawn <client|server> side arg_string
-
-		} else if (strcmp(szT, "-mp-spawn") == 0) {
-			int cSpawn;
-			c = IniScanf(&pszCmds[nchAbs], "%d %+", &cSpawn, &nchRel);
-			nchAbs += nchRel;
-			if (c != 2)
-				return;
-
-			for (int nSpawn = 0; nSpawn < cSpawn; nSpawn++) {
-				char szModule[MAX_PATH];
-				GetModuleFileName(NULL, szModule, sizeof(szModule) - 1);
-				char szCmdLine[MAX_PATH];
-				sprintf(szCmdLine, "%s -mp-start %d", szModule, nSpawn + 1);
-				WinExec(szCmdLine, SW_SHOW);
-			}
-
-		// -mp-start <pos>
-		// TODO: -mp-start <client|server> side arg_string
-
-		} else if (strcmp(szT, "-mp-start") == 0) {
-			int nSpawn;
-			c = IniScanf(&pszCmds[nchAbs], "%d %+", &nSpawn, &nchRel);
-			nchAbs += nchRel;
-			if (c != 2)
-				return;
-
-			gfMPStress = true;
-			gnMPPos = nSpawn;
-#endif
 		}
 	}
 
-#ifdef DEBUG_HELPERS
-	InitDebugHelpers();
-#endif
 
     if (!HostInit()) {
         return;
@@ -190,18 +134,6 @@ void GameMain(char *pszCmds)
 			ggame.Exit();
 			return;
 		}
-
-#if 0
-//for testing sync error uploading
-        //temp
-        base::ByteBuffer *bb = new base::ByteBuffer();
-        bb->WriteString("hello world");
-        const char *url = base::Format::ToString("%s?gameid=1&pid=2",
-                kszSyncErrorUploadUrl);
-        UploadByteBuffer(gphttp, bb, url);
-        ggame.Exit();
-        return;
-#endif
 
 		if (gfLoadReinitializeSave) {
 			gfLoadReinitializeSave = false;
@@ -219,22 +151,10 @@ void GameMain(char *pszCmds)
 		break;
 	}
 
-	// Demo mode only nag screen
-    // Will mean you'll need to press the applications silkscreen button twice
-    // in order to exit from demo
-
-	if (gfDemo) {
-		gevm.ClearAppStopping();
-		DoRegisterNowForm();
-	}
-
 	ggame.Exit();
 
     HostExit();
 
-#ifdef DEBUG_HELPERS
-	ExitDebugHelpers();
-#endif
 
 #if defined(CHECK_OLD_ALLOCS) && defined(DEBUG) && !defined(CE) && !defined(PIL)
 	_CrtDumpMemoryLeaks();
@@ -253,7 +173,6 @@ Game::Game()
 	m_szNextLevel[0] = 0;
     m_fSkipSaveReinitialize = false;
     m_fUpdateTriggers = false;
-    m_gameid = 0;
 }
 
 Game::~Game()
@@ -283,18 +202,9 @@ bool Game::Init(int imm)
 	gnHueOffset = gprefsInit.nHueOffset;
 	gnSatMultiplier = gprefsInit.nSatMultiplier;
 	gnLumOffset = gprefsInit.nLumOffset;
-    strncpyz(gszUsername, gprefsInit.szUsername, sizeof(gszUsername));
-    strncpyz(gszPassword, gprefsInit.szPassword, sizeof(gszPassword));
-    strncpyz(gszToken, gprefsInit.szToken, sizeof(gszToken));
-    gfAnonymous = (gprefsInit.fAnonymous != 0);
 	gwfPerfOptions = gprefsInit.wfPerfOptions;
 	gwfHandicap = gprefsInit.wfHandicap;
-	gkey = gprefsInit.key;
-	gnDemoRank = gprefsInit.nDemoRank;
     gnScrollSpeed = gprefsInit.nScrollSpeed;
-	gfIgnoreBluetoothWarning = (gprefsInit.wfPrefs & kfPrefIgnoreBluetoothWarning) ? true : false;
-    strncpyz(gszAskURL, gprefsInit.szAskURL, sizeof(gszAskURL));
-    strncpyz(gszDeviceId, gprefsInit.szDeviceId, sizeof(gszDeviceId));
 
 	// Temp buffer used for several things, including decompression, TBitmap compiling.
 
@@ -305,9 +215,6 @@ bool Game::Init(int imm)
 
 	// Requires gpbScratch to work
 
-#if defined(PIL) && defined(TRACE_TO_DB_LOG)
-	DbLogInit();
-#endif
 
 	// Init event manager
 
@@ -487,64 +394,16 @@ bool Game::CheckMemoryAvailable()
 #error Gob count limit error!
 #endif
 
-// mp limits
-
-#define kcStructGobsMaxMP 55 // 33
-#define kcMuntGobsMaxMP 88 // 66
-
-#ifndef __CPU_68K
-#if (kcSceneryGobsLimit+kcScorchGobsLimit+kcSupportGobsLimit+kcStructGobsMaxMP*4+kcMuntGobsMaxMP*4 > kcpgobMax)
-#error Gob count limit error!
-#endif
-#endif
-
 	// Assume max. Works for all platforms except lowest end Palms.
 
 	gcStructGobsHumanLimitSP = kcStructGobsHumanMaxSP;
 	gcStructGobsComputerLimitSP = kcStructGobsComputerMaxSP;
 	gcMuntGobsHumanLimitSP = kcMuntGobsHumanMaxSP;
 	gcMuntGobsComputerLimitSP = kcMuntGobsComputerMaxSP;
-	gcStructGobsLimitMP = kcStructGobsMaxMP;
-	gcMuntGobsLimitMP = kcMuntGobsMaxMP;
 	gcSceneryGobsLimit = kcSceneryGobsLimit;
 	gcScorchGobsLimit = kcScorchGobsLimit;
 	gcSupportGobsLimit = kcSupportGobsLimit;
 
-#ifdef PIL
-
-#if 0
-	// Limit test
-
-	gcStructGobsHumanLimitSP = kcStructGobsHumanMinSP;
-	gcStructGobsComputerLimitSP = kcStructGobsComputerMinSP;
-	gcMuntGobsHumanLimitSP = kcMuntGobsHumanMinSP;
-	gcMuntGobsComputerLimitSP = kcMuntGobsComputerMinSP;
-
-#else
-
-	// Max scenario?
-	UInt32 cbFree, cbMax;
-	MemHeapFreeBytes(0, &cbFree, &cbMax);
-	if (cbFree < kcbDynMemMax) {
-		if (cbFree >= kcbDynMemMed) {
-			gcStructGobsHumanLimitSP = kcStructGobsHumanMedSP;
-			gcStructGobsComputerLimitSP = kcStructGobsComputerMedSP;
-			gcMuntGobsHumanLimitSP = kcMuntGobsHumanMedSP;
-			gcMuntGobsComputerLimitSP = kcMuntGobsComputerMedSP;
-		}
-		else if (cbFree >= kcbDynMemMin) {
-			gcStructGobsHumanLimitSP = kcStructGobsHumanMinSP;
-			gcStructGobsComputerLimitSP = kcStructGobsComputerMinSP;
-			gcMuntGobsHumanLimitSP = kcMuntGobsHumanMinSP;
-			gcMuntGobsComputerLimitSP = kcMuntGobsComputerMinSP;
-		}
-		else {
-			HostNotEnoughMemory(false, cbFree, kcbDynMemMin);
-			return false;
-		}
-	}
-#endif
-#endif
 
 	return true;
 }
@@ -598,19 +457,6 @@ bool Game::LoadGameData()
 		return false;
 	}
 
-#if 0
-	// Enum and push addon data
-
-	Enum enm;
-	char szAddon[64];
-    char szDir[1024];
-	while (HostEnumAddonFiles(&enm, szDir, sizeof(szDir),
-            szAddon, sizeof(szAddon))) {
-		if (CheckDatabaseVersion(szDir, szAddon, true)) {
-			gpakr.Push(szDir, szAddon);
-        }
-	}
-#endif
 
 	// Set global tile dimensions
 	// Perform hack for size 20 which really reuses 24x24 tiles but sizes other graphics proportionally
@@ -708,13 +554,8 @@ bool Game::InitMemMgr()
 // will be used by the storage memory manager. This is more than enough; we don't get
 // anywhere close this much on low-end Palms.
 
-#ifdef __CPU_68K
-// Single player only
-#define kcbDynReserve ((dword)384 * 1024)
-#else
 // Single and multi player
 #define kcbDynReserve ((dword)512 * 1024)
-#endif
 
 #define kcbSaveGame ((dword)20 * 1024)
 #define kcbMaxSaveGame ((dword)13 * kcbSaveGame)
@@ -1005,25 +846,6 @@ bool Game::InitDisplay(int immRequested)
 	if (ddwSizes4bpp & (((ddword)1) << 16))
 		AddModeMatches(4, 16, 4, 160);
 
-#if 0 // def DEBUG
-	// Print out mode matches
-
-	HostMessageBox("Mode Matches:");
-	ModeInfo mode;
-	for (int n = 0; n < m_cmm; n++) {
-		ModeMatch *pmm = &m_amm[n];
-		gpdisp->GetModeInfo(pmm->imode, &mode);
-		HostMessageBox("%dx%dx%d cyGraffiti=%d, depthData=%d, sizeData=%d", mode.cx, mode.cy, mode.nDepth, mode.cyGraffiti, pmm->nDepthData, pmm->nSizeData);
-	}
-
-	// Print out modes
-
-	HostMessageBox("Modes:");
-	for (n = 0; n < gpdisp->GetModeCount(); n++) {
-		gpdisp->GetModeInfo(n, &mode);
-		HostMessageBox("%dx%dx%d cyGraffiti=%d", mode.cx, mode.cy, mode.nDepth, mode.cyGraffiti);
-	}
-#endif
 
 	// Find best match
 
@@ -1098,15 +920,6 @@ bool Game::InitDisplay(int immRequested)
 	// If a mode was not explicitly chosen, bring up helpful suggestions about resolution / data size
 
 	if (immRequested == -1) {
-#if 0
-//doesn't work since if the higher res data isn't in memory then the option to use it won't be considered
-
-		// See if there is a mode that'll support higher-res graphics
-
-		int immBetter = FindBestModeMatch(m_amm[immNew].nSizeData);
-		if (immBetter != -1 && immBetter != immNew)
-			HostMessageBox(TEXT("This device supports higher resolution game graphics."));
-#endif
 
 		// Give a message if grayscale data is being shown on a color device
 
@@ -1124,18 +937,8 @@ bool Game::InitDisplay(int immRequested)
 
 	// Try to set this mode
 
-#if defined(WIN) && !defined(CE)
-	// If changing modes, use the default scale (-1)
-
-	int nScale = gprefsInit.nScale;
-	if (immRequested != -1)
-		nScale = -1;
-	if (!gpdisp->SetMode(m_amm[immNew].imode, nScale))
-		return false;
-#else
 	if (!gpdisp->SetMode(m_amm[immNew].imode))
 		return false;
-#endif
 
 	// Worked, remember new and best
 
@@ -1270,12 +1073,6 @@ bool Game::InitMultiFormMgr()
 	gpfrmmInput->SetFlags(gpfrmmInput->GetFlags() | kfFrmmNoScroll);
 	rc.Set(0, cySim, m_sizPlayfield.cx, cySim + cyInputForm);
 	gpmfrmm->AddFormMgr(gpfrmmInput, &rc);
-
-    // Tell the display about the two formmgr's that make
-    // up the screen. Some displays will want this for managing
-    // the front dib specially.
-
-    gpdisp->SetFormMgrs(gpfrmmSim, gpfrmmInput);
 
 	return true;
 }
@@ -1454,7 +1251,6 @@ int Game::PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame, int nRank)
 	if (pstmSavedGame != NULL) {
 		// Load MissionIdentifier
 
-        pstmSavedGame->Read(&m_miid.packid, sizeof(m_miid.packid));
         pstmSavedGame->ReadString(m_miid.szLvlFilename,
                 sizeof(m_miid.szLvlFilename));
         
@@ -1501,23 +1297,14 @@ int Game::PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame, int nRank)
 			SetRandomSeed(0x29a);
         }
 #else
-		SetRandomSeed(gfMultiplayer ? gtimm.GetTickCount() : 0x29a);
+		SetRandomSeed(0x29a);
 #endif
-        // Mount the pdb with the mission pack
-
-        if (!gppackm->Mount(gpakr, &m_miid.packid)) {
-            pstmSavedGame->Close();
-            delete pstmSavedGame;
-            nGo = knGoInitFailure;
-            break;
-        }
 
         // The level can be changed by a SetNextMisson action. This is how
         // we manage progressing from one level to the next.
 
 		if (pstmSavedGame != NULL) {
 			if (!gplrm.LoadState(pstmSavedGame)) {
-                gppackm->Unmount(gpakr, &m_miid.packid);
 				pstmSavedGame->Close();
 				delete pstmSavedGame;
 				nGo = knGoInitFailure;
@@ -1533,14 +1320,12 @@ int Game::PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame, int nRank)
         // Play the level until the player loses, exits, or advances to the
         // next level
 
-        nGo = RunSimulation(pstmSavedGame, m_miid.szLvlFilename, 0, 0, NULL);
+        nGo = RunSimulation(pstmSavedGame, m_miid.szLvlFilename);
 
         // Only use the saved game stream the first time through. Any
         // restarts start from the beginning of the level.
 
         pstmSavedGame = NULL;
-
-        gppackm->Unmount(gpakr, &m_miid.packid);
 
 		switch (nGo) {
 		case knGoAppStop:
@@ -1553,21 +1338,6 @@ int Game::PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame, int nRank)
 			// If no next level, we're done.
 
 			if (m_szNextLevel[0] == 0) {
-				if (gfDemo &&
-                        (stricmp(m_miid.szLvlFilename, "d_03.lvl") == 0)) {
-
-                    // if player just finished D3, save rank in prefs so we
-                    // know to start from M3 when they buy a new copy. If they
-                    // played D3 as a challenge mission, their rank will be -1
-
-					char szT[kcbPvarValueMax];
-					if (ggame.GetVar("rank", szT, sizeof(szT)))
-						gnDemoRank = atoi(szT);
-					if (gnDemoRank < 0)
-						gnDemoRank = 0;
-
-					SavePreferences();
-				}				
 				nGo = knGoAbortLevel;
 			} else {
                 // Mark this mission complete!
@@ -1608,8 +1378,7 @@ int Game::PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame, int nRank)
 
 // RunSimulation will Close and delete the passed-in Stream before returning
 
-int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
-        dword gameid, Chatter *chatter)
+int Game::RunSimulation(Stream *pstm, char *pszLevel)
 {
 	DialogForm *pfrm = (DialogForm *)gpmfrmm->LoadForm(gpiniForms, kidfLoading, new DialogForm());
 	if (pfrm != NULL) {
@@ -1619,25 +1388,8 @@ int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
 		gpmfrmm->DrawFrame(false);
 	}
 
-	// Retain whether or not this is a multiplayer game. Inquiring minds will 
-	// want to know later.
-
-	m_wf &= ~(kfGameMultiplayer | kfGameRoleServer);
-	if (wfRole & kfRoleMultiplayer) {
-		m_wf |= kfGameMultiplayer;
-		gfMultiplayer = true;
-
-		// Pvars shouldn't carry into multiplayer games.
-
-		m_dictPvars.Clear();
-	} else {
-		gfMultiplayer = false;
-	}
-	if (wfRole & kfRoleServer)
-		m_wf |= kfGameRoleServer;
-
 	gsndm.WaitSilence();
-	bool fSuccess = InitSimulation(pstm, pszLevel, wfRole, gameid, chatter);
+	bool fSuccess = InitSimulation(pstm, pszLevel);
 
 	if (pstm != NULL) {
 		if (!pstm->IsSuccess())
@@ -1649,17 +1401,12 @@ int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
 
 	delete pfrm;
 
-	if (!fSuccess) {
-		gfMultiplayer = false;
+	if (!fSuccess)
 		return knGoInitFailure;
-	}
 
 	// Clear fog if asked ("-nofog" command line switch)
 
 //temp
-#if 0
-	gfClearFog = true;
-#endif
 
 	if (gfClearFog)
 		gsim.GetLevel()->GetFogMap()->RevealAll(gpupdSim);
@@ -1679,12 +1426,6 @@ int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
 			continue;
 
 		if (evt.eType == appStopEvent) {
-			// Warn about multiplayer if the player pressed the home button
-
-			if (m_wf & kfGameMultiplayer) {
-				if (!AskResignGame())
-					continue;
-			}
 			if (evt.dw != knAppExit)
 				SaveReinitializeGame();
 			nGo = knGoAppStop;
@@ -1701,98 +1442,14 @@ int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
 
 	ExitSimulation();
 
-    // Eat potential cancel mode messages that due to MP exit ordering got
-    // posted after gameOverEvent
+    // Eat potential cancel mode messages that got posted after gameOverEvent
 
 	if (gevm.PeekEvent(&evt, 0)) {
 		if (evt.eType == cancelModeEvent)
 			gevm.GetEvent(&evt, 0);
 	}
 
-	// Assume not multiplayer anymore
-
-	gfMultiplayer = false;
-	m_wf &= ~(kfGameMultiplayer | kfGameRoleServer);
-
 	return nGo;
-}
-
-bool Game::AskResignGame(bool fTellHost)
-{
-	bool fAppStopping = gevm.IsAppStopping();
-    bool fAsk = true;
-#if defined(IPHONE) || defined(__IPHONEOS__) || defined (__ANDROID__)
-    // When an iPhone or Android game exits, it exits without the opportunity to
-    // confirm with the user. So if iPhone and the app is stopping, just
-    // resign.
-    if (fAppStopping) {
-        fAsk = false;
-    }
-#endif
-
-	Assert(m_wf & kfGameMultiplayer);
-
-    if (fAsk) {
-        // If app stopping is set
-
-        if (fAppStopping) {
-            gevm.ClearAppStopping();
-        }
-
-        // Ask user
-
-        char sz[128];
-        if (m_wf & kfGameRoleServer) {
-            gpstrtbl->GetString(kidsExitHost, sz, sizeof(sz));
-        } else {
-            gpstrtbl->GetString(kidsExitClient, sz, sizeof(sz));
-        }
-
-        // If the user wants to keep going, return with "app stopping" cleared
-
-        if (!HtMessageBox(kidfMessageBoxQuery, kfMbWhiteBorder | kfMbKeepTimersEnabled, "Warning", sz))
-            return false;
-
-        // If app stopping set it again
-
-        if (fAppStopping) {
-            gevm.SetAppStopping();
-        }
-    }
-
-	if (fTellHost && gptra != NULL) {
-		// Tell host
-
-		PlayerResignNetMessage prng;
-		prng.pid = gpplrLocal->GetId();
-        gptra->SendNetMessage(&prng);
-	}
-	return true;
-}
-
-bool Game::AskObserveGame()
-{
-	bool fYes = false;
-	gpplrLocal->SetFlags(gpplrLocal->GetFlags() | kfPlrObserver);
-
-	SimUIForm *psui = ggame.GetSimUIForm();
-	psui->ClearSelection();
-
-	if (!gevm.IsAppStopping()) {
-		if (psui->GetRole() & kfRoleServer) {
-			fYes = HtMessageBox(kidfMessageBoxQuery, kfMbKeepTimersEnabled | kfMbWhiteBorder, 
-				"GAME OVER", "Do you want to continue as an observer? Since this device hosting, answering no will stop the game.");
-		} else {
-			fYes = HtMessageBox(kidfMessageBoxQuery, kfMbKeepTimersEnabled | kfMbWhiteBorder, 
-				"GAME OVER", "Do you want to continue as an observer?");
-		}
-
-		if (fYes) {
-            psui->SetObserving();
-		}
-	}
-
-	return fYes;
 }
 
 bool Game::SaveReinitializeGame()
@@ -1800,11 +1457,6 @@ bool Game::SaveReinitializeGame()
     if (m_fSkipSaveReinitialize) {
         return false;
     }
-
-	// We don't save "reinitialize" games when playing multiplayer
-
-	if (gfMultiplayer)
-		return false;
 
 	Status("** Saving Game for Return **");
 	Stream *pstm = HostNewSaveGameStream(knGameReinitializeSave, "Reinitialize");
@@ -1817,14 +1469,11 @@ bool Game::SaveReinitializeGame()
 	return false;
 }
 
-bool Game::InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
-        dword gameid, Chatter *chatter) {
+bool Game::InitSimulation(Stream *pstm, char *pszLevel) {
 
 	// Perform one-time Simulation initialization. This might seem like a 
 	// strange place to do it but the goal is to put off the expensive stuff
 	// it does so it doesn't slow game launch time.
-
-    m_gameid = gameid;
 
 	if (m_fSimUninitialized) {
 		Status("Simulation Init (one-time)...");
@@ -1862,7 +1511,7 @@ bool Game::InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
 
 	// Load the sim UI form
 
-	m_pfrmSimUI = (SimUIForm *)gpfrmmSim->LoadForm(gpiniForms, kidfSimUI, new SimUIForm(wfRole, gameid, chatter));
+	m_pfrmSimUI = (SimUIForm *)gpfrmmSim->LoadForm(gpiniForms, kidfSimUI, new SimUIForm());
 	if (m_pfrmSimUI == NULL) {
 		Assert("LoadForm(SimUIForm) failed");
 		gsim.PerLevelExit();
@@ -1873,7 +1522,7 @@ bool Game::InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
 
 	// Load the input UI form
 
-	m_pfrmInputUI = (InputUIForm *)gpfrmmInput->LoadForm(gpiniForms, kidfInputUI, new InputUIForm(chatter));
+	m_pfrmInputUI = (InputUIForm *)gpfrmmInput->LoadForm(gpiniForms, kidfInputUI, new InputUIForm());
 	if (m_pfrmInputUI == NULL) {
 		Assert("LoadForm(InputUIForm) failed");
 		delete m_pfrmSimUI;
@@ -1919,8 +1568,7 @@ bool Game::InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
 	// MissionLoaded trigger will go off and pop up an ecom, reposition the
 	// view, etc.
 
-	if ((wfRole & kfRoleMultiplayer) == 0)
-		m_pfrmSimUI->OnTimer(0);
+	m_pfrmSimUI->OnTimer(0);
 
 	// Clear the screen so the ugly palette change isn't apparent
 
@@ -1993,14 +1641,6 @@ void Game::ExitSimulation()
 
 void Game::Exit()
 {
-#if defined(WIN) && !defined(CE)
-	// If the game exits without pressing F8, stop the avi recording automatically
-
-	if (gpavir != NULL) {
-		delete gpavir;
-		gpavir = NULL;
-	}
-#endif
 
 	// Save preferences
 
@@ -2078,9 +1718,6 @@ void Game::Exit()
 
 	// Depends on gpbScratch so clean up before deleting
 
-#if defined(PIL) && defined(TRACE_TO_DB_LOG)
-	DbLogExit();
-#endif
 
 	delete[] gpbScratch;
 	gpbScratch = NULL;
@@ -2123,12 +1760,6 @@ bool Game::FilterEvent(Event *pevt)
     UpdateTriggers();
 
 	switch (pevt->eType) {
-    case checkGameOverEvent:
-        if (m_pfrmSimUI != NULL) {
-            m_pfrmSimUI->CheckMultiplayerGameOver((Pid)pevt->dw);
-        }
-        break;
-        
 	case gamePaintEvent:
 		// Keep track of # of paints for fps stat
 
@@ -2139,83 +1770,9 @@ bool Game::FilterEvent(Event *pevt)
 
 		gpmfrmm->DrawFrame(false);
 		return true;
-
-	case gameSuspendEvent:
-		// OS alert is showing.
-
-		Suspend();
-		return true;
-
-    case transportEvent:
-        if (gptra != NULL) {
-            gptra->OnEvent(pevt);
-        }
-        return true;
-
-    case mpEndMissionWinEvent:
-        EndMissionAction::OnMPEndMissionActionEvent(knWinLoseTypeWin,
-                pevt->dw);
-        break;
-
-    case mpEndMissionLoseEvent:
-        EndMissionAction::OnMPEndMissionActionEvent(knWinLoseTypeLose,
-                pevt->dw);
-        break;
-
-    case mpShowObjectivesEvent:
-        ShowObjectivesAction::OnMPShowObjectivesEvent(pevt->dw);
-        break;
-
-    case disableSoundEvent:
-        gsndm.SaveStateAndClear();
-        break;
-
-    case enableSoundEvent:
-        gsndm.RestoreState();
-        break;
 	}
 
 	return false;
-}
-
-char *gszPaused = "PAUSED";
-
-void Game::Suspend()
-{
-	// Force back buffer to be valid
-
-	gpmfrmm->DrawFrame(true);
-
-	// Darken back buffer
-
-	DibBitmap *pbmBack = gpdisp->GetBackDib();
-	Size sizDib;
-	pbmBack->GetSize(&sizDib);
-	pbmBack->Shadow(0, 0, sizDib.cx, sizDib.cy);
-
-	// Draw "Paused" sign in the middle
-	// TODO: Make prettier
-
-	Font *pfnt = gapfnt[kifntTitle];
-	int cxText = pfnt->GetTextExtent(gszPaused);
-	int cyText = pfnt->GetHeight();
-	int cxBox = cxText * 3;
-	int cyBox = cyText * 3;
-	int x = (sizDib.cx - cxBox) / 2;
-	int y = (sizDib.cy - cyBox) / 2;
-	pbmBack->Fill(x, y, cxBox, cyBox, GetColor(kiclrBlack));
-	pfnt->DrawText(pbmBack, gszPaused, x + cxText, y + cyText);
-
-	// Call host. This is a modal loop. When it returns, the game isn't
-	// paused anymore
-
-	gsndm.SaveStateAndClear();
-	HostSuspendModalLoop(pbmBack);
-	gsndm.RestoreState();
-
-	// Ok, invalidate everything so it all redraws
-
-	gpmfrmm->InvalidateRect(NULL);
 }
 
 void Game::GetPlayfieldSize(Size *psiz)
@@ -2238,7 +1795,6 @@ Form *Game::GetMiniMapForm()
     return m_pfrmMiniMap;
 }
 
-#define knVerGameState 9
 int Game::PlaySavedGame(Stream *pstm)
 {
 	// Overall, look at build version first
@@ -2249,23 +1805,8 @@ int Game::PlaySavedGame(Stream *pstm)
 
 	// Read version
 
-	bool fStale = false;
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerGameState)
-		fStale = true;
-
-	// Read platform
-
-	if (!fStale) {
-		byte bPlatform = 0;
-		if (nVer >= 6)
-			bPlatform = pstm->ReadByte();
-
-		// Check version
-
-		if (!CheckSaveGameVersion(szVersion, bPlatform))
-			fStale = true;
-	}
+	bool fStale = !CheckSaveGameVersion(szVersion, nVer);
 
 	// If old, bail
 
@@ -2291,7 +1832,7 @@ void Game::SaveGame(Stream *pstm)
 	bool fSuccess = false;
 	if (pstm != NULL) {
 		// Write build version string first
-		// NOTE: these first 3 entries are assumed in CheckSaveGameVersion() and DeleteStaleSaveGames()!!
+		// NOTE: these first 2 entries are assumed in CheckSaveGameVersion() and DeleteStaleSaveGames()!!
 
 		pstm->WriteString(gszVersion);
 
@@ -2299,27 +1840,8 @@ void Game::SaveGame(Stream *pstm)
 
 		pstm->WriteByte(knVerGameState);
 
-		// Save platform byte. Needed for platform compatibility check (68K->ARM transition)
-
-#ifdef PIL
-#ifdef PNO
-		// ARM saved game
-
-		pstm->WriteByte(1);
-#else
-		// 68K saved game
-
-		pstm->WriteByte(0);
-#endif
-#else
-		// Whatever, doesn't matter since it isn't Palm
-
-		pstm->WriteByte(0);
-#endif
-
 		// Save mission identifier
 
-        pstm->Write(&m_miid.packid, sizeof(m_miid.packid));
         pstm->WriteString(m_miid.szLvlFilename);
 
 		// Save next level filename
@@ -2392,11 +1914,6 @@ char *Game::GetNextLevel()
 	return m_szNextLevel;
 }
 
-bool Game::IsMultiplayer()
-{ 
-	return (m_wf & kfGameMultiplayer) != 0; 
-}
-
 void Game::SetGameSpeed(int t)
 {
 	gtGameSpeed = t;
@@ -2405,10 +1922,6 @@ void Game::SetGameSpeed(int t)
 }
 
 // Preferences support.
-//
-// Note always save and load assuming a storage format of big endian.
-// That way we don't have a headache when someone upgrades from a 68K Palm to a
-// ARM Palm with ARM HT and then HotSyncs, restoring a little endian preferences database.
 
 Preferences gprefsInit;
 
@@ -2420,120 +1933,22 @@ void Game::LoadPreferences()
 	// It's a global because we won't be able to process all preferences related initialization
 	// here.
 
-	if (!LoadPreferences2()) {
-		// Initialize preferences to default values
-
-		memset(&gprefsInit, 0, sizeof(gprefsInit));
-		Date date;
-		HostGetCurrentDate(&date);
-        gprefsInit.fAnonymous = 0;
-		gprefsInit.nYearLastRun = date.nYear;
-		gprefsInit.nMonthLastRun = date.nMonth;
-		gprefsInit.nDayLastRun = date.nDay;
-		gprefsInit.nVolume = (word)-1;
-		gprefsInit.wfPerfOptions = kfPerfMax;
-		gprefsInit.ctGameSpeed = kctUpdate / 2;
-		gprefsInit.wfHandicap = kfHcapDefault;
-#if defined(WIN) && !defined(CE)
-		gprefsInit.nScale = -1;
-#endif
-        gprefsInit.nScrollSpeed = 1.0;
-        strncpyz(gprefsInit.szAskURL, "http://", sizeof(gprefsInit.szAskURL));
-        strncpyz(gprefsInit.szDeviceId, HostGenerateDeviceId(), sizeof(gprefsInit.szDeviceId));
+	Preferences prefs;
+	int cbRead = HostLoadPreferences(&prefs, sizeof(prefs));
+	if (cbRead == sizeof(prefs) && prefs.dwVersion == knVersionPreferences &&
+			prefs.cbSize == sizeof(prefs)) {
+		gprefsInit = prefs;
+		return;
 	}
-}
 
-bool Game::LoadPreferences2()
-{
-    Preferences prefs;
-    int cbRead = HostLoadPreferences(&prefs, sizeof(prefs));
-    if (cbRead != (int)BigDword(prefs.prefv.cbSize))
-        return false;
+	// Initialize preferences to default values
 
-    switch (BigDword(prefs.prefv.dwVersion)) {
-    case knVersionPreferencesV100:
-        if (cbRead != sizeof(PreferencesV100))
-            return false;
-        if (!LoadPreferencesV100((PreferencesV100 *)&prefs))
-            return false;
-        strncpyz(gprefsInit.szDeviceId, HostGenerateDeviceId(), sizeof(gprefsInit.szDeviceId));
-        return true;
-
-	case knVersionPreferencesV101:
-        if (cbRead != sizeof(PreferencesV101))
-            return false;
-        return LoadPreferencesV101((PreferencesV101 *)&prefs);
-    }
-
-    return false;
-}
-
-bool Game::LoadPreferencesV100(PreferencesV100 *pprefsV100)
-{
-    strncpyz(gprefsInit.szUsername, pprefsV100->szUsername,
-            sizeof(gprefsInit.szUsername));
-    strncpyz(gprefsInit.szPassword, pprefsV100->szPassword,
-            sizeof(gprefsInit.szPassword));
-    strncpyz(gprefsInit.szToken, pprefsV100->szToken,
-            sizeof(gprefsInit.szToken));
-    gprefsInit.fAnonymous = BigWord(pprefsV100->fAnonymous);
-    gprefsInit.nYearLastRun = BigWord(pprefsV100->nYearLastRun);
-    gprefsInit.nMonthLastRun = BigWord(pprefsV100->nMonthLastRun);
-    gprefsInit.nDayLastRun = BigWord(pprefsV100->nDayLastRun);
-    gprefsInit.nVolume = BigWord(pprefsV100->nVolume);
-    gprefsInit.wfPrefs = BigWord(pprefsV100->wfPrefs);
-    gprefsInit.wfPerfOptions = BigWord(pprefsV100->wfPerfOptions);
-    gprefsInit.ctGameSpeed = BigDword(pprefsV100->ctGameSpeed);
-    gprefsInit.fLassoSelection = BigWord(pprefsV100->fLassoSelection);
-    gprefsInit.nHueOffset = BigWord(pprefsV100->nHueOffset);
-    gprefsInit.nSatMultiplier = BigWord(pprefsV100->nSatMultiplier);
-    gprefsInit.nLumOffset = BigWord(pprefsV100->nLumOffset);
-    gprefsInit.cxModeBest = BigWord(pprefsV100->cxModeBest);
-    gprefsInit.cyModeBest = BigWord(pprefsV100->cyModeBest);
-    gprefsInit.nDepthModeBest = BigWord(pprefsV100->nDepthModeBest);
-    gprefsInit.nDepthDataBest = BigWord(pprefsV100->nDepthDataBest);
-    gprefsInit.nSizeDataBest = BigWord(pprefsV100->nSizeDataBest);
-    gprefsInit.nDegreeOrientationBest = BigWord(pprefsV100->nDegreeOrientationBest);
-    gprefsInit.cxModeLast = BigWord(pprefsV100->cxModeLast);
-    gprefsInit.cyModeLast = BigWord(pprefsV100->cyModeLast);
-    gprefsInit.nDepthModeLast = BigWord(pprefsV100->nDepthModeLast);
-    gprefsInit.nDepthDataLast = BigWord(pprefsV100->nDepthDataLast);
-    gprefsInit.nSizeDataLast = BigWord(pprefsV100->nSizeDataLast);
-    gprefsInit.nDegreeOrientationLast = BigWord(pprefsV100->nDegreeOrientationLast);
-    gprefsInit.nDemoRank = BigWord(pprefsV100->nDemoRank);
-    gprefsInit.nScrollSpeed = pprefsV100->nScrollSpeed;
-    strncpyz(gprefsInit.szAskURL, pprefsV100->szAskURL,
-            sizeof(gprefsInit.szAskURL));
-
-    // Migrate obsolete handicap combinations
-
-    gprefsInit.wfHandicap = BigWord(pprefsV100->wfHandicap);
-    if (gprefsInit.wfHandicap == 0) // old hard
-        gprefsInit.wfHandicap = kfHcapHard; // new hard
-    else if (gprefsInit.wfHandicap == (kfHcapDecreasedTimeToBuild | kfHcapIncreasedFirePower | kfHcapIncreasedMinerLoadValue | kfHcapShowEnemyBuildProgress | kfHcapShowEnemyResourceStatus))
-        gprefsInit.wfHandicap = kfHcapEasy;
-    else if (gprefsInit.wfHandicap == (kfHcapDecreasedTimeToBuild | kfHcapShowEnemyBuildProgress | kfHcapShowEnemyResourceStatus))
-        gprefsInit.wfHandicap = kfHcapNormal;
-    else if (gprefsInit.wfHandicap != kfHcapEasy && gprefsInit.wfHandicap != kfHcapNormal && gprefsInit.wfHandicap != kfHcapHard)
-        gprefsInit.wfHandicap = kfHcapDefault;
-
-    gprefsInit.key = pprefsV100->key;
-#if defined(WIN) && !defined(CE)
-    gprefsInit.nScale = BigWord(pprefsV100->nScale);
-#endif
-
-    return true;
-}
-
-bool Game::LoadPreferencesV101(PreferencesV101 *pprefsV101)
-{
-    // Since order is the same as V100 except for extra fields at the end, load V100 first
-    if (!LoadPreferencesV100((PreferencesV100 *)pprefsV101))
-        return false;
-
-    // PreferencesV101 has this new field, load it
-    strncpyz(gprefsInit.szDeviceId, pprefsV101->szDeviceId, sizeof(gprefsInit.szDeviceId));
-    return true;
+	memset(&gprefsInit, 0, sizeof(gprefsInit));
+	gprefsInit.nVolume = (word)-1;
+	gprefsInit.wfPerfOptions = kfPerfMax;
+	gprefsInit.ctGameSpeed = kctUpdate / 2;
+	gprefsInit.wfHandicap = kfHcapDefault;
+	gprefsInit.nScrollSpeed = 1.0;
 }
 
 void Game::SavePreferences()
@@ -2543,79 +1958,41 @@ void Game::SavePreferences()
 	if (!(m_wf & kfGameInitDone))
 		return;
 
-	// Always save the latest version of the preferences
-
 	Preferences prefs;
+	memset(&prefs, 0, sizeof(prefs));
+	prefs.dwVersion = knVersionPreferences;
+	prefs.cbSize = sizeof(prefs);
+	prefs.nVolume = gsndm.GetVolume();
+	prefs.wfPerfOptions = (gwfPerfOptions & kfPerfAll) | (kfPerfMax & ~kfPerfAll);
+	prefs.ctGameSpeed = gtGameSpeed;
+	prefs.fLassoSelection = gfLassoSelection ? 1 : 0;
+	prefs.nHueOffset = gnHueOffset;
+	prefs.nSatMultiplier = gnSatMultiplier;
+	prefs.nLumOffset = gnLumOffset;
+	prefs.wfHandicap = gwfHandicap;
+	prefs.nScrollSpeed = gnScrollSpeed;
 
-	prefs.prefv.dwVersion = BigDword(knVersionPreferences);
-	prefs.prefv.cbSize = BigDword(sizeof(prefs));
-    strncpyz(prefs.szUsername, gszUsername, sizeof(prefs.szUsername));
-    strncpyz(prefs.szPassword, gszPassword, sizeof(prefs.szPassword));
-    strncpyz(prefs.szToken, gszToken, sizeof(prefs.szToken));
-    prefs.fAnonymous = gfAnonymous ? BigWord(1) : 0;
-	Date date;
-	HostGetCurrentDate(&date);
-	prefs.nYearLastRun = BigWord(date.nYear);
-	prefs.nMonthLastRun = BigWord(date.nMonth);
-	prefs.nDayLastRun = BigWord(date.nDay);
-	prefs.nVolume = BigWord(gsndm.GetVolume());
-	word wfPrefs = gfIgnoreBluetoothWarning ? kfPrefIgnoreBluetoothWarning : 0;
-	prefs.wfPrefs = BigWord(wfPrefs);
-	prefs.wfPerfOptions = BigWord((gwfPerfOptions & kfPerfAll) | (kfPerfMax & ~kfPerfAll));
-	prefs.ctGameSpeed = BigDword((dword)gtGameSpeed);
-	prefs.fLassoSelection = gfLassoSelection ? BigWord(1) : 0;
-	prefs.nHueOffset = BigWord(gnHueOffset);
-	prefs.nSatMultiplier = BigWord(gnSatMultiplier);
-	prefs.nLumOffset = BigWord(gnLumOffset);
-	prefs.wfHandicap = BigWord(gwfHandicap);
-	prefs.nDemoRank = BigWord(gnDemoRank);
-    prefs.nScrollSpeed = gnScrollSpeed;
-    strncpyz(prefs.szAskURL, gszAskURL, sizeof(prefs.szAskURL));
-    strncpyz(prefs.szDeviceId, gszDeviceId, sizeof(prefs.szDeviceId));
-
-	if (gpdisp == NULL || m_immBest == -1) {
-		prefs.cxModeBest = 0;
-		prefs.cyModeBest = 0;
-		prefs.nDepthModeBest = 0;
-		prefs.nDepthDataBest = 0;
-		prefs.nSizeDataBest = 0;
-		prefs.nDegreeOrientationBest = 0;
-	} else {
+	if (gpdisp != NULL && m_immBest != -1) {
 		ModeInfo mode;
 		gpdisp->GetModeInfo(m_amm[m_immBest].imode, &mode);
-		prefs.cxModeBest = BigWord(mode.cx);
-		prefs.cyModeBest = BigWord(mode.cy);
-		prefs.nDepthModeBest = BigWord(mode.nDepth);
-		prefs.nDepthDataBest = BigWord(m_amm[m_immBest].nDepthData);
-		prefs.nSizeDataBest = BigWord(m_amm[m_immBest].nSizeData);
-		prefs.nDegreeOrientationBest = BigWord(mode.nDegreeOrientation);
+		prefs.cxModeBest = mode.cx;
+		prefs.cyModeBest = mode.cy;
+		prefs.nDepthModeBest = mode.nDepth;
+		prefs.nDepthDataBest = m_amm[m_immBest].nDepthData;
+		prefs.nSizeDataBest = m_amm[m_immBest].nSizeData;
+		prefs.nDegreeOrientationBest = mode.nDegreeOrientation;
 	}
-	if (gpdisp == NULL || m_immCurrent == -1) {
-		prefs.cxModeLast = 0;
-		prefs.cyModeLast = 0;
-		prefs.nDepthModeLast = 0;
-		prefs.nDepthDataLast = 0;
-		prefs.nSizeDataLast = 0;
-		prefs.nDegreeOrientationLast = 0;
-	} else {
+	if (gpdisp != NULL && m_immCurrent != -1) {
 		ModeInfo mode;
 		gpdisp->GetModeInfo(m_amm[m_immCurrent].imode, &mode);
-		prefs.cxModeLast = BigWord(mode.cx);
-		prefs.cyModeLast = BigWord(mode.cy);
-		prefs.nDepthModeLast = BigWord(mode.nDepth);
-		prefs.nDepthDataLast = BigWord(m_amm[m_immCurrent].nDepthData);
-		prefs.nSizeDataLast = BigWord(m_amm[m_immCurrent].nSizeData);
-		prefs.nDegreeOrientationLast = BigWord(mode.nDegreeOrientation);
+		prefs.cxModeLast = mode.cx;
+		prefs.cyModeLast = mode.cy;
+		prefs.nDepthModeLast = mode.nDepth;
+		prefs.nDepthDataLast = m_amm[m_immCurrent].nDepthData;
+		prefs.nSizeDataLast = m_amm[m_immCurrent].nSizeData;
+		prefs.nDegreeOrientationLast = mode.nDegreeOrientation;
 	}
-	prefs.key = gkey;
-#if defined(WIN) && !defined(CE)
-	if (gpdisp == NULL) {
-		prefs.nScale = (word)-1;
-	} else {
-		prefs.nScale = BigWord(gpdisp->GetScale());
-	}
-#endif
-	
+
 	HostSavePreferences(&prefs, sizeof(prefs));
 }
 
@@ -2629,13 +2006,6 @@ bool Game::GetVar(const char *pszName, char *pszBuff, int cbBuff)
 
 		} else if (stricmp(pszName, "$grayscale") == 0) {
 			strncpyz(pszBuff, gfGrayscale ? "1" : "0", cbBuff);
-
-        } else if (stricmp(pszName, "$iphone") == 0) {
-#if defined(IPHONE) || defined(__IPHONEOS__)
-			strncpyz(pszBuff, "1", cbBuff);
-#else
-			strncpyz(pszBuff, "0", cbBuff);
-#endif        
 
 		} else if (stricmp(pszName, "$difficulty") == 0) {
 			char *pszT = "0";
@@ -2654,9 +2024,6 @@ bool Game::GetVar(const char *pszName, char *pszBuff, int cbBuff)
 			}
 
 			strncpyz(pszBuff, pszT, cbBuff);
-
-		} else if (stricmp(pszName, "$demo") == 0) {
-			strncpyz(pszBuff, gfDemo ? "1" : "0", cbBuff);
 
 		} else {
 
@@ -2687,8 +2054,7 @@ bool Game::SetVar(const char *pszName, const char *pszValue)
 }
 
 void Game::GamePause(bool fpause) {
-    if (!gfMultiplayer)
-        gsim.Pause(fpause);
+    gsim.Pause(fpause);
 }
 
 } // namespace wi

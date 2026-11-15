@@ -1,38 +1,32 @@
-#ifndef __COMPETEMANAGER_H__
-#define __COMPETEMANAGER_H__
+#ifndef __COMPLETEMANAGER_H__
+#define __COMPLETEMANAGER_H__
 
 #include "game/ht.h"
-#include <map>
+#include <set>
 #include <string>
 
 namespace wi {
 
-struct MissionHash {
-    byte hash[16];
-};
+// Tracks which missions the player has completed. Each completed mission is
+// recorded as an empty file, named after the mission, in the completes
+// directory.
 
 class CompleteManager {
 public:
     CompleteManager(const char *completedir) : completedir_(completedir) {}
-    ~CompleteManager() {}
 
     void Init();
     bool IsComplete(const MissionIdentifier *pmiid);
     void MarkComplete(const MissionIdentifier *pmiid);
 
 private:
-    dword BadHashString(const char *s);
-    bool ParseFilename(const char *filename, dword *pkey, byte *hash);
-    const char *GetFilename(dword key, MissionHash *pmh);
-    bool GetMissionHash(const MissionIdentifier *pmiid, MissionHash *pmh);
-    dword GetKey(const MissionIdentifier *pmiid);
+    static std::string Key(const char *pszLvlFilename);
 
-    typedef std::multimap<dword, MissionHash> CompleteMap;
-    CompleteMap map_;
+    std::set<std::string> complete_;
     std::string completedir_;
 };
 extern CompleteManager *gpcptm;
 
 } // namespace wi
 
-#endif // __COMPETEMANAGER_H__
+#endif // __COMPLETEMANAGER_H__

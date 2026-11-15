@@ -1,5 +1,4 @@
 #include "game/ht.h"
-#include "game/stateframe.h"
 
 namespace wi {
 
@@ -23,20 +22,6 @@ byte grvlpLarge[] = {
 	// ctx & cty
 	11, 11,
 
-#if 0
-	// reveal mask
-	0xf, 0xf, 0xf, 0xa, 0x2, 0x2, 0x2, 0x3, 0xf, 0xf, 0xf,
-	0xf, 0xf, 0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0xf, 0xf,
-	0xf, 0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0xf,
-	0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3,
-	0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
-	0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
-	0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
-	0xc, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5,
-	0xf, 0xc, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5, 0xf,
-	0xf, 0xf, 0xc, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5, 0xf, 0xf,
-	0xf, 0xf, 0xf, 0xc, 0x4, 0x4, 0x4, 0x5, 0xf, 0xf, 0xf,
-#else
 	// reveal mask
 	0xf, 0xf, 0xf, 0xa, 0x2, 0x2, 0x2, 0x3, 0xf, 0xf, 0xf,
 	0xf, 0xa, 0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2, 0x3, 0xf,
@@ -49,28 +34,8 @@ byte grvlpLarge[] = {
 	0xf, 0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0xf,
 	0xf, 0xc, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4, 0x5, 0xf,
 	0xf, 0xf, 0xf, 0xc, 0x4, 0x4, 0x4, 0x5, 0xf, 0xf, 0xf,
-#endif
 };
 
-#if 0
-byte grvlpMegaLarge[] = {
-	// ctx & cty
-	13, 13,
-
-	// reveal mask
-	0xf, 0xf, 0xf, 0xa, 0x2, 0x2, 0x2, 0x2, 0x2, 0x3, 0xf, 0xf, 0xf,
-	0xf, 0xf, 0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0xf, 0xf,
-	0xf, 0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0xf,
-	0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3,
-	0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
-	0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
-	0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1,
-	0xc, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5,
-	0xf, 0xc, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5, 0xf,
-	0xf, 0xf, 0xc, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x5, 0xf, 0xf,
-	0xf, 0xf, 0xf, 0xc, 0x4, 0x4, 0x4, 0x4, 0x4, 0x5, 0xf, 0xf, 0xf,
-};
-#endif
 
 
 // Helper function. Creates but does not Init the Gob.
@@ -202,66 +167,6 @@ Gob::~Gob()
 {
 }
 
-#ifdef TRACKSTATE
-
-dword gmpgtQuad[] = {
-    'GNON', // kgtNone 0
-    'GSRI', // kgtShortRangeInfantry 1
-    'GLRI', // kgtLongRangeInfantry 2
-    'GHRC', // kgtHumanResourceCenter 3
-    'GDCL', // kgtSurfaceDecal 4
-    'GSCN', // kgtScenery 5
-    'GANI', // kgtAnimation 6
-    'GREA', // kgtReactor 7
-    'GPRC', // kgtProcessor 8
-    'GSTU', // kgtStructure 9
-    'GUNI', // kgtUnit 10
-    'GMIN', // kgtGalaxMiner 11
-    'GHQR', // kgtHeadquarters 12
-    'GRES', // kgtResearchCenter 13
-    'GVTS', // kgtVehicleTransportStation 14
-    'GRDR', // kgtRadar 15
-    'GLTK', // kgtLightTank 16
-    'GMTK', // kgtMediumTank 17
-    'GGNV', // kgtMachineGunVehicle 18
-    'GRTV', // kgtRocketVehicle 19
-    'GTAK', // kgtTakeoverSpecialist 20
-    'GWAR', // kgtWarehouse 21
-    'GMHQ', // kgtMobileHeadquarters 22
-    'GOVR', // kgtOvermind 23
-    'GTST', // kgtTankShot 24
-    'GRKT', // kgtRocket 25
-    'GMGT', // kgtMachineGunTower 26
-    'GRTR', // kgtRocketTower 27
-    'GSCO', // kgtScorch 28
-    'GSMO', // kgtSmoke 29
-    'GPUF', // kgtPuff 30
-    'GBUL', // kgtBullet 31
-    'GART', // kgtArtillery 32
-    'GARS', // kgtArtilleryShot 33
-    'GAND', // kgtAndy 34
-    'GREP', // kgtReplicator 35
-    'GACT', // kgtActivator 36
-    'GFOX', // kgtFox 37
-    'GANS', // kgtAndyShot 38
-};
-
-void Gob::TrackState(StateFrame *frame) {
-    int i = frame->AddCountedValue(gmpgtQuad[GetType()]);
-    frame->AddValue('ID  ', (dword)m_gid, i);
-    frame->AddValue('WX  ', (dword)m_wx, i);
-    frame->AddValue('WY  ', (dword)m_wy, i);
-    frame->AddValue('GNXT', (dword)m_gidNext, i);
-    frame->AddValue('ST  ', (dword)m_st, i);
-    frame->AddValue('STNX', (dword)m_stNext, i);
-    dword ff = m_ff;
-    ff &= ~(kfGobRedraw | kfGobFlashing | kfGobDrawFlashed |
-            kfGobDebug | kfGobSelected | kfGobVisibleLastFrame |
-            kfGobIncludeFindVisible | kfGobTransitioningToVisible |
-            kfGobAnimationChanged | kfGobLayerSelection | kfGobLayerMask);
-    frame->AddValue('FF  ', ff, i);
-}
-#endif
 
 bool Gob::Invalidate()
 {
@@ -367,12 +272,6 @@ dword Gob::GetSortKey()
 	return MakeSortKey(m_wy, m_gid);
 }
 
-#if defined(WIN) && defined(DEBUG)
-void Gob::ToString(char *psz)
-{
-	sprintf(psz, "this=0x%08lx, gid=0x%08lx, gt=0x%lx, wx=0x%04lx, wy=0x%04lx", this, m_gid, GetType(), m_wx, m_wy);
-}
-#endif
 
 // Clipping bounds is used to determine on-display visibility
 // This bounds is a rectangle tightly enclosing all the pixels the Gob
@@ -563,12 +462,6 @@ bool Gob::IsSavable()
 
 // StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-char *Gob::GetName()
-{
-	return "Gob";
-}
-#endif
 
 //
 // SurfaceDecalGob implementation
@@ -948,12 +841,6 @@ void AnimGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer)
 	}
 }
 
-#if defined(DEBUG_HELPERS)
-char *AnimGob::GetName()
-{
-	return "Animation";
-}
-#endif
 
 int AnimGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
@@ -1021,7 +908,7 @@ void DrawArrow(DibBitmap *pbm, int x, int y, Direction dir, Side side)
 }
 #endif
 
-void GetHealthColorAndLength(int nNumerator, int nDenominator, int cxWidth, Color *pclr, int *pnLength) secCode7;
+void GetHealthColorAndLength(int nNumerator, int nDenominator, int cxWidth, Color *pclr, int *pnLength);
 void GetHealthColorAndLength(int nNumerator, int nDenominator, int cxWidth, Color *pclr, int *pnLength)
 {
 	// Break it down into three pieces.
@@ -1053,27 +940,6 @@ void DrawSelectionIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDeno
 
 	bool fSelectionBrackets = (gwfPerfOptions & kfPerfSelectionBrackets) != 0;
 
-#ifdef __CPU_68K
-	//debug
-	//BitmapType *pbmpScreen = WinGetBitmap(WinGetDisplayWindow());
-	//byte *pbBits = (byte *)BmpGetBits(pbmpScreen);
-	byte *pbBits = pbm->GetBits();
-	
-	// Hack to make drawing a selection faster if not clipped
-	// OPT: Could still be faster as TBitmaps
-
-	Size sizDib;
-	pbm->GetSize(&sizDib);
-
-	if (prc->left >= 0 && prc->top - kcyHealthBar >= 0 && prc->right <= sizDib.cx && prc->bottom <= sizDib.cy) {
-		Color clrHealth;
-		int nLength;
-		GetHealthColorAndLength(nNumerator, nDenominator, cxWidth, &clrHealth, &nLength);
-		byte *pbDst = pbBits + (long)(prc->top - kcyHealthBar) * sizDib.cx + prc->left;
-		DrawSelection68k(pbDst, sizDib.cx, cxWidth, cyHeight, nCornerWidth, nCornerHeight, GetColor(kiclrWhite), nLength, clrHealth, gmpiclriclrShadow, fSelectionBrackets);
-		return;
-	}
-#endif
 
 	// Slow clipped path
 
@@ -1111,15 +977,6 @@ void DrawHealthIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenomin
 	int nLength;
 	GetHealthColorAndLength(nNumerator, nDenominator, cxWidth, &clr, &nLength);
 
-#ifdef __CPU_68K
-	Size sizDib;
-	pbm->GetSize(&sizDib);
-	if (prc->left >= 0 && prc->top - kcyHealthBar >= 0 && prc->right <= sizDib.cx && prc->bottom <= sizDib.cy) {
-		byte *pbDst = pbm->GetBits() + (long)(prc->top - kcyHealthBar) * sizDib.cx + prc->left;
-		DrawSelection68k(pbDst, sizDib.cx, cxWidth, 0, 0, 0, 0, nLength, clr, gmpiclriclrShadow, false);
-		return;
-	}
-#endif
 
 	pbm->Shadow(prc->left, prc->top - kcyHealthBar, cxWidth, kcyHealthBar);
 	pbm->Fill(prc->left + 1, prc->top - (kcyHealthBar - 1), nLength, kcyHealthBar - 2, clr);
@@ -1292,9 +1149,6 @@ GobMgr::GobMgr()
 {
 	m_pgobHead = NULL;
 	m_pgidMap = NULL;
-#ifdef MP_DEBUG_SHAREDMEM
-	m_apgobMaster = NULL;
-#endif
 	m_cpgobActive = 0;
 	m_car = 0;
 	m_cSceneryGobs = 0;
@@ -1567,15 +1421,6 @@ void GobMgr::RemoveGob(Gob *pgob)
 {
 	// Ensure this gob isn't in any area lists still
 
-#if defined(WIN) && !defined(CE) && defined(DEBUG)
-	// Validate not already in these areas
-
-	for (int iar = 0; iar < m_car; iar++) {
-		Area *par = &m_aar[iar];
-		for (word iareT = par->iareHead; iareT != (word)-1; iareT = par->aare[iareT].iareNext)
-			Assert(par->aare[iareT].gid != pgob->m_gid);
-	}
-#endif
 
 	// Mark this gob invalid in the update map so this area gets drawn correctly
 
@@ -1641,19 +1486,7 @@ void GobMgr::TrackGobCounts(Gob *pgob, bool fIncrement)
 	// Validate counts so we know of errors
 
 #ifdef DEBUG
-	if (ggame.IsMultiplayer()) {
-		for (Side side = ksideNeutral; side < kcSides; side++) {
-			Player *pplr = gplrm.GetPlayer(side);
-			if (pplr == NULL)
-				continue;
-
-			int cStructGobs = pplr->GetUnitInstanceCountFromMask(kumStructures);
-			Assert(cStructGobs >= 0 && cStructGobs <= gcStructGobsLimitMP);
-
-			int cMuntGobs = pplr->GetUnitInstanceCountFromMask(kumMobileUnits);
-			Assert(cMuntGobs >= 0 && cMuntGobs <= gcMuntGobsLimitMP);
-		}
-	} else {
+	{
 		int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
 		Assert(cMuntGobsComputer >= 0 && cMuntGobsComputer <= gcMuntGobsComputerLimitSP);
 
@@ -1679,18 +1512,13 @@ bool GobMgr::IsBelowLimit(int nLimit, Player *pplr)
 	case knLimitStruct:
 		{
 			Assert(pplr != NULL);
-			if (!ggame.IsMultiplayer()) {
-				int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcStructureBuilder);
-				if (pplr->GetFlags() & kfPlrComputer) {
-					int cStructGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
-					return (cStructGobsComputer + cQueued) < gcStructGobsComputerLimitSP + gcStructGobsComputerDeltaSP;
-				} else {
-					int cStructGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
-					return (cStructGobsHuman + cQueued) < gcStructGobsHumanLimitSP + gcStructGobsHumanDeltaSP;
-				}
+			int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcStructureBuilder);
+			if (pplr->GetFlags() & kfPlrComputer) {
+				int cStructGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
+				return (cStructGobsComputer + cQueued) < gcStructGobsComputerLimitSP + gcStructGobsComputerDeltaSP;
 			} else {
-				int cQueued = BuilderGob::GetQueuedCount(pplr, kfUntcStructureBuilder);
-				return (pplr->GetUnitInstanceCountFromMask(kumStructures) + cQueued) < gcStructGobsLimitMP;
+				int cStructGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
+				return (cStructGobsHuman + cQueued) < gcStructGobsHumanLimitSP + gcStructGobsHumanDeltaSP;
 			}
 		}
 		break;
@@ -1698,18 +1526,13 @@ bool GobMgr::IsBelowLimit(int nLimit, Player *pplr)
 	case knLimitMobileUnit:
 		{
 			Assert(pplr != NULL);
-			if (!ggame.IsMultiplayer()) {
-				int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcMobileUnitBuilder);
-				if (pplr->GetFlags() & kfPlrComputer) {
-					int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
-					return (cMuntGobsComputer + cQueued) < gcMuntGobsComputerLimitSP;
-				} else {
-					int cMuntGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
-					return (cMuntGobsHuman + cQueued) < gcMuntGobsHumanLimitSP;
-				}
+			int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcMobileUnitBuilder);
+			if (pplr->GetFlags() & kfPlrComputer) {
+				int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
+				return (cMuntGobsComputer + cQueued) < gcMuntGobsComputerLimitSP;
 			} else {
-				int cQueued = BuilderGob::GetQueuedCount(pplr, kfUntcMobileUnitBuilder);
-                return (pplr->GetUnitInstanceCountFromMask(kumMobileUnits) + cQueued) < gcMuntGobsLimitMP;
+				int cMuntGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
+				return (cMuntGobsHuman + cQueued) < gcMuntGobsHumanLimitSP;
 			}
 		}
 		break;
@@ -1932,15 +1755,6 @@ void GobMgr::AddGobToAreas(Gid gid, AreaMask am)
 	int aiar[kcAreasMax];
 	int car = GetAreasFromMask(am, aiar);
 
-#if defined(WIN) && !defined(CE) && defined(DEBUG)
-	// Validate not already in these areas
-
-	for (int iar = 0; iar < car; iar++) {
-		Area *par = &m_aar[aiar[iar]];
-		for (word iareT = par->iareHead; iareT != (word)-1; iareT = par->aare[iareT].iareNext)
-			Assert(par->aare[iareT].gid != gid);
-	}
-#endif
 
 	// Add to the following areas
 
@@ -2008,21 +1822,6 @@ void GobMgr::RemoveGobFromAreas(Gid gid, AreaMask am)
 	int aiar[kcAreasMax];
 	int car = GetAreasFromMask(am, aiar);
 
-#if defined(WIN) && !defined(CE) && defined(DEBUG)
-	// Validate already in these areas
-
-	for (int iar = 0; iar < car; iar++) {
-		Area *par = &m_aar[aiar[iar]];
-		bool fFound = false;
-		for (word iareT = par->iareHead; iareT != (word)-1; iareT = par->aare[iareT].iareNext) {
-			if (par->aare[iareT].gid == gid) {
-				fFound = true;
-				break;
-			}
-		}
-		Assert(fFound);
-	}
-#endif
 
 	// Remove from the following areas
 
@@ -2166,9 +1965,6 @@ bool GobMgr::LoadAreas(IniReader *pini)
 	char szProp[128];
 	FindProp findArea;
 	while (pini->FindNextProperty(&findArea, "Areas", szProp, sizeof(szProp))) {
-#ifdef DEBUG_HELPERS
-		strncpyz(m_aszAreaNames[m_car], szProp, 50);
-#endif
 		int nLeft, nTop, nWidth, nHeight;
 		if (!pini->GetPropertyValue(&findArea, "%d,%d,%d,%d", &nLeft, &nTop, &nWidth, &nHeight))
 			return false;
@@ -2301,161 +2097,8 @@ struct GobSort { // gs
 	dword key;
 };
 
-void SortGobs(Gob **apgob, int cpgob) secGob;
+void SortGobs(Gob **apgob, int cpgob);
 
-#if 0
-// Called by Simulation::Draw to identify and sort the on-screen Gobs
-// prior to drawing them.
-
-int GobMgr::FindGobs(const Rect *prcBounds, Gob **apgob, int cpgobMax, byte *pbFogMap)
-{
-	TCoord txLeft, txRight, tyTop, tyBottom;
-	txLeft = TcFromUpc(prcBounds->left);
-
-	// This bounds check here is to avoid exceeding the range of the
-	// pixel -> world coord lookup table.
-
-	int xRight = prcBounds->right + gcxTile - 1;
-	if (xRight >= kpcMax)
-		xRight = kpcMax - 1;
-	txRight = TcFromUpc(xRight);
-	tyTop = TcFromUpc(prcBounds->top);
-	int yBottom = prcBounds->bottom + gcyTile - 1;
-	if (yBottom >= kpcMax)
-		yBottom = kpcMax - 1;
-	tyBottom = TcFromUpc(yBottom);
-
-	// Expand the cells examined to include any that may contain Gobs
-	// that intersect the specified bounding rectangle.
-	// This carries some assumptions about the maximum size of Gob
-	// clippinging rectangle and its relation to its origin.
-
-	// Maximum Gob clipping rectangle is:
-	// -3/+2 tiles wide from its origin
-	// -3/+1 tiles high from its origin
-
-	txLeft = _max(0, txLeft - 3);
-	txRight = _min(m_ctx - 1, txRight + 2);
-	tyTop = _max(0, tyTop - 3);
-	tyBottom = _min(m_cty - 1, tyBottom + 1);
-
-	int ctx = txRight - txLeft;
-
-	int cpgob = 0;
-	Gid *pgidLeft = m_pgidMap + (tyTop * m_ctx) + txLeft;
-	for (int ty = tyTop; ty <= tyBottom; ty++, pgidLeft += m_ctx) {
-
-		Gid *pgidRight = pgidLeft + ctx;
-
-		for (Gid *pgidT = pgidLeft; pgidT <= pgidRight; pgidT++) {
-			Gid gidT = *pgidT;
-			Gid gidNext;
-
-			for (; (gidT & kwfGidEndMarker) == 0; gidT = gidNext) {
-				Gob *pgobT = *PpgobFromGid(gidT);
-				gidNext = pgobT->m_gidNext;
-				dword ffGob = pgobT->GetFlags();
-
-				// UNDONE: OPT: this could be sped up a little. We only need
-				// to test the clipping bounds of Gobs found when scanning the
-				// expanded edges of the bounds.
-
-				Rect rcClip;
-				pgobT->GetClippingBounds(&rcClip);
-				if (rcClip.left >= prcBounds->right)
-					goto lbNextGob;
-				if (rcClip.right <= prcBounds->left)
-					goto lbNextGob;
-				if (rcClip.top >= prcBounds->bottom)
-					goto lbNextGob;
-				if (rcClip.bottom <= prcBounds->top)
-					goto lbNextGob;
-
-				// Check if totally under fog
-				// Fog disappears quickly; check top left right away
-
-				if (pbFogMap != NULL) {
-					int txLeft = TcFromPc(rcClip.left);
-					if (txLeft < 0)
-						txLeft = 0;
-					int tyTop = TcFromPc(rcClip.top);
-					if (tyTop < 0)
-						tyTop = 0;
-					byte *pbFogT = pbFogMap + m_ctx * tyTop + txLeft;
-					if (IsFogOpaque(*pbFogT)) {
-						int xT = rcClip.right + gcxTile - 1;
-						if (xT >= kpcMax)
-							xT = kpcMax - 1;
-						int txRight = TcFromPc(xT);
-						if (txRight > m_ctx)
-							txRight = m_ctx;
-						int yT = rcClip.bottom + gcyTile - 1;
-						if (yT >= kpcMax)
-							yT = kpcMax - 1;
-						int tyBottom = TcFromPc(yT);
-						if (tyBottom > m_cty)
-							tyBottom = m_cty;
-						bool fOpaque = true;
-						for (int tyT = tyTop; tyT < tyBottom; tyT++) {
-							for (int txT = txLeft; txT < txRight; txT++) {
-								word wFog = *pbFogT++;
-								if (!IsFogOpaque(wFog)) {
-									fOpaque = false;
-									break;
-								}
-							}
-							if (!fOpaque)
-								break;
-							pbFogT += m_ctx - (txRight - txLeft);
-						}
-						if (fOpaque)
-							goto lbNextGob;
-					}
-				}
-
-				// Remember if this gob was not visible last frame; we'll need this info later
-
-				if (!(ffGob & kfGobVisibleLastFrame)) {
-					ffGob |= kfGobTransitioningToVisible;
-				} else {
-					ffGob &= ~kfGobTransitioningToVisible;
-				}
-
-				// Remember that this gob was visible in this frame
-
-				ffGob = (ffGob & ~kfGobIncludeFindVisible) | kfGobVisibleLastFrame;
-				pgobT->SetFlags(ffGob);
-
-				// Add gob to list
-
-				apgob[cpgob++] = pgobT;
-				if (cpgob == cpgobMax)
-					goto lbFull;
-				continue;
-
-lbNextGob:
-				// Gob not visible, but add to list anyway if asked
-				// Clear the "gob was visible this frame" bit since it isn't visible this frame.
-
-				ffGob &= ~kfGobTransitioningToVisible;
-				if (ffGob & kfGobIncludeFindVisible) {
-					pgobT->SetFlags(ffGob & ~(kfGobIncludeFindVisible | kfGobVisibleLastFrame));
-					apgob[cpgob++] = pgobT;
-					if (cpgob == cpgobMax)
-						goto lbFull;
-				} else {
-					pgobT->SetFlags(ffGob & ~kfGobVisibleLastFrame);
-				}
-			}
-		}
-	}
-
-lbFull:
-	SortGobs(apgob, cpgob);
-
-	return cpgob;
-}
-#else
 // Called by Simulation::Draw to identify and sort the on-screen Gobs
 // prior to drawing them.
 
@@ -2592,7 +2235,6 @@ lbFull:
 	SortGobs(apgob, cpgob);
 	return cpgob;
 }
-#endif
 
 void SortGobs(Gob **apgob, int cpgob)
 {
@@ -2601,11 +2243,7 @@ void SortGobs(Gob **apgob, int cpgob)
 
 	// Prep for sorting
 
-#if 1
 	GobSort *ags = (GobSort *)gpbScratch;
-#else
-	GobSort ags[kcpgobMax / 4];
-#endif
 	GobSort *pgsT = ags;
 	Gob **ppgobT = apgob;
 	int i;
@@ -2634,101 +2272,6 @@ void SortGobs(Gob **apgob, int cpgob)
 		*ppgobT++ = pgsT->pgob;
 }
 
-#if 0
-// For reference:
-
-/* qsort -- qsort interface implemented by faster quicksort.
-   J. L. Bentley and M. D. McIlroy, SPE 23 (1993) 1249-1265.
-   Copyright 1993, John Wiley.
-*/
-
-    /*assume sizeof(long) is a power of 2 */
-#define SWAPINIT(a, es) swaptype =         \
-    (a-(char*)0 | es) % sizeof(long) ? 2 : es > sizeof(long);
-#define swapcode(TYPE, parmi, parmj, n) {  \
-    register TYPE *pi = (TYPE *) (parmi);  \
-    register TYPE *pj = (TYPE *) (parmj);  \
-    do {                                   \
-        register TYPE t = *pi;             \
-        *pi++ = *pj;                       \
-        *pj++ = t;                         \
-    } while ((n -= sizeof(TYPE)) > 0);     \
-}
-#include <stddef.h>
-static void swapfunc(char *a, char *b, size_t n, int swaptype)
-{   if (swaptype <= 1) swapcode(long, a, b, n)
-    else swapcode(char, a, b, n)
-}
-#define swap(a, b)                         \
-    if (swaptype == 0) {                   \
-        t = *(long*)(a);                   \
-        *(long*)(a) = *(long*)(b);         \
-        *(long*)(b) = t;                   \
-    } else                                 \
-        swapfunc(a, b, es, swaptype)
-
-#define PVINIT(pv, pm)                                \
-    if (swaptype != 0) { pv = a; swap(pv, pm); }      \
-    else { pv = (char*)&v; *(long*)pv = *(long*)pm; }
-
-#define vecswap(a, b, n) if (n > 0) swapfunc(a, b, n, swaptype)
-
-static char *med3(char *a, char *b, char *c, int (*cmp)(const void *pElement1, const void *pElement2))
-{	return cmp(a, b) < 0 ?
-		  (cmp(b, c) < 0 ? b : cmp(a, c) < 0 ? c : a)
-		: (cmp(b, c) > 0 ? b : cmp(a, c) > 0 ? c : a);
-}
-
-void qsort(char *a, size_t n, size_t es, int (*cmp)(const void *pElement1, const void *pElement2))
-{
-	char *pa, *pb, *pc, *pd, *pl, *pm, *pn, *pv;
-	int r, swaptype;
-	long t, v;
-	size_t s;
-
-	SWAPINIT(a, es);
-	if (n < 7) {	 /* Insertion sort on smallest arrays */
-		for (pm = a + es; pm < a + n*es; pm += es)
-			for (pl = pm; pl > a && cmp(pl-es, pl) > 0; pl -= es)
-				swap(pl, pl-es);
-		return;
-	}
-	pm = a + (n/2)*es;    /* Small arrays, middle element */
-	if (n > 7) {
-		pl = a;
-		pn = a + (n-1)*es;
-		if (n > 40) {    /* Big arrays, pseudomedian of 9 */
-			s = (n/8)*es;
-			pl = med3(pl, pl+s, pl+2*s, cmp);
-			pm = med3(pm-s, pm, pm+s, cmp);
-			pn = med3(pn-2*s, pn-s, pn, cmp);
-		}
-		pm = med3(pl, pm, pn, cmp); /* Mid-size, med of 3 */
-	}
-	PVINIT(pv, pm);       /* pv points to partition value */
-	pa = pb = a;
-	pc = pd = a + (n-1)*es;
-	for (;;) {
-		while (pb <= pc && (r = cmp(pb, pv)) <= 0) {
-			if (r == 0) { swap(pa, pb); pa += es; }
-			pb += es;
-		}
-		while (pb <= pc && (r = cmp(pc, pv)) >= 0) {
-			if (r == 0) { swap(pc, pd); pd -= es; }
-			pc -= es;
-		}
-		if (pb > pc) break;
-		swap(pb, pc);
-		pb += es;
-		pc -= es;
-	}
-	pn = a + n*es;
-	s = _min(pa-a,  pb-pa   ); vecswap(a,  pb-s, s);
-	s = _min(pd-pc, pn-pd-es); vecswap(pb, pn-s, s);
-	if ((s = pb-pa) > es) qsort(a,    s/es, es, cmp);
-	if ((s = pd-pc) > es) qsort(pn-s, s/es, es, cmp);
-}
-#endif
 
 const int kcpgobInRangeMax = 100;
 
@@ -2798,45 +2341,5 @@ lbFull:
 	return cpgob;
 }
 
-#if defined(DEBUG) && defined(WIN)
-Gob *GobMgr::FindEnemyWithinRange(UnitGob *punt, TCoord tcRange, bool fStructures)
-{
-	TRect trc;
-	punt->GetTileRect(&trc);
-	trc.left -= tcRange;
-	trc.right += tcRange;
-	trc.top -= tcRange;
-	trc.bottom += tcRange;
-
-	Gob *apgob[kcpgobInRangeMax];
-	int cpgob = FindGobs(&trc, apgob, sizeof(apgob));
-	Assert(cpgob <= kcpgobInRangeMax);
-
-	if (cpgob == 0)
-		return NULL;
-
-	Gob **ppgobT = apgob;
-	for (int i = 0; i < cpgob; i++, ppgobT++) {
-		Gob *pgobT = *ppgobT;
-
-		// Don't fire on non-military targets or allies
-
-		if (!punt->IsValidTarget(pgobT))
-			continue;
-
-		// or enemy structures
-
-		if (!fStructures && (pgobT->GetFlags() & kfGobStructure))
-			continue;
-
-		// NOTE: this doesn't return the NEAREST Gob, just the first
-		// found within range
-
-		return pgobT;
-	}
-
-	return NULL;
-}
-#endif
 
 } // namespace wi

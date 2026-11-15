@@ -1,38 +1,11 @@
 #include "game/ht.h"
 #include "base/format.h"
-#include "yajl/wrapper/jsontypes.h"
-#include "game/httppackinfomanager.h"
 #include "game/completemanager.h"
 
 namespace wi {
 
 #define kcUnlockAhead 1
 #define kfItemLocked 0x8000
-
-// Should be moved into PackInfoManager, but in a better form,
-// for getting specific properties without needing to know the key.
-
-const char *GetString(const json::JsonMap *map, const char *key) {
-    const json::JsonObject *obj = map->GetObject(key);
-    if (obj == NULL || obj->type() != json::JSONTYPE_STRING) {
-        return NULL;
-    }
-    const json::JsonString *s = (json::JsonString *)obj;
-
-    bool fWhitespace = true;
-    char ch; 
-    const char *psz = s->GetString();
-    while ((ch = *psz++) != 0) {
-        if (!isspace(ch)) {
-            fWhitespace = false;
-            break;
-        }
-    }
-    if (fWhitespace) {
-        return NULL;
-    }
-    return s->GetString();
-}
 
 SelectMissionForm::SelectMissionForm(MissionList *pml,
         const MissionIdentifier *pmiidFind) {
@@ -51,9 +24,9 @@ bool SelectMissionForm::Init(FormMgr *pfrmm, IniReader *pini, word idf) {
 	if (!ShellForm::Init(pfrmm, pini, idf))
 		return false;
 
-    // Format the lists. 3 lists are used as a simple cache.
+    // Format the lists, one per mission type
 
-    int aidcList[] = { kidcStoryList, kidcChallengeList, kidcAddOnList };
+    int aidcList[] = { kidcStoryList, kidcChallengeList };
     for (int i = 0; i < ARRAYSIZE(aidcList); i++) {
         ListControl *plstc = (ListControl *)GetControlPtr(aidcList[i]);
         m_aplstc[i] = plstc;
@@ -72,38 +45,23 @@ bool SelectMissionForm::Init(FormMgr *pfrmm, IniReader *pini, word idf) {
     // If asked to find a certain mission, find it first to see what
     // type it is, and switch the radio button bar to that type.
 
-    int iPack = -1;
     int iMission = -1;
 	int cMissions = m_pml->GetCount();
     if (m_pmiidFind != NULL) {
         for (int i = 0; i < cMissions; i++) {
             MissionIdentifier miid;
             m_pml->GetMissionIdentifier(i, &miid);
-            if (memcmp(&miid.packid, &m_pmiidFind->packid,
-                    sizeof(miid.packid)) == 0) {
-                if (iPack == -1) {
-                    iPack = i;
-                }
-                if (strcmp(miid.szLvlFilename,
-                        m_pmiidFind->szLvlFilename) == 0) {
-                    iMission = i;
-                    break;
-                }
+            if (stricmp(miid.szLvlFilename, m_pmiidFind->szLvlFilename) == 0) {
+                iMission = i;
+                break;
             }
         }
-        if (iMission == -1) {
-            iMission = iPack;
-        }
     }
-    int iMissionSelect = iMission;
 
     // Init the lists
 
-    MissionType mt = InitLists(iMissionSelect);
+    MissionType mt = InitLists(iMission);
     SwitchToMissionType(mt);
-
-    // Hide this label - only show it if there are no addon packs
-    GetControlPtr(kidcAddOnMessage)->Show(false);
 
 	return true;
 }
@@ -114,8 +72,6 @@ int SelectMissionForm::IndexFromMissionType(MissionType mt) {
         return 0;
     case kmtChallenge:
         return 1;
-    case kmtAddOn:
-        return 2;
     default:
         return -1;
     }
@@ -127,8 +83,6 @@ MissionType SelectMissionForm::MissionTypeFromIndex(int i) {
         return kmtStory;
     case 1:
         return kmtChallenge;
-    case 2:
-        return kmtAddOn;
     default:
         return kmtUnknown;
     }
@@ -165,7 +119,7 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
         if (!m_pml->GetMissionDescription(i, &md)) {
             continue;
         }
-        if (md.mt != kmtStory && md.mt != kmtChallenge && md.mt != kmtAddOn) {
+        if (md.mt != kmtStory && md.mt != kmtChallenge) {
             continue;
         }
 
@@ -270,9 +224,6 @@ bool SelectMissionForm::OnPenEvent(Event *pevt) {
             if (m_cMagic >= kcMagic) {
                 m_cMagic = 0;
                 m_fMagicUnlock = true;
-#ifdef BETA_TIMEOUT
-                GetControlPtr(kidcOk)->Show(true);
-#endif
             }
         }
     }
@@ -312,35 +263,10 @@ void SelectMissionForm::OnControlNotify(word idc, int nNotify) {
             return;
         }
         SwitchToMissionType(mtNew);
-
-        // If in Add-On category, and there is nothing there, show this
-        // label, otherwise hide it
-
-        bool fShowLabel = false;
-        ListControl *plstc = m_aplstc[IndexFromMissionType(kmtAddOn)];
-        if (m_mt == kmtAddOn) {
-            if (plstc->GetCount() == 0) {
-                fShowLabel = true;
-            }
-        }
-
-        LabelControl *plbl = (LabelControl *)GetControlPtr(kidcAddOnMessage);
-        if (fShowLabel) {
-            plbl->Show(true);
-            if (m_mt == kmtAddOn) {
-                plstc->Show(false);
-            }
-        } else {
-            plbl->Show(false);
-            if (m_mt == kmtAddOn) {
-                plstc->Show(true);
-            }
-        }
     }
 
-    if (idc == kidcStoryList || idc == kidcChallengeList ||
-            idc == kidcAddOnList) {
-        // Update the mission pack description
+    if (idc == kidcStoryList || idc == kidcChallengeList) {
+        // Update the mission description
         UpdateDescription();
     }
 
@@ -380,32 +306,13 @@ void SelectMissionForm::UpdateDescription() {
         return;
     }
     int i = GetSelectedMissionIndex(plstc);
-    MissionIdentifier miid;
-    if (!m_pml->GetMissionIdentifier(i, &miid)) {
+    MissionDescription md;
+    if (!m_pml->GetMissionDescription(i, &md)) {
         plbl->SetText("");
         return;
     }
-    json::JsonMap *map = gppim->GetInfoMap(&miid.packid);
-    if (map == NULL) {
-        MissionDescription md;
-        if (!m_pml->GetMissionDescription(i, &md)) {
-            plbl->SetText("");
-            return;
-        }
-        const char *s;
-        if (miid.packid.id == PACKID_MAIN) {
-            s = base::Format::ToString("%s by Spiffcode, Inc.", md.szPackName);
-        } else {
-            s = md.szPackName;
-        }
-        plbl->SetText(s);
-        return;
-    }
-    const char *szAuthor = GetString(map, "a");
-    const char *szTitle = GetString(map, "t");
-    const char *s = base::Format::ToString("%s by %s", szTitle, szAuthor);
-    plbl->SetText(s);
-    delete map;
+    plbl->SetText(base::Format::ToString("%s by Spiffcode, Inc.",
+            md.mt == kmtStory ? "Story Missions" : "Challenge Missions"));
 }
 
 bool SelectMissionForm::GetSelectedMission(MissionIdentifier *pmiid) {

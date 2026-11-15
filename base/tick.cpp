@@ -1,35 +1,32 @@
 #include "inc/basictypes.h"
 #include "base/tick.h"
-#include <sys/time.h>
+#include <chrono>
 #include <time.h>
 
 namespace base {
 
+static std::chrono::steady_clock::duration ElapsedSinceStart() {
+    // Start one second in the past, so tick counts are never zero
+    static const std::chrono::steady_clock::time_point s_start =
+            std::chrono::steady_clock::now() - std::chrono::seconds(1);
+    return std::chrono::steady_clock::now() - s_start;
+}
+
 void GetTimeOfDay(int *sec, int *usec) {
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-
-    static bool s_init;
-    static dword s_sec;
-    if (!s_init) {
-        s_init = true;
-        s_sec = (dword)(tv.tv_sec - 1); // so it's never zero
-    }
-
-    *sec = (int)(tv.tv_sec - s_sec);
-    *usec = tv.tv_usec;
+    long64 us = std::chrono::duration_cast<std::chrono::microseconds>(
+            ElapsedSinceStart()).count();
+    *sec = (int)(us / 1000000);
+    *usec = (int)(us % 1000000);
 }
 
 long64 GetTickCount() {
-    int sec, usec;
-    GetTimeOfDay(&sec, &usec);
-    return ((long64)sec) * 100 + usec / 10000;
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+            ElapsedSinceStart()).count() / 10;
 }
 
 long64 GetMillisecondCount() {
-    int sec, usec;
-    GetTimeOfDay(&sec, &usec);
-    return ((long64)sec) * 1000 + usec / 1000;
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+            ElapsedSinceStart()).count();
 }
 
 dword GetSecondsUnixEpocUTC() {

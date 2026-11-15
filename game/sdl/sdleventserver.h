@@ -3,22 +3,26 @@
 
 #include "inc/basictypes.h"
 #include "base/thread.h"
-#include "base/selectserver.h"
+#include "base/eventserver.h"
 #include "game/sdl/sysmessages.h"
 #include <SDL.h>
 
 namespace wi {
 
-class SdlEventServer : public base::SelectServer {
+// Blocks the game's message queue until an SDL event arrives, the queue is
+// woken up, or the wait times out.
+
+class SdlEventServer : public base::EventServer {
 public:
-    virtual bool Wait(long64 ctWait, bool fProcessIO = true) {
+    SdlEventServer() : wait_(false) {}
+
+    virtual bool Wait(long64 ctWait) {
         // Map ctWait (100th's sec) to timeout (milliseconds)
         int timeout = -1;
         if (ctWait != base::kctForever) {
             timeout = (int)ctWait * 10;
         }
 
-        // SDL_WaitEventTimeout(), with the addition of socket i/o
         Uint32 expiration = 0;
         if (timeout > 0) {
             expiration = SDL_GetTicks() + timeout;
@@ -36,26 +40,20 @@ public:
             case -1:
                 // App is exiting, or there is an error
                 return false;
+
             case 1:
                 // There is an event
                 base::Thread::current().Post(kidmSdlEvent, NULL);
                 return true;
-            case 0:
-                // No SDL event. poll for and dispatch network events, if any.
-                // Be careful with wait_ - it might of been set to false via
-                // callback in SDL_PumpEvents, yet SelectServer::Wait() sets
-                // it back to true.
-                bool wait = wait_;
-                SelectServer::Wait(0, fProcessIO);
-                wait_ &= wait;
 
+            case 0:
                 // Polling and no events?
                 if (timeout == 0) {
                     return true;
                 }
 
                 // Timeout expired and no events?
-                if (timeout > 0 && ((int) (SDL_GetTicks() - expiration) >= 0)) {
+                if (timeout > 0 && ((int)(SDL_GetTicks() - expiration) >= 0)) {
                     return true;
                 }
 
@@ -67,7 +65,11 @@ public:
         }
         return true;
     }
+
     virtual void WakeUp() { wait_ = false; }
+
+private:
+    volatile bool wait_;
 };
 
 } // namespace wi

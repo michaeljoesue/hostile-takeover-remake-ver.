@@ -38,9 +38,16 @@
 #define EMPTY_LOGGING
 #endif
 
+// Name of the current function, with its signature
+#if defined(_MSC_VER)
+#define LOG_FUNCTION __FUNCSIG__
+#else
+#define LOG_FUNCTION __PRETTY_FUNCTION__
+#endif
+
 #if defined(DEBUG_LOGGING)
-#define LOG() base::ConsoleLog(__PRETTY_FUNCTION__, NULL, __LINE__).stream()
-#define LOGF() base::ConsoleLog(__PRETTY_FUNCTION__, __FILE__, __LINE__).stream()
+#define LOG() base::ConsoleLog(LOG_FUNCTION, NULL, __LINE__).stream()
+#define LOGF() base::ConsoleLog(LOG_FUNCTION, __FILE__, __LINE__).stream()
 #define LOGS() base::ConsoleLog().stream()
 #define LOGX() base::ConsoleLog(NULL, NULL, -1).stream()
 #else
@@ -51,8 +58,8 @@
 #endif
 
 #if defined(DEBUG_LOGGING) || defined(RELEASE_LOGGING)
-#define RLOG() base::ConsoleLog(__PRETTY_FUNCTION__, NULL, __LINE__).stream()
-#define RLOGF() base::ConsoleLog(__PRETTY_FUNCTION__, __FILE__, __LINE__).stream()
+#define RLOG() base::ConsoleLog(LOG_FUNCTION, NULL, __LINE__).stream()
+#define RLOGF() base::ConsoleLog(LOG_FUNCTION, __FILE__, __LINE__).stream()
 #define RLOGS() base::ConsoleLog().stream()
 #define RLOGX() base::ConsoleLog(NULL, NULL, -1).stream()
 #else
@@ -77,13 +84,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#ifdef __ANDROID__
-#include <android/log.h>
-#define LOG_TAG "HT"
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#endif
 
 namespace base {
 class Log {
@@ -138,18 +138,25 @@ public:
 #include <iostream>
 #include <sstream>
 #include <time.h>
-#include <sys/time.h>
+#include <chrono>
+
+// Log output goes to stderr and to the debugger (Visual Studio's Output
+// window). Declared here to avoid including windows.h everywhere.
+extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(
+        const char *lpOutputString);
+
 namespace base {
 class ConsoleLog {
 public:
     ConsoleLog(const char *function, const char *file, int line) {
         time_t t = time(NULL);
         struct tm *tm = localtime(&t); 
-        struct timeval tv;
-        gettimeofday(&tv, 0);
+        int ms = (int)(std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count()
+                % 1000);
         stream_ << Log::Format("%02d%02d%02d%02d.%02d%03d|",
                 tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min,
-                tm->tm_sec, tv.tv_usec / 1000);
+                tm->tm_sec, ms);
 
         if (function != NULL) {
             std::string func(function);
@@ -184,11 +191,10 @@ public:
     }
 
     ~ConsoleLog() {
-        #ifdef __ANDROID__
-        LOGD("%s\n", stream_.str().c_str());
-        #else
-        std::cout << stream_.str() << std::endl;
-        #endif
+        stream_ << "\n";
+        std::string str = stream_.str();
+        std::cerr << str;
+        OutputDebugStringA(str.c_str());
     }
 
     std::ostringstream& stream() { return stream_; }

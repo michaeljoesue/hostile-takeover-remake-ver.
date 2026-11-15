@@ -161,12 +161,6 @@ void DibBitmap::Blt(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst)
 
 void DibBitmap::Clear(Color clr)
 {
-#ifdef __CPU_68K
-	if (gfArmPresent) {
-		memsetArm(m_pb, (byte)clr, m_cb);
-		return;
-	}
-#endif
 	memset(m_pb, (byte)clr, m_cb);
 }
 
@@ -385,46 +379,6 @@ void DibBitmap::Scroll(Rect *prcSrc, int xDst, int yDst)
     Blt(this, prcSrc, xDst, yDst);
 }
         
-#ifdef __CPU_68K
-void DibBitmap::BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst)
-{
-	// OS5 path usually not executed
-
-	if (IsOS50Compat()) {
-		bool fFirst = true;
-		Rect rc;
-		while (pupd->EnumUpdateRects(fFirst, NULL, &rc)) {
-			fFirst = false;
-			Blt(pbmSrc, &rc, rc.left, rc.top + yTopDst);
-		}
-		return;
-	}
-
-	// Init
-
-	bool *pfMap = pupd->GetInvalidMap();
-	MapInfo *pmnfo = pupd->GetMapInfo();
-	Size sizMap;
-	pupd->GetMapSize(&sizMap);
-
-	dword cbOffset = yTopDst * (dword)m_siz.cx;
-	byte *pbSrc = pbmSrc->GetBits();
-	byte *pbDst = m_pb + cbOffset;
-
-	switch (gcxTile) {
-	case 16:
-		UpdateScreen816(pfMap, sizMap.cx, sizMap.cy, pbSrc, pbDst, m_siz.cx,
-				pmnfo->cxLeftTile, pmnfo->cyTopTile, pmnfo->cxRightTile, pmnfo->cyBottomTile, pmnfo->ctxInside, pmnfo->ctyInside);
-		break;
-
-	case 24:
-		UpdateScreen824(pfMap, sizMap.cx, sizMap.cy, pbSrc, pbDst, m_siz.cx,
-				pmnfo->cxLeftTile, pmnfo->cyTopTile, pmnfo->cxRightTile, pmnfo->cyBottomTile, pmnfo->ctxInside, pmnfo->ctyInside);
-		break;
-	}
-}
-
-#else
 void DibBitmap::BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst)
 {
 	bool fFirst = true;
@@ -435,112 +389,5 @@ void DibBitmap::BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst)
 	}
 }
 
-#if 0
-void DibBitmap::BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst)
-{
-	MapInfo *pmnfo = pupd->GetMapInfo();
-	bool *pfInvalid = pupd->GetInvalidMap();
-	Size sizMap;
-	pupd->GetMapSize(&sizMap);
-	int cbReturn = sizMap.cx - ((pmnfo->cxLeftTile != 0 ? 1 : 0) + pmnfo->ctxInside + (pmnfo->cxRightTile != 0 ? 1 : 0));
-
-	Rect rcSrc;
-	int xT = 0;
-	int yDst = yTopDst;
-	int ySrc = 0;
-	if (pmnfo->cyTopTile != 0) {
-		// Upper left corner
-
-		if (pmnfo->cxLeftTile != 0 && *pfInvalid++) {
-			rcSrc.Set(xT, ySrc, xT + pmnfo->cxLeftTile, ySrc + pmnfo->cyTopTile);
-			Blt(pbmSrc, &rcSrc, xT, yDst);
-		}
-		xT += pmnfo->cxLeftTile;
-
-		// Upper edge
-
-		for (int tx = 0; tx < pmnfo->ctxInside; tx++) {
-			if (*pfInvalid++) {
-				rcSrc.Set(xT, ySrc, xT + gcxTile, ySrc + pmnfo->cyTopTile);
-				Blt(pbmSrc, &rcSrc, xT, yDst);
-			}
-			xT += gcxTile;
-		}
-
-		// Upper right corner
-
-		if (pmnfo->cxRightTile != 0 && *pfInvalid++) {
-			rcSrc.Set(xT, ySrc, xT + pmnfo->cxRightTile, ySrc + pmnfo->cyTopTile);
-			Blt(pbmSrc, &rcSrc, xT, yDst);
-		}
-		xT = 0;
-		yDst += pmnfo->cyTopTile;
-		ySrc += pmnfo->cyTopTile;
-		pfInvalid += cbReturn;
-	}
-
-	// Inside
-
-	for (int ty = 0; ty < pmnfo->ctyInside; ty++) {
-
-		// Inside left
-
-		if (pmnfo->cxLeftTile != 0 && *pfInvalid++) {
-			rcSrc.Set(xT, ySrc, xT + pmnfo->cxLeftTile, ySrc + gcyTile);
-			Blt(pbmSrc, &rcSrc, xT, yDst);
-		}
-		xT += pmnfo->cxLeftTile;
-
-		// Inside
-
-		for (int tx = 0; tx < pmnfo->ctxInside; tx++) {
-			if (*pfInvalid++) {
-				rcSrc.Set(xT, ySrc, xT + gcxTile, ySrc + gcyTile);
-				Blt(pbmSrc, &rcSrc, xT, yDst);
-			}
-			xT += gcxTile;
-		}
-
-		// Inside right
-
-		if (pmnfo->cxRightTile != 0 && *pfInvalid++) {
-			rcSrc.Set(xT, ySrc, xT + pmnfo->cxRightTile, ySrc + gcyTile);
-			Blt(pbmSrc, &rcSrc, xT, yDst);
-		}
-		xT = 0;
-		yDst += gcyTile;
-		ySrc += gcyTile;
-		pfInvalid += cbReturn;
-	}
-
-	if (pmnfo->cyBottomTile != 0) {
-		// Bottom left tile
-
-		if (pmnfo->cxLeftTile != 0 && *pfInvalid++) {
-			rcSrc.Set(xT, ySrc, xT + pmnfo->cxLeftTile, ySrc + pmnfo->cyBottomTile);
-			Blt(pbmSrc, &rcSrc, xT, yDst);
-		}
-		xT += pmnfo->cxLeftTile;
-
-		// Bottom edge
-
-		for (int tx = 0; tx < pmnfo->ctxInside; tx++) {
-			if (*pfInvalid++) {
-				rcSrc.Set(xT, ySrc, xT + gcxTile, ySrc + pmnfo->cyBottomTile);
-				Blt(pbmSrc, &rcSrc, xT, yDst);
-			}
-			xT += gcxTile;
-		}
-
-		// Bottom right corner
-
-		if (pmnfo->cxRightTile != 0 && *pfInvalid++) {
-			rcSrc.Set(xT, ySrc, xT + pmnfo->cxRightTile, ySrc + pmnfo->cyBottomTile);
-			Blt(pbmSrc, &rcSrc, xT, yDst);
-		}
-	}
-}
-#endif
-#endif
 
 } // namespace wi

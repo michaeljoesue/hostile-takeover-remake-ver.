@@ -4,12 +4,6 @@ namespace wi {
 
 static MobileUnitConsts gConsts;
 
-#if defined(DEBUG_HELPERS)
-char *ArtilleryGob::GetName()
-{
-	return "Artillery";
-}
-#endif
 
 static int s_anFiringStripIndices[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 static int s_anMovingStripIndices[8] = { 8, 9, 10, 11, 12, 13, 14, 15 };
@@ -76,14 +70,6 @@ bool ArtilleryGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, W
 	return true;
 }
 
-#if 0
-int ArtilleryGob::ProcessStateMachineMessage(State st, Message *pmsg)
-{
-BeginStateMachine
-
-EndStateMachineInherit(MobileUnitGob)
-}
-#endif
 
 //
 // ArtilleryShotGob implementation
@@ -130,11 +116,5 @@ GobType ArtilleryShotGob::GetType()
 	return kgtArtilleryShot;
 }
 
-#if defined(DEBUG_HELPERS)
-char *ArtilleryShotGob::GetName()
-{
-	return "ArtilleryShot";
-}
-#endif
 
 } // namespace wi

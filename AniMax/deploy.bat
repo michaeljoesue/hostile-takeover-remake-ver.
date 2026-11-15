@@ -1,2 +1,4 @@
-copy bin\debug\AniMax.exe ..\bin
-copy amx\bin\debug\amx.dll ..\bin
+@echo off
+rem Copies the built tool to ..\bin
+copy /Y bin\Debug\AniMax.exe ..\bin
+copy /Y amx\bin\Debug\amx.dll ..\bin

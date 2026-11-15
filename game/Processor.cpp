@@ -278,12 +278,6 @@ void ProcessorGob::NotifyMinersAttemptingDelivery(bool fDying)
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *ProcessorGob::GetName()
-{
-	return "Processor";
-}
-#endif
 
 int ProcessorGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
@@ -525,12 +519,6 @@ lbError:
 
 	State(kstDying)
 		OnEnter
-#if 0 // DWM: crazy last minute change. Players don't lose credits when they sell Processors
-			// Sorry, player must lose some Credits along with this Processor
-
-			if (m_ff & kfGobActive)
-				m_pplr->SetCredits(m_pplr->GetCredits() - CalcCreditsShare(m_pplr), true);
-#endif
 
 			// Remove the Miner too if it's inside the Processor
 
@@ -566,16 +554,12 @@ lbError:
 			NotifyMinersAttemptingDelivery(true);
 			return nHandled;
 
-#if 0
-EndStateMachineInherit(StructGob)
-#else
             return knHandled;
         }
     } else {
         return (int)StructGob::ProcessStateMachineMessage(st, pmsg);
     }
     return (int)StructGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 //

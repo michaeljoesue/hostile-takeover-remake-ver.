@@ -63,12 +63,6 @@ void RadarGob::Deactivate()
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *RadarGob::GetName()
-{
-	return "Radar";
-}
-#endif
 
 int RadarGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
@@ -106,16 +100,12 @@ BeginStateMachine
 
 			DefUpdate();
 
-#if 0
-EndStateMachineInherit(StructGob)
-#else
             return knHandled;
         }
     } else {
         return (int)StructGob::ProcessStateMachineMessage(st, pmsg); 
     }
     return (int)StructGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 } // namespace wi

@@ -2,7 +2,7 @@
 #define __MESSAGEQUEUE_H__
 
 #include "base/criticalsection.h"
-#include "base/socketserver.h"
+#include "base/eventserver.h"
 #include "base/messagehandler.h"
 #include "base/log.h"
 #include "inc/basictypes.h"
@@ -47,15 +47,14 @@ const int kidmDispose = 0x7f00;
 // New base messages are negative to avoid colliding with game idm's defined in input.h.
 const int kidmNone = -1;
 const int kidmNullEvent = -2;
-const int kidmTransportEvent = -3;
 
 class MessageQueue {
 public:
-    MessageQueue(SocketServer *ss = NULL);
+    MessageQueue(EventServer *es = NULL);
     virtual ~MessageQueue();
 
-    SocketServer& ss() { return *ss_; }
-    void set_ss(SocketServer *ss) { delete ss_; ss_ = ss; }
+    EventServer& es() { return *es_; }
+    void set_es(EventServer *es) { delete es_; es_ = es; }
 
     virtual void Stop();
     virtual bool IsStopping();
@@ -106,7 +105,7 @@ private:
     void ClearChain(Message **ppmsg, MessageHandler *handler, int id);
     void InsertDelayedMessage(Message *pmsg);
 
-    SocketServer *ss_;
+    EventServer *es_;
     bool stop_;
     Message *pmsg_;
     Message *pmsgDelayed_;

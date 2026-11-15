@@ -42,8 +42,6 @@ Display::Display()
     m_pitch32 = 0;
     m_pixelCount = 0;
 
-    m_density = 0;
-    m_fShouldRender = false;
 }
 
 Display::~Display()
@@ -78,26 +76,13 @@ bool Display::Init()
         return false;
     }
 
-	// Absolutely do not mess with SDL_FULLSCREEN if there is any chance the app
-	// will crash or stop at a breakpoint. If it does you will be lost in full
-	// screen mode! (ssh from another machine and kill the Xcode process)
     videoflags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
-    #if defined(__IPHONEOS__) || defined(__ANDROID__)
-    videoflags = videoflags | SDL_WINDOW_BORDERLESS;
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeRight LandscapeLeft");
-    #endif
-
-    // Android wants to process mouse and touch events separately
-    #if defined(__ANDROID__)
-    SDL_SetHint(SDL_HINT_ANDROID_SEPARATE_MOUSE_AND_TOUCH, "1");
-    #endif
 
     // Get surface properties
     SurfaceProperties props;
     HostHelpers::GetSurfaceProperties(&props);
     m_cx = props.cxWidth;
     m_cy = props.cyHeight;
-    m_density = props.density;
     
     // Create window
     if ((m_window = SDL_CreateWindow("Hostile Takeover", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_cx, m_cy, videoflags)) == NULL) {
@@ -107,7 +92,6 @@ bool Display::Init()
 
     // Create renderer
     m_renderer = SDL_CreateRenderer(m_window, 0, SDL_RENDERER_TARGETTEXTURE);
-    this->SetShouldRender(true);
 
     // Keep the screen size around
     s_siz.cx = m_cx;
@@ -128,7 +112,6 @@ bool Display::Init()
 
     ModeInfo *pmode = m_amodeInfo;
     
-#if 1
     pmode->nDepth = 8;
     pmode->cx = props.cxWidth;
     pmode->cy = props.cyHeight;
@@ -136,46 +119,15 @@ bool Display::Init()
     pmode->fNative = true;
     pmode->nDegreeOrientation = 0;
     pmode++;
-#endif
 
-#if 0
-    pmode->nDepth = 8;
-    pmode->cx = props.cyHeight;
-    pmode->cy = props.cxWidth;
-    pmode->cyGraffiti = 0;
-    pmode->fNative = true;
-    pmode->nDegreeOrientation = 90; // leftie controls
-    pmode++;
-#endif
 
-#if 0
-    pmode->nDepth = 8;
-    pmode->cx = props.cxWidth;
-    pmode->cy = props.cyHeight;
-    pmode->cyGraffiti = 0;
-    pmode->fNative = true;
-    pmode->nDegreeOrientation = 180; // bizzaro controls
-    pmode++;
-#endif
     
-#if 0
-    pmode->nDepth = 8;
-    pmode->cx = props.cyHeight;
-    pmode->cy = props.cxWidth;
-    pmode->cyGraffiti = 0;
-    pmode->fNative = true;
-    pmode->nDegreeOrientation = 270; // rightie controls
-    pmode++;
-#endif
 
     m_cmodes = pmode - m_amodeInfo;
 
     HostOutputDebugString("Display::Init %d", pmode - m_amodeInfo);
     HostOutputDebugString("Display::Init %d modes", m_cmodes);
 
-#if defined(__IPHONEOS__)
-    HostHelpers::DisplayInitComplete();
-#endif
     return true;
 }
 
@@ -299,9 +251,6 @@ void Display::FrameComplete(int cfrmm, UpdateMap **apupd, Rect *arc,
 }
 
 void Display::RenderGameSurface() {
-    if (!m_fShouldRender)
-        return;
-
     // Update the texture
     SDL_UpdateTexture(m_texture, NULL, m_gamePixels32, m_pitch32);
 
@@ -318,9 +267,6 @@ void Display::RenderGameSurface() {
 
 void Display::ResetScrollOffset()
 {
-#if 0 // TODO(darrinm): SDL-ify
-    IPhone::ResetScrollOffset();
-#endif
 }
 
 SpriteManager *Display::GetSpriteManager()
@@ -330,19 +276,5 @@ SpriteManager *Display::GetSpriteManager()
 	return s_psprm;
 }
 
-void Display::SetFormMgrs(FormMgr *pfrmmSimUI, FormMgr *pfrmmInput)
-{
-#if 0 // TODO(darrinm): SDL-ify
-    IPhone::SetFormMgrs(pfrmmSimUI, pfrmmInput);
-#endif
-}
-
-float Display::Density() {
-    return m_density;
-}
-
-void Display::SetShouldRender(bool fsr) {
-    m_fShouldRender = fsr;
-}
 
 } // namespace wi

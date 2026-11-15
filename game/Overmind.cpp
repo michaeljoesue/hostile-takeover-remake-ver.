@@ -30,14 +30,6 @@ bool OvermindGob::Init(const char *pszName)
 	m_wx = m_wy = 0;
 	m_ff |= kfGobStateMachine;
 
-#if 0	// The Overmind doesn't need to take sides. It will be given an owner Player (somewhere)
-	// For now, Overmind takes the side the player isn't on
-
-	if (gpplrLocal->GetSide() == kside1)
-		m_side = kside2;
-	else
-		m_side = kside1;
-#endif
 
 	// Add the fresh Gob to the GobMgr. GobMgr::AddGob assigns this Gob a gid
 
@@ -53,17 +45,6 @@ bool OvermindGob::Init(const char *pszName)
 
 bool OvermindGob::Init(IniReader *pini, FindProp *pfind, const char *pszName)
 {
-#if 0
-	int wf = 0;
-	char szBitmap[kcbFilename];
-	int cArgs = pini->GetPropertyValue(pfind, "%*d ,%s,%d ,%d", szBitmap, &m_x, &m_y, &wf);
-	if (cArgs < 3) {
-		Assert("OvermindGob requires at least 3 valid initialization parameters");
-		return false;
-	}
-
-	m_wf |= (word)wf;
-#endif
 
 	return Init(pszName);
 }
@@ -89,12 +70,6 @@ void OvermindGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLa
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *OvermindGob::GetName()
-{
-	return "Overmind";
-}
-#endif
 
 void OvermindGob::Toggle()
 {

@@ -376,16 +376,12 @@ BeginStateMachine
 
 	//-----------------------------------------------------------------------
 
-#if 0
-EndStateMachineInherit(StructGob)
-#else
             return knHandled;
         }
     } else {
         return (int)StructGob::ProcessStateMachineMessage(st, pmsg); 
     }
     return (int)StructGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 dword TowerGob::GetAnimationHash() {
@@ -515,12 +511,6 @@ bool GunTowerGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WC
 	return true;
 }
 
-#if defined(DEBUG_HELPERS)
-char *GunTowerGob::GetName()
-{
-	return "GunTower";
-}
-#endif
 
 //
 // RocketTowerGob implementation
@@ -556,12 +546,6 @@ RocketTowerGob::RocketTowerGob() : TowerGob(&gtwrcRocket)
 {
 }
 
-#if defined(DEBUG_HELPERS)
-char *RocketTowerGob::GetName()
-{
-	return "RocketTower";
-}
-#endif
 
 // UNDONE: UnitGob can handle some of this (e.g., timing)
 

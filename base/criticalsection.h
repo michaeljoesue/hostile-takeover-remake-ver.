@@ -2,29 +2,20 @@
 #define __CRITICALSECTION_H__
 
 #include "inc/basictypes.h"
-#include <pthread.h>
+#include <mutex>
 
 namespace base {
 
 class CriticalSection {
 public:
-    CriticalSection() {
-        pthread_mutexattr_t mutex_attribute;
-        pthread_mutexattr_init(&mutex_attribute);
-        pthread_mutexattr_settype(&mutex_attribute, PTHREAD_MUTEX_RECURSIVE);
-        pthread_mutex_init(&mutex_, &mutex_attribute);
-    }
-    ~CriticalSection() {
-        pthread_mutex_destroy(&mutex_);
-    }
     void Enter() {
-        pthread_mutex_lock(&mutex_);
+        mutex_.lock();
     }
     void Leave() {
-        pthread_mutex_unlock(&mutex_);
+        mutex_.unlock();
     }
 private:
-    pthread_mutex_t mutex_;
+    std::recursive_mutex mutex_;
 };
 
 // CritScope, for serializing exection through a scope

@@ -96,12 +96,6 @@ void WarehouseGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nL
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *WarehouseGob::GetName()
-{
-	return "Warehouse";
-}
-#endif
 
 // UNDONE: when a Warehouse is destroyed some amount of the Galaxite
 // is carrying should be lost
@@ -133,16 +127,12 @@ BeginStateMachine
 
 	//-----------------------------------------------------------------------
 
-#if 0
-EndStateMachineInherit(StructGob)
-#else
             return knHandled;
         }
     } else {
         return (int)StructGob::ProcessStateMachineMessage(st, pmsg); 
     }
     return (int)StructGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 } // namespace wi

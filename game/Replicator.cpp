@@ -10,12 +10,6 @@ namespace wi {
 static AnimationData *s_panidActivator = NULL;
 static BuilderConsts gConsts;
 
-#if defined(DEBUG_HELPERS)
-char *ReplicatorGob::GetName()
-{
-	return "Replicator";
-}
-#endif
 
 bool ReplicatorGob::InitClass(IniReader *pini)
 {
@@ -25,17 +19,6 @@ bool ReplicatorGob::InitClass(IniReader *pini)
 	// Sound effects
 	gConsts.sfxUnitReady = ksfxReplicatorBuild;
 
-#if 0
-	gConsts.sfxPowerOn = ksfxReplicatorOn;
-	gConsts.sfxPowerOff = ksfxReplicatorOff;
-	gConsts.sfxUnitBuildAbort = ksfxReplicatorAbortRecruiting;
-	gConsts.sfxUnitReady = ksfxReplicatorUnitReady;
-	gConsts.sfxAbortRepair = ksfxReplicatorAbortRepair;
-	gConsts.sfxDamaged = ksfxReplicatorDamaged;
-	gConsts.sfxDestroyed = ksfxReplicatorDestroyed;
-	gConsts.sfxRepair = ksfxReplicatorRepair;
-	gConsts.sfxSelect = ksfxReplicatorSelect;
-#endif
 
 	// Preload the Activator animation data
 
@@ -147,16 +130,12 @@ void ReplicatorGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int n
 		m_ani.SetStrip(m_fEnabled ? 2 : 0);
 		m_ani.Draw(pbm, x, y, side);
 		m_ani.SetStrip(m_fEnabled ? 3 : 1);
-#if defined(IPHONE) || defined(SDL)
         // When this is scaled up by 1 1/3 (scaling 24 art to 32),
         // the upper right quadrant piece is 55 high, which translates after
         // rounding to 73, yet the lower right quad piece wants to go at
         // location 56 (effectively) which scales to 75, so there is a gap.
 
 		m_ani.Draw(pbm, x, y - 1, side); // ugly hack
-#else
-		m_ani.Draw(pbm, x, y, side);
-#endif
 
 		if (m_fReplicating) {
 			m_ani.SetStrip(m_pmuntc->panid->GetStripIndex("l 0"));
@@ -401,16 +380,12 @@ BeginStateMachine
 			m_unvl.MinSkip();
 			DefUpdate();
 
-#if 0
-EndStateMachineInherit(StructGob)
-#else
             return knHandled;
         }
     } else {
         return (int)StructGob::ProcessStateMachineMessage(st, pmsg); 
     }
     return (int)StructGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 void ReplicatorGob::WaitingForCredits(bool fNeed, bool fOverride, Player *pplr)
@@ -465,12 +440,6 @@ void ReplicatorGob::RemoveReplicatorInputPoint(TCoord tx, TCoord ty)
 // ActivatorGob implementation
 //
 
-#if defined(DEBUG_HELPERS)
-char *ActivatorGob::GetName()
-{
-	return "Activator";
-}
-#endif
 
 bool ActivatorGob::Init(IniReader *pini, FindProp *pfind, const char *pszName)
 {
@@ -549,16 +518,12 @@ BeginStateMachine
 
 		return AnimGob::ProcessStateMachineMessage(st, pmsg);
 
-#if 0
-EndStateMachineInherit(AnimGob)
-#else
             return knHandled;
         }
     } else {
         return (int)AnimGob::ProcessStateMachineMessage(st, pmsg); 
     }
     return (int)AnimGob::ProcessStateMachineMessage(st, pmsg);
-#endif
 }
 
 } // namespace wi

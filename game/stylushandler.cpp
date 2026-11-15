@@ -239,9 +239,8 @@ void SimUIForm::StylusHandler::OnPenHold(Event *pevt)
     }
 
 	// Don't popup menu if the player doesn't own the Gob (unless in God mode)
-	// God mode is limited for multiplayer games.
 
-	if ((!gfGodMode || ggame.IsMultiplayer()) && 
+	if (!gfGodMode && 
 			pgobHit->GetSide() != gpplrLocal->GetSide()) {
 		return;
     }

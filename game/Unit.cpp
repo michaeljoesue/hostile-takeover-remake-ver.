@@ -6,8 +6,6 @@ TBitmap *gaptbmScorches[4];
 UnitConsts *gapuntc[kutMax];
 int gnUnitCostMin = 32767;
 int gnUnitCostMax = -1;
-int gnUnitCostMPMin = 32767;
-int gnUnitCostMPMax = -1;
 fix gfxMobileUnitArmorStrengthMin = itofx(511);
 fix gfxMobileUnitArmorStrengthMax = itofx(-1);
 fix gfxStructureArmorStrengthMin = itofx(511);
@@ -73,9 +71,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 	puntc->nInfantryDamage = 0;
 	puntc->nVehicleDamage = 0;
 	puntc->nStructureDamage = 0;
-	puntc->nInfantryDamageMP = 0;
-	puntc->nVehicleDamageMP = 0;
-	puntc->nStructureDamageMP = 0;
 	puntc->ctFiringRate = 0;
 	puntc->tcFiringRange = 0;
 
@@ -90,10 +85,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
  	if (pini->GetPropertyValue(szTemplate, "TimeToBuild", "%d", &csecTimeToBuild) != 1)
 		return false;
  	puntc->cupdTimeToBuild = UpdFromSec(csecTimeToBuild);
-	if (pini->GetPropertyValue(szTemplate, "TimeToBuildMP", "%d", &csecTimeToBuild) != 1)
-		puntc->cupdTimeToBuildMP = puntc->cupdTimeToBuild;
-	else
-		puntc->cupdTimeToBuildMP = UpdFromSec(csecTimeToBuild);
 	int pcT;
 	if (pini->GetPropertyValue(szTemplate, "UIBoundsLeft", "%d", &pcT) != 1)
 		return false;
@@ -132,8 +123,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 			gfxInfantryDamageMax = _max(gfxInfantryDamageMax, fxDamagePerSec);
 		}
 	}
-	if (pini->GetPropertyValue(szTemplate, "InfantryDamageMP", "%d", &puntc->nInfantryDamageMP) != 1)
-		puntc->nInfantryDamageMP = puntc->nInfantryDamage;
 	if (pini->GetPropertyValue(szTemplate, "VehicleDamage", "%d", &puntc->nVehicleDamage)) {
 		if (puntc->nVehicleDamage != 0) {
 			fxDamagePerSec = (fix)mulfx(itofx32(puntc->nVehicleDamage), divfx(itofx(1000), itofx(cmsFiringRate)));
@@ -141,8 +130,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 			gfxVehicleDamageMax = _max(gfxVehicleDamageMax, fxDamagePerSec);
 		}
 	}
-	if (pini->GetPropertyValue(szTemplate, "VehicleDamageMP", "%d", &puntc->nVehicleDamageMP) != 1)
-		puntc->nVehicleDamageMP = puntc->nVehicleDamage;
 	if (pini->GetPropertyValue(szTemplate, "StructureDamage", "%d", &puntc->nStructureDamage)) {
 		if (puntc->nStructureDamage != 0) {
 			fxDamagePerSec = (fix)mulfx(itofx32(puntc->nStructureDamage), divfx(itofx(1000), itofx(cmsFiringRate)));
@@ -150,8 +137,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 			gfxStructureDamageMax = _max(gfxStructureDamageMax, fxDamagePerSec);
 		}
 	}
-	if (pini->GetPropertyValue(szTemplate, "StructureDamageMP", "%d", &puntc->nStructureDamageMP) != 1)
-		puntc->nStructureDamageMP = puntc->nStructureDamage;
 
 	pini->GetPropertyValue(szTemplate, "FiringRange", "%d", &puntc->tcFiringRange);
 	gtcFiringRangeMin = _min((int)gtcFiringRangeMin, puntc->tcFiringRange);
@@ -173,11 +158,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 
 	if (!pini->GetPropertyValue(szTemplate, "LongName", puntc->szLongName, sizeof(puntc->szLongName)))
 		strcpy(puntc->szLongName, puntc->szName);
-
-	if (pini->GetPropertyValue(szTemplate, "CostMP", "%d", &puntc->nCostMP) != 1)
-		puntc->nCostMP = puntc->nCost;
-	gnUnitCostMPMin = _min(gnUnitCostMPMin, puntc->nCostMP);
-	gnUnitCostMPMax = _max(gnUnitCostMPMax, puntc->nCostMP);
 
 	puntc->panid = LoadAnimationData(puntc->szAniName);
 	Assert(puntc->panid != NULL);
@@ -591,7 +571,7 @@ dword UnitGob::GetAnimationHash()
 {
     int nFrame = m_ani.GetFrame();
     int nStrip = m_ani.GetStrip();
-    return ((nFrame << 16) | nStrip) ^ (dword)(unsigned long)this ^ (GetId() << 16);
+    return ((nFrame << 16) | nStrip) ^ (dword)(pword)this ^ (GetId() << 16);
 }
 
 void UnitGob::GetAnimationBounds(Rect *prc, bool fBase)
@@ -847,9 +827,6 @@ UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 		return puntEnemyClosest;
 
 	if (cEmpty == ARRAYSIZE(m_agidEnemyNearby)) {
-#if defined(DEBUG) && defined(WIN)
-//		Assert(ggobm.FindEnemyWithinRange(this, tcRange) == NULL, "Lost track of a nearby enemy!");
-#endif
 		m_ff |= kfGobNoEnemiesNearby;
 	}
 
@@ -1353,19 +1330,5 @@ bool UnitMenu::OnHitTest(Event *pevt)
 	return true;
 }
 
-#ifdef MP_DEBUG_SHAREDMEM
-void UnitGob::MPValidate()
-{
-//  Warehouse sets animation state during draw
-//	m_ani.MPValidate((Animation *)(((byte *)MPGetGobPtr(m_gid)) + OFFSETOF(UnitGob, m_ani)));
-	MPValidateGobMember(UnitGob, m_agidEnemyNearby);
-	MPValidateGobMember(UnitGob, m_fxHealth);
-	MPValidateGobMember(UnitGob, m_cupdLastHitNotify);
-//  gpplrLocal specific
-//	MPValidateGobMember(UnitGob, m_cDamageCountdown);
-//	MPValidateGobMember(UnitGob, m_wfUnit);
-	MPValidateGobMember(UnitGob, m_unvl);
-}
-#endif
 
 } // namespace wi

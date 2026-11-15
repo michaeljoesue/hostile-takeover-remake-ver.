@@ -2,71 +2,40 @@
 #define __MISSIONLIST_H__
 
 #include "game/ht.h"
+#include <string>
+#include <vector>
 
 namespace wi {
 
-enum MissionType { kmtStory, kmtChallenge, kmtAddOn, kmtDemo,
-        kmtMultiplayerChallenge, kmtMultiplayerAddOn, kmtUnknown };
+// Built-in single player missions. Story missions are s_*.lvl, challenge
+// missions are c_*.lvl.
+
+enum MissionType { kmtStory, kmtChallenge, kmtUnknown };
 
 struct MissionDescription { // md
-    char szPackName[kcbLevelTitle];
     char szLvlTitle[kcbLevelTitle];
-    int cPlayersMin;
-    int cPlayersMax;
     MissionType mt;
 };
 
 struct MissionIdentifier { // miid
-    PackId packid;
     char szLvlFilename[kcbFilename];
 };
-
-enum MissionListType { kmltAll, kmltSinglePlayer, kmltMultiplayer };
 
 class MissionList
 {
 public:
-    MissionList();
-    ~MissionList();
-
-    bool Init(const PackId *ppackid, MissionListType type);
+    bool Init();
     int GetCount();
     bool GetMissionDescription(int i, MissionDescription *pmd);
     bool GetMissionIdentifier(int i, MissionIdentifier *pmiid);
-    bool IsMultiplayerMissionType(MissionType mt) {
-        return mt == kmtMultiplayerChallenge || mt == kmtMultiplayerAddOn;
-    }
+
+    static MissionType GetMissionType(const char *pszLvl);
 
 private:
-    struct LvlItem { // lvli
-        const char *pszFilename;
-        MissionType mt;
-        LvlItem *plvliNext;
-    };
-
-    struct PdbItem { // pdbi
-        PackId packid;
-        const char *pszTitle;
-        int clvli;
-        LvlItem *plvliFirst;
-        PdbItem *ppdbiNext;
-    };
-
-    LvlItem *FindLevelItem(int i, PdbItem **pppdbi);
-    PdbItem *AddLevelFiles(const PackId *ppackid);
-    PdbItem *AddPdbItem(const PackId *ppackid);
-    LvlItem *AddLvlItem(PdbItem *ppdbi, char *pszLvl);
-    void ResortMainMissions(PdbItem *ppdbi);
-    bool PassesDemoFilter(char *psz, bool fAddOn);
-    MissionType GetMissionType(const PackId *ppackid, const char *pszLvl);
-    const char *ExtractPackTitle(const PackId *ppackid);
-
-    PdbItem *m_ppdbiFirst;
-    MissionListType m_mlt;
+    std::vector<std::string> m_vecLvl;
 };
 
-extern MissionList *CreateMissionList(const PackId *ppackid,
-        MissionListType mlt);
+extern MissionList *CreateMissionList();
 
 } // namespace wi
 

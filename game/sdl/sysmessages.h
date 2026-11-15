@@ -4,22 +4,9 @@
 namespace wi {
 
 enum {
-    kidmAppTerminate = 1,
-    kidmBreakEvent,
-    kidmAnimationTimer,
+    kidmAnimationTimer = 1,
     kidmDestroyAfterAnimation,
-    kidmAppSetFocus,
-    kidmAppKillFocus,
-    kidmAskStringEvent,
     kidmSdlEvent,
-    kidmFingerMoveEvent,
-    kidmFingerMoveEvent2,
-    kidmFingerUpEvent,
-    kidmFingerUpEvent2,
-    kidmReceivedResponse,
-    kidmReceivedData,
-    kidmFinishedLoading,
-    kidmError,
     kidmUser = 0x400
 };
 

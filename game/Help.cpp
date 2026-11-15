@@ -16,9 +16,9 @@ namespace wi {
 // Help Control
 //
 
-bool PaintChunk(int x, int y, int cx, int cy, int curIndex, int curY, int nyBottom, Chunk *pChunk, void *ptr) secHelpControl;
-bool HitTestChunk(int x, int y, int cx, int cy, int curIndex, int curY, int nyBottom, Chunk *pChunk, void *ptr) secHelpControl;
-bool FindPositionCallback(int x, int y, int cx, int cy, int curIndex, int curY, int nyBottom, Chunk *pChunk, void *ptr) secHelpControl;
+bool PaintChunk(int x, int y, int cx, int cy, int curIndex, int curY, int nyBottom, Chunk *pChunk, void *ptr);
+bool HitTestChunk(int x, int y, int cx, int cy, int curIndex, int curY, int nyBottom, Chunk *pChunk, void *ptr);
+bool FindPositionCallback(int x, int y, int cx, int cy, int curIndex, int curY, int nyBottom, Chunk *pChunk, void *ptr);
 
 HelpControl::HelpControl()
 {
@@ -50,9 +50,7 @@ bool HelpControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 
 	m_cyPageAmount = (int)((long)m_rc.Height() * 85 / 100);
 
-#if defined(IPHONE) || defined(SDL)
     m_wf |= kfHelpScrollPosition;
-#endif
 
 	return true;
 }
@@ -729,11 +727,7 @@ int HelpControl::FindNextPosition(int nchFrom, int cyAmount, bool *pfLargeFont, 
 	fph.nDistY = cyAmount;
 	fph.cySpan = cyAmount;
 	fph.cyControl = m_rc.Height();
-#if defined(IPHONE) || defined(SDL)
     fph.nCondition = knFindPosFingerScroll;
-#else
-	fph.nCondition = fCondition ? knFindPosAtLeastY : knFindPosAtMostY;
-#endif
 	fph.nchLastHR = -1;
 	fph.nchFirstHR = -1;
 	fph.nchSpanMet = -1;
@@ -924,12 +918,6 @@ bool FindPositionCallback(int x, int y, int cx, int cy, int nchBuffer, int cyTot
 {
 	FindPositionHelper *pFPH = (FindPositionHelper*)pv;
 
-#if 0
-	if (pChunk != NULL && (pChunk->nType == knChunkRawText ||
-            pChunk->nType == knChunkLargeText)) {
-		pFPH->fLargeFont = (pChunk->nType == knChunkRawText) ? false : true;
-    }
-#else
     if (pChunk != NULL) {
         if (pChunk->nType == knChunkLargeText) {
             pFPH->fLargeFont = true;
@@ -937,7 +925,6 @@ bool FindPositionCallback(int x, int y, int cx, int cy, int nchBuffer, int cyTot
             pFPH->fLargeFont = false;
         }
     }
-#endif
 
     // we're counting the vertical (Y) distance traveled from a given point to
     // pFPH->nIndex
@@ -1015,10 +1002,10 @@ bool FindPositionCallback(int x, int y, int cx, int cy, int nchBuffer, int cyTot
 class HelpForm : public ShellForm
 {
 public:
-	HelpForm() secHelpForm;
-	virtual bool DoModal(const char *pszLink, const char *pszFile) secHelpForm;
-	virtual void OnControlSelected(word idc) secHelpForm;
-	virtual bool EventProc(Event *pevt) secHelpForm;
+	HelpForm();
+	virtual bool DoModal(const char *pszLink, const char *pszFile);
+	virtual void OnControlSelected(word idc);
+	virtual bool EventProc(Event *pevt);
 };
 
 void Help(const char *pszAnchor, bool fPauseSimulation, const char *pszFile)
