@@ -71,7 +71,7 @@
 Six weeks ago an ACME owned, unmanned probe en route to the star Tau Ceti reported back that an unexplored planet, Icarus, contained 'massive' Galaxite deposits. ACME has dispatched a colony ship to the location. On board are Gordon Fox, Mining Base Commander, Jana Perez, a Senior Research Scientist, her fiance, Andy Whitmore, a Mining Operations Trainee, and Arthur Olstrom, a Sr. Mining Executive; it includes the equipment and people necessary to exploit and defend their claim. If ACME can successfully claim Icarus it may well become the richest and most powerful mega corporation of them all!</H2>
 <HR>
 <A NAME="gettingstarted"><H1>GETTING STARTED </H1></A>
-<H2>When you begin the game, you will be presented with a number of options. Choose <A HREF="#playsolo">Play</A> to begin. New players will likely wish to <A HREF="#newgame">begin the story</A> missions from the beginning. <A HREF="#loadsingleplayer">Load Saved Game</A> allows you to resume any previously saved game. <A HREF="#gameoptions">Options</A> lets you change the game speed, scroll speed and difficulty.</H2>
+<H2>When you begin the game, you will be presented with a number of options. Choose <A HREF="#playsolo">Play</A> to begin. New players will likely wish to <A HREF="#newgame">begin the story</A> missions from the beginning. <A HREF="#loadsingleplayer">Load Saved Game</A> allows you to resume any previously saved game. <A HREF="#gameoptions">Options</A> lets you change the game speed, scroll speed, difficulty, sound, graphics effects, colors and display settings.</H2>
 <HR>
 <A NAME="newgame"><H1>BEGINNING A NEW GAME </H1></A>
 <H2>To start the story missions from the beginning, select <A HREF="#playsolo">Play</A>, then select the first mission in the list, Story Mission "M0: Introduction". This is a training mission which is an excellent place to start. You'll learn how to create buildings, build units and move your forces around. However, there are some features that are not covered in the training mission and are helpful to know ahead of time. Refer to <A HREF="#Tips">Tips</A> for more information. As you finish each mission you will be taken to the next mission in the adventures of Andy, Jana, Olstrom and Fox. Watch your rank increase with each successfully completed mission.</H2>
@@ -84,13 +84,15 @@ Six weeks ago an ACME owned, unmanned probe en route to the star Tau Ceti report
 There are three difficulty settings for the game. This setting can be changed at any time and will take effect immediately. <BR>
 Moving the volume slider to the right will increase the audio volume, moving it to the left will decrease the audio volume. You can mute all game sound by selecting the Mute checkbox.<BR>
 Moving the scroll speed slider to the right will increase the rate the map scrolls.<BR>
+Display options choose the game resolution (a larger resolution shows more of the map; the recommended one fits your screen), fullscreen or windowed play and Smooth Motion, which draws units moving smoothly at your screen's refresh rate. Press Alt+Enter or F11 at any time to switch between fullscreen and a window. The window can be resized; the game is scaled to fit.<BR>
+The + and - keys on the number pad change the game speed while playing.<BR>
 Clicking the Default button will restore these settings to their default values.</H2>
 <HR>
 <A NAME="howtoplay"><H1>GAME PLAY CONTROLS </H1></A>
 <H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly, to move a unit, click on the unit, then click on the destination. To move multiple units, <A HREF="#multiselect">select</A> the units then click on the destination. To attack, select your desired units, then click on the enemy unit you wish to attack. To see the menu of one of your units or buildings, click on it and hold the mouse button down until the menu appears.</H2>
 <HR>
 <A NAME="scrollmap"><H1>SCROLLING THE MAP </H1></A>
-<H2>To scroll the map, click on the <A HREF="#minimap">Mini Map</A> in the lower right-hand corner of the window, or drag a selection rectangle to the edge of the map. From <A HREF="#gameoptions">Options</A> you can adjust how fast the map scrolls.</H2>
+<H2>To scroll the map, use the arrow keys, click on the <A HREF="#minimap">Mini Map</A> in the lower right-hand corner of the window, or drag a selection rectangle to the edge of the map. In fullscreen, moving the mouse to the edge of the screen scrolls the map too. From <A HREF="#gameoptions">Options</A> you can adjust how fast the map scrolls.</H2>
 <HR>
 <A NAME="multiselect"><H1>SELECTING MULTIPLE UNITS </H1></A>
 <H2>You can select multiple units at once. Press the mouse button on the map and drag diagonally across a group of units. A box will be drawn. When you release the mouse button all the units in the box will be selected. If Lasso Selection is turned on in <A HREF="#gameoptions">Options</A>, draw a loop around the units instead.</H2>

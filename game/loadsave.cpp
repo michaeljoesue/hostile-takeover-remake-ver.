@@ -157,7 +157,7 @@ bool LoadGameForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 		} else {
 			strcpy(szT, szLevel);
 		}
-		plstc->Add(szT, (void *)((long)nGame + 1));
+		plstc->Add(szT, (void *)((pword)nGame + 1));
 	}
 	m_nGameLast = nGameLast;
 

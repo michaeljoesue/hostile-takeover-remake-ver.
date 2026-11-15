@@ -1110,13 +1110,15 @@ int BuildQueue::GetRemainingCapacity()
 void BuildQueue::Enqueue(UnitType ut)
 {
 	int i = 0;
-	while ((m_achBuildQueue[i] != (char)kutNone) && i < m_cchQueueMax)
+	while (i < m_cchQueueMax && m_achBuildQueue[i] != (char)kutNone)
 		i++;
 
 	// we should have made sure there would be room before we get here, we've already
 	// told the user it's on the queue by this point
 
 	Assert(i < m_cchQueueMax);
+	if (i >= m_cchQueueMax)
+		return;
 
 	m_achBuildQueue[i] = (char)ut;
 }
@@ -1141,13 +1143,15 @@ bool BuildQueue::RemoveUnit(UnitType ut)
 			break;
 	}
 	Assert(i > -1);
+	if (i < 0)
+		return false;
 
 	// it's possible we will encounter things being removed that aren't there because
 	// of a lag in state. As long as it happens once in each queue we'll be ok. (IE one queue 
 	// will fail canceling and the other will fail removing a completed unit) Since only one
 	// queue actually reflects game state it's ok for them to get to the same state different ways
 
-	memmove(&(m_achBuildQueue[i]), &(m_achBuildQueue[i+1]), sizeof(char)*(m_cchQueueMax - i));
+	memmove(&(m_achBuildQueue[i]), &(m_achBuildQueue[i+1]), sizeof(char)*(m_cchQueueMax - i - 1));
 	m_achBuildQueue[m_cchQueueMax - 1] = kutNone;
 
 	// return true if we removed the currently building item

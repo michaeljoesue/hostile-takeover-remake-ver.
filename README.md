@@ -6,15 +6,45 @@ This version of the game is **Windows 11 (64 bit) only** and **single player
 only**. Compared to the original repository:
 
 - The iOS, Android, macOS, Linux, Native Client, Palm OS and Windows Mobile
-  ports and their build files are gone. The game runs on the SDL2 layer in
-  `game/sdl`, with a small Windows host layer, and builds with CMake and
-  Visual Studio.
+  ports and their build files are gone. The game runs on SDL3 (`game/sdl`)
+  with a small Windows host layer, and builds with CMake and Visual Studio.
 - Multiplayer, the multiplayer server (`server`, `stats`, `syncerror`), chat,
   accounts and login, the leaderboard, the forums link, add-on mission pack
   downloads, copy protection (DRM), the demo/purchase screens and the related
   code have been removed. The multiplayer maps (`M_*`) are still built into
   the game data, but the single-player menus don't list them.
 - Story and challenge missions, saved games, options and help are unchanged.
+
+### Modern engine
+
+The engine has been updated from its 2007 handheld roots:
+
+- **SDL3 with GPU presentation.** The game's 8 bit frame is uploaded as a
+  palettized texture and scaled by the GPU with sharp pixel-art filtering,
+  letterboxed to keep its shape. Vsync paces the frame rate.
+- **Any resolution.** Choose the game resolution in Options > Display (from
+  800x600 up to your desktop size; larger shows more of the map). The
+  recommended one fits your screen, divided down on very high resolution
+  screens so the art isn't tiny (4K runs at 1920x1080, scaled 2x).
+  High-DPI aware.
+- **Fullscreen or windowed**, resizable window; Alt+Enter or F11 switches.
+- **Smooth motion.** The simulation still runs at its original fixed rate
+  (so gameplay is unchanged), but units and projectiles are drawn
+  interpolated between updates at the display's refresh rate. Keyboard
+  scrolling is continuous instead of a tile at a time, and the map scrolls
+  when the mouse is at the screen edge in fullscreen. Options > Display >
+  Smooth Motion turns it off.
+- **Higher limits.** Up to 4096 game objects (was 768), 500 units and 300
+  structures for the player (was 88 and 55), 600 shots and explosions, 300
+  scorch marks and 600 scenery objects on the map at once (was 50, 30 and
+  100), build queues of 50 (was 10), and a larger graphics cache. The
+  computer players keep their original limits so the missions keep their
+  original difficulty.
+- **Better sound.** Effects are mixed in 16 bit on 16 channels (was 8 bit,
+  4 channels, averaged so effects got quieter as more played) with soft
+  clipping, and resampled by SDL3 to the output device's rate (typically
+  48 kHz stereo). The volume slider works.
+- The full Options menu (Game, Sound, Performance, Color, Display) is back.
 
 ## About
 
@@ -31,9 +61,9 @@ only**. Compared to the original repository:
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) with the
   **Desktop development with C++** workload (includes CMake)
 - An internet connection the first time you configure: the build downloads
-  SDL2 2.30 from GitHub and builds it as a static library. If you'd rather
-  use your own SDL2 (for example from vcpkg), CMake uses it when
-  `find_package(SDL2)` finds it, and copies `SDL2.dll` next to the game.
+  SDL3 3.4 from GitHub and builds it as a static library. If you'd rather
+  use your own SDL3 (for example from vcpkg), CMake uses it when
+  `find_package(SDL3)` finds it, and copies `SDL3.dll` next to the game.
 
 ### Building the game
 
@@ -68,8 +98,11 @@ Run `HostileTakeover.exe`. Choose **Play** and start with Story Mission
 - Click a unit to select it; click the ground to move, or an enemy to attack.
 - Drag a box to select several units.
 - Click and hold on one of your units or buildings for its menu.
-- Arrow keys or the mini map scroll the map.
+- Arrow keys, the mini map, or the mouse at the screen edge (fullscreen)
+  scroll the map.
 - **Menu** (bottom left) has save, load, options and help.
+- Alt+Enter or F11 switches between fullscreen and a window; numpad + and -
+  change the game speed.
 
 Saved games, settings and mission progress are stored in
 `%APPDATA%\Spiffcode\HostileTakeover`. If you quit during a mission, it is
@@ -82,6 +115,19 @@ All art, sound, levels and UI layouts are in two data files in `game`:
 are checked in, so you only need to rebuild `htdata832.pdb` if you change
 levels, art, the forms in `data\forms.ini.pp`, `data\GobTemplates.ini.pp`,
 the help text or `game\wistrings.h`.
+
+### Updating menus, unit stats and help text
+
+After editing `data\forms.ini.pp`, `data\game.ini.pp`,
+`data\GobTemplates.ini.pp` or `data\help.txt`, update the data file with:
+
+```bat
+python data\update_text.py
+```
+
+This recompiles those files and replaces them in `game\htdata832.pdb`,
+keeping everything else. It only needs Python and the CMake build (for
+`inicrunch.exe`), not the .NET tools.
 
 ### Rebuilding htdata832.pdb
 
