@@ -1,6 +1,6 @@
-# hostile-takeover-remastered-ver.
+# hostile-takeover-remake-ver.
 
-Remake/remaster of [spiffcode/hostile-takeover](https://github.com/spiffcode/hostile-takeover), full upstream history included.
+Remake of [spiffcode/hostile-takeover](https://github.com/spiffcode/hostile-takeover) with new modern engine, full upstream history included.
 
 This version of the game is **Windows 11 (64 bit) only** and **single player
 only**. Compared to the original repository:
