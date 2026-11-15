@@ -1,3 +1,9 @@
+# hostile-takeover-remastered-ver.
+
+Remake/remaster of [spiffcode/hostile-takeover](https://github.com/spiffcode/hostile-takeover), full upstream history included.
+
+---
+
 ## About
 
 *Hostile Takeover* is the open source release of the wildly popular mobile Real Time Strategy game [*Warfare Incorporated*](http://www.warfareincorporated.com/). Warfare Incorporated's developers, grateful for all the contributions of the open source community, are delighted to give something back.
