@@ -91,7 +91,10 @@
 [kidfDisplayOptions]
 	FORM=(0 0 160 160) kidcCancel center
 	LABEL=0 (38 6 83 0) "DISPLAY OPTIONS" kifntTitle center
-	LIST=kidcModesList (7 21 146 60) kifntShadow
+	LABEL=0 (7 19 146 0) "Game Resolution" kifntShadow
+	LIST=kidcModesList (7 30 146 66) kifntShadow
+	CHECKBOX=kidcFullscreen (11 103 134 0) "Fullscreen (Alt+Enter)" kifntShadow
+	CHECKBOX=kidcSmoothMotion (11 115 134 0) "Smooth Motion" kifntShadow
 	BUTTON=kidcOk (13 140 40 12) "OK" kifntButton
 	BUTTON=kidcCancel (60 140 40 12) "CANCEL" kifntButton
 	BUTTON=kidcDefault (107 140 40 12) "DEFAULT" kifntButton

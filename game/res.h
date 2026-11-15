@@ -338,6 +338,8 @@
 // DisplayOptions constants
 
 #define kidcModesList 1001
+#define kidcFullscreen 1002
+#define kidcSmoothMotion 1003
 
 // PerformanceOptions constants
 

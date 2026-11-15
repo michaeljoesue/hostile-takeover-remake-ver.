@@ -123,14 +123,26 @@ private:
 
 bool DoModalGameOptionsForm(Palette *ppal, bool fInGame)
 {
-    ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms,
-            kidfInGameOptions, new InGameOptionsForm());
-    if (pfrm == NULL) {
-        return false;
-    }
-    pfrm->DoModal();
-    delete pfrm;
+	ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms, kidfGameOptions, new GameOptionsForm());
+	if (pfrm == NULL)
+		return false;
+	int nResult;
+	pfrm->DoModal(&nResult);
 
+	if (!fInGame)
+		pfrm->Show(true);
+
+	if (nResult == kidcColorOptions) {
+		gpmfrmm->InvalidateRect(NULL);
+		Form *pfrmT = gpmfrmm->LoadForm(gpiniForms, kidfColorOptions, new ColorOptionsForm(ppal));
+		if (pfrmT != NULL) {
+			pfrmT->DoModal();
+			delete pfrmT;
+		}
+	}
+
+	pfrm->Show(false);
+	delete pfrm;
 	return true;
 }
 
@@ -631,69 +643,35 @@ bool DisplayOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	if (!ShellForm::Init(pfrmm, pini, idf))
 		return false;
 
-	InitResettableControls();
-
 	// Initialize display mode list
 
 	ListControl *plstc = (ListControl *)GetControlPtr(kidcModesList);
 	plstc->SetFlags(plstc->GetFlags() | kfLstcBorder);
 
 	int immCur = ggame.GetModeMatchCurrent();
+	int immBest = ggame.GetModeMatchBest();
 	int cmm = ggame.GetModeMatchCount();
-
-	// Make resolution list
 
 	for (int imm = 0; imm < cmm; imm++) {
 		ModeMatch mm;
 		ggame.GetModeMatch(imm, &mm);
-
-		// Art
-
-		char szArt[64];
-		if (mm.nDepthData < 8) {
-			strcpy(szArt, "gray");
-		} else {
-			strcpy(szArt, "color");
-		}
-		switch (mm.nSizeData) {
-		case 16:
-			strcat(szArt, " low-res art");
-			break;
-
-		case 20:
-			// Don't want to insult PPC users
-			strcat(szArt, " med-res art");
-			break;
-
-		case 24:
-			strcat(szArt, " high-res art");
-			break;
-		}
-
-		// Orientation
-
 		ModeInfo mode;
 		gpdisp->GetModeInfo(mm.imode, &mode);
-		char szOrientation[64];
-		szOrientation[0] = 0;
-		if (mode.nDegreeOrientation != 0)
-			sprintf(szOrientation, ", %d deg", mode.nDegreeOrientation);
 		char szT[64];
-#ifdef DEV_BUILD
-		sprintf(szT, "%dx%dx%d, %s%s", mode.cx, mode.cy, mode.nDepth, szArt, szOrientation);
-#else
-		sprintf(szT, "%dx%d, %s%s", mode.cx, mode.cy, szArt, szOrientation);
-#endif
+		sprintf(szT, "%d x %d%s", mode.cx, mode.cy,
+				imm == immBest ? "  (recommended)" : "");
 		plstc->Add(szT, (void *)(pword)imm);
 	}
-
 	plstc->Select(immCur);
 
+	InitResettableControls();
 	return true;
 }
 
 void DisplayOptionsForm::InitResettableControls()
 {
+	SetControlChecked(kidcFullscreen, gpdisp->IsFullscreen());
+	SetControlChecked(kidcSmoothMotion, gfSmoothMotion);
 }
 
 void DisplayOptionsForm::OnControlSelected(word idc)
@@ -701,6 +679,9 @@ void DisplayOptionsForm::OnControlSelected(word idc)
 	switch (idc) {
 	case kidcOk:
 		{
+			gpdisp->SetFullscreen(GetControlChecked(kidcFullscreen));
+			gfSmoothMotion = GetControlChecked(kidcSmoothMotion);
+
 			ListControl *plstc = (ListControl *)GetControlPtr(kidcModesList);
 			if (plstc->GetFlags() & kfCtlVisible) {
 				int immNew = (int)(pword)plstc->GetSelectedItemData();
@@ -722,7 +703,8 @@ void DisplayOptionsForm::OnControlSelected(word idc)
 		{
 			ListControl *plstc = (ListControl *)GetControlPtr(kidcModesList);
 			plstc->Select(ggame.GetModeMatchBest(), true);
-			InitResettableControls();
+			SetControlChecked(kidcFullscreen, true);
+			SetControlChecked(kidcSmoothMotion, true);
 		}
 		break;
 	}

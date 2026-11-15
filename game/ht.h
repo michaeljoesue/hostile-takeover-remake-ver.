@@ -7223,9 +7223,13 @@ struct Preferences // prefs
 	word nSizeDataLast;
 	word nDegreeOrientationLast;
 	double nScrollSpeed;
+	word fFullscreen;				// added in 0x201
+	word fSmoothMotion;
 };
 
-#define knVersionPreferences 0x200
+#define knVersionPreferences 0x201
+#define knVersionPreferences200 0x200	// same layout, without the fields added since
+extern bool gfSmoothMotion;
 extern Preferences gprefsInit;
 bool HostSavePreferences(void *pv, int cb);
 int HostLoadPreferences(void *pv, int cb);

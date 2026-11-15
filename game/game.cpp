@@ -38,6 +38,7 @@ int gnLumOffset = 0;
 double gnScrollSpeed = 1.0;
 Stream *gpstmSavedGame;
 UpdateMap *gpupdSim;
+bool gfSmoothMotion = true;
 int gtGameSpeed = kcmsUpdate / 10;	// 80 ms/frame or 12.5 FPS (1000/80)
 Color *gaclrFixed;
 bool gfClearFog;
@@ -205,6 +206,8 @@ bool Game::Init(int imm)
 	gwfPerfOptions = gprefsInit.wfPerfOptions;
 	gwfHandicap = gprefsInit.wfHandicap;
     gnScrollSpeed = gprefsInit.nScrollSpeed;
+	gfFullscreen = gprefsInit.fFullscreen != 0;
+	gfSmoothMotion = gprefsInit.fSmoothMotion != 0;
 
 	// Temp buffer used for several things, including decompression, TBitmap compiling.
 
@@ -345,6 +348,11 @@ bool Game::Init(int imm)
 	// We're done with game initialization
 
 	m_wf |= kfGameInitDone;
+
+	// Remember a newly chosen resolution right away
+
+	if (imm != -1)
+		SavePreferences();
 
 	return true;
 }
@@ -1947,10 +1955,24 @@ void Game::LoadPreferences()
 	// here.
 
 	Preferences prefs;
+	memset(&prefs, 0, sizeof(prefs));
 	int cbRead = HostLoadPreferences(&prefs, sizeof(prefs));
 	if (cbRead == sizeof(prefs) && prefs.dwVersion == knVersionPreferences &&
 			prefs.cbSize == sizeof(prefs)) {
 		gprefsInit = prefs;
+		return;
+	}
+
+	// Older preferences: keep them and default the newer settings
+
+	const int cbPrefs200 = (int)offsetof(Preferences, fFullscreen);
+	if (cbRead == cbPrefs200 && prefs.dwVersion == knVersionPreferences200 &&
+			prefs.cbSize == (dword)cbPrefs200) {
+		gprefsInit = prefs;
+		gprefsInit.dwVersion = knVersionPreferences;
+		gprefsInit.cbSize = sizeof(gprefsInit);
+		gprefsInit.fFullscreen = 1;
+		gprefsInit.fSmoothMotion = 1;
 		return;
 	}
 
@@ -1962,6 +1984,8 @@ void Game::LoadPreferences()
 	gprefsInit.ctGameSpeed = kctUpdate / 2;
 	gprefsInit.wfHandicap = kfHcapDefault;
 	gprefsInit.nScrollSpeed = 1.0;
+	gprefsInit.fFullscreen = 1;
+	gprefsInit.fSmoothMotion = 1;
 }
 
 void Game::SavePreferences()
@@ -1984,6 +2008,8 @@ void Game::SavePreferences()
 	prefs.nLumOffset = gnLumOffset;
 	prefs.wfHandicap = gwfHandicap;
 	prefs.nScrollSpeed = gnScrollSpeed;
+	prefs.fFullscreen = gfFullscreen ? 1 : 0;
+	prefs.fSmoothMotion = gfSmoothMotion ? 1 : 0;
 
 	if (gpdisp != NULL && m_immBest != -1) {
 		ModeInfo mode;
