@@ -532,7 +532,7 @@ void MobileUnitBuildForm::SetOwner(BuilderGob *pbldr)
 					// Disable Cancel Order button if nothing queued for that unit.
 
 					pbtn = (ButtonControl *)GetControlPtr(kidcCancelOrder);
-					pbtn->Show(m_bqPrivate.GetUnitCount(puntc->ut) > 0);
+					pbtn->Show(false);
 
 				}
 			}
@@ -708,7 +708,7 @@ void MobileUnitBuildForm::OnControlSelected(word idc)
 				m_bqPrivate.Enqueue(UnitTypeFromPVoid(plstc->GetSelectedItemData()));
 
 				ButtonControl *pbtn = (ButtonControl *)GetControlPtr(kidcCancelOrder);
-				pbtn->Show(true);
+				pbtn->Show(false);
 
 				// Need to update the order button / show the limit reached label.
 				// Since the order was queued we don't really know if the limit has been
@@ -794,23 +794,41 @@ void MobileUnitBuildForm::OnControlNotify(word idc, int nNotify)
 
     UpdateUnitInfo(pli);
     ButtonControl *pbtn = (ButtonControl *)GetControlPtr(kidcCancelOrder);
-    pbtn->Show(m_bqPrivate.GetUnitCount(UnitTypeFromPVoid(plstc->GetSelectedItemData())) > 0);
+    pbtn->Show(false);
 
     // Can we order?
 
     m_fOrderValid = !m_bqPrivate.IsFull() && !pli->fDisabled;
     UpdateOrderButton(false);
 
-    if (m_fOrderValid && !m_fLimitReached) {
-        // Tap on a selected item orders it
+    // A click on an item orders one (the info shows what it is); selecting
+    // it from code (opening the menu) doesn't
 
-        int ili = plstc->GetSelectedItemIndex();
-        if (s_iliCurrent == ili && !pli->fDisabled) {
+    int ili = plstc->GetSelectedItemIndex();
+    s_iliCurrent = ili;
+    if (plstc->IsUserClick() && !pli->fDisabled) {
+        if (m_fOrderValid && !m_fLimitReached) {
             OnControlSelected(kidcOrder);
         } else {
-            s_iliCurrent = ili;
+            gsndm.PlaySfx(ksfxGuiFormHide);
         }
     }
+}
+
+// Right click on an item cancels one of it from the queue
+
+bool MobileUnitBuildForm::OnRightDown(Event *pevt)
+{
+    ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
+    int ili = plstc->HitTestItem(pevt->x, pevt->y);
+    if (ili < 0)
+        return false;
+    if (plstc->GetSelectedItemIndex() != ili)
+        plstc->Select(ili, true);
+    UnitType ut = UnitTypeFromPVoid(plstc->GetSelectedItemData());
+    if (m_bqPrivate.GetUnitCount(ut) > 0)
+        OnControlSelected(kidcCancelOrder);
+    return true;
 }
 
 void MobileUnitBuildForm::UpdateOrderButton(bool fCalcLimit)
@@ -831,7 +849,11 @@ void MobileUnitBuildForm::UpdateOrderButton(bool fCalcLimit)
 		pctlOrder->Show(false);
 	} else {
 		pctlLimit->Show(false);
-		pctlOrder->Show(m_fOrderValid);
+
+		// Modern build menu: left click orders, right click cancels; no
+		// Order / Cancel Order buttons
+
+		pctlOrder->Show(false);
 	}
 }
 

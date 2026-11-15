@@ -205,6 +205,7 @@ enum MessageId { // mid
 	kmidStopCommand,			// Stop and guard
 	kmidClearActionCommand,		// A new player order replaces the current one
 	kmidForceAttackCommand,		// Ctrl+right-click: attack even a friend (AttackCommand)
+	kmidGuardUnitCommand,		// Ctrl+Alt+right-click on a friend: guard it (AttackCommand.gidTarget)
 };
 
 STARTLABEL(MessageNames)
@@ -249,6 +250,7 @@ STARTLABEL(MessageNames)
 	LABEL(kmidStopCommand)
 	LABEL(kmidClearActionCommand)
 	LABEL(kmidForceAttackCommand)
+	LABEL(kmidGuardUnitCommand)
 ENDLABEL(MessageNames)
 
 #pragma pack(pop)

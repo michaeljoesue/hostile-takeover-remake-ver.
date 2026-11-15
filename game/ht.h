@@ -2201,6 +2201,7 @@ public:
 
 	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
     virtual bool OnFilterEvent(Event *pevt) { return false; }
+    virtual bool OnRightDown(Event *pevt) { return false; }	// right button, while modal
 	virtual bool EventProc(Event *pevt);
 	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide);
 	virtual bool OnHitTest(Event *pevt);
@@ -2698,6 +2699,8 @@ public:
 	bool Add(const char *psz, void *pvData = NULL);
 //	ListItem *EnumItemPtr(Enum *penum);
 	int GetSelectedItemIndex();
+	int HitTestItem(int x, int y);	// item under the point (form manager coords) or -1
+	bool IsUserClick() { return m_fUserClick; }	// notifying because of a click
 	ListItem *GetSelectedItem();
 	void *GetSelectedItemData();
 	void Select(int iItem, bool fOnly = false, bool fMakeCenter = false);
@@ -2757,6 +2760,7 @@ private:
     FlickScroller m_flics;
     int m_iclrScrollPos;
     bool m_fPenDown;
+    bool m_fUserClick;
 
 protected:
 	int m_cyItem;
@@ -3117,6 +3121,7 @@ private:
 	MobileUnitGob *SetSelectionTargets(Gid gid, WCoord wxTarget,
             WCoord wyTarget);
     void OnRightClick(int x, int y, bool fQueue = false, bool fForce = false);
+    void OnGuardClick(int x, int y, bool fQueue);
     void ScrollViewBy(WCoord dwx, WCoord dwy);
 
     // Control groups: Ctrl+1..9 sets, 1..9 selects
@@ -5589,6 +5594,7 @@ enum MobileUnitAction // mua
 	kmuaMove,
 	kmuaAttack,
 	kmuaHuntEnemies,
+	kmuaGuardUnit,		// follow and protect a friendly unit (m_msgAction.AttackCommand.gidTarget)
 };
 
 struct MoveDirections // movd
@@ -5700,9 +5706,17 @@ protected:
 	bool InTransition();
 	void EndAttackMove();
 	UnitGob *FindEnemyWhenMoving(TCoord tcRange);
-	UnitGob *FindEnemyStructureNearby(TCoord tcRange);
+	UnitGob *FindEnemyStructureNearby(TCoord tcRange, Gob *pgobFrom = NULL);
 	void IssueOrder(Message *pmsg);
 	void StartQueuedOrder();
+	UnitGob *GetGuardedUnit();
+	bool GuardUnitUpdate();
+	UnitGob *FindGuardTarget();
+
+public:
+	void GuardUnit(Gid gidTarget);	// player's guard order (Ctrl+Alt+right-click)
+
+protected:
 
 private:
 	bool IsAttackPointWithinFiringRangeOfTarget(UnitGob *puntTarget);
@@ -5771,6 +5785,7 @@ public:
 #ifdef DRAW_PATHS
 public:
 #endif
+	bool m_fMovingAside;		// moving aside for another unit; resume m_msgAction after
 	word m_nSeqMoveAside;
 	Path *m_ppathUnit;
 	Path *m_ppathAvoid;
@@ -5896,6 +5911,7 @@ public:
 	virtual void OnControlSelected(word idc);
 	virtual void OnControlNotify(word idc, int nNotify);
 	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual bool OnRightDown(Event *pevt);
 
 private:
 	int m_cupdLast;

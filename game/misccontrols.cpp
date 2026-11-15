@@ -747,6 +747,7 @@ ListControl::ListControl()
     memset(m_axTab, 0xff, sizeof(m_axTab));
     m_axTab[0] = 0;
     m_fDrag = false;
+    m_fUserClick = false;
     m_fTimerAdded = false;
     m_iclrScrollPos = kiclrMediumGray;
     m_fPenDown = false;
@@ -1250,6 +1251,7 @@ void ListControl::OnPenEvent2(Event *pevt)
 		}
 	}
 
+	m_fUserClick = true;
 	if (fChange) {
 		m_pceh->OnControlNotify(m_idc, knNotifySelectionChange);
 		gsndm.PlaySfx(ksfxGuiScrollingListSelectItem);
@@ -1258,6 +1260,7 @@ void ListControl::OnPenEvent2(Event *pevt)
 		if (fOnItem)
 			m_pceh->OnControlNotify(m_idc, knNotifySelectionTap);
 	}
+	m_fUserClick = false;
 }
 
 void ListControl::Clear()
@@ -1391,6 +1394,26 @@ void ListControl::Select(int iliSelect, bool fOnly, bool fMakeCenter)
 		Invalidate();
 }
 
+
+// Index of the item under (x, y) (form manager coordinates, like pen
+// events), or -1
+
+int ListControl::HitTestItem(int x, int y)
+{
+	if (m_cyItem <= 0)
+		return -1;
+	Rect rcForm;
+	m_pfrm->GetRect(&rcForm);
+	Rect rcInterior;
+	GetSubRects(&rcInterior);
+	rcInterior.Offset(rcForm.left, rcForm.top);
+	if (!rcInterior.PtIn(x, y))
+		return -1;
+	int ili = m_iliTop + (y - rcInterior.top) / m_cyItem;
+	if (ili < 0 || ili >= m_cli)
+		return -1;
+	return ili;
+}
 
 int ListControl::GetSelectedItemIndex()
 {

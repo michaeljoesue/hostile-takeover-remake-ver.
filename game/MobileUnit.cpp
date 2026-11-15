@@ -144,6 +144,7 @@ MobileUnitGob::MobileUnitGob(MobileUnitConsts *pmuntc) : UnitGob(pmuntc)
 	m_ppathUnit = NULL;
 	m_ppathAvoid = NULL;
 	m_nSeqMoveAside = 0;
+	m_fMovingAside = false;
 
 	// Just to be clear this Unit or its nearby allies hasn't been hit for awhile
 
@@ -261,11 +262,11 @@ bool MobileUnitGob::Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword
 	return true;
 }
 
-#define knVerMobileUnitGobState 12
+#define knVerMobileUnitGobState 13	// 13: m_fMovingAside
 bool MobileUnitGob::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerMobileUnitGobState)
+	if (nVer != knVerMobileUnitGobState && nVer != 12)
 		return false;
 	m_dir = (Direction)pstm->ReadByte();
 	m_dirNext = (Direction)pstm->ReadByte();
@@ -315,6 +316,7 @@ bool MobileUnitGob::LoadState(Stream *pstm)
 		return false;
 	for (int i = 0; i < m_cmsgQueued; i++)
 		pstm->Read(&m_amsgQueued[i], sizeof(Message));
+	m_fMovingAside = nVer >= 13 ? pstm->ReadByte() != 0 : false;
 	return UnitGob::LoadState(pstm);
 }
 
@@ -365,6 +367,7 @@ bool MobileUnitGob::SaveState(Stream *pstm)
 	pstm->WriteByte((byte)m_cmsgQueued);
 	for (int i = 0; i < m_cmsgQueued; i++)
 		pstm->Write(&m_amsgQueued[i], sizeof(Message));
+	pstm->WriteByte(m_fMovingAside ? 1 : 0);
 	return UnitGob::SaveState(pstm);
 }
 
@@ -500,29 +503,35 @@ void MobileUnitGob::EndAttackMove()
 // Set while SimUIForm gives an attack-move order (A + click)
 
 // Moving units only hear about enemy mobile units (NotifyEnemyNearby leaves
-// out towers). An attack-move also fights the enemy structures it passes,
-// defence towers first.
+// out towers). Attack-move and guard orders also fight the enemy defence
+// towers they pass; buildings without weapons are left alone.
 
 UnitGob *MobileUnitGob::FindEnemyWhenMoving(TCoord tcRange)
 {
 	UnitGob *punt = FindEnemyNearby(tcRange);
 	if (punt != NULL)
 		return punt;
-	if (m_mua == kmuaMove && m_msgAction.mid == kmidAttackMoveCommand)
+	if ((m_mua == kmuaMove && m_msgAction.mid == kmidAttackMoveCommand) || m_mua == kmuaGuardUnit)
 		return FindEnemyStructureNearby(tcRange);
 	return NULL;
 }
 
-UnitGob *MobileUnitGob::FindEnemyStructureNearby(TCoord tcRange)
+UnitGob *MobileUnitGob::FindEnemyStructureNearby(TCoord tcRange, Gob *pgobFrom)
 {
+	// In range of this unit, or (guarding) of the friend pgobFrom
 	// Structures are listed at their top left tile; look far enough up and
 	// left to catch the largest one
 
 	const TCoord ktcStructMax = 4;
 	TCoord ctx, cty;
 	ggobm.GetMapSize(&ctx, &cty);
-	TCoord tx = TcFromWc(m_wx);
-	TCoord ty = TcFromWc(m_wy);
+	WPoint wptFrom;
+	wptFrom.wx = m_wx;
+	wptFrom.wy = m_wy;
+	if (pgobFrom != NULL)
+		pgobFrom->GetPosition(&wptFrom);
+	TCoord tx = TcFromWc(wptFrom.wx);
+	TCoord ty = TcFromWc(wptFrom.wy);
 	TCoord txLeft = _max(0, tx - tcRange - ktcStructMax);
 	TCoord tyTop = _max(0, ty - tcRange - ktcStructMax);
 	TCoord txRight = _min(ctx, tx + tcRange + 1);
@@ -530,7 +539,6 @@ UnitGob *MobileUnitGob::FindEnemyStructureNearby(TCoord tcRange)
 
 	UnitGob *puntBest = NULL;
 	TCoord tcBest = 0;
-	bool fBestTower = false;
 	for (TCoord tyT = tyTop; tyT < tyBottom; tyT++) {
 		for (TCoord txT = txLeft; txT < txRight; txT++) {
 			for (Gid gid = ggobm.GetFirstGid(txT, tyT); gid != kgidNull; gid = ggobm.GetNextGid(gid)) {
@@ -544,23 +552,126 @@ UnitGob *MobileUnitGob::FindEnemyStructureNearby(TCoord tcRange)
 				if (IsAlly(punt->GetSide()) || GetDamageTo(punt) <= 0)
 					continue;
 
+				// Only buildings with weapons (defence towers)
+
+				if ((punt->GetConsts()->um & kumTowers) == 0)
+					continue;
+
 				// In firing range by the same test the attack state uses
 
-				if (!IsGobWithinRange(punt, tcRange))
-					continue;
 				TCoord tc = CalcRange(tx, ty, punt);
+				if (pgobFrom == NULL ? !IsGobWithinRange(punt, tcRange) : tc > tcRange)
+					continue;
 
-				bool fTower = (punt->GetConsts()->um & kumTowers) != 0;
-				if (puntBest == NULL || (fTower && !fBestTower) ||
-						(fTower == fBestTower && tc < tcBest)) {
+				if (puntBest == NULL || tc < tcBest) {
 					puntBest = punt;
 					tcBest = tc;
-					fBestTower = fTower;
 				}
 			}
 		}
 	}
 	return puntBest;
+}
+
+// Guard order (Ctrl+Alt+right-click on a friend): the unit follows the
+// friend and fights enemies near it, including defence towers. Guarding a
+// miner goes on while it is inside a Processor (hidden, not active).
+
+const TCoord ktcGuardFollow = 2;	// follow when further away than this
+const TCoord ktcGuardSight = 5;		// fight enemies this close
+const TCoord ktcGuardLeash = 8;		// stop chasing this far from the friend
+
+void MobileUnitGob::GuardUnit(Gid gidTarget)
+{
+	if (gidTarget == m_gid || m_pmuntc->tcFiringRange == 0)
+		return;
+	Message msgT;
+	memset(&msgT, 0, sizeof(msgT));
+	msgT.mid = kmidGuardUnitCommand;
+	msgT.smidSender = kgidNull;
+	msgT.smidReceiver = m_gid;
+	msgT.AttackCommand.gidTarget = gidTarget;
+	IssueOrder(&msgT);
+}
+
+UnitGob *MobileUnitGob::GetGuardedUnit()
+{
+	// Inactive includes a miner inside a Processor
+
+	Gob *pgob = ggobm.GetGob(m_msgAction.AttackCommand.gidTarget, false);
+	if (pgob == NULL || !(pgob->GetFlags() & kfGobUnit) || pgob == this)
+		return NULL;
+	UnitGob *punt = (UnitGob *)pgob;
+	if (!IsAlly(punt->GetSide()) || punt->GetHealth() <= 0)
+		return NULL;
+	return punt;
+}
+
+UnitGob *MobileUnitGob::FindGuardTarget()
+{
+	UnitGob *punt = FindEnemyNearby(ktcGuardSight);
+	if (punt != NULL)
+		return punt;
+
+	// Enemies the friend can see
+
+	UnitGob *puntGuarded = GetGuardedUnit();
+	if (puntGuarded != NULL && (puntGuarded->GetFlags() & (kfGobMobileUnit | kfGobActive)) == (kfGobMobileUnit | kfGobActive)) {
+		punt = ((MobileUnitGob *)puntGuarded)->FindEnemyNearby(ktcGuardSight);
+		if (punt != NULL && IsValidTarget(punt))
+			return punt;
+	}
+	// Towers that can hit this unit, or that are near the friend
+
+	punt = FindEnemyStructureNearby(m_pmuntc->tcFiringRange);
+	if (punt == NULL && puntGuarded != NULL)
+		punt = FindEnemyStructureNearby(ktcGuardSight, puntGuarded);
+	return punt;
+}
+
+// Called by the guard state. Returns true if it changed state.
+
+bool MobileUnitGob::GuardUnitUpdate()
+{
+	UnitGob *puntGuarded = GetGuardedUnit();
+	if (puntGuarded == NULL) {
+		// The friend is gone: the order is over
+
+		m_mua = kmuaNone;
+		return false;
+	}
+
+	if (m_wfMunt & kfMuntFiring)
+		return false;
+
+	UnitGob *puntTarget = FindGuardTarget();
+	if (puntTarget != NULL) {
+		m_gidTarget = puntTarget->GetId();
+		puntTarget->GetAttackPoint(&m_wptTarget);
+		m_wptTargetCenter = m_wptTarget;
+		m_tcTargetRadius = 0;
+		m_wcMoveDistPerUpdate = m_pmuntc->GetMoveDistPerUpdate();
+		SetStatePendingFireComplete(kstAttack);
+		return true;
+	}
+
+	// Keep up with the friend (a hidden miner sits in its Processor)
+
+	TCoord tcFollow = ktcGuardFollow;
+	if (!(puntGuarded->GetFlags() & kfGobActive))
+		tcFollow++;
+	if (CalcRange(TcFromWc(m_wx), TcFromWc(m_wy), puntGuarded) <= tcFollow)
+		return false;
+	WPoint wpt;
+	puntGuarded->GetCenter(&wpt);
+	m_wptTarget.wx = WcTrunc(wpt.wx) + kwcTileHalf;
+	m_wptTarget.wy = WcTrunc(wpt.wy) + kwcTileHalf;
+	m_wptTargetCenter = m_wptTarget;
+	m_tcTargetRadius = 1;
+	m_wcMoveDistPerUpdate = m_pmuntc->GetMoveDistPerUpdate();
+	m_gidTarget = kgidNull;
+	SetState(kstMove);
+	return true;
 }
 
 bool gfAttackMoveOrder = false;
@@ -905,6 +1016,10 @@ lbMoveCommand:
 			m_wcMoveDistPerUpdate = pmsg->MoveCommand.wcMoveDistPerUpdate;
 		}
 
+	OnMsg(kmidGuardUnitCommand)
+		if (PendOrProcessAction(pmsg, kstGuard, kmuaGuardUnit))
+			m_gidForceTarget = kgidNull;
+
 	OnMsg(kmidForceAttackCommand)
 		if (PendOrProcessCommand(pmsg, kstAttack)) {
 			m_gidForceTarget = pmsg->AttackCommand.gidTarget;
@@ -1055,6 +1170,11 @@ lbHitNoDamage:
 				return knHandled;
 			}
 
+			// Guarding a friend: follow it, fight what threatens it
+
+			if (m_mua == kmuaGuardUnit && GuardUnitUpdate())
+				return knHandled;
+
 			// if enemy in range and we're not already firing at something
 
 			if ((m_wfMunt & (kfMuntAttackEnemiesWhenGuarding | kfMuntFiring)) == kfMuntAttackEnemiesWhenGuarding) {
@@ -1119,6 +1239,8 @@ lbHitNoDamage:
 				m_cCountdown = GetIdleCountdown();
 			}
 			m_unvl.MinSkip(m_cCountdown);
+			if (m_mua == kmuaGuardUnit)
+				m_unvl.MinSkip(4);	// keep up with the friend
 
 			// Handle flashing
 
@@ -1139,8 +1261,8 @@ lbHitNoDamage:
 				// If the Unit is sufficiently aggressive and sees an enemy 
 				// unit it should attack it.
 
-				if (m_wfMunt & kfMuntAttackEnemiesWhenMoving) {
-					UnitGob *puntTarget = FindEnemyWhenMoving(m_pmuntc->tcFiringRange);
+				if ((m_wfMunt & kfMuntAttackEnemiesWhenMoving) || m_mua == kmuaGuardUnit) {
+					UnitGob *puntTarget = m_mua == kmuaGuardUnit ? FindGuardTarget() : FindEnemyWhenMoving(m_pmuntc->tcFiringRange);
 					if (puntTarget != NULL) {
 						m_gidTarget = puntTarget->GetId();
 						puntTarget->GetAttackPoint(&m_wptTarget);
@@ -1153,27 +1275,30 @@ lbHitNoDamage:
 				}
 			}
 
-			switch (MoveUpdate()) {
-			case knMoveTargetReached:
-				if (m_mua == kmuaMove)
-					m_mua = kmuaNone;	// Move action complete
-				EndAttackMove();
+			{
+				int nMove = MoveUpdate();
+				if (nMove == knMoveTargetReached || nMove == knMoveStuck) {
+					// Moved aside for another unit: carry on with the order
 
-				SetState(kstGuard);
-				break;
+					if (m_fMovingAside) {
+						m_fMovingAside = false;
+						if (m_mua != kmuaNone) {
+							gsmm.SendMsg(&m_msgAction);
+							return knHandled;
+						}
+					}
 
-			case knMoveStuck:
-				// UNDONE: what to do? Doing nothing means we repath every
-				// Update (jogging in place) until a valid path can be determined.
+					// For knMoveStuck: UNDONE: what to do? Doing nothing means
+					// we repath every Update (jogging in place) until a valid
+					// path can be determined. For now, give up and return to
+					// Guard state
 
-				// For now, give up and return to Guard state
+					if (m_mua == kmuaMove)
+						m_mua = kmuaNone;	// Move action complete
+					EndAttackMove();
 
-				if (m_mua == kmuaMove)
-					m_mua = kmuaNone;	// Move action complete
-				EndAttackMove();
-
-				SetState(kstGuard);
-				break;
+					SetState(kstGuard);
+				}
 			}
 
 	//-----------------------------------------------------------------------
@@ -1196,6 +1321,17 @@ lbHitNoDamage:
 				m_wfMunt &= ~kfMuntCommandPending;
 				gsmm.SendMsg(&m_msgPending);
 				return knHandled;
+			}
+
+			// Guarding a friend: don't chase too far from it
+
+			if (m_mua == kmuaGuardUnit) {
+				UnitGob *puntGuarded = GetGuardedUnit();
+				if (puntGuarded == NULL || CalcRange(TcFromWc(m_wx), TcFromWc(m_wy), puntGuarded) > ktcGuardLeash) {
+					m_gidTarget = kgidNull;
+					ContinueActionPendingFireComplete();
+					return knHandled;
+				}
 			}
 
 			// if enemy dead/gone or taken over, go to guard mode
@@ -2754,6 +2890,26 @@ bool MobileUnitGob::AcceptMoveAsideRequest(Direction dir)
     // on later units. We don't want overridden behavior (such as the miner
     // mining galaxite) to interfere with move aside, so call
     // MobileUnitGob::SetTarget directly.
+
+	// A unit carrying out an order (guard, attack-move, ...) keeps it: the
+	// step aside is sent directly (SetTarget would clear the order) and the
+	// order resumes when the step is done
+
+	if (m_mua != kmuaNone) {
+		Message msgT;
+		memset(&msgT, 0, sizeof(msgT));
+		msgT.mid = kmidMoveCommand;
+		msgT.smidSender = kgidNull;
+		msgT.smidReceiver = m_gid;
+		msgT.MoveCommand.wptTarget.wx = wxDst;
+		msgT.MoveCommand.wptTarget.wy = wyDst;
+		msgT.MoveCommand.gidTarget = kgidNull;
+		msgT.MoveCommand.wptTargetCenter.wx = wxDst;
+		msgT.MoveCommand.wptTargetCenter.wy = wyDst;
+		gcmdq.Enqueue(&msgT);
+		m_fMovingAside = true;
+		return true;
+	}
 
 	MobileUnitGob::SetTarget(kgidNull, WcFromTc(txTo) + kwcTileHalf, WcFromTc(tyTo) + kwcTileHalf);
 	return true;

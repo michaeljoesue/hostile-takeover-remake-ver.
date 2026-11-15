@@ -119,6 +119,7 @@ Modern RTS controls:
 | | |
 |---|---|
 | Left-click | Select a unit or building (enemies too, to look at them). Clicking one of your buildings also opens its menu. Clicking the ground deselects. |
+| Unit build menus | Left-click a unit to order one (the panel shows what it is), right-click it to cancel one from the queue |
 | Placing a building | After Build, the building follows the mouse: left-click puts it down (white tiles: it fits; red: it doesn't), right-click or Esc cancels |
 | Drag a box | Select your units in it (Shift+drag adds to the selection) |
 | Double-click, Ctrl+click | Select all your units of that type on screen |
@@ -126,7 +127,8 @@ Modern RTS controls:
 | Right-click | Move to the ground, attack an enemy, or open the menu of one of your units or buildings; cancels building placement |
 | Shift+right-click | Queue a move or attack: units carry it out after their current orders (up to 16) |
 | Ctrl+right-click | Force attack: attack the unit or building clicked, even your own or an ally's (Ctrl+Shift queues it). Destroying a friend isn't counted as a kill |
-| A, then left-click | Attack-move: units fight enemies they meet, including towers and other buildings in range (towers first), then carry on |
+| A, then left-click | Attack-move: units fight enemies they meet, including defence towers in range (buildings without weapons are left alone), then carry on |
+| Ctrl+Alt+right-click | Red Alert style: on one of your (or an ally's) units, the selected units guard it: they follow it and fight enemies and defence towers near it, and keep guarding a miner while it's inside a Processor. On an enemy: attack. On the ground: attack-move. Shift queues it |
 | S | Stop |
 | Ctrl+1 to 9 | Make the selection control group 1 to 9 (Shift+number adds to it) |
 | 1 to 9 | Select a control group; press twice quickly to go to it |
@@ -270,8 +272,9 @@ Maps, sides and limits:
 - **Sides.** Side 1 (ACME), side 2 (OMNI), sides 3 and 4, and side 5
   (Crimson). Settings > Side 5 (Crimson) sets up side 5; triggers and units
   can use it like the others.
-- **Galaxite regrowth.** Settings > Level > Galaxite Regrowth: Off,
-  Slow (a size step every 200 seconds) or Normal (every 100 seconds).
+- **Galaxite regrowth.** Settings > Galaxite Regrowth (also under
+  Settings > Level, in the Galaxite group): Off, Slow (a size step every
+  200 seconds) or Normal (every 100 seconds).
   Mined Galaxite grows back only where the mission put it, spreading from
   Galaxite that's left, and only to 60% of its starting size.
 - **Limits.** M no longer stops a mission for exceeding the old limits. It
@@ -279,6 +282,10 @@ Maps, sides and limits:
   side, 64 switches or 64 areas, or more scenery objects (600) and units
   and buildings placed on the map (1600) than the game has room for. The
   last two grow with the map like the game's limits.
+- **Unit group time limits.** Wait, Attack, Guard and Guard Vicinity
+  actions take a number of seconds or Unlimited (set Unlimited to True in
+  the action's properties): with no limit the group keeps at it until
+  it's destroyed.
 - **Counters removed.** The game never had Counters (the Counter condition
   and Modify Counter action did nothing), so M no longer has the Counters
   menu or the Modify Counter action. Older missions still open; any Modify

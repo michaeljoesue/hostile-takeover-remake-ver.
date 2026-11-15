@@ -754,6 +754,18 @@ bool MultiFormMgr::CookEvent(Event *pevt)
 
 	switch (pevt->eType) {
     case rightDownEvent:
+        {
+            // A modal form (e.g. a unit build menu) may use the right button
+
+            Form *pfrmModal = FormMgr::GetModalForm();
+            if (pfrmModal != NULL) {
+                pevt->idf = 0;
+                pfrmModal->OnRightDown(pevt);
+                return false;
+            }
+        }
+        return CookBattlefieldEvent(pevt);
+
     case middleDownEvent:
     case middleUpEvent:
     case middleMoveEvent:

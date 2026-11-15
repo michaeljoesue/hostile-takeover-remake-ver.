@@ -348,7 +348,7 @@ namespace m
 	}
 
 	[Serializable]
-	abstract public class CaBase {
+	abstract public class CaBase : System.Runtime.Serialization.IDeserializationCallback {
 		// NOTE: This is legacy. We don't want it anymore but it has been serialized
 		// into some levels and the effort required to up-convert them is greater 
 		// than the value of doing so.
@@ -364,6 +364,22 @@ namespace m
 		}
 
 		abstract public string GetString();
+
+		// Unit group actions with a time saved by older versions of M hold a
+		// plain CaTypeNumber there; make it a CaTypeDuration (adds Unlimited)
+
+		protected void UpgradeDuration(int i) {
+			if (m_acat != null && i < m_acat.Length && m_acat[i] != null &&
+					m_acat[i].GetType() == typeof(CaTypeNumber))
+				m_acat[i] = new CaTypeDuration((CaTypeNumber)m_acat[i]);
+		}
+
+		protected virtual void UpgradeTypes() {
+		}
+
+		public void OnDeserialization(object sender) {
+			UpgradeTypes();
+		}
 
 		public CaType[] GetTypes() {
 			return m_acat;
@@ -1256,13 +1272,17 @@ namespace m
 
 	[Serializable]
 	[DisplayName("Wait")]
-	[Description("Delay a number of seconds before continuing on with the next action.")]
+	[Description("Delay a number of seconds before continuing on with the next action. " +
+			"Unlimited waits forever.")]
 	public class WaitUnitGroupAction : CaBase {
 		override public string GetString() {
-			return "Wait $1 seconds";
+			return "Wait $1";
 		}
 		public WaitUnitGroupAction() {
-			m_acat = new CaType[] { new CaTypeNumber() };
+			m_acat = new CaType[] { new CaTypeDuration() };
+		}
+		protected override void UpgradeTypes() {
+			UpgradeDuration(0);
 		}
 	}
 
@@ -1288,10 +1308,13 @@ namespace m
 			"elapses the next nearest matching enemy will be targeted by the group.")]
 	public class AttackUnitGroupAction : CaBase {
 		override public string GetString() {
-			return "Attack nearest $1 owned by $2 for $3 seconds";
+			return "Attack nearest $1 owned by $2 $3";
 		}
 		public AttackUnitGroupAction() {
-			m_acat = new CaType[] { new CaTypeUnitTypes(), new CaTypeSide(), new CaTypeNumber() };
+			m_acat = new CaType[] { new CaTypeUnitTypes(), new CaTypeSide(), new CaTypeDuration() };
+		}
+		protected override void UpgradeTypes() {
+			UpgradeDuration(2);
 		}
 	}
 
@@ -1313,10 +1336,13 @@ namespace m
 		 "their sight range for the specified interval.")]
 	public class GuardUnitGroupAction : CaBase {
 		override public string GetString() {
-			return "Guard for $1 seconds";
+			return "Guard $1";
 		}
 		public GuardUnitGroupAction() {
-			m_acat = new CaType[] { new CaTypeNumber() };
+			m_acat = new CaType[] { new CaTypeDuration() };
+		}
+		protected override void UpgradeTypes() {
+			UpgradeDuration(0);
 		}
 	}
 
@@ -1326,10 +1352,13 @@ namespace m
 		 "an expanded sight range for the specified interval.")]
 	public class GuardVicinityUnitGroupAction : CaBase {
 		override public string GetString() {
-			return "Guard vicinity for $1 seconds";
+			return "Guard vicinity $1";
 		}
 		public GuardVicinityUnitGroupAction() {
-			m_acat = new CaType[] { new CaTypeNumber() };
+			m_acat = new CaType[] { new CaTypeDuration() };
+		}
+		protected override void UpgradeTypes() {
+			UpgradeDuration(0);
 		}
 	}
 

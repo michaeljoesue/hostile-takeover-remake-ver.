@@ -819,12 +819,16 @@ bool WaitUnitGroupAction::SaveState(Stream *pstm)
 	return pstm->IsSuccess();
 }
 
+// Unit group actions given no time limit (M saves -1) never time out
+
+const long kctWaitUnlimited = 0x7fffffff;
+
 bool WaitUnitGroupAction::Init(char *psz)
 {
 	int cSecs;
 	if (!ParseNumber(&psz, &cSecs))
 		return false;
-	m_ctWait = cSecs * 100;
+	m_ctWait = cSecs < 0 ? kctWaitUnlimited : cSecs * 100;	// -1: no time limit
 	return true;
 }
 
@@ -1051,7 +1055,7 @@ bool AttackUnitGroupAction::Init(char *psz)
 	int cSecs;
 	if (!ParseNumber(&psz, &cSecs))
 		return false;
-	m_ctWait = cSecs * 100;
+	m_ctWait = cSecs < 0 ? kctWaitUnlimited : cSecs * 100;	// -1: no time limit
 	return true;
 }
 
@@ -1240,7 +1244,7 @@ bool GuardUnitGroupAction::Init(char *psz)
 	int cSecs;
 	if (!ParseNumber(&psz, &cSecs))
 		return false;
-	m_ctWait = cSecs * 100;
+	m_ctWait = cSecs < 0 ? kctWaitUnlimited : cSecs * 100;	// -1: no time limit
 	return true;
 }
 
@@ -1375,7 +1379,7 @@ bool GuardVicinityUnitGroupAction::Init(char *psz)
 	int cSecs;
 	if (!ParseNumber(&psz, &cSecs))
 		return false;
-	m_ctWait = cSecs * 100;
+	m_ctWait = cSecs < 0 ? kctWaitUnlimited : cSecs * 100;	// -1: no time limit
 	return true;
 }
 

@@ -89,6 +89,83 @@ namespace m {
 		}
 	}
 
+	// Duration: a number of seconds, or Unlimited (saved as -1; the game
+	// then never ends the action)
+
+	[Serializable]
+	public class CaTypeDuration : CaTypeNumber {
+		bool m_fUnlimited;
+
+		public CaTypeDuration() {
+			m_fUnlimited = false;
+		}
+
+		public CaTypeDuration(CaTypeNumber catn) {
+			m_fUnlimited = false;
+			if (catn.IsInitialized())
+				Value = catn.Value;
+		}
+
+		[System.ComponentModel.Description("Number of seconds. Ignored when Unlimited is True.")]
+		public int Seconds {
+			get {
+				return m_nValue < 0 ? 0 : m_nValue;
+			}
+			set {
+				Value = value < 0 ? 0 : value;
+				m_fUnlimited = false;
+			}
+		}
+
+		[System.ComponentModel.Description("True: the action never ends by itself (the group keeps doing it until it is destroyed).")]
+		public bool Unlimited {
+			get {
+				return m_fUnlimited;
+			}
+			set {
+				m_fUnlimited = value;
+				m_fInit = true;
+				if (!value && m_nValue < 0)
+					m_nValue = 0;
+			}
+		}
+
+		[System.ComponentModel.Browsable(false)]
+		public new int Value {
+			get {
+				return base.Value;
+			}
+			set {
+				base.Value = value;
+			}
+		}
+
+		public override string ToString() {
+			if (!m_fInit)
+				return "for N seconds";
+			if (m_fUnlimited)
+				return "with no time limit";
+			return "for " + m_nValue.ToString() + " seconds";
+		}
+
+		public override string FromSaveString(string strArgs, bool fLast) {
+			Regex re = new Regex(@"^(?<value>(-)?\d+)(?<end>.*)$");
+			Match m = re.Match(strArgs);
+			int n = int.Parse(m.Groups["value"].Value);
+			if (n < 0) {
+				Unlimited = true;
+			} else {
+				Value = n;
+				m_fUnlimited = false;
+			}
+			return m.Groups["end"].Value;
+		}
+
+		public override string ToSaveString() {
+			return m_fUnlimited ? "-1" : m_nValue.ToString();
+		}
+	}
+
 	// QualifiedNumber
 
 	public enum Qualifier { AtLeast, AtMost, Exactly };

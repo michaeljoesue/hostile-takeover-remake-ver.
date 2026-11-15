@@ -559,6 +559,10 @@ bool SimUIForm::EventProc(Event *pevt)
 {
     switch (pevt->eType) {
     case rightDownEvent:
+        if ((pevt->ffMods & (kfModCtrl | kfModAlt)) == (kfModCtrl | kfModAlt)) {
+            OnGuardClick(pevt->x, pevt->y, (pevt->ffMods & kfModShift) != 0);
+            return true;
+        }
         OnRightClick(pevt->x, pevt->y, (pevt->ffMods & kfModShift) != 0,
                 (pevt->ffMods & kfModCtrl) != 0);
         return true;
@@ -798,6 +802,43 @@ void SimUIForm::ScrollViewBy(WCoord dwx, WCoord dwy)
 
 // Right-click: on the ground, move the selected units there; on an enemy,
 // attack it; on one of the player's own units or buildings, open its menu.
+
+// Ctrl+Alt+right-click (Red Alert style): on a friendly unit or building,
+// the selected units guard it; on an enemy, attack it; on the ground,
+// attack-move there. Shift queues the order.
+
+void SimUIForm::OnGuardClick(int x, int y, bool fQueue)
+{
+    if (gpfrmPlace != NULL && gpfrmPlace->IsBusy())
+        return;
+    SetAttackMoveArmed(false);
+
+    WCoord wxTarget, wyTarget;
+    Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
+    gfQueueOrder = fQueue;
+    if (pgobHit != NULL && pgobHit->GetType() != kgtReplicator &&
+            (pgobHit->GetFlags() & (kfGobUnit | kfGobActive)) == (kfGobUnit | kfGobActive)) {
+        UnitGob *puntHit = (UnitGob *)pgobHit;
+        if (puntHit->IsAlly(gpplrLocal->GetSide())) {
+            Gid *pgid = new Gid[kcpgobMax];
+            int cgid = GetOwnSelection(pgid, kcpgobMax, true);
+            for (int i = 0; i < cgid; i++) {
+                MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pgid[i]);
+                if (pmunt != NULL && pmunt != pgobHit)
+                    pmunt->GuardUnit(pgobHit->GetId());
+            }
+            delete[] pgid;
+            pgobHit->Flash();
+        } else {
+            MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, kfMasAttack);
+        }
+    } else {
+        gfAttackMoveOrder = true;
+        MoveOrAttackOrSelect(NULL, wxTarget, wyTarget, kfMasMove);
+        gfAttackMoveOrder = false;
+    }
+    gfQueueOrder = false;
+}
 
 void SimUIForm::OnRightClick(int x, int y, bool fQueue, bool fForce)
 {
