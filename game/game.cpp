@@ -36,6 +36,7 @@ double gnScrollSpeed = 1.0;
 Stream *gpstmSavedGame;
 UpdateMap *gpupdSim;
 bool gfSmoothMotion = true;
+extern bool gfShowFPS;
 int gtGameSpeed = kcmsUpdate / 10;	// 80 ms/frame or 12.5 FPS (1000/80)
 Color *gaclrFixed;
 bool gfClearFog;
@@ -216,6 +217,7 @@ bool Game::Init(int imm)
     gnScrollSpeed = gprefsInit.nScrollSpeed;
 	gfFullscreen = gprefsInit.fFullscreen != 0;
 	gfSmoothMotion = gprefsInit.fSmoothMotion != 0;
+	gfShowFPS = gprefsInit.fShowFPS != 0;
 
 	// Temp buffer used for several things, including decompression, TBitmap compiling.
 
@@ -2024,7 +2026,7 @@ void Game::SavePreferences()
 	prefs.nVolume = gsndm.GetVolume();
 	prefs.wfPerfOptions = (gwfPerfOptions & kfPerfAll) | (kfPerfMax & ~kfPerfAll);
 	prefs.ctGameSpeed = gtGameSpeed;
-	prefs.fReserved1 = 0;
+	prefs.fShowFPS = gfShowFPS ? 1 : 0;
 	prefs.nHueOffset = gnHueOffset;
 	prefs.nSatMultiplier = gnSatMultiplier;
 	prefs.nLumOffset = gnLumOffset;

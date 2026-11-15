@@ -653,13 +653,6 @@ bool SimUIForm::OnBattlefieldKey(Event *pevt)
         }
         return true;
 
-    case 'f':
-        // Frames-per-second counter on/off
-
-        gfShowFPS = !gfShowFPS;
-        GetControlPtr(kidcFps)->Show(gfShowFPS);
-        return true;
-
     case ' ':
         if (gfLastAlertValid)
             CenterViewOn(gwptLastAlert.wx, gwptLastAlert.wy);

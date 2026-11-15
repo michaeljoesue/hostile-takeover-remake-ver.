@@ -661,6 +661,7 @@ bool DisplayOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 void DisplayOptionsForm::InitResettableControls()
 {
 	SetControlChecked(kidcFullscreen, gpdisp->IsFullscreen());
+	SetControlChecked(kidcShowFPS, gfShowFPS);
 }
 
 void DisplayOptionsForm::OnControlSelected(word idc)
@@ -669,6 +670,9 @@ void DisplayOptionsForm::OnControlSelected(word idc)
 	case kidcOk:
 		{
 			gpdisp->SetFullscreen(GetControlChecked(kidcFullscreen));
+			gfShowFPS = GetControlChecked(kidcShowFPS);
+			if (ggame.GetSimUIForm() != NULL)
+				ggame.GetSimUIForm()->GetControlPtr(kidcFps)->Show(gfShowFPS);
 
 			ListControl *plstc = (ListControl *)GetControlPtr(kidcModesList);
 			if (plstc->GetFlags() & kfCtlVisible) {
@@ -692,6 +696,7 @@ void DisplayOptionsForm::OnControlSelected(word idc)
 			ListControl *plstc = (ListControl *)GetControlPtr(kidcModesList);
 			plstc->Select(ggame.GetModeMatchBest(), true);
 			SetControlChecked(kidcFullscreen, true);
+			SetControlChecked(kidcShowFPS, false);
 		}
 		break;
 	}

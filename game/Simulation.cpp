@@ -572,36 +572,47 @@ void Simulation::Update(CommandQueue *pcmdq)
 }
 
 
+// Box selection picks the player's fighting units. Miners and defence
+// towers are left out, unless the box holds nothing else.
+
 void Simulation::SetSelection(Rect *prc)
 {
     if (!gfDragSelecting) {
         return;
     }
 
-    for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL;
-            pgobT = ggobm.GetNextGob(pgobT)) {
-        dword ff = pgobT->GetFlags();
+    // 0: not in the box, 1: a miner or tower in it, 2: another unit in it
 
-        // If were in select mode then only Gobs inside the selection rectangle
-        // get to be selected.
-
-        if ((ff & kfGobUnit) == 0) {
-            continue;
-        }
-        bool fSelect = false;
-        UnitGob *punt = (UnitGob *)pgobT;
-        if ((gfGodMode || punt->GetOwner() == gpplrLocal) &&
-                ((ff & (kfGobActive | kfGobUnit)) == (kfGobActive | kfGobUnit))) {
-            if ((ff & kfGobStructure) == 0 ||
-                    (punt->GetConsts()->um & kumTowers) != 0) {
-                WPoint wptGobCenter;
-                punt->GetCenter(&wptGobCenter);
-                if (prc->PtIn(wptGobCenter.wx, wptGobCenter.wy)) {
-                    fSelect = true;
+    bool fFighters = false;
+    for (int nPass = 0; nPass < 2; nPass++) {
+        for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL;
+                pgobT = ggobm.GetNextGob(pgobT)) {
+            dword ff = pgobT->GetFlags();
+            if ((ff & kfGobUnit) == 0) {
+                continue;
+            }
+            int nKind = 0;
+            UnitGob *punt = (UnitGob *)pgobT;
+            if ((gfGodMode || punt->GetOwner() == gpplrLocal) &&
+                    ((ff & (kfGobActive | kfGobUnit)) == (kfGobActive | kfGobUnit))) {
+                UnitMask um = punt->GetConsts()->um;
+                if ((ff & kfGobStructure) == 0 || (um & kumTowers) != 0) {
+                    WPoint wptGobCenter;
+                    punt->GetCenter(&wptGobCenter);
+                    if (prc->PtIn(wptGobCenter.wx, wptGobCenter.wy)) {
+                        nKind = (um & (kumTowers | kumGalaxMiner)) != 0 ? 1 : 2;
+                    }
                 }
             }
+            if (nPass == 0) {
+                if (nKind == 2) {
+                    fFighters = true;
+                    break;
+                }
+                continue;
+            }
+            punt->Select(fFighters ? nKind == 2 : nKind != 0);
         }
-        punt->Select(fSelect);
     }
 }
 

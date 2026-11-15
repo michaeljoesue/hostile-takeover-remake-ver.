@@ -1012,6 +1012,13 @@ private:
 	byte m_mpSrcDstResult[256];
 	byte *m_pbMap;
 	TBitmap *m_aptbm[16];
+	int *m_apnCoverage[16];	// coverage of each edge tile, 0..256 per pixel
+	bool m_fSoftInit;
+	void *m_pvSoftCache;	// soft tiles by 3x3 neighbourhood (see fogmap.cpp)
+	void InitSoftEdges();
+	byte *GetSoftTile(byte *abNeighbours);
+	void DrawSoftEdge(DibBitmap *pbm, byte *pbSoft, int x, int y);
+	byte GetFogAt(int tx, int ty);
 	TBitmap *m_aptbmGalax[9];
 	AnimationData *m_panidWalls;
 	byte *m_pbGxOriginal;	// the Galaxite each tile started with
@@ -7109,7 +7116,7 @@ struct Preferences // prefs
 	word wfPerfOptions;
 	word wfHandicap;				// Difficulty-affecting flags
 	int ctGameSpeed;				// game speed
-	word fReserved1;	// was fLassoSelection; kept for prefs layout
+	word fShowFPS;		// frames-per-second counter (was fLassoSelection, always saved 0)
 	short nHueOffset;				// HSL settings
 	short nSatMultiplier;
 	short nLumOffset;

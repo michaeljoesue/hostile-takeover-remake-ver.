@@ -42,6 +42,8 @@ The engine has been updated from its 2007 handheld roots:
   the PC can draw. Keyboard scrolling is continuous instead of a tile at a
   time, and the map scrolls when the mouse is at the edge of the screen or
   window. (Sprite animations still have the frames the artists drew.)
+  The edge of the fog of war fades out gradually instead of in tile-sized
+  steps. Options > Display > Show frames per second shows the frame rate.
 - **Higher limits, scaled to the map.** On a 64x64 map: 300 structures and
   500 units for the player, the same for the computer players together
   (originally 55/88 and 72/117), 600 scenery objects, 300 scorch marks and
@@ -121,7 +123,7 @@ Modern RTS controls:
 | Left-click | Select a unit or building (enemies too, to look at them). Clicking one of your buildings also opens its menu. Clicking the ground deselects. |
 | Unit build menus | Left-click a unit to order one (the panel shows what it is), right-click it to cancel one from the queue |
 | Placing a building | After Build, the building follows the mouse: left-click puts it down (white tiles: it fits; red: it doesn't), right-click or Esc cancels |
-| Drag a box | Select your units in it (Shift+drag adds to the selection) |
+| Drag a box | Select your fighting units in it; miners and defence towers are left out unless the box holds nothing else (Shift+drag adds to the selection) |
 | Double-click, Ctrl+click | Select all your units of that type on screen |
 | Shift+click | Add a unit to the selection, or take it out |
 | Right-click | Move to the ground, attack an enemy, or open the menu of one of your units or buildings; cancels building placement |
@@ -137,7 +139,6 @@ Modern RTS controls:
 | Middle-drag | Pan the map |
 | Mouse wheel | Scroll the map up and down (Shift+wheel: sideways) |
 | Arrow keys, mouse at the edge, mini map | Scroll the map |
-| F | Show or hide the frames-per-second counter |
 
 The mini map (bottom right) is about a third of the screen's height
 whatever the map's size, and shows units moving smoothly.

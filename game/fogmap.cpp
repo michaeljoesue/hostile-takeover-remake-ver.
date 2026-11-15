@@ -1,6 +1,11 @@
+#include <unordered_map>
 #include "ht.h"
 
 namespace wi {
+
+// Soft fog edge tiles by 3x3 neighbourhood (see FogMap::GetSoftTile)
+
+typedef std::unordered_map<unsigned long long, byte *> SoftCache;
 
 FogMap::FogMap()
 {
@@ -10,6 +15,9 @@ FogMap::FogMap()
 	m_tRegrowthLast = 0;
 	m_panidWalls = NULL;
 	memset(m_aptbm, 0, sizeof(m_aptbm));
+	memset(m_apnCoverage, 0, sizeof(m_apnCoverage));
+	m_fSoftInit = false;
+	m_pvSoftCache = NULL;
 	memset(m_aptbmGalax, 0, sizeof(m_aptbmGalax));
 
 	// Each tile holds 4 bits. 0 is right most, 1 is top most, 2 is bottom most,
@@ -36,8 +44,16 @@ FogMap::~FogMap()
 	delete[] m_pbMap;
 	delete[] m_pbGxOriginal;
 	int n;
-	for (n = 0; n < 16; n++)
+	for (n = 0; n < 16; n++) {
 		delete m_aptbm[n];
+		delete[] m_apnCoverage[n];
+	}
+	SoftCache *pcache = (SoftCache *)m_pvSoftCache;
+	if (pcache != NULL) {
+		for (SoftCache::iterator it = pcache->begin(); it != pcache->end(); ++it)
+			delete[] it->second;
+		delete pcache;
+	}
 
 	for (n = 0; n < 9; n++)
 		delete m_aptbmGalax[n];
@@ -394,7 +410,15 @@ void FogMap::Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap 
 			byte bDstNew = (*pbDst & ~kbfFogMask) | m_mpSrcDstResult[((*pbSrc) << 4) | (*pbDst & kbfFogMask)];
 			if (bDst != bDstNew) {
 				*pbDst = bDstNew;
-				pupd->InvalidateTile(txT, tyT);
+
+				// Soft edges: the neighbours' look depends on this tile too
+
+				for (int tyN = tyT - 1; tyN <= tyT + 1; tyN++) {
+					for (int txN = txT - 1; txN <= txT + 1; txN++) {
+						if (txN >= 0 && tyN >= 0 && txN < m_ctxMap && tyN < m_ctyMap)
+							pupd->InvalidateTile(txN, tyN);
+					}
+				}
 				gpmm->RedrawTile(txT, tyT);
 			}
 			pbDst++;
@@ -405,8 +429,203 @@ void FogMap::Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap 
 	}
 }
 
+// Soft fog edges. The edge tiles are 1 bit masks with hard, stepped
+// outlines. A tile is drawn from the coverage of it and its 8 neighbours,
+// blurred, as steps of darkening (the palette's shadow map applied 1 to 3
+// times, then black) with an ordered dither between the steps. The soft
+// tiles are cached by neighbourhood.
+
+const int kcSoftCacheMax = 4096;
+const byte kbOffMap = 16;	// GetFogAt: outside the map
+const int kcSoftLevels = 8;	// 0: clear, 1..7: shadow map applied that many times, 8: black
+
+static const byte s_abBayer4[16] = {
+	0, 8, 2, 10,
+	12, 4, 14, 6,
+	3, 11, 1, 9,
+	15, 7, 13, 5
+};
+
+void FogMap::InitSoftEdges()
+{
+	m_fSoftInit = true;
+	m_pvSoftCache = new SoftCache;
+	int cx = m_cxTile;
+	int cy = m_cyTile;
+	DibBitmap *pbmT = CreateDibBitmap(NULL, cx, cy);
+	if (pbmT == NULL)
+		return;
+	Color clrBlack = GetColor(kiclrBlack);
+	Color clrSentinel = (Color)((clrBlack + 1) & 0xff);
+	for (int n = 0; n < 16; n++) {
+		int *pnCov = new int[cx * cy];
+		m_apnCoverage[n] = pnCov;
+		if (n == kbOpaque || n == kbEmpty || m_aptbm[n] == NULL) {
+			for (int i = 0; i < cx * cy; i++)
+				pnCov[i] = n == kbOpaque ? 256 : 0;
+			continue;
+		}
+		pbmT->Fill(0, 0, cx, cy, clrSentinel);
+		m_aptbm[n]->BltTo(pbmT, 0, 0);
+		byte *pb = pbmT->GetBits();
+		int cbRow = pbmT->GetRowBytes();
+		for (int y = 0; y < cy; y++) {
+			for (int x = 0; x < cx; x++) {
+				byte b = pb[y * cbRow + x];
+				pnCov[y * cx + x] = b == clrBlack ? 256 : (b == clrSentinel ? 0 : 128);
+			}
+		}
+	}
+	delete pbmT;
+}
+
+byte FogMap::GetFogAt(int tx, int ty)
+{
+	// Off the map (nothing is drawn there; it's black) counts as fog
+
+	if (tx < 0 || ty < 0 || tx >= m_ctxMap || ty >= m_ctyMap)
+		return kbOffMap;
+	return m_pbMap[ty * m_ctxMap + tx] & kbfFogMask;
+}
+
+byte *FogMap::GetSoftTile(byte *abNeighbours)
+{
+	unsigned long long key = 0;
+	for (int i = 0; i < 9; i++)
+		key = (key << 5) | abNeighbours[i];
+	SoftCache *pcache = (SoftCache *)m_pvSoftCache;
+	SoftCache::iterator it = pcache->find(key);
+	if (it != pcache->end())
+		return it->second;
+	if ((int)pcache->size() >= kcSoftCacheMax) {
+		for (it = pcache->begin(); it != pcache->end(); ++it)
+			delete[] it->second;
+		pcache->clear();
+	}
+
+	// Coverage of the 3x3 tiles, blurred (box blur, twice each way; its
+	// reach, 2 * nRadius, stays within one tile)
+
+	int cx = m_cxTile;
+	int cy = m_cyTile;
+	int cxBig = cx * 3;
+	int cyBig = cy * 3;
+	int *pnCov = new int[cxBig * cyBig];
+	int *pnTmp = new int[cxBig * cyBig];
+	for (int ty = 0; ty < 3; ty++) {
+		for (int tx = 0; tx < 3; tx++) {
+			byte bN = abNeighbours[ty * 3 + tx];
+			int *pnSrc = m_apnCoverage[bN == kbOffMap ? kbOpaque : bN];
+			for (int y = 0; y < cy; y++)
+				memcpy(&pnCov[(ty * cy + y) * cxBig + tx * cx], &pnSrc[y * cx], cx * sizeof(int));
+		}
+	}
+	int nRadius = cx / 3;
+	if (nRadius < 1)
+		nRadius = 1;
+	int cSpan = 2 * nRadius + 1;
+	for (int nPass = 0; nPass < 2; nPass++) {
+		for (int y = 0; y < cyBig; y++) {
+			for (int x = 0; x < cxBig; x++) {
+				int nSum = 0;
+				for (int d = -nRadius; d <= nRadius; d++) {
+					int xT = x + d;
+					xT = xT < 0 ? 0 : (xT >= cxBig ? cxBig - 1 : xT);
+					nSum += pnCov[y * cxBig + xT];
+				}
+				pnTmp[y * cxBig + x] = nSum / cSpan;
+			}
+		}
+		for (int y = 0; y < cyBig; y++) {
+			for (int x = 0; x < cxBig; x++) {
+				int nSum = 0;
+				for (int d = -nRadius; d <= nRadius; d++) {
+					int yT = y + d;
+					yT = yT < 0 ? 0 : (yT >= cyBig ? cyBig - 1 : yT);
+					nSum += pnTmp[yT * cxBig + x];
+				}
+				pnCov[y * cxBig + x] = nSum / cSpan;
+			}
+		}
+	}
+
+	// Darkness steps 0..4 for the middle tile, dithered (tiles sit on the
+	// tile grid, so the dither lines up across tiles)
+
+	byte *pbSoft = new byte[cx * cy];
+	for (int y = 0; y < cy; y++) {
+		for (int x = 0; x < cx; x++) {
+			int nCov = pnCov[(cy + y) * cxBig + cx + x];
+
+			// Fully dark at the edge of the map: past it nothing is drawn
+
+			int nDist = cSpan * 2;
+			for (int i = 0; i < 9; i++) {
+				if (abNeighbours[i] != kbOffMap)
+					continue;
+				int xT = cx + x, yT = cy + y;
+				int xL = (i % 3) * cx, yTop = (i / 3) * cy;
+				int dx = xT < xL ? xL - xT : (xT >= xL + cx ? xT - (xL + cx - 1) : 0);
+				int dy = yT < yTop ? yTop - yT : (yT >= yTop + cy ? yT - (yTop + cy - 1) : 0);
+				int d = dx > dy ? dx : dy;
+				if (d < nDist)
+					nDist = d;
+			}
+			if (nDist < cSpan * 2)
+				nCov += (256 - nCov) * (cSpan * 2 - nDist) / (cSpan * 2);
+			if (nCov > 256)
+				nCov = 256;
+			int nLevel = (nCov * kcSoftLevels * 16 + s_abBayer4[(y & 3) * 4 + (x & 3)] * 256) / (256 * 16);
+			if (nCov <= 4)
+				nLevel = 0;
+			if (nCov >= 252)
+				nLevel = kcSoftLevels;
+			pbSoft[y * cx + x] = (byte)(nLevel > kcSoftLevels ? kcSoftLevels : nLevel);
+		}
+	}
+	delete[] pnCov;
+	delete[] pnTmp;
+	(*pcache)[key] = pbSoft;
+	return pbSoft;
+}
+
+void FogMap::DrawSoftEdge(DibBitmap *pbm, byte *pbSoft, int x, int y)
+{
+	Size siz;
+	pbm->GetSize(&siz);
+	int xL = x < 0 ? -x : 0;
+	int yT = y < 0 ? -y : 0;
+	int xR = x + m_cxTile > siz.cx ? siz.cx - x : m_cxTile;
+	int yB = y + m_cyTile > siz.cy ? siz.cy - y : m_cyTile;
+	if (xL >= xR || yT >= yB)
+		return;
+	byte *mpShadow = gmpiclriclrShadow;
+	byte bBlack = (byte)GetColor(kiclrBlack);
+	int cbRow = pbm->GetRowBytes();
+	for (int yy = yT; yy < yB; yy++) {
+		byte *pbDst = pbm->GetBits() + (long)(y + yy) * cbRow + x;
+		byte *pbSrc = pbSoft + yy * m_cxTile;
+		for (int xx = xL; xx < xR; xx++) {
+			int nLevel = pbSrc[xx];
+			if (nLevel == 0)
+				continue;
+			if (nLevel >= kcSoftLevels) {
+				pbDst[xx] = bBlack;
+				continue;
+			}
+			byte b = pbDst[xx];
+			while (nLevel-- > 0)
+				b = mpShadow[b];
+			pbDst[xx] = b;
+		}
+	}
+}
+
 void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 {
+	if (!m_fSoftInit)
+		InitSoftEdges();
+
 	Size siz;
 	pbm->GetSize(&siz);
 	Rect rcDib;
@@ -437,13 +656,34 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 	int xTile = tx * gcxTile - xMap;
 	int yTile = ty * gcyTile - yMap;
 	int xTileStart = xTile;
+	byte abNeighbours[9];
 	for (int tyT = ty; tyT < ty + cty; tyT++) {
 		int cEmpty = 0;
 		int xStart;
 		for (int txT = tx; txT < tx + ctx; txT++) {
 			byte bFog = *pbMapT++ & kbfFogMask;
-			if (*pfInvalid++ == false)
+			if (*pfInvalid++ == false) {
 				bFog = kbEmpty;
+			} else {
+				// Fog and its 8 neighbours. All the same: black or
+				// nothing; otherwise a soft tile.
+
+				bool fUniform = true;
+				for (int i = 0; i < 9; i++) {
+					abNeighbours[i] = GetFogAt(txT + i % 3 - 1, tyT + i / 3 - 1);
+					if (abNeighbours[i] != bFog)
+						fUniform = false;
+				}
+				if (!fUniform && gmpiclriclrShadow != NULL) {
+					if (cEmpty != 0) {
+						pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
+						cEmpty = 0;
+					}
+					DrawSoftEdge(pbm, GetSoftTile(abNeighbours), xTile, yTile);
+					xTile += gcxTile;
+					continue;
+				}
+			}
 
 			// Opaque?
 
