@@ -990,6 +990,14 @@ public:
 	bool DecGalaxite(TCoord tx, TCoord ty);
 	bool FindNearestGalaxite(TCoord tx, TCoord ty, TPoint *ptpt, bool fIgnoreFog);
 
+	// Galaxite regrowth (a per-level setting: knGalaxiteRegrowth*)
+
+	void SetGalaxiteRegrowth(int nRegrowth) {
+		m_nRegrowth = nRegrowth;
+	}
+	void CaptureGalaxiteOriginal(long tCurrent);
+	void UpdateGalaxiteRegrowth(long tCurrent);
+
 	// Wall methods
 
 	int GetWallHealth(TCoord tx, TCoord ty);
@@ -1006,7 +1014,14 @@ private:
 	TBitmap *m_aptbm[16];
 	TBitmap *m_aptbmGalax[9];
 	AnimationData *m_panidWalls;
+	byte *m_pbGxOriginal;	// the Galaxite each tile started with
+	int m_nRegrowth;
+	long m_tRegrowthLast;
 };
+
+#define knGalaxiteRegrowthOff 0
+#define knGalaxiteRegrowthSlow 1		// a size step every 200 seconds
+#define knGalaxiteRegrowthNormal 2		// a size step every 100 seconds
 
 // Directions
 
@@ -3956,6 +3971,7 @@ public:
 	bool Init(IniReader *pini, int iug);
 	void Activate();
 	void Update();
+	void ReorderMissingUnits();
 	void OnBuilt(UnitGob *punt);
 	void AddUnit(UnitGob *punt, bool fReplicant);
 	void RemoveReplicants();
@@ -6073,6 +6089,7 @@ public:
 	// MobileUnitGob overrides
 
 	void PerformAction(char *szAction);
+	virtual void Idle();
 
 	// StateMachine methods
 
@@ -6092,6 +6109,8 @@ private:
 	static AnimationData *s_panidVacuum;
 	bool m_fAttemptingToDeliver;
 	bool m_fHidden;
+	bool m_fKeepMining;		// mining (or delivering) until told otherwise
+	bool m_fQuietRetry;		// retrying: don't announce "needs Galaxite" again
 };
 
 inline void MinerGob::SetGalaxiteAmount(int nAmount)

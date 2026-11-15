@@ -421,6 +421,13 @@ lbError:
 				int nGalaxiteValue = m_pplr->GetHandicap() & kfHcapIncreasedMinerLoadValue ? 
 						((knGalaxiteValue * (100 + knIncreasedMinerLoadValuePercent)) + 50) / 100 : knGalaxiteValue;
 				int nCreditsNew = m_pplr->GetCredits() + 2 * nGalaxiteValue;
+
+				// Fill storage right up to the limit: when the credits were
+				// just under it, the last load used to be refused for good
+
+				if (nCreditsNew > m_pplr->GetCapacity() &&
+						m_pplr->GetCredits() < m_pplr->GetCapacity())
+					nCreditsNew = m_pplr->GetCapacity();
 				if (nCreditsNew <= m_pplr->GetCapacity()) {
 					MarkRedraw();
 					m_pplr->SetCredits(nCreditsNew, true);

@@ -452,6 +452,10 @@ void Simulation::Update(CommandQueue *pcmdq)
         ggame.ScheduleUpdateTriggers();
     }
 
+    // Galaxite regrowth
+
+    m_plvl->GetFogMap()->UpdateGalaxiteRegrowth(GetTickCount());
+
     // Update Players
 
     gplrm.Update(m_cUpdates);

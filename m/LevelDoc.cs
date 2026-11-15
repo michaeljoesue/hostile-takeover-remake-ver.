@@ -35,6 +35,7 @@ namespace m {
 		bool m_fUpdateDirty = false;
 		static bool s_fLoading = false;
 		int m_ctx = 64, m_cty = 64;
+		GalaxiteRegrowth m_gxr = GalaxiteRegrowth.Off;
 		TriggerManager m_tgrm = new TriggerManager();
 		UnitGroupManager m_ugm = new UnitGroupManager();
 		SwitchManager m_swm = new SwitchManager();
@@ -85,6 +86,12 @@ namespace m {
 
 				m_nPlayersMin = info.GetInt32("MinPlayers");
 				m_nPlayersMax = info.GetInt32("MaxPlayers");
+			} catch (SerializationException) {
+			}
+
+			m_gxr = GalaxiteRegrowth.Off;
+			try {
+				m_gxr = (GalaxiteRegrowth)info.GetInt32("GalaxiteRegrowth");
 			} catch (SerializationException) {
 			}
 
@@ -196,6 +203,7 @@ namespace m {
 			info.AddValue("BoundsHeight", Bounds.Height);
 			info.AddValue("MinPlayers", MinPlayers);
 			info.AddValue("MaxPlayers", MaxPlayers);
+			info.AddValue("GalaxiteRegrowth", (int)m_gxr);
 			info.AddValue("SideInfos", GetSideInfos());
 			info.AddValue("Width", Width);
 			info.AddValue("Height", Height);
@@ -1254,6 +1262,8 @@ namespace m {
 			sec.Add(new Ini.Property("Palette", strFilePalette));
 			sec.Add(new Ini.Property("MinPlayers", m_nPlayersMin.ToString()));
 			sec.Add(new Ini.Property("MaxPlayers", m_nPlayersMax.ToString()));
+			if (m_gxr != GalaxiteRegrowth.Off)
+				sec.Add(new Ini.Property("GalaxiteRegrowth", ((int)m_gxr).ToString()));
 			sec.Add(new Ini.Property("UnitGroupCount", m_ugm.Items.Count.ToString()));
 
 			// < 0 means use the current version, otherwise use the passed version
@@ -1403,6 +1413,9 @@ namespace m {
 			m_strTitle = secGen["Title"].Value;
 			m_nPlayersMin = int.Parse(secGen["MinPlayers"].Value);
 			m_nPlayersMax = int.Parse(secGen["MaxPlayers"].Value);
+			m_gxr = GalaxiteRegrowth.Off;
+			if (secGen["GalaxiteRegrowth"] != null)
+				m_gxr = (GalaxiteRegrowth)int.Parse(secGen["GalaxiteRegrowth"].Value);
 
 			// SideInfo
 
@@ -1811,6 +1824,21 @@ namespace m {
 			}
 		}
 
+		[System.ComponentModel.Category("Galaxite")]
+		[System.ComponentModel.DisplayName("Galaxite Regrowth")]
+		[System.ComponentModel.Description("Whether mined Galaxite grows back: Off, Slow (a size step every 200 seconds) or Normal (every 100 seconds). It regrows only where Galaxite was at the start, spreading from Galaxite that is left, and only back to 60% of its starting size.")]
+		public GalaxiteRegrowth GalaxiteRegrowth {
+			get {
+				return m_gxr;
+			}
+			set {
+				if (m_gxr == value)
+					return;
+				m_gxr = value;
+				SetModified(true);
+			}
+		}
+
 		public int MaxPlayers {
 			get {
 				return m_nPlayersMax;
@@ -1832,6 +1860,13 @@ namespace m {
 				m_fUpdateDirty = true;
 			}
 		}
+	}
+
+	// Must match knGalaxiteRegrowth* in game/ht.h
+	public enum GalaxiteRegrowth {
+		Off,
+		Slow,
+		Normal,
 	}
 
 	public enum Intelligence {

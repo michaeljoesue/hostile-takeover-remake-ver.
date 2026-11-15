@@ -60,9 +60,11 @@ MinerGob::MinerGob() : MobileUnitGob(&gConsts)
 	m_wfMunt &= ~kfMuntAggressivenessBits;
 	m_fHidden = false;
 	m_fAttemptingToDeliver = false;
+	m_fKeepMining = false;
+	m_fQuietRetry = false;
 }
 
-#define knVerMinerGobState 2
+#define knVerMinerGobState 3
 bool MinerGob::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
@@ -76,6 +78,7 @@ bool MinerGob::LoadState(Stream *pstm)
 	m_fMinerUnderAttack = pstm->ReadByte() != 0 ? true : false;
 	m_fHidden = pstm->ReadByte() != 0 ? true : false;
 	m_fAttemptingToDeliver = pstm->ReadByte() != 0 ? true : false;
+	m_fKeepMining = pstm->ReadByte() != 0 ? true : false;
 	return MobileUnitGob::LoadState(pstm);
 }
 
@@ -90,6 +93,7 @@ bool MinerGob::SaveState(Stream *pstm)
 	pstm->WriteByte(m_fMinerUnderAttack);
 	pstm->WriteByte(m_fHidden);
 	pstm->WriteByte(m_fAttemptingToDeliver);
+	pstm->WriteByte(m_fKeepMining);
 	return MobileUnitGob::SaveState(pstm);
 }
 
@@ -273,9 +277,30 @@ void MinerGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord 
 	gcmdq.Enqueue(&msg);
 }
 
+// A miner that is supposed to be mining but has ended up standing idle
+// (a blocked path, a Processor that never called it in, a destroyed
+// Processor, no Galaxite left) tries again every few seconds until it's
+// given another order
+
+void MinerGob::Idle()
+{
+	MobileUnitGob::Idle();
+	if (!m_fKeepMining || m_fHidden || !(m_ff & kfGobActive) || !IsIdle())
+		return;
+	if (m_nGalaxiteAmount > 0) {
+		SendDeliverCommand(m_gidFavoriteProcessor);
+		return;
+	}
+	m_fQuietRetry = true;
+	Mine(kwxInvalid, kwxInvalid);
+	m_fQuietRetry = false;
+}
+
 void MinerGob::Mine(WCoord wx, WCoord wy)
 {
 	Assert(!InTransition());
+
+	m_fKeepMining = true;
 
 //temp
 if (!(m_ff & kfGobActive)) {
@@ -303,9 +328,11 @@ if (!(m_ff & kfGobActive)) {
 				// where we are is in the way of any other Miners trying
 				// to use the same Processor!)
 
-				gsim.GetLevel()->GetTriggerMgr()->SetConditionTrue(knMinerCantFindGalaxiteCondition, GetSideMask(GetSide()));
-				if (m_pplr == gpplrLocal)
-					ShowAlert(kidsMinerNeedsGalaxite);
+				if (!m_fQuietRetry) {
+					gsim.GetLevel()->GetTriggerMgr()->SetConditionTrue(knMinerCantFindGalaxiteCondition, GetSideMask(GetSide()));
+					if (m_pplr == gpplrLocal)
+						ShowAlert(kidsMinerNeedsGalaxite);
+				}
 				SetState(kstGuard);
 			}
 		}
@@ -397,6 +424,24 @@ Deliver() {
 
 int MinerGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
+	// Any other order stops the "keep mining" retries
+
+	switch (pmsg->mid) {
+	case kmidMoveCommand:
+	case kmidAttackMoveCommand:
+	case kmidStopCommand:
+	case kmidMoveAction:
+	case kmidGuardAction:
+	case kmidGuardVicinityAction:
+	case kmidGuardAreaAction:
+	case kmidHuntEnemiesAction:
+		m_fKeepMining = false;
+		break;
+	case kmidDeliverCommand:
+		m_fKeepMining = true;
+		break;
+	}
+
 BeginStateMachine
 	OnMsg(kmidHit)
 		// It is possible to be hit by a shot AFTER the process of

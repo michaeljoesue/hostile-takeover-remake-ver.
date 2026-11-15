@@ -261,6 +261,9 @@ bool Level::LoadLevelConstants(const char *pszLevelName, IniReader *pini)
 		Assert(false);
 		return false;
 	}
+	int nRegrowth = knGalaxiteRegrowthOff;
+	pini->GetPropertyValue("General", "GalaxiteRegrowth", "%d", &nRegrowth);
+	m_pfogm->SetGalaxiteRegrowth(nRegrowth);
 
 	// Load palette
 
@@ -396,6 +399,7 @@ bool Level::LoadLevelVariables(IniReader *pini)
 		pini->GetPropertyValue(&find2, "%d,%d,%d", &nGx, &tx, &ty);
 		m_pfogm->SetGalaxite(nGx, tx, ty);
 	}
+	m_pfogm->CaptureGalaxiteOriginal(gsim.GetTickCount());
 
 // In terrain for the moment (forever?)
 

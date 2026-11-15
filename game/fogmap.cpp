@@ -5,6 +5,9 @@ namespace wi {
 FogMap::FogMap()
 {
 	m_pbMap = NULL;
+	m_pbGxOriginal = NULL;
+	m_nRegrowth = knGalaxiteRegrowthOff;
+	m_tRegrowthLast = 0;
 	m_panidWalls = NULL;
 	memset(m_aptbm, 0, sizeof(m_aptbm));
 	memset(m_aptbmGalax, 0, sizeof(m_aptbmGalax));
@@ -31,6 +34,7 @@ FogMap::~FogMap()
 {
 	delete m_panidWalls;
 	delete[] m_pbMap;
+	delete[] m_pbGxOriginal;
 	int n;
 	for (n = 0; n < 16; n++)
 		delete m_aptbm[n];
@@ -112,7 +116,7 @@ bool FogMap::Init(Size *psizTile, Size *psizMap)
 	return true;
 }
 
-#define knVerFogMapState 4
+#define knVerFogMapState 5
 bool FogMap::LoadState(Stream *pstm)
 {
 	// Note at this point the fogmap has already been "initialized" from
@@ -123,6 +127,10 @@ bool FogMap::LoadState(Stream *pstm)
 	if (nVer != knVerFogMapState)
 		return false;
 	pstm->ReadBytesRLE(m_pbMap, m_ctxMap * m_ctyMap);
+	if (m_pbGxOriginal == NULL)
+		m_pbGxOriginal = new byte[m_ctxMap * m_ctyMap];
+	pstm->ReadBytesRLE(m_pbGxOriginal, m_ctxMap * m_ctyMap);
+	m_tRegrowthLast = (long)pstm->ReadDword();
 	return pstm->IsSuccess();
 }
 
@@ -130,7 +138,98 @@ bool FogMap::SaveState(Stream *pstm)
 {
 	pstm->WriteByte(knVerFogMapState);
 	pstm->WriteBytesRLE(m_pbMap, m_ctxMap * m_ctyMap);
+	if (m_pbGxOriginal == NULL) {
+		m_pbGxOriginal = new byte[m_ctxMap * m_ctyMap];
+		memset(m_pbGxOriginal, 0, m_ctxMap * m_ctyMap);
+	}
+	pstm->WriteBytesRLE(m_pbGxOriginal, m_ctxMap * m_ctyMap);
+	pstm->WriteDword((dword)m_tRegrowthLast);
 	return pstm->IsSuccess();
+}
+
+// Galaxite regrowth
+//
+// Galaxite values come in three looks (1-5, 6-10, 11-15), each in five
+// sizes. A mined-out tile only regrows where the level put Galaxite, only
+// next to Galaxite that's still there (it spreads), and only back to 60% of
+// the size it started with. One size step per tile per period.
+
+void FogMap::CaptureGalaxiteOriginal(long tCurrent)
+{
+	int cb = m_ctxMap * m_ctyMap;
+	if (m_pbGxOriginal == NULL)
+		m_pbGxOriginal = new byte[cb];
+	for (int i = 0; i < cb; i++)
+		m_pbGxOriginal[i] = (m_pbMap[i] & kbfGalaxiteMask) >> kcGalaxiteShift;
+	m_tRegrowthLast = tCurrent;
+}
+
+void FogMap::UpdateGalaxiteRegrowth(long tCurrent)
+{
+	if (m_nRegrowth == knGalaxiteRegrowthOff || m_pbGxOriginal == NULL)
+		return;
+	long ctPeriod = m_nRegrowth == knGalaxiteRegrowthSlow ? 200 * 100 : 100 * 100;
+	if (tCurrent - m_tRegrowthLast < ctPeriod)
+		return;
+	m_tRegrowthLast = tCurrent;
+
+	// Decide first, then grow, so Galaxite spreads one tile per period
+
+	int cb = m_ctxMap * m_ctyMap;
+	byte *pbGrow = new byte[cb];
+	memset(pbGrow, 0, cb);
+	TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
+	for (TCoord ty = 0; ty < m_ctyMap; ty++) {
+		for (TCoord tx = 0; tx < m_ctxMap; tx++) {
+			int off = ty * m_ctxMap + tx;
+			int nOrig = m_pbGxOriginal[off];
+			if (nOrig == 0)
+				continue;
+			int nBase = ((nOrig - 1) / 5) * 5 + 1;
+			int cOrig = nOrig - nBase + 1;
+			int cCap = (cOrig * 6 + 9) / 10;	// 60%, rounded up
+			int nCur = (m_pbMap[off] & kbfGalaxiteMask) >> kcGalaxiteShift;
+			int cCur = nCur == 0 ? 0 : nCur - nBase + 1;
+			if (cCur >= cCap)
+				continue;
+
+			// Not under a building
+
+			if (ptrmap->TestFlags(tx, ty, 1, 1, kbfStructure))
+				continue;
+
+			// A mined-out tile needs Galaxite next to it
+
+			if (cCur == 0) {
+				bool fNeighbor = false;
+				for (int dy = -1; dy <= 1 && !fNeighbor; dy++) {
+					for (int dx = -1; dx <= 1; dx++) {
+						if ((dx != 0 || dy != 0) && GetGalaxite(tx + dx, ty + dy) != 0) {
+							fNeighbor = true;
+							break;
+						}
+					}
+				}
+				if (!fNeighbor)
+					continue;
+			}
+			pbGrow[off] = (byte)(cCur == 0 ? nBase : nCur + 1);
+		}
+	}
+
+	for (TCoord ty = 0; ty < m_ctyMap; ty++) {
+		for (TCoord tx = 0; tx < m_ctxMap; tx++) {
+			int off = ty * m_ctxMap + tx;
+			if (pbGrow[off] == 0)
+				continue;
+			SetGalaxite(pbGrow[off], tx, ty);
+			if (gptrcMapOpaque == NULL || !gptrcMapOpaque->PtIn(tx, ty))
+				gpupdSim->InvalidateTile(tx, ty);
+			if (gpmm != NULL)
+				gpmm->RedrawTile(tx, ty);
+		}
+	}
+	delete[] pbGrow;
 }
 
         

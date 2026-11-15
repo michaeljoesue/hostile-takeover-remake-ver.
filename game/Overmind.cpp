@@ -98,6 +98,14 @@ BeginStateMachine
 				if (pgobMiner->GetType() != kgtGalaxMiner)
 					continue;
 
+				// Only idle, active miners: this also runs after a saved game
+				// is loaded, when miners may be busy mining or delivering, or
+				// hidden inside a Processor
+
+				if (!(pgobMiner->GetFlags() & kfGobActive) ||
+						!((MobileUnitGob *)pgobMiner)->IsIdle())
+					continue;
+
 				// Send the Miner off to mine
 				// NOTE: We send a message rather than call MinerGob::Mine method directly 
 				// so the state change will occur immediately.

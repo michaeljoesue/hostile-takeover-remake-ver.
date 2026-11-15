@@ -62,10 +62,10 @@ word TerrainMap::s_anScoreTerrain[] = { 0, 0, knScoreBlocked, knScoreBlocked };
 
 word TerrainMap::s_anScoreVector[] = { 5, 7, 5, 7, 5, 7, 5, 7 };
 
-// Max nodes futility cutoff. Traverse the map three times, and * 3 because of how
-// nodes are added to the list
+// Longest path (in steps) the path arrays below can hold: every tile of the
+// largest map
 
-#define kcNodesMax (ktcMax * 3 * 3)
+#define kcNodesMax (ktcMax * ktcMax)
 
 TerrainMap::TerrainMap()
 {
@@ -656,14 +656,15 @@ PathHead *TerrainMap::AddPathHead(int wScoreKnown, int wScore, int cSteps, int o
 		ppathh = m_ppathhFreeList;
 		m_ppathhFreeList = ppathh->ppathhNext;
 	} else {
-		// Futility cutoff scales with the map so the original 64x64 maps
-		// keep their original search effort (a bigger cutoff made units
-		// with unreachable targets search for much longer)
+		// Futility cutoff: one node per map tile. The original cutoff (a
+		// few times the map's width) could run out on twisty maps, and the
+		// search then returned a path to the closest point it had found, so
+		// units stopped short of where they were sent.
 
-		int ctMax = m_ctx > m_cty ? m_ctx : m_cty;
-		if (ctMax < 64)
-			ctMax = 64;
-		if (m_cNodes >= ctMax * 3 * 3)
+		int cNodesMax = m_ctx * m_cty;
+		if (cNodesMax < 64 * 3 * 3)
+			cNodesMax = 64 * 3 * 3;
+		if (m_cNodes >= cNodesMax)
 			return NULL;
 		ppathh = new PathHead;
 		if (ppathh == NULL)
@@ -753,7 +754,7 @@ bool TerrainMap::GetFlags(int tx, int ty, byte *pbf)
 
 Path *TerrainMap::MakePath(TCoord txStart, TCoord tyStart, int off)
 {
-	Direction adir[kcNodesMax];
+	static Direction adir[kcNodesMax];
 
 	TCoord ty = off / m_ctx;
 	TCoord tx = off % m_ctx;
@@ -779,7 +780,7 @@ Path *TerrainMap::MakePath(TCoord txStart, TCoord tyStart, int off)
 
 Path *CreatePath(TerrainMap *ptrmap, TCoord txStart, TCoord tyStart, TPoint *atpt, int ctpt)
 {
-	Direction adir[kcNodesMax];
+	static Direction adir[kcNodesMax];
 
 	TCoord txLast = txStart;
 	TCoord tyLast = tyStart;

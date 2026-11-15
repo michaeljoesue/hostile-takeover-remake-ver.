@@ -272,24 +272,29 @@ Stream *HostOpenSaveGameStream(int nGame, bool fDelete)
 	if (!FindSaveGame(nGame, szT, sizeof(szT)))
 		return NULL;
 
-	// rename to a temporary file before opening
+	// Read the save in place. (It used to be renamed to a temporary name and
+	// only renamed back if every read succeeded, so a crash or a short read
+	// while loading made the save disappear.) fDelete is for the one-shot
+	// save made when the game quits mid-mission: it is deleted once read.
 
 	char szTFull[PATH_MAX];
 	PrependSavesDirectory(szT, szTFull);
-	char szTempNameFull[PATH_MAX];
-	PrependSavesDirectory(kszTempName, szTempNameFull);
-    rename(szTFull, szTempNameFull);
 
-	// Get stream over temp file
+	// The one-shot save is still moved aside first, so that if loading it
+	// crashes the game doesn't try it again on every start
+
+	if (fDelete) {
+		char szTempNameFull[PATH_MAX];
+		PrependSavesDirectory(kszTempName, szTempNameFull);
+		remove(szTempNameFull);
+		if (rename(szTFull, szTempNameFull) == 0)
+			strcpy(szTFull, szTempNameFull);
+	}
 
 	FileStream *pstm = new FileStream();
 	if (pstm == NULL)
 		return NULL;
-
-	// If load is successful, and fDelete is True  szTempName will be deleted
-	// if fDelete is false szTempName will be renamed to szSaveGame
-
-	if (!pstm->Init("rb", szTempNameFull, fDelete ? szTempNameFull : NULL, fDelete ? NULL : szTFull)) {
+	if (!pstm->Init("rb", szTFull, fDelete ? szTFull : NULL, NULL)) {
 		delete pstm;
 		return NULL;
 	}

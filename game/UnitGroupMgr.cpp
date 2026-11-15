@@ -56,6 +56,12 @@ bool UnitGroupMgr::LoadState(Stream *pstm)
 	for (int i = 0; i < m_cug; i++)
 		m_aug[i].LoadState(pstm);
 
+	// The computer's build list (BuildMgr) isn't saved, so groups that were
+	// waiting for units to be built would wait forever: order them again
+
+	for (int i = 0; i < m_cug; i++)
+		m_aug[i].ReorderMissingUnits();
+
 	return pstm->IsSuccess();
 }
 
@@ -436,6 +442,18 @@ bool UnitGroup::Init(IniReader *pini, int iug)
 	Assert((m_wf & kfUgSpawn) == 0 || m_nSpawnArea != -1);
 
 	return true;
+}
+
+void UnitGroup::ReorderMissingUnits()
+{
+	if ((m_wf & (kfUgActive | kfUgNeedsUnit)) != (kfUgActive | kfUgNeedsUnit))
+		return;
+	BuildMgr *pbldm = gsim.GetBuildMgr();
+	UnitListEntry *pule = m_aule;
+	for (int iule = 0; iule < m_cule; iule++, pule++) {
+		if (!(pule->bf & kfUleBuilt))
+			pbldm->BuildUnit(pule->ut, this, m_nSpawnArea);
+	}
 }
 
 void UnitGroup::OnBuilt(UnitGob *punt)
