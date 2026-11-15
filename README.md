@@ -214,6 +214,12 @@ one with File > New.
 - From the command line, `bin\mcl.exe -pack out.pdb mission.ld [...]` makes a
   mission pack too.
 
+Missions (`.ld`) and tile sets (`.tc`) are saved in M's own file format
+(`m\DocFormat.cs`). Files from older versions of M, which used .NET's
+retired BinaryFormatter, still open, and are converted the next time they
+are saved; `bin\mcl.exe -convert desert.tc mission.ld [...]` converts them
+in one go (tile sets first).
+
 To change the built-in missions instead, edit their `.ld` files and rebuild
 the data file as above. The editor's own help (Help in M, `m\m.chm`) and
 `legacy\docs\AuthorKit.chm` describe the old AuthorKit's `run.bat`; Run (F5)

@@ -83,8 +83,9 @@ namespace m
 			info.AddValue("Cookie", m_cookie);
 			info.AddValue("TileTemplates", m_alsTemplates);
 			string strNameBackground = "";
-			if (m_tmplBackground != null)
-				strNameBackground = m_tmplBackground.Name;
+			Template tmplBackground = GetBackgroundTemplate();
+			if (tmplBackground != null)
+				strNameBackground = tmplBackground.Name;
 			info.AddValue("NameBackground", strNameBackground);
 			info.AddValue("TileSize", m_sizTile);
 			if (m_pal != null)

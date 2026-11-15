@@ -25,6 +25,7 @@
     <Compile Include="Counter.cs" />
     <Compile Include="CountersForm.cs" />
     <Compile Include="Doc.cs" />
+    <Compile Include="DocFormat.cs" />
     <Compile Include="EditCommentsForm.cs" />
     <Compile Include="EditLevelTextForm.cs" />
     <Compile Include="EditRichTextForm.cs" />

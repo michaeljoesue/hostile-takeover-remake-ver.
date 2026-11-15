@@ -40,6 +40,23 @@ namespace m
 				OutputTools.ImportText(astr);
 				break;
 
+			case "-convert":
+				// -convert file.tc|file.ld ...
+				// Re-saves documents in the current format (tile sets
+				// before the levels that use them)
+
+				{
+					for (int i = 1; i < astr.Length; i++) {
+						Document doc = DocManager.OpenDocument(astr[i]);
+						if (doc == null || !doc.Save()) {
+							Console.WriteLine("Error: couldn't convert " + astr[i]);
+							Environment.Exit(1);
+						}
+						Console.WriteLine("Saved " + astr[i]);
+					}
+				}
+				break;
+
 			case "-pack":
 				// -pack out.pdb level.ld [level.ld ...]
 				// Exports levels to a mission pack, like M's Export Mission Pack

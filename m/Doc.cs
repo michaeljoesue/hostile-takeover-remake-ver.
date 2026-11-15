@@ -156,6 +156,17 @@ namespace m
 			return OpenDocument(frmOpen.FileName);
 		}
 
+		// Files saved by M before 2.0 used BinaryFormatter
+
+		public static object LoadLegacy(Stream stm, StreamingContext ctx, SerializationBinder binder) {
+#pragma warning disable SYSLIB0011
+			IFormatter fmtr = new BinaryFormatter(null, ctx);
+			if (binder != null)
+				fmtr.Binder = binder;
+			return fmtr.Deserialize(stm);
+#pragma warning restore SYSLIB0011
+		}
+
 		public virtual Document OpenDocument(string strFile) {
 			// Already open? If so, return the already open document after incrementing its open count
 
@@ -177,11 +188,16 @@ namespace m
 				Hashtable ht = new Hashtable();
 				ht.Add("DocTemplate", this);
 				ht.Add("Filename", strFile);
-				IFormatter fmtr = new BinaryFormatter(null, new StreamingContext(StreamingContextStates.File, ht));
-				if (m_serBinder != null)
-					fmtr.Binder = m_serBinder;
+				StreamingContext ctx = new StreamingContext(StreamingContextStates.File, ht);
 				stm = new FileStream(strFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-				doc = (Document)fmtr.Deserialize(stm);
+				if (DocFormat.IsDocFormat(stm)) {
+					doc = (Document)DocFormat.Load(stm, ctx);
+				} else {
+					// Saved by an older M; it's converted when next saved
+					doc = (Document)LoadLegacy(stm, ctx, m_serBinder);
+					if (doc != null)
+						doc.LoadedFromLegacy = true;
+				}
 				stm.Close();
 
 			} catch (SerializationException ex) {
@@ -315,6 +331,9 @@ namespace m
 		protected string m_strDir;
 		protected string m_strFileName;
 		protected bool m_fModified;
+
+		// Opened from a pre-2.0 (BinaryFormatter) file
+		public bool LoadedFromLegacy;
 		protected bool m_fIniting;
 		protected int m_cOpen;
 
@@ -406,9 +425,12 @@ namespace m
 		bool SaveHelper(string strFile) {
 			Stream stm = null;
 			try {
-				IFormatter fmtr = new BinaryFormatter();
+				// Serialize fully before touching the file, so a failure
+				// doesn't destroy the existing one
+				MemoryStream stmMem = new MemoryStream();
+				DocFormat.Save(stmMem, this);
 				stm = new FileStream(strFile, FileMode.Create, FileAccess.Write, FileShare.None);
-				fmtr.Serialize(stm, this);
+				stmMem.WriteTo(stm);
 				stm.Close();
 			} catch (Exception ex) {
 				if (stm != null)

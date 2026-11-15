@@ -135,27 +135,7 @@ namespace m {
 			} catch (SerializationException) {
 			}
 
-			// Support old .ld's that have separate .map files
-
 			string strTemplatesFileName = null;
-			try {
-				string strFile = info.GetString("MapFileName");
-				if (strFile != null) {
-					Stream stm = null;
-					try {
-						IFormatter fmtr = new BinaryFormatter();
-						stm = new FileStream(m_strDir + Path.DirectorySeparatorChar + strFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-						strTemplatesFileName = (string)fmtr.Deserialize(stm);
-						SetTemplateDoc((TemplateDoc)DocManager.OpenDocument(m_strDir + Path.DirectorySeparatorChar + strTemplatesFileName));
-						m_alsmi.AddRange((IMapItem[])fmtr.Deserialize(stm));
-						stm.Close();
-					} catch {
-						if (stm != null)
-							stm.Close();
-					}
-				}
-			} catch(SerializationException) {
-			}
 
 			// Load the desired template set
 
