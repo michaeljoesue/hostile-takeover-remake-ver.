@@ -2761,7 +2761,6 @@ inline SliderControl::~SliderControl() {
 #define kfMmVertBorderInside 1
 #define kfMmRedraw 2
 #define kfMmHasPoweredRadar 4
-#define kfMmPenDownTimeout 8
 
 class MiniMapControl : public Control // mmc
 {
@@ -2772,7 +2771,6 @@ public:
 	virtual void OnPaint(DibBitmap *pbm);
 	virtual void OnPenEvent(Event *pevt);
 	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
-    virtual void OnBreakCapture();
 
 	void Redraw();
 	void RedrawTRect(TRect *ptrc);
@@ -2782,10 +2780,6 @@ public:
 	static int CalcWidth();
 
 private:
-    void OnPenEvent2(Event *pevt);
-
-    long m_tPenDown;
-    Event m_evtPenDown;
 	long m_tInvalidateLast;
 	int m_nScale;
 	int m_cyInputUI;

@@ -1380,26 +1380,6 @@ void MiniMapControl::Update()
 			Invalidate();
 		}
 	}
-
-// Enough time to give the second finger time to come down, and not long
-// enough to make the minimap jerky
-
-#define kctPenDownTimeout 25
-
-    if (m_wfMm & kfMmPenDownTimeout) {
-        if (tCurrent - m_tPenDown >= kctPenDownTimeout) {
-            m_wfMm &= ~kfMmPenDownTimeout;
-            OnPenEvent2(&m_evtPenDown);
-        }
-    }
-}
-
-void MiniMapControl::OnBreakCapture()
-{
-    // Forget about the pen down, if there is one
-
-    m_wfMm &= ~kfMmPenDownTimeout;
-    Trace("Breaking capture");
 }
 
 void MiniMapControl::Redraw()
@@ -1411,25 +1391,10 @@ void MiniMapControl::Redraw()
 
 void MiniMapControl::OnPenEvent(Event *pevt)
 {
-    // Process the pen down in waiting if there is a pen up
-
-    if (pevt->eType == penUpEvent) {
-        if (m_wfMm & kfMmPenDownTimeout) {
-            m_wfMm &= ~kfMmPenDownTimeout;
-            OnPenEvent2(&m_evtPenDown);
-        }
-    }
-
 	if (pevt->eType != penDownEvent && pevt->eType != penMoveEvent) {
 		return;
     }
 
-
-    OnPenEvent2(pevt);
-}
-
-void MiniMapControl::OnPenEvent2(Event *pevt)
-{
 	static int s_xPenDown;
 	static int s_yPenDown;
 	static WCoord s_wxViewDown;
