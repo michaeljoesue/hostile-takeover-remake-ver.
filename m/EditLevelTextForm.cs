@@ -190,6 +190,7 @@ namespace m
 																		  this.richTextBox1});
 			this.Controls.Add(this.mainMenu1);
 			this.MainMenuStrip = this.mainMenu1;
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Name = "EditLevelTextForm";
 			this.Text = "Level Text";
 			this.ResumeLayout(false);

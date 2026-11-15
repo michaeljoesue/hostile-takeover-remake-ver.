@@ -41,8 +41,10 @@ namespace m
 			if (!s_rcBounds.IsEmpty)
 				SetBounds(s_rcBounds.Left, s_rcBounds.Top, s_rcBounds.Width, s_rcBounds.Height, BoundsSpecified.All);
 			else {
-				Rectangle rcScreen = Screen.GetWorkingArea(this);
-				SetBounds((rcScreen.Width - Bounds.Width) / 2, (rcScreen.Height - Bounds.Height) / 2, 0, 0, BoundsSpecified.Location);
+				// Centre on the monitor M is on
+				Control ctlParent = DocManager.GetFrameParent();
+				Rectangle rcScreen = ctlParent != null ? Screen.GetWorkingArea(ctlParent) : Screen.GetWorkingArea(this);
+				SetBounds(rcScreen.X + (rcScreen.Width - Bounds.Width) / 2, rcScreen.Y + (rcScreen.Height - Bounds.Height) / 2, 0, 0, BoundsSpecified.Location);
 			}
 
 			m_tgrm = tgrm;

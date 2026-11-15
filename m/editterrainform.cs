@@ -176,6 +176,7 @@ namespace m
 			this.Controls.AddRange(new System.Windows.Forms.Control[] {
 																		  this.panel1,
 																		  this.panel9});
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Name = "EditTerrainForm";
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.Text = "Edit Terrain";

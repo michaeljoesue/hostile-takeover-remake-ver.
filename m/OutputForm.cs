@@ -20,6 +20,14 @@ namespace m
 			if (s_frm == null) {
 				s_frm = new OutputForm();
 				s_frm.Owner = DocManager.GetFrameParent();
+
+				// Open over M's window, on M's monitor
+				if (s_frm.Owner != null) {
+					Rectangle rcOwner = s_frm.Owner.Bounds;
+					s_frm.StartPosition = FormStartPosition.Manual;
+					s_frm.Location = new Point(rcOwner.X + (rcOwner.Width - s_frm.Width) / 2,
+							rcOwner.Y + (rcOwner.Height - s_frm.Height) / 2);
+				}
 			}
 			s_frm.Show();
 			s_frm.BringToFront();

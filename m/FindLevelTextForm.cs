@@ -133,6 +133,7 @@ namespace m
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Name = "FindLevelTextForm";
 			this.ShowInTaskbar = false;
 			this.Text = "Find";

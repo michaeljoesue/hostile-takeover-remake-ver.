@@ -176,6 +176,7 @@ namespace m
 			this.Controls.Add(this.pictureBox1);
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Name = "AboutForm";
 			this.ShowInTaskbar = false;
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
