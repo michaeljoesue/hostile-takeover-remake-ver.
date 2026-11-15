@@ -847,9 +847,22 @@ bool Game::InitDisplay(int immRequested)
 		AddModeMatches(4, 16, 4, 160);
 
 
-	// Find best match
+	// Find best match. The display marks its recommended resolution as
+	// native; prefer it when the data supports it.
 
 	int immBest = FindBestModeMatch(0);
+	if (immBest != -1) {
+		for (int imm = 0; imm < m_cmm; imm++) {
+			ModeInfo mode;
+			gpdisp->GetModeInfo(m_amm[imm].imode, &mode);
+			if (mode.fNative &&
+					m_amm[imm].nDepthData == m_amm[immBest].nDepthData &&
+					m_amm[imm].nSizeData == m_amm[immBest].nSizeData) {
+				immBest = imm;
+				break;
+			}
+		}
+	}
 
 	// If we a not requesting a specific size, choose one
 

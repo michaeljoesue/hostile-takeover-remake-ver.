@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <string>
 #include <filesystem>
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "game/ht.h"
 
 namespace wi {
 
@@ -38,13 +39,12 @@ static void MakeDir(const std::string& str)
 bool HostHelpers::Init()
 {
     // Game data lives next to the executable
-    char *pszBase = SDL_GetBasePath();
+    const char *pszBase = SDL_GetBasePath();
     if (pszBase == NULL) {
         Log("SDL_GetBasePath failed: %s", SDL_GetError());
         return false;
     }
     gstrMainDataDir = StripSeparator(pszBase);
-    SDL_free(pszBase);
 
     // Saved games and settings live in the user's roaming app data folder
     char *pszPref = SDL_GetPrefPath("Spiffcode", "HostileTakeover");
@@ -68,6 +68,8 @@ bool HostHelpers::Init()
 
 void HostHelpers::Cleanup()
 {
+    HostDestroyWindow();
+    SDL_Quit();
 }
 
 const char *HostHelpers::GetMainDataDir()
@@ -123,13 +125,5 @@ void HostHelpers::Break()
     Log("BREAK!!");
 }
 
-void HostHelpers::GetSurfaceProperties(SurfaceProperties *pprops)
-{
-    pprops->cxWidth = 800;
-    pprops->cyHeight = 600;
-    pprops->cbxPitch = 1;
-    pprops->cbyPitch = pprops->cxWidth;
-    pprops->ffFormat = wi::kfDirect8;
-}
 
 } // namespace wi

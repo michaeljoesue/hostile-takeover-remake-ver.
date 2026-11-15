@@ -13,6 +13,7 @@ SdlAnimSprite::SdlAnimSprite(SpriteManager *psprm) {
     yOrigin_ = 0;
     texture_ = NULL;
     surface_ = NULL;
+    pixels_ = NULL;
     nScale_ = 1.0f;
     x_ = 0;
     y_ = 0;
@@ -26,8 +27,10 @@ SdlAnimSprite::~SdlAnimSprite() {
     crit_.Enter();
     SDL_DestroyTexture(texture_);
     texture_ = NULL;
-    SDL_FreeSurface(surface_);
+    SDL_DestroySurface(surface_);
     surface_ = NULL;
+    delete[] pixels_;
+    pixels_ = NULL;
     crit_.Leave();
 }
 
@@ -62,6 +65,18 @@ void SdlAnimSprite::CaptureFrame(UnitGob *pgob) {
 }
 
 bool SdlAnimSprite::CreateSurface(UnitGob *pgob) {
+    // Free the previous frame
+    if (texture_ != NULL) {
+        SDL_DestroyTexture(texture_);
+        texture_ = NULL;
+    }
+    if (surface_ != NULL) {
+        SDL_DestroySurface(surface_);
+        surface_ = NULL;
+    }
+    delete[] pixels_;
+    pixels_ = NULL;
+
     // Get height/width
     Rect rcAni;
     pgob->GetAnimationBounds(&rcAni, false);
@@ -118,20 +133,16 @@ bool SdlAnimSprite::CreateSurface(UnitGob *pgob) {
     }
     delete[] pb8;
 
-    // Create the appropriate masks
+    // Pixels are packed B G R A, high byte to low byte
 
-    dword rmask = 0xff000000;
-    dword gmask = 0x00ff0000;
-    dword bmask = 0x0000ff00;
-    dword amask = 0x000000ff;
-
-    surface_ = SDL_CreateRGBSurfaceFrom(pdw32, cx_, cy_, 32, (cx_ * sizeof(dword)), bmask, gmask, rmask, amask);
+    surface_ = SDL_CreateSurfaceFrom(cx_, cy_, SDL_PIXELFORMAT_BGRA8888,
+            pdw32, cx_ * sizeof(dword));
 
     if (surface_ == NULL) {
         delete[] pdw32;
         return false;
     }
-    
+    pixels_ = pdw32;
     return true;
 }
 
@@ -150,19 +161,21 @@ void SdlAnimSprite::Draw(void *pv, Size *psiz) {
     Rect rcBounds;
     GetBounds(&rcBounds);
 
-    SDL_Rect rc = {
-        x_ + rcBounds.left,
-        y_ + rcBounds.top,
-        rcBounds.Width() ,
-        rcBounds.Height()
+    SDL_FRect rc = {
+        (float)(x_ + rcBounds.left),
+        (float)(y_ + rcBounds.top),
+        (float)rcBounds.Width(),
+        (float)rcBounds.Height()
     };
 
     if (surface_ != NULL) {
-        // Create a texture from the surface
-        texture_ = SDL_CreateTextureFromSurface((SDL_Renderer *)pv, surface_);
-
-        // Render the texture
-        SDL_RenderCopy((SDL_Renderer *)pv, texture_, NULL, &rc);
+        // Create the texture once per captured frame
+        if (texture_ == NULL) {
+            texture_ = SDL_CreateTextureFromSurface((SDL_Renderer *)pv,
+                    surface_);
+        }
+        if (texture_ != NULL)
+            SDL_RenderTexture((SDL_Renderer *)pv, texture_, NULL, &rc);
     }
 
     crit_.Leave();

@@ -1,6 +1,6 @@
 #include "game/ht.h"
 #include "game/sdl/sdlspritemgr.h"
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 namespace wi {
 
@@ -67,15 +67,15 @@ void SdlSpriteManager::DrawSprites(SDL_Renderer *renderer, Size siz) {
 
     for (int i = 0; i < cpspr_; i++) {
         // Draw clipped to rcClip1
-        SDL_RenderSetClipRect(renderer, &rcClip1_);
+        SDL_SetRenderClipRect(renderer, &rcClip1_);
         apspr_[i]->Draw(renderer, &siz);
 
         // Draw clipped to rcClip2
-        SDL_RenderSetClipRect(renderer, &rcClip2_);
+        SDL_SetRenderClipRect(renderer, &rcClip2_);
         apspr_[i]->Draw(renderer, &siz);
     }
 
-    SDL_RenderSetClipRect(renderer, NULL);
+    SDL_SetRenderClipRect(renderer, NULL);
 }
 
 void SdlSpriteManager::SetClipRects(wi::Rect *prc1, wi::Rect *prc2) {

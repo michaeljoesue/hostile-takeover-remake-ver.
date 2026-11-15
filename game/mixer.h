@@ -15,6 +15,11 @@ struct Channel // chnl
 
 void MixChannels(Channel *achnl, int cchnl, byte *pb, word cb);
 
+// Mixes into signed 16 bit samples (csamples must be even). Sounds are summed
+// with headroom and soft clipped rather than averaged, so each effect keeps
+// its loudness when several play at once.
+void MixChannels16(Channel *achnl, int cchnl, short *ps, int csamples);
+
 } // namespace wi
 
 #endif // __MIXER_H__

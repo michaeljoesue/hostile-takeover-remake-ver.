@@ -55,16 +55,14 @@ else()
     target_link_options(HostileTakeover PRIVATE -static)
 endif()
 
-if(TARGET SDL2::SDL2main)
-    target_link_libraries(HostileTakeover PRIVATE SDL2::SDL2main)
-endif()
-if(TARGET SDL2::SDL2-static)
-    target_link_libraries(HostileTakeover PRIVATE SDL2::SDL2-static)
+# SDL3 (SDL_main is provided by the SDL3/SDL_main.h header, no extra library)
+if(TARGET SDL3::SDL3-static)
+    target_link_libraries(HostileTakeover PRIVATE SDL3::SDL3-static)
 else()
-    target_link_libraries(HostileTakeover PRIVATE SDL2::SDL2)
+    target_link_libraries(HostileTakeover PRIVATE SDL3::SDL3)
 endif()
 
-# Copy the game data (and SDL2.dll, when using a shared SDL2) next to the
+# Copy the game data (and SDL3.dll, when using a shared SDL3) next to the
 # executable so it can be run from the build folder
 add_custom_command(TARGET HostileTakeover POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

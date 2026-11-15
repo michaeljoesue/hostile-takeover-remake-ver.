@@ -6,18 +6,6 @@
 
 namespace wi {
 
-struct SurfaceProperties {
-    int cxWidth;
-    int cyHeight;
-    int cbxPitch;
-    int cbyPitch;
-    unsigned short ffFormat;
-};
-
-const unsigned short kfDirect565 = 0x0001;
-const unsigned short kfDirect888 = 0x0002;
-const unsigned short kfDirect8 = 0x0004;
-
 class HostHelpers
 {
 public:
@@ -28,7 +16,6 @@ public:
     static void Log(const char *pszFormat, va_list va);
     static void MessageBox(const char *pszFormat, va_list va);
     static void Break();
-    static void GetSurfaceProperties(SurfaceProperties *pprops);
 
     static const char *GetMainDataDir();
     static const char *GetTempDir();

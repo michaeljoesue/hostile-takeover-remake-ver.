@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "game/sdl/sdlpackfile.h"
 #include "game/sdl/sysmessages.h"
 
@@ -113,6 +113,10 @@ public:
     void ResetScrollOffset();
     SpriteManager *GetSpriteManager();
     void RenderGameSurface();
+    bool IsFullscreen();
+    void SetFullscreen(bool fFullscreen);
+    SDL_Renderer *GetRenderer();
+    void GetSize(Size *psiz);
 
 private:
     int m_imode;
@@ -125,21 +129,19 @@ private:
     DibBitmap *m_pbmFront;
     DibBitmap *m_pbmClip;
 
-    SDL_Window *m_window;
-    SDL_Renderer *m_renderer;
     SDL_Texture *m_texture;
-
+    SDL_Palette *m_ppal;
+    bool m_fPaletteTexture;
     byte *m_gamePixels;
-    Uint32 *m_gamePixels32;
-    Uint32 m_palette[256];
-    int m_pitch32;
-    int m_pixelCount;
-
+    dword *m_gamePixels32;
+    dword m_palette[256];
 };
 
 #define kfDtClearLine 1
 
 extern Display *gpdisp;
+extern bool gfFullscreen;
+void HostDestroyWindow();
 
 class PlatformSprite {
 public:

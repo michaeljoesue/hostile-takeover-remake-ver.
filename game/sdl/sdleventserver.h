@@ -5,7 +5,7 @@
 #include "base/thread.h"
 #include "base/eventserver.h"
 #include "game/sdl/sysmessages.h"
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 namespace wi {
 
@@ -23,7 +23,7 @@ public:
             timeout = (int)ctWait * 10;
         }
 
-        Uint32 expiration = 0;
+        Uint64 expiration = 0;
         if (timeout > 0) {
             expiration = SDL_GetTicks() + timeout;
         }
@@ -35,8 +35,8 @@ public:
 
             // Check for a single event. Peek here, let the caller Get.
             SDL_Event event;
-            switch (SDL_PeepEvents(&event, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT,
-                    SDL_LASTEVENT)) {
+            switch (SDL_PeepEvents(&event, 1, SDL_PEEKEVENT, SDL_EVENT_FIRST,
+                    SDL_EVENT_LAST)) {
             case -1:
                 // App is exiting, or there is an error
                 return false;
@@ -53,13 +53,26 @@ public:
                 }
 
                 // Timeout expired and no events?
-                if (timeout > 0 && ((int)(SDL_GetTicks() - expiration) >= 0)) {
+                if (timeout > 0 && SDL_GetTicks() >= expiration) {
                     return true;
                 }
 
-                // This is how SDL_WaitEventTimeout() does waiting.
-                // 10ms is fine for this game.
-                SDL_Delay(10);
+                // Sleep until an event arrives or the timeout expires,
+                // in short slices so wakeups are noticed quickly.
+                {
+                    Sint32 ms = 1;
+                    if (timeout > 0) {
+                        Uint64 now = SDL_GetTicks();
+                        ms = now >= expiration ? 0 :
+                                (Sint32)(expiration - now);
+                        if (ms > 5)
+                            ms = 5;
+                    } else {
+                        ms = 5;
+                    }
+                    if (ms > 0)
+                        SDL_WaitEventTimeout(NULL, ms);
+                }
                 break;
             }
         }

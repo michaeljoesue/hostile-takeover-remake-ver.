@@ -444,43 +444,38 @@ void ShellForm::OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd)
 	Size sizBmp;
 	prbm->GetSize(&sizBmp);
     
-    // Draw middle
-	Rect rcBmp;
-	rcBmp.left = ((sizDib.cx - sizBmp.cx) / 2) & ~1;
-	rcBmp.top = (sizDib.cy - sizBmp.cy) / 2;
-	rcBmp.right = rcBmp.left + sizBmp.cx;
-	rcBmp.bottom = rcBmp.top + sizBmp.cy;
-	BltHelper(pbm, prbm, pupd, rcBmp.left, rcBmp.top);
+    // Tile the bitmap over the whole screen, with one copy centered. Larger
+    // screens than the original devices get more of the pattern instead of
+    // black borders.
 
-    
+	int xCenter = ((sizDib.cx - sizBmp.cx) / 2) & ~1;
+	int yCenter = (sizDib.cy - sizBmp.cy) / 2;
+	int xStart = xCenter;
+	while (xStart > 0)
+		xStart -= sizBmp.cx;
+	int yStart = yCenter;
+	while (yStart > 0)
+		yStart -= sizBmp.cy;
+	for (int y = yStart; y < sizDib.cy; y += sizBmp.cy) {
+		for (int x = xStart; x < sizDib.cx; x += sizBmp.cx) {
+			if (pupd != NULL) {
+				// Update rects are always on screen, so this clips
+				BltHelper(pbm, prbm, pupd, x, y);
+				continue;
+			}
+			Rect rcDst;
+			rcDst.Set(_max(x, 0), _max(y, 0), _min(x + sizBmp.cx, sizDib.cx),
+					_min(y + sizBmp.cy, sizDib.cy));
+			if (rcDst.IsEmpty())
+				continue;
+			Rect rcSrc;
+			rcSrc.Set(rcDst.left - x, rcDst.top - y, rcDst.right - x,
+					rcDst.bottom - y);
+			prbm->BltTo(pbm, rcDst.left, rcDst.top, &rcSrc);
+		}
+	}
+
 	delete prbm;
-    
-	// If the screen is wider than the form we clear those areas
-	// out first to the form's background color
-
-	Size siz;
-	pbm->GetSize(&siz);
-	if (rcBmp.top > 0) {
-		Rect rc;
-		rc.Set(0, 0, siz.cx, rcBmp.top);
-		FillHelper(pbm, pupd, &rc, GetColor(kiclrBlack));
-	}
-	if (rcBmp.bottom < siz.cy) {
-		Rect rc;
-		rc.Set(0, rcBmp.bottom, siz.cx, siz.cy);
-		FillHelper(pbm, pupd, &rc, GetColor(kiclrBlack));
-	}
-    
-	if (rcBmp.left > 0) {
-		Rect rc;
-		rc.Set(0, rcBmp.top, rcBmp.left, rcBmp.bottom);
-		FillHelper(pbm, pupd, &rc, GetColor(kiclrBlack));
-	}
-	if (rcBmp.right < siz.cx) {
-		Rect rc;
-		rc.Set(rcBmp.right, rcBmp.top, siz.cx, rcBmp.bottom);
-		FillHelper(pbm, pupd, &rc, GetColor(kiclrBlack));
-	}
 
 	// Don't start timing for absolute positioned animation until we've
 	// loaded the cache at least once. Gives smoother animation

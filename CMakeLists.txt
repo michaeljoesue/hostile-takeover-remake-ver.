@@ -21,19 +21,20 @@ foreach(config Debug Release RelWithDebInfo MinSizeRel)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG} ${CMAKE_BINARY_DIR}/bin/${config})
 endforeach()
 
-# SDL2. Uses an installed SDL2 (e.g. from vcpkg) when one is found, otherwise
-# downloads and builds SDL2 from source as a static library.
-find_package(SDL2 CONFIG QUIET)
-if(NOT SDL2_FOUND)
+# SDL3. Uses an installed SDL3 (e.g. from vcpkg) when one is found, otherwise
+# downloads and builds SDL3 from source as a static library.
+find_package(SDL3 CONFIG QUIET)
+if(NOT SDL3_FOUND)
     include(FetchContent)
     set(SDL_SHARED OFF CACHE BOOL "" FORCE)
     set(SDL_STATIC ON CACHE BOOL "" FORCE)
-    set(SDL_TEST OFF CACHE BOOL "" FORCE)
-    FetchContent_Declare(SDL2
-        URL https://github.com/libsdl-org/SDL/releases/download/release-2.30.9/SDL2-2.30.9.tar.gz
-        URL_HASH SHA256=24b574f71c87a763f50704bbb630cbe38298d544a1f890f099a4696b1d6beba4
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(SDL3
+        URL https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-3.4.20.tar.gz
+        URL_HASH SHA256=f3bb06f55bed9557227a700af2ea62e49497ebdf58037732a731a5fb3ef8581f
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
-    FetchContent_MakeAvailable(SDL2)
+    FetchContent_MakeAvailable(SDL3)
 endif()
 
 add_subdirectory(game)

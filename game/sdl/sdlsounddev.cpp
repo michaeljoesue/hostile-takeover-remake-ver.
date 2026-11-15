@@ -1,17 +1,21 @@
 #include "../ht.h"
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "../sounddevice.h"
 #include "../mixer.h"
 
 namespace wi {
 
-#define kcBuffers 4
-#define kcbBuffer 256
-#define kcChannels 4
+// The game's sound effects are 8 kHz mono ADPCM. They're decoded and mixed
+// into 16 bit samples at 8 kHz, and SDL's audio stream resamples the mix to
+// whatever the output device uses (typically 48 kHz stereo).
+
+#define kcChannels kcChannelsMax
+#define knSourceRate 8000
 
 extern long HostGetTickCount();
-void AudioCallback(void *pvUser, Uint8 *stream, int len);
+static void SDLCALL AudioCallback(void *pvUser, SDL_AudioStream *pstm,
+        int cbAdditional, int cbTotal);
 
 class SdlSoundDevice : public SoundDevice // sndd
 {
@@ -31,15 +35,17 @@ public:
     virtual int GetVolume();
 
 private:
-    void InitAudioBuffer(byte *pbBuffer, int len);
+    void Fill(SDL_AudioStream *pstm, int cbNeeded);
 
     bool m_fEnable;
     long m_tSilence;
-    byte *m_apbBuffers[kcBuffers];
+    int m_nVolume;
     Channel m_achnl[kcChannels];
-	SDL_AudioSpec m_spec;
+    SDL_AudioStream *m_pstm;
+    short m_asBuffer[1024];
 
-    friend void AudioCallback(void *pvUser, Uint8 *stream, int len);
+    friend void SDLCALL AudioCallback(void *pvUser, SDL_AudioStream *pstm,
+            int cbAdditional, int cbTotal);
 };
 
 SoundDevice *CreateSdlSoundDevice()
@@ -56,41 +62,46 @@ SoundDevice *CreateSdlSoundDevice()
 
 SdlSoundDevice::SdlSoundDevice()
 {
-    for (int i = 0; i < ARRAYSIZE(m_apbBuffers); i++)
-        m_apbBuffers[i] = NULL;
-
     m_fEnable = false;
     m_tSilence = 0;
+    m_nVolume = 255;
+    m_pstm = NULL;
+    memset(m_achnl, 0, sizeof(m_achnl));
 }
 
 SdlSoundDevice::~SdlSoundDevice()
 {
-	SDL_CloseAudio();
-	
-	// TODO(darrinm): and free buffers?
+    if (m_pstm != NULL) {
+        SDL_DestroyAudioStream(m_pstm);
+        m_pstm = NULL;
+    }
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
 bool SdlSoundDevice::Init()
 {
-    // Set up streaming
-	m_spec.freq = 8000;
-	m_spec.format = AUDIO_U8;
-	m_spec.channels = 1;
-	m_spec.samples = kcbBuffer;
-    m_spec.size = kcbBuffer;
-	m_spec.callback = AudioCallback;
-	m_spec.userdata = this;
-	
-	if (SDL_OpenAudio(&m_spec, NULL) != 0)
-		return false;
-		
-    for (int i = 0; i < kcBuffers; i++) {
-        m_apbBuffers[i] = (byte *)malloc(m_spec.size);
-        if (m_apbBuffers[i] == NULL) {
-           return false;
-        }
+    if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
+        LOG() << "Couldn't initialize SDL audio: " << SDL_GetError();
+        return false;
     }
 
+    SDL_AudioSpec spec;
+    spec.format = SDL_AUDIO_S16;
+    spec.channels = 1;
+    spec.freq = knSourceRate;
+    m_pstm = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+            &spec, AudioCallback, this);
+    if (m_pstm == NULL) {
+        LOG() << "Couldn't open audio device: " << SDL_GetError();
+        return false;
+    }
+
+    SDL_AudioSpec specDevice;
+    if (SDL_GetAudioDeviceFormat(SDL_GetAudioStreamDevice(m_pstm),
+            &specDevice, NULL)) {
+        LOG() << "Audio output " << specDevice.freq << " Hz, "
+                << specDevice.channels << " channel(s)";
+    }
     return true;
 }
 
@@ -101,25 +112,19 @@ bool SdlSoundDevice::IsEnabled()
 
 void SdlSoundDevice::Enable(bool fEnable)
 {
-	SDL_LockAudio();
-	
-    if (fEnable) {
-        if (!m_fEnable) {
-            memset(m_achnl, 0, sizeof(m_achnl));
-            m_tSilence = 0;
-            m_fEnable = true;
-			SDL_PauseAudio(0);
-        }
-    } else {
-        if (m_fEnable) {
-            m_fEnable = false;
-            memset(m_achnl, 0, sizeof(m_achnl));
-            m_tSilence = 0;
-			SDL_PauseAudio(1);
-        }
+    SDL_LockAudioStream(m_pstm);
+    if (fEnable != m_fEnable) {
+        memset(m_achnl, 0, sizeof(m_achnl));
+        m_tSilence = 0;
+        m_fEnable = fEnable;
     }
-	
-	SDL_UnlockAudio();
+    SDL_UnlockAudioStream(m_pstm);
+
+    if (fEnable) {
+        SDL_ResumeAudioStreamDevice(m_pstm);
+    } else {
+        SDL_PauseAudioStreamDevice(m_pstm);
+    }
 }
 
 int SdlSoundDevice::GetChannelCount()
@@ -131,8 +136,11 @@ bool SdlSoundDevice::IsChannelFree(int ichnl)
 {
     if (ichnl < 0 || ichnl >= kcChannels)
         return false;
+    SDL_LockAudioStream(m_pstm);
     Channel *pchnl = &m_achnl[ichnl];
-    return (pchnl->pb >= pchnl->pbEnd);
+    bool fFree = (pchnl->pb >= pchnl->pbEnd);
+    SDL_UnlockAudioStream(m_pstm);
+    return fFree;
 }
 
 bool SdlSoundDevice::IsSilent()
@@ -158,19 +166,17 @@ void SdlSoundDevice::PlayAdpcm(int ichnl, byte *pb, word cb)
     if (!m_fEnable)
         return;
 
-    // Start it up
-
-	SDL_LockAudio();
-	
+    SDL_LockAudioStream(m_pstm);
 	Channel *pchnl = &m_achnl[ichnl];
 	pchnl->pb = pb;
 	pchnl->pbEnd = pb + cb;
 	pchnl->nStepIndex = 0;
 	pchnl->bSampleLast = 128;
-	m_tSilence = HostGetTickCount() +
-			(cb + kcBuffers * m_spec.size + 39) / 40 + 1;
-	
-	SDL_UnlockAudio();
+
+    // Each byte is 2 samples at 8 kHz, i.e. 1/40th of a 10ms tick. Allow a
+    // little extra for the output latency.
+	m_tSilence = HostGetTickCount() + (cb + 39) / 40 + 5;
+    SDL_UnlockAudioStream(m_pstm);
 }
 
 void SdlSoundDevice::SetVolume(int nVolume)
@@ -179,34 +185,40 @@ void SdlSoundDevice::SetVolume(int nVolume)
         nVolume = 0;
     if (nVolume > 255)
         nVolume = 255;
+    m_nVolume = nVolume;
+    if (m_pstm != NULL)
+        SDL_SetAudioStreamGain(m_pstm, nVolume / 255.0f);
 }
 
 int SdlSoundDevice::GetVolume()
 {
-	return 255;
+	return m_nVolume;
 }
 
-void AudioCallback(void *pvUser, Uint8* stream, int len)
+// Called on SDL's audio thread with the stream locked
+
+void SdlSoundDevice::Fill(SDL_AudioStream *pstm, int cbNeeded)
 {
-    SDL_memset(stream, 0, len);
-    SdlSoundDevice *psndd = (SdlSoundDevice *)pvUser;
-    psndd->InitAudioBuffer(stream, len);
+    while (cbNeeded > 0) {
+        int csamples = cbNeeded / (int)sizeof(short);
+        csamples = (csamples + 1) & ~1;
+        if (csamples > ARRAYSIZE(m_asBuffer))
+            csamples = ARRAYSIZE(m_asBuffer);
+        if (m_fEnable) {
+            MixChannels16(m_achnl, kcChannels, m_asBuffer, csamples);
+        } else {
+            memset(m_asBuffer, 0, csamples * sizeof(short));
+        }
+        SDL_PutAudioStreamData(pstm, m_asBuffer, csamples * sizeof(short));
+        cbNeeded -= csamples * sizeof(short);
+    }
 }
 
-void SdlSoundDevice::InitAudioBuffer(byte *pbBuffer, int len)
+static void SDLCALL AudioCallback(void *pvUser, SDL_AudioStream *pstm,
+        int cbAdditional, int cbTotal)
 {
-    // Don't send buffers to the device if not enabled
-
-    if (!m_fEnable)
-        return;
-
-	SDL_LockAudio();
-
-    // Fill the buffer and queue it for playing
-
-    MixChannels(m_achnl, ARRAYSIZE(m_achnl), pbBuffer, len);
-
-	SDL_UnlockAudio();
+    if (cbAdditional > 0)
+        ((SdlSoundDevice *)pvUser)->Fill(pstm, cbAdditional);
 }
 
 } // namespace wi

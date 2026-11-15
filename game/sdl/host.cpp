@@ -6,7 +6,7 @@
 #include "game/completemanager.h"
 #include <errno.h>
 #include <time.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 namespace wi {
 
@@ -33,12 +33,61 @@ void HostExit()
     HostHelpers::Cleanup();
 }
 
+static void StepGameSpeed(int nDelta)
+{
+    int i = 0;
+    for (; i < ARRAYSIZE(gatGameSpeeds); i++)
+        if (gatGameSpeeds[i] == gtGameSpeed)
+            break;
+    i += nDelta;
+    if (i < 0)
+        i = 0;
+    if (i >= ARRAYSIZE(gatGameSpeeds))
+        i = ARRAYSIZE(gatGameSpeeds) - 1;
+    ggame.SetGameSpeed(gatGameSpeeds[i]);
+}
+
+static void RedrawWindow()
+{
+    if (gpmfrmm != NULL && gpdisp != NULL) {
+        gpmfrmm->DrawFrame(true);
+        gpdisp->RenderGameSurface();
+    }
+}
+
+// Mouse positions arrive in window coordinates; the game wants them in game
+// pixels, which are scaled and letterboxed into the window.
+
+static void MapMousePosition(SDL_Event *pevent, Event *pevt, float x, float y)
+{
+    if (gpdisp != NULL && gpdisp->GetRenderer() != NULL)
+        SDL_ConvertEventToRenderCoordinates(gpdisp->GetRenderer(), pevent);
+    if (pevent->type == SDL_EVENT_MOUSE_MOTION) {
+        x = pevent->motion.x;
+        y = pevent->motion.y;
+    } else {
+        x = pevent->button.x;
+        y = pevent->button.y;
+    }
+    Size siz = { 0, 0 };
+    if (gpdisp != NULL)
+        gpdisp->GetSize(&siz);
+    int xT = (int)SDL_floorf(x);
+    int yT = (int)SDL_floorf(y);
+    if (siz.cx > 0) {
+        xT = SDL_clamp(xT, 0, siz.cx - 1);
+        yT = SDL_clamp(yT, 0, siz.cy - 1);
+    }
+    pevt->x = xT;
+    pevt->y = yT;
+}
+
 bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 {
     memset(pevt, 0, sizeof(*pevt));
     SDL_Event event;
-    switch (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
-            SDL_LASTEVENT)) {
+    switch (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_FIRST,
+            SDL_EVENT_LAST)) {
     case -1:
         // App is exiting, or there is an error
         pevt->eType = appStopEvent;
@@ -50,95 +99,101 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 
 	switch (event.type) {
 
-	case SDL_MOUSEBUTTONDOWN:
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        if (event.button.button != SDL_BUTTON_LEFT)
+            return false;
         pevt->eType = penDownEvent;
-        pevt->x = event.button.x;
-        pevt->y = event.button.y;
+        MapMousePosition(&event, pevt, event.button.x, event.button.y);
 		break;
 
-	case SDL_MOUSEBUTTONUP:
+	case SDL_EVENT_MOUSE_BUTTON_UP:
+        if (event.button.button != SDL_BUTTON_LEFT)
+            return false;
         pevt->eType = penUpEvent;
-		pevt->x = event.button.x;
-		pevt->y = event.button.y;
+        MapMousePosition(&event, pevt, event.button.x, event.button.y);
 		break;
 
-	case SDL_MOUSEMOTION:
+	case SDL_EVENT_MOUSE_MOTION:
         pevt->eType = penMoveEvent;
-		pevt->x = event.motion.x;
-		pevt->y = event.motion.y;
+        MapMousePosition(&event, pevt, event.motion.x, event.motion.y);
 		break;
 
-	case SDL_KEYDOWN:
+	case SDL_EVENT_KEY_DOWN:
+        // Alt+Enter and F11 toggle fullscreen
+
+        if ((event.key.key == SDLK_RETURN && (event.key.mod & SDL_KMOD_ALT)) ||
+                event.key.key == SDLK_F11) {
+            if (!event.key.repeat && gpdisp != NULL) {
+                gpdisp->SetFullscreen(!gpdisp->IsFullscreen());
+                ggame.SavePreferences();
+            }
+            return false;
+        }
+
         pevt->eType = keyDownEvent;
-        switch (event.key.keysym.sym) {
+        switch (event.key.key) {
 		case SDLK_UP:
 			pevt->chr = chrPageUp;
 			break;
-			
+
 		case SDLK_DOWN:
 			pevt->chr = chrPageDown;
 			break;
-			
+
 		case SDLK_LEFT:
 			pevt->chr = chrLeft;
 			break;
-			
+
 		case SDLK_RIGHT:
 			pevt->chr = chrRight;
 			break;
-			
+
 		case SDLK_BACKSPACE:
 			pevt->chr = chrBackspace;
 			break;
-			
+
 		case SDLK_DELETE:
 			pevt->chr = chrDelete;
 			break;
 
-		case SDLK_KP_MINUS:	// numpad
-			{
-				int i = 0;
-				for (; i < ARRAYSIZE(gatGameSpeeds); i++)
-					if (gatGameSpeeds[i] == gtGameSpeed)
-						break;
-				i--;
-				if (i < 0)
-					i = 0;
-				ggame.SetGameSpeed(gatGameSpeeds[i]);
-			}
+		case SDLK_KP_MINUS:
+            StepGameSpeed(-1);
 			break;
 
-		case SDLK_KP_PLUS:	// numpad
-			{
-				int i = 0;
-				for (; i < ARRAYSIZE(gatGameSpeeds); i++)
-					if (gatGameSpeeds[i] == gtGameSpeed)
-						break;
-				i++;
-				if (i >= ARRAYSIZE(gatGameSpeeds))
-					i = ARRAYSIZE(gatGameSpeeds) - 1;
-				ggame.SetGameSpeed(gatGameSpeeds[i]);
-			}
+		case SDLK_KP_PLUS:
+            StepGameSpeed(1);
 			break;
 
         default:
-            pevt->chr = event.key.keysym.sym;
+            pevt->chr = event.key.key;
             break;
         }
         break;
 
-	case SDL_QUIT:
+	case SDL_EVENT_QUIT:
         pevt->eType = appStopEvent;
         break;
 
-    case SDL_WINDOWEVENT:
-        gpmfrmm->DrawFrame(true);
-        gpdisp->RenderGameSurface();
-        break;
+    case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
+        gfFullscreen = true;
+        RedrawWindow();
+        return false;
+
+    case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
+        gfFullscreen = false;
+        RedrawWindow();
+        return false;
+
+    case SDL_EVENT_WINDOW_EXPOSED:
+    case SDL_EVENT_WINDOW_RESIZED:
+    case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+    case SDL_EVENT_WINDOW_RESTORED:
+        RedrawWindow();
+        return false;
 
     default:
         return false;
-    }    
+    }
 
     pevt->ms = pmsg->ms;
     if (pevt->ms == 0)
@@ -225,7 +280,7 @@ long HostGetMillisecondCount()
 
 dword HostGetCurrentKeyState(dword keyBit)
 {
-    const Uint8 *pbKeys = SDL_GetKeyboardState(NULL);
+    const bool *pbKeys = SDL_GetKeyboardState(NULL);
     dword dw = 0;
     if (pbKeys[SDL_SCANCODE_UP])
         dw |= keyBitRockerUp;

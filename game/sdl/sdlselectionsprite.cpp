@@ -54,11 +54,11 @@ void SdlSelectionSprite::Draw(void *pv, Size *psiz) {
         Point pt2 = {(int)apt[next].y, (int)apt[next].x};
 
         // draw the selection sprite line
-        SDL_RenderDrawLine(renderer, pt1.x, pt1.y, pt2.x, pt2.y);
+        SDL_RenderLine(renderer, (float)pt1.x, (float)pt1.y, (float)pt2.x, (float)pt2.y);
 
         // create and draw a grabbie rect
-        SDL_Rect rect = {pt1.x - GRABBIE_SIZE_HALF, pt1.y - GRABBIE_SIZE_HALF,
-            GRABBIE_SIZE, GRABBIE_SIZE};
+        SDL_FRect rect = {(float)(pt1.x - GRABBIE_SIZE_HALF),
+            (float)(pt1.y - GRABBIE_SIZE_HALF), GRABBIE_SIZE, GRABBIE_SIZE};
         SDL_RenderFillRect(renderer, &rect);
     }
 

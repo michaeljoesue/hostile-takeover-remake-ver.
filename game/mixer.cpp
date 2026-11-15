@@ -219,4 +219,45 @@ void MixChannels(Channel *achnl, int cchnl, byte *pb, word cb)
 	}
 }
 
+static inline short SoftClip(int n)
+{
+    // Linear up to the knee, then compress smoothly toward full scale
+    const int knKnee = 24000;
+    const int knMax = 32767;
+    int nAbs = n < 0 ? -n : n;
+    if (nAbs > knKnee) {
+        int nOver = nAbs - knKnee;
+        int nRange = knMax - knKnee;
+        nAbs = knKnee + (int)((long long)nRange * nOver / (nOver + nRange));
+    }
+    return (short)(n < 0 ? -nAbs : nAbs);
+}
+
+void MixChannels16(Channel *achnl, int cchnl, short *ps, int csamples)
+{
+	short *psEnd = ps + (csamples & ~1);
+	while (ps < psEnd) {
+		int nSum1 = 0;
+		int nSum2 = 0;
+		for (int ichnl = 0; ichnl < cchnl; ichnl++) {
+			Channel *pchnl = &achnl[ichnl];
+			if (pchnl->pb < pchnl->pbEnd) {
+				int nDelta = (*pchnl->pb) >> 4;
+				pchnl->bSampleLast += gabAdpcmSteppings[pchnl->nStepIndex][nDelta];
+				nSum1 += (int)pchnl->bSampleLast - 128;
+				pchnl->nStepIndex = ganStepIndexMap[pchnl->nStepIndex][nDelta];
+				nDelta = (*pchnl->pb) & 0xf;
+				pchnl->bSampleLast += gabAdpcmSteppings[pchnl->nStepIndex][nDelta];
+				nSum2 += (int)pchnl->bSampleLast - 128;
+				pchnl->nStepIndex = ganStepIndexMap[pchnl->nStepIndex][nDelta];
+				pchnl->pb++;
+			}
+		}
+
+		// 8 bit samples to 16 bit, with ~6dB of headroom for overlaps
+		*ps++ = SoftClip(nSum1 * 128);
+		*ps++ = SoftClip(nSum2 * 128);
+	}
+}
+
 } // namespace wi

@@ -47,6 +47,7 @@ private:
     int xOrigin_, yOrigin_;
     SDL_Texture *texture_;
     SDL_Surface *surface_;
+    dword *pixels_;
     SpriteManager *psprm_;
     dword mp8bpp32bpp_[256];
     float nScaleStart_, nScaleEnd_;
