@@ -1,5 +1,6 @@
 #include "../ht.h"
 #include "game/sdl/hosthelpers.h"
+#include <algorithm>
 #include <cmath>
 
 namespace wi {
@@ -67,6 +68,7 @@ Display::Display()
 
 Display::~Display()
 {
+    TextOverlay::Reset();
 	delete m_pbmBack;
 	m_pbmBack = NULL;
 	delete m_pbmFront;
@@ -128,18 +130,19 @@ bool Display::Init()
         cyDesktop = (int)(pdm->h * density + 0.5f);
     }
 
-    // The recommended game resolution is the desktop size, divided down on
-    // very high resolution screens so the art isn't tiny (e.g. 4K -> 1080p).
+    // The recommended game resolution is 600 lines with the desktop's aspect
+    // ratio, scaled up to fill the window, like the web version. The menus
+    // and art are sized for that and fill the screen as intended; text is
+    // drawn at the window's own resolution (see TextOverlay), so it stays
+    // sharp at any scale. Larger resolutions (more map, smaller menus) are in
+    // Options > Display.
 
-    int nScale = (int)std::lround(cyDesktop / 1080.0);
-    if (nScale < 1)
-        nScale = 1;
-    int cxNative = cxDesktop / nScale;
-    int cyNative = cyDesktop / nScale;
-    if (cxNative < 800 || cyNative < 600) {
-        cxNative = 800;
+    int cyNative = cyDesktop > 660 ? 600 : cyDesktop;
+    if (cyNative < 600)
         cyNative = 600;
-    }
+    int cxNative = (int)((long)cxDesktop * cyNative / cyDesktop);
+    if (cxNative < 800)
+        cxNative = 800;
 
     m_cmodes = 0;
     for (int i = 0; i < ARRAYSIZE(s_asizModes); i++) {
@@ -151,6 +154,13 @@ bool Display::Init()
     if (cxDesktop != cxNative)
         AddMode(m_amodeInfo, &m_cmodes, cxDesktop, cyDesktop, false);
 
+    // Smallest first, as the Display options list shows them
+
+    std::sort(m_amodeInfo, m_amodeInfo + m_cmodes,
+            [](const ModeInfo &a, const ModeInfo &b) {
+                return a.cy != b.cy ? a.cy < b.cy : a.cx < b.cx;
+            });
+
     // Create the window on first use
 
     if (s_window == NULL) {
@@ -159,16 +169,12 @@ bool Display::Init()
         int cxWindow = cxNative;
         int cyWindow = cyNative;
         if (pdm != NULL) {
-            // Window size is in screen coordinates; fit in 85% of the desktop
-            float density = pdm->pixel_density > 0 ? pdm->pixel_density : 1.0f;
-            cxWindow = (int)(cxNative / density);
-            cyWindow = (int)(cyNative / density);
-            float scale = std::fmin(pdm->w * 0.85f / cxWindow,
-                    pdm->h * 0.85f / cyWindow);
-            if (scale < 1.0f) {
-                cxWindow = (int)(cxWindow * scale);
-                cyWindow = (int)(cyWindow * scale);
-            }
+            // Window size is in screen coordinates: 85% of the desktop, with
+            // the game's aspect ratio
+            float scale = std::fmin(pdm->w * 0.85f / cxNative,
+                    pdm->h * 0.85f / cyNative);
+            cxWindow = (int)(cxNative * scale);
+            cyWindow = (int)(cyNative * scale);
         }
         s_window = SDL_CreateWindow("Hostile Takeover", cxWindow, cyWindow,
                 flags);
@@ -304,6 +310,7 @@ bool Display::SetMode(int imode)
 	delete m_pbmBack;
 	delete m_pbmFront;
     delete[] m_gamePixels;
+    TextOverlay::Reset();
 	m_pbmBack = pbmBack;
 	m_pbmFront = pbmFront;
     m_gamePixels = pbPixels;
@@ -367,6 +374,14 @@ void Display::RenderGameSurface() {
     SDL_SetRenderDrawColor(s_renderer, 0, 0, 0, 255);
     SDL_RenderClear(s_renderer);
     SDL_RenderTexture(s_renderer, m_texture, NULL, NULL);
+
+    // Text, at the window's resolution
+
+    SDL_FRect rcFrame;
+    if (SDL_GetRenderLogicalPresentationRect(s_renderer, &rcFrame) &&
+            rcFrame.h > 0) {
+        TextOverlay::Render(rcFrame.h / m_cy, rcFrame.x, rcFrame.y);
+    }
 
     SDL_RenderPresent(s_renderer);
 

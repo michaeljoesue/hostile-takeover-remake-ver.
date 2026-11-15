@@ -35,7 +35,7 @@ GAME_DIR = os.path.join(ROOT_DIR, 'game')
 
 # Data version stamped into version.txt. Must match gszVersion in
 # game/game.cpp for release builds of the game.
-DATA_VERSION = '1.6'
+DATA_VERSION = '2.0'
 
 DEPTH = 8
 TILESIZE = 32

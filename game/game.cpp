@@ -62,7 +62,7 @@ long gtStressTimeout;
 #endif
 
 #if !defined(DEV_BUILD)
-char *gszVersion = "1.6";
+char *gszVersion = "2.0";
 #else
 char *gszVersion = "+++VERSION+++";
 #endif

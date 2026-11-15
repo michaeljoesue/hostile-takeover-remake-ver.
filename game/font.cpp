@@ -309,6 +309,13 @@ int Font::DrawText(DibBitmap *pbm, char *psz, int x, int y, int cch, dword *mpsc
 	if (m_pvf != NULL && InitVector()) {
 		if (cch == -1)
 			cch = (int)strlen(psz);
+		if (TextOverlay::IsTarget(pbm)) {
+			TextOverlay::AddText(this, pbm, psz, cch, x, y);
+			int cx = 0;
+			for (int ich = 0; ich < cch; ich++)
+				cx += VectorCharWidth((byte)psz[ich]);
+			return cx;
+		}
 		return DrawVectorText(pbm, psz, x, y, cch);
 	}
 	return DrawBitmapText(pbm, psz, x, y, cch, mpscaiclr);
@@ -1026,6 +1033,145 @@ int Font::DrawVectorText(DibBitmap *pbm, const char *psz, int x, int y,
 		xT += pvf->acx[ch];
 	}
 	return xT - x;
+}
+
+//
+// Text overlay support: bounds and rendering at any scale
+//
+
+static int VectorCodepoint(VectorFont *pvf, byte ch)
+{
+	if (pvf->fCaps && ch >= 'a' && ch <= 'z')
+		ch = ch - 'a' + 'A';
+	return CodepointFromChar(ch);
+}
+
+void Font::GetVectorBounds(const char *psz, int cch, int x, int y,
+		Rect *prcInk)
+{
+	VectorFont *pvf = m_pvf;
+	prcInk->SetEmpty();
+	int xPen = x;
+	for (int ich = 0; ich < cch; ich++) {
+		byte ch = (byte)psz[ich];
+		int cp = VectorCodepoint(pvf, ch);
+		if (cp > ' ') {
+			int x0, y0, x1, y1;
+			stbtt_GetCodepointBitmapBox(&pvf->info, cp, pvf->nScale,
+					pvf->nScale, &x0, &y0, &x1, &y1);
+			if (x1 > x0 && y1 > y0) {
+				Rect rc;
+				rc.Set(xPen + x0 - 1, y + pvf->yBaseline + y0 - 1,
+						xPen + x1 + 1, y + pvf->yBaseline + y1 + 1);
+				if (pvf->fShadow) {
+					Rect rcShadow = rc;
+					rcShadow.Offset(pvf->dxShadow, pvf->dyShadow);
+					rc.Union(&rcShadow);
+				}
+				if (prcInk->IsEmpty())
+					*prcInk = rc;
+				else
+					prcInk->Union(&rc);
+			}
+		}
+		xPen += pvf->acx[ch];
+	}
+}
+
+// Render text into an ARGB buffer (straight alpha) covering output pixels
+// xOut..xOut+cxOut, yOut..yOut+cyOut, where a game pixel is nScale output
+// pixels. Text and shadow positions follow the game pixel layout exactly.
+
+void Font::RenderOverlay(const char *psz, int cch, int x, int y, float nScale,
+		int xOut, int yOut, int cxOut, int cyOut, dword *pargb)
+{
+	VectorFont *pvf = m_pvf;
+	int cp = cxOut * cyOut;
+	std::vector<byte> abText(cp, 0);
+	std::vector<byte> abShadow(pvf->fShadow ? cp : 0, 0);
+	float nScaleGlyph = pvf->nScale * nScale;
+	std::vector<byte> abGlyph;
+
+	auto place = [&](std::vector<byte> &ab, int cpt, float fx, float fy) {
+		int ix = (int)floor(fx);
+		int iy = (int)floor(fy);
+		float sx = fx - ix;
+		float sy = fy - iy;
+		int x0, y0, x1, y1;
+		stbtt_GetCodepointBitmapBoxSubpixel(&pvf->info, cpt, nScaleGlyph,
+				nScaleGlyph, sx, sy, &x0, &y0, &x1, &y1);
+		int cxG = x1 - x0;
+		int cyG = y1 - y0;
+		if (cxG <= 0 || cyG <= 0)
+			return;
+		abGlyph.assign(cxG * cyG, 0);
+		stbtt_MakeCodepointBitmapSubpixel(&pvf->info, &abGlyph[0], cxG, cyG,
+				cxG, nScaleGlyph, nScaleGlyph, sx, sy, cpt);
+		for (int gy = 0; gy < cyG; gy++) {
+			int oy = iy + y0 + gy;
+			if (oy < 0 || oy >= cyOut)
+				continue;
+			for (int gx = 0; gx < cxG; gx++) {
+				int ox = ix + x0 + gx;
+				if (ox < 0 || ox >= cxOut)
+					continue;
+				byte b = abGlyph[gy * cxG + gx];
+				byte &bDst = ab[oy * cxOut + ox];
+				if (b > bDst)
+					bDst = b;
+			}
+		}
+	};
+
+	int xPen = x;
+	for (int ich = 0; ich < cch; ich++) {
+		byte ch = (byte)psz[ich];
+		int cpt = VectorCodepoint(pvf, ch);
+		if (cpt > ' ' && stbtt_FindGlyphIndex(&pvf->info, cpt) != 0) {
+			float fx = xPen * nScale - xOut;
+			float fy = (y + pvf->yBaseline) * nScale - yOut;
+			place(abText, cpt, fx, fy);
+			if (pvf->fShadow) {
+				place(abShadow, cpt, fx + pvf->dxShadow * nScale,
+						fy + pvf->dyShadow * nScale);
+			}
+		}
+		xPen += pvf->acx[ch];
+	}
+
+	// Compose: text over shadow, text colored by its row in the line
+
+	const dword *argbPal = gpdisp->GetPaletteColors();
+	int cRows = (int)pvf->aiclrRow.size();
+	float nShadowAlpha = pvf->nShadowAlpha / 256.0f;
+	int rS = (pvf->rgbShadow >> 16) & 0xff, gS = (pvf->rgbShadow >> 8) & 0xff,
+			bS = pvf->rgbShadow & 0xff;
+	for (int oy = 0; oy < cyOut; oy++) {
+		int nRow = (int)floor((oy + yOut + 0.5f) / nScale) - y;
+		if (nRow < 0)
+			nRow = 0;
+		if (nRow >= cRows)
+			nRow = cRows - 1;
+		dword rgbRow = argbPal[pvf->aiclrRow[nRow]];
+		int rT = (rgbRow >> 16) & 0xff, gT = (rgbRow >> 8) & 0xff,
+				bT = rgbRow & 0xff;
+		for (int ox = 0; ox < cxOut; ox++) {
+			int i = oy * cxOut + ox;
+			float aT = abText[i] / 255.0f;
+			float aS = pvf->fShadow ? abShadow[i] / 255.0f * nShadowAlpha : 0;
+			float a = aT + aS * (1.0f - aT);
+			if (a <= 0.0f) {
+				pargb[i] = 0;
+				continue;
+			}
+			float wS = aS * (1.0f - aT);
+			int r = (int)((rT * aT + rS * wS) / a + 0.5f);
+			int g = (int)((gT * aT + gS * wS) / a + 0.5f);
+			int b = (int)((bT * aT + bS * wS) / a + 0.5f);
+			pargb[i] = ((dword)(a * 255.0f + 0.5f) << 24) | (r << 16) |
+					(g << 8) | b;
+		}
+	}
 }
 
 } // namespace wi

@@ -922,6 +922,16 @@ void MultiFormMgr::DrawFrame(bool fForceBackBufferValid, bool fPaint)
 
 	gpdisp->FrameStart();
 
+	// Text drawn into the form managers' buffers goes to the text overlay
+
+	DibBitmap *apbmOverlay[kcFormMgrMax];
+	int ayTopOverlay[kcFormMgrMax];
+	for (int n = 0; n < m_cfrmm; n++) {
+		apbmOverlay[n] = m_apfrmm[n]->GetDib();
+		ayTopOverlay[n] = m_arcFormMgr[n].top;
+	}
+	TextOverlay::BeginFrame(m_cfrmm, apbmOverlay, ayTopOverlay);
+
 	// Draw forms
 
 	bool fAnyScroll = fPaint ? Paint(fForceBackBufferValid) : false;
@@ -939,6 +949,7 @@ void MultiFormMgr::DrawFrame(bool fForceBackBufferValid, bool fPaint)
         apupd[n] = m_apfrmm[n]->GetUpdateMap();
         arc[n] = m_arcFormMgr[n];
     }
+	TextOverlay::EndFrame(m_cfrmm, apbmOverlay, apupd);
 	gpdisp->FrameComplete(m_cfrmm, apupd, arc, fAnyScroll);
 
 	// Save avi frame

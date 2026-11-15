@@ -24,9 +24,14 @@ The engine has been updated from its 2007 handheld roots:
   letterboxed to keep its shape. Vsync paces the frame rate.
 - **Any resolution.** Choose the game resolution in Options > Display (from
   800x600 up to your desktop size; larger shows more of the map). The
-  recommended one fits your screen, divided down on very high resolution
-  screens so the art isn't tiny (4K runs at 1920x1080, scaled 2x).
-  High-DPI aware.
+  recommended one is 600 lines with your screen's shape, scaled up to fill
+  the window like the web version, so the menus fill the screen as designed
+  (1.8x on a 1080p screen, 3.6x on 4K). High-DPI aware.
+- **Sharp text at any size.** Text is drawn with anti-aliased TrueType fonts
+  on top of the scaled frame, at the window's own pixel resolution, so it
+  stays crisp however far the game is scaled up (true 4K text on a 4K
+  screen). Text keeps its place in the stacking order: whatever the game
+  draws over it later still covers it.
 - **Fullscreen or windowed**, resizable window; Alt+Enter or F11 switches.
 - **Smooth motion.** The simulation still runs at its original fixed rate
   (so gameplay is unchanged), but units and projectiles are drawn

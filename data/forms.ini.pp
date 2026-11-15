@@ -26,7 +26,7 @@
 	BUTTON=kidcLoadSavedGame (65 93 110 14) "LOAD SAVED GAME" kifntButton
 	BUTTON=kidcSetupGame (65 110 54 14) "OPTIONS" kifntButton
 	BUTTON=kidcHelp (121 110 54 14) "HELP" kifntButton
-	BITMAP=0 (52 148 0 0) copyright.rbm
+	LABEL=0 (20 148 200 12) "Copyright © 2003-2014 Spiffcode, Inc. · Remake 2026" kifntShadow center
 	LABEL=kidcVersion (239 148 0 12) "" kifntShadow right
 
 [kidfGameOptions]

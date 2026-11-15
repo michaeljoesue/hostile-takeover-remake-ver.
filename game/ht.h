@@ -783,6 +783,15 @@ public:
 	bool LoadVector(const char *pszTtf, float nScale = 1.0f,
 			int nTracking = 0);
 
+	// Vector font support for the text overlay (see TextOverlay)
+	bool IsVector() {
+		return m_pvf != NULL && InitVector();
+	}
+	void GetVectorBounds(const char *psz, int cch, int x, int y,
+			Rect *prcInk);
+	void RenderOverlay(const char *psz, int cch, int x, int y, float nScale,
+			int xOut, int yOut, int cxOut, int cyOut, dword *pargb);
+
 	int GetHeight() {
 		return BigWord(m_pfnth->cy);
 	}
@@ -829,6 +838,35 @@ private:
 	int m_nGlyphOverlap;
 	int m_nLineOverlap;
     int m_cxEllipsis;
+};
+
+// Text overlay. Text in the menus and the game's forms is not drawn into the
+// game frame, which may be shown scaled up; it is drawn on top of it at the
+// window's own resolution, so it stays sharp at any size. Each piece of text
+// remembers the frame pixels under it, and only shows where they are
+// unchanged, so anything drawn over it later still covers it.
+// See game/sdl/textoverlay.cpp.
+
+class TextOverlay
+{
+public:
+	// Should text drawn into pbm go to the overlay?
+	static bool IsTarget(DibBitmap *pbm);
+
+	// Record text drawn into pbm at x, y
+	static void AddText(Font *pfnt, DibBitmap *pbm, const char *psz, int cch,
+			int x, int y);
+
+	// Frame bracketing, from MultiFormMgr::DrawFrame. The form managers'
+	// back buffers, where they are on the screen, and what they repaint.
+	static void BeginFrame(int cdib, DibBitmap **apbm, int *ayTop);
+	static void EndFrame(int cdib, DibBitmap **apbm, UpdateMap **apupd);
+
+	// Draw on the window, after the game frame (from Display)
+	static void Render(float nScale, float xOut, float yOut);
+
+	// Drop everything (display mode change, exit)
+	static void Reset();
 };
 Font *LoadFont(char *pszFont);
 
