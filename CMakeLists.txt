@@ -39,3 +39,19 @@ endif()
 
 add_subdirectory(game)
 add_subdirectory(inicrunch)
+
+# The C# tools (map editor M, AniMax and the data build tools) are built by
+# HostileTakeoverTools.sln into bin. Turn this on to build them along with
+# the game; it needs a Visual Studio generator (for MSBuild).
+option(HT_BUILD_TOOLS "Build the C# tools (HostileTakeoverTools.sln) into bin" OFF)
+if(HT_BUILD_TOOLS)
+    if(NOT CMAKE_VS_MSBUILD_COMMAND)
+        message(FATAL_ERROR "HT_BUILD_TOOLS needs a Visual Studio generator")
+    endif()
+    add_custom_target(tools ALL
+        COMMAND "${CMAKE_VS_MSBUILD_COMMAND}" HostileTakeoverTools.sln
+            -restore -m -nologo -v:minimal -p:Configuration=$<CONFIG>
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Building the C# tools into bin"
+        VERBATIM)
+endif()

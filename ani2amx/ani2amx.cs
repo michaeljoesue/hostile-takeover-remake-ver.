@@ -18,7 +18,8 @@ namespace acrunch
 				string strImportDir = Path.GetFileNameWithoutExtension(strFileName);
 				Console.WriteLine("Importing files from {0}", strImportDir);
 
-				AnimDoc doc = new AnimDoc();
+				// Same defaults AniMax uses for a new document
+				AnimDoc doc = new AnimDoc(Globals.TileSize, Globals.FrameRate);
 				if (!doc.Import(Directory.GetFiles(strImportDir, "*.png"))) {
 					Console.WriteLine("Error: couldn't import files from dir {0}", strImportDir);
 					return -1;

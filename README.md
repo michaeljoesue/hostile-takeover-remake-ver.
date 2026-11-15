@@ -133,8 +133,8 @@ keeping everything else. It only needs Python and the CMake build (for
 
 Requirements: [Python 3](https://www.python.org/downloads/) and the CMake
 build above (it builds `inicrunch.exe`, which the data build uses). The
-content tools in `bin` are .NET Framework 3.5 programs; if Windows asks to
-turn on .NET Framework 3.5 the first time one runs, allow it.
+content tools in `bin` run on the .NET Framework 4.8 that is part of
+Windows 11; .NET Framework 3.5 isn't needed.
 
 ```bat
 python data\build.py --clean
@@ -149,10 +149,38 @@ missions are named `S_*` and challenge missions `C_*`.
 
 The `bin` directory contains the content tools used to build the data file,
 and the GUI editors for maps and missions (**M**, `bin\m.exe`) and animations
-(**AniMax**, `bin\AniMax.exe`). The source of each tool is in the folder of
-the same name (C# projects for Visual Studio, plus `inicrunch`, which is
-built by CMake). `legacy\docs` has the original design documents and the
-mission authoring guide, `AuthorKit.chm`.
+(**AniMax**, `bin\AniMax.exe`). They are .NET Framework 4.8 programs; the
+source of each is in the folder of the same name (and `inicrunch`, which is
+C++, is built by CMake with the game). `legacy\docs` has the original design
+documents and the mission authoring guide, `AuthorKit.chm`.
+
+### Building the tools
+
+All the C# tools are in one solution, `HostileTakeoverTools.sln`, with
+SDK-style projects targeting .NET Framework 4.8. Building it puts the tools
+straight into `bin`, where the data build and M expect them.
+
+Requirements: Visual Studio 2022 with the **.NET desktop development**
+workload (it includes the .NET Framework 4.8 targeting pack).
+
+- **In Visual Studio:** open `HostileTakeoverTools.sln` and build (Release).
+- **From a Developer Command Prompt:**
+
+  ```bat
+  msbuild HostileTakeoverTools.sln -restore -p:Configuration=Release
+  ```
+
+- **With the game:** configure CMake with `-DHT_BUILD_TOOLS=ON` and the
+  `tools` target builds the solution as part of the game build.
+
+Use Visual Studio's MSBuild rather than `dotnet build`: the forms of M,
+AniMax and Schemer embed images and other non-text resources, which the
+.NET SDK's own resource compiler can't embed for .NET Framework programs
+(the other tools build either way). The shared settings are in
+`Directory.Build.props`.
+
+The AED animation script editor (`aed`) uses JScript.NET and still has its
+original Visual Studio 2003 project; it isn't part of the solution.
 
 ### Making missions with M
 
@@ -178,5 +206,5 @@ the data file as above. The editor's own help (Help in M, `m\m.chm`) and
 `legacy\docs\AuthorKit.chm` describe the old AuthorKit's `run.bat`; Run (F5)
 replaces it.
 
-M is built from `m\m.sln` (Visual Studio, .NET Framework 4.8); `m\deploy.bat`
-copies the Release build to `bin`.
+M is built by `HostileTakeoverTools.sln` (projects `m`, `mgui`, which
+makes `m.exe`, and `mcl`).

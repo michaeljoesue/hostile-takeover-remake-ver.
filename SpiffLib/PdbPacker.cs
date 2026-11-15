@@ -133,6 +133,11 @@ namespace SpiffLib {
 			}
 		}
 
+		// Game data .pdbs (htdata*.pdb, htsfx.pdb) have the type DATA
+		public void Save(string strFilePdb, string strCreatorId) {
+			Save(strFilePdb, strCreatorId, "DATA");
+		}
+
 		public void Save(string strFilePdb, string strCreatorId, string strTypeId) {
 			// First sort all the files by name
 

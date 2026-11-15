@@ -1,0 +1,43 @@
+<Project>
+
+  <!--
+    Shared settings for the C# tools (HostileTakeoverTools.sln). Conditioned
+    on .csproj so the C++ projects CMake generates are unaffected.
+  -->
+
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+
+    <!-- Projects list their files; the tool folders hold old, unused files too -->
+    <EnableDefaultItems>false</EnableDefaultItems>
+
+    <!-- Every project has its own AssemblyInfo.cs, some with 1.0.* versions -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Deterministic>false</Deterministic>
+
+    <!-- The shared SpiffLib code uses pointers -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- The tools are run from bin, where the data build expects them -->
+    <OutDir>$(MSBuildThisFileDirectory)bin\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+    <!-- Keep bin free of .pdb symbol files (easily confused with game .pdb data) -->
+    <DebugType>embedded</DebugType>
+
+    <!-- Warnings that are part of the original code's style -->
+    <NoWarn>$(NoWarn);CS0108;CS0114;CS0162;CS0168;CS0169;CS0219;CS0414;CS0618;CS0649;CS0672</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    Building on Linux or macOS with the .NET SDK: use Mono's .NET Framework
+    4.8 reference assemblies instead of downloading them from NuGet.
+  -->
+
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(OS)' != 'Windows_NT' and Exists('/usr/lib/mono/4.8-api')">
+    <FrameworkPathOverride>/usr/lib/mono/4.8-api</FrameworkPathOverride>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+  </PropertyGroup>
+
+</Project>
