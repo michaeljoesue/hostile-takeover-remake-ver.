@@ -2845,7 +2845,7 @@ void MobileUnitGob::SetPosition(WCoord wx, WCoord wy)
 	if (fTileChange) {
 		// Reveal fog
 
-		if (m_pplr == gpplrLocal) {
+		if (SharesVisionWithLocal(m_pplr)) {
 			WCoord wxView, wyView;
 			gsim.GetViewPos(&wxView, &wyView);
 			FogMap *pfogm = gsim.GetLevel()->GetFogMap();

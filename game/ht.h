@@ -7102,6 +7102,11 @@ extern DibBitmap *gpbmClip;
 extern FormMgr *gpfrmmSim;
 extern bool gfAttackMoveOrder;
 
+// Allies share vision: the local player sees what their allies' units and
+// buildings see
+bool SharesVisionWithLocal(Player *pplr);
+void RevealAroundUnit(UnitGob *punt);
+
 // Where the last "under attack" alert happened, for the Space key
 extern WPoint gwptLastAlert;
 extern bool gfLastAlertValid;

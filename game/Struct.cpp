@@ -687,15 +687,8 @@ void StructGob::Takeover(Player *pplr)
 
 	// Reveal fog around this newly owned structure
 
-	if (pplr == gpplrLocal) {
-		WCoord wxView, wyView;
-		gsim.GetViewPos(&wxView, &wyView);
-		FogMap *pfogm = gsim.GetLevel()->GetFogMap();
-		WPoint wpt;
-		GetCenter(&wpt);
-		RevealPattern *prvlp = (RevealPattern *)(m_pstruc->wf & kfUntcLargeDefog ? grvlpLarge : grvlp);
-		pfogm->Reveal(TcFromWc(wpt.wx), TcFromWc(wpt.wy), prvlp, gpupdSim, wxView, wyView);
-	}
+	if (SharesVisionWithLocal(pplr))
+		RevealAroundUnit(this);
 
 	// force an update so it gets in sync on lowpower/credits etc
 

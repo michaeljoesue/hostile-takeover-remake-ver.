@@ -247,15 +247,8 @@ bool UnitGob::Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, c
 
 	// Reveal this part of the map
 
-	if (m_pplr == gpplrLocal) {
-		WCoord wxView, wyView;
-		gsim.GetViewPos(&wxView, &wyView);
-		FogMap *pfogm = gsim.GetLevel()->GetFogMap();
-		WPoint wpt;
-		GetCenter(&wpt);
-		RevealPattern *prvlp = (RevealPattern *)(m_puntc->wf & kfUntcLargeDefog ? grvlpLarge : grvlp);
-		pfogm->Reveal(TcFromWc(wpt.wx), TcFromWc(wpt.wy), prvlp, gpupdSim, wxView, wyView);
-	}
+	if (SharesVisionWithLocal(m_pplr))
+		RevealAroundUnit(this);
 
 	// Add the fresh Gob to the GobMgr.
 
@@ -324,6 +317,33 @@ bool UnitGob::SaveState(Stream *pstm)
 GobType UnitGob::GetType()
 {
 	return m_puntc->gt;
+}
+
+bool SharesVisionWithLocal(Player *pplr)
+{
+	if (pplr == NULL || gpplrLocal == NULL)
+		return false;
+	if (pplr == gpplrLocal)
+		return true;
+	Side side = pplr->GetSide();
+	if (side == ksideNeutral)
+		return false;
+	return (gpplrLocal->GetAllies() & GetSideMask(side)) != 0;
+}
+
+// Clear the fog around a unit or building the local player can see through
+
+void RevealAroundUnit(UnitGob *punt)
+{
+	if (gsim.GetLevel() == NULL)
+		return;
+	WCoord wxView, wyView;
+	gsim.GetViewPos(&wxView, &wyView);
+	FogMap *pfogm = gsim.GetLevel()->GetFogMap();
+	WPoint wpt;
+	punt->GetCenter(&wpt);
+	RevealPattern *prvlp = (RevealPattern *)(punt->GetConsts()->wf & kfUntcLargeDefog ? grvlpLarge : grvlp);
+	pfogm->Reveal(TcFromWc(wpt.wx), TcFromWc(wpt.wy), prvlp, gpupdSim, wxView, wyView);
 }
 
 bool UnitGob::IsAlly(Side side)

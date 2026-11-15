@@ -157,9 +157,20 @@ void PlayerMgr::SetAllies(Player **applr, int cplrs, SideMask sidmAllies)
 		applr[n]->SetAllies(sidmAllies);
     }
 
-	// Recalc enemies. Clear first
+	// Allies share vision: reveal around everything the local player can now
+	// see through
 
 	Gob *pgobT;
+	for (pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
+		if ((pgobT->GetFlags() & (kfGobUnit | kfGobActive)) != (kfGobUnit | kfGobActive))
+			continue;
+		UnitGob *punt = (UnitGob *)pgobT;
+		if (punt->GetOwner() != gpplrLocal && SharesVisionWithLocal(punt->GetOwner()))
+			RevealAroundUnit(punt);
+	}
+
+	// Recalc enemies. Clear first
+
 	for (pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
 		if (!(pgobT->GetFlags() & kfGobUnit))
 			continue;
