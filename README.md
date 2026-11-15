@@ -195,9 +195,6 @@ AniMax and Schemer embed images and other non-text resources, which the
 (the other tools build either way). The shared settings are in
 `Directory.Build.props`.
 
-The AED animation script editor (`aed`) uses JScript.NET and still has its
-original Visual Studio 2003 project; it isn't part of the solution.
-
 ### Making missions with M
 
 M needs the .NET Framework 4.8, which is part of Windows 11. Start
