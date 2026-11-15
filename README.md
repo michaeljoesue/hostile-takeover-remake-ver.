@@ -33,11 +33,14 @@ The engine has been updated from its 2007 handheld roots:
   screen). Text keeps its place in the stacking order: whatever the game
   draws over it later still covers it.
 - **Fullscreen or windowed**, resizable window; Alt+Enter or F11 switches.
+- **Modern RTS controls** in place of the original one-button Palm controls:
+  right-click orders, box and Shift selection, control groups, attack-move,
+  stop, middle-drag panning and wheel scrolling (see Playing below).
 - **Smooth motion.** The simulation still runs at its original fixed rate
   (so gameplay is unchanged), but units and projectiles are drawn
   interpolated between updates at the display's refresh rate. Keyboard
   scrolling is continuous instead of a tile at a time, and the map scrolls
-  when the mouse is at the screen edge in fullscreen. Options > Display >
+  when the mouse is at the edge of the screen or window. Options > Display >
   Smooth Motion turns it off.
 - **Higher limits.** Up to 4096 game objects (was 768), 500 units and 300
   structures for the player (was 88 and 55), 600 shots and explosions, 300
@@ -100,12 +103,28 @@ screen, log to Visual Studio's Output window, and have a test options menu
 Run `HostileTakeover.exe`. Choose **Play** and start with Story Mission
 "M0: Introduction", which teaches the controls.
 
-- Click a unit to select it; click the ground to move, or an enemy to attack.
-- Drag a box to select several units.
-- Click and hold on one of your units or buildings for its menu.
-- Arrow keys, the mini map, or the mouse at the screen edge (fullscreen)
-  scroll the map.
-- **Menu** (bottom left) has save, load, options and help.
+Modern RTS controls:
+
+| | |
+|---|---|
+| Left-click | Select a unit or building (enemies too, to look at them). Clicking one of your buildings also opens its menu. Clicking the ground deselects. |
+| Drag a box | Select your units in it (Shift+drag adds to the selection) |
+| Double-click, Ctrl+click | Select all your units of that type on screen |
+| Shift+click | Add a unit to the selection, or take it out |
+| Right-click | Move to the ground, attack an enemy, or open the menu of one of your units or buildings; cancels building placement |
+| A, then left-click | Attack-move: units fight enemies they meet, then carry on |
+| S | Stop |
+| Ctrl+1 to 9 | Make the selection control group 1 to 9 (Shift+number adds to it) |
+| 1 to 9 | Select a control group; press twice quickly to go to it |
+| Space | Go to the last "under attack" alert |
+| Esc | Cancel attack-move or placement, otherwise deselect |
+| Middle-drag | Pan the map |
+| Mouse wheel | Scroll the map up and down (Shift+wheel: sideways) |
+| Arrow keys, mouse at the edge, mini map | Scroll the map |
+
+- The bar at the bottom shows what's selected: one unit's name and health,
+  or how many of each type. Damaged units show a health bar.
+- **Menu** (bottom left, or M) has save, load, options and help.
 - Alt+Enter or F11 switches between fullscreen and a window; numpad + and -
   change the game speed.
 
