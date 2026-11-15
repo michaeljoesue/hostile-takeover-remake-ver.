@@ -29,7 +29,9 @@ Simulation::Simulation()
 
 bool Simulation::IsSmoothMotionActive()
 {
-    if (!gfSmoothMotion || m_plvl == NULL || m_fPaused)
+    // Always on (the Smooth Motion option is gone)
+
+    if (m_plvl == NULL || m_fPaused)
         return false;
 
     // Only while updates are arriving; e.g. not while a modal dialog has

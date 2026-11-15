@@ -189,7 +189,9 @@ bool Display::Init()
             LOG() << "Couldn't create renderer: " << SDL_GetError();
             return false;
         }
-        SDL_SetRenderVSync(s_renderer, 1);
+        // No vsync: frames are drawn as fast as the PC allows, with
+        // movement interpolated, so motion isn't limited to the refresh rate
+        SDL_SetRenderVSync(s_renderer, 0);
         LOG() << "Renderer: " << SDL_GetRendererName(s_renderer);
 
         SDL_SetWindowFullscreen(s_window, gfFullscreen);
@@ -385,14 +387,17 @@ void Display::RenderGameSurface() {
 
     SDL_RenderPresent(s_renderer);
 
-    // Present normally waits for vsync. In case it doesn't (vsync off in the
-    // driver, minimized window), don't spin faster than 240 frames a second.
+    // The frame rate isn't limited, except while nothing can be seen (window
+    // minimized or hidden), when it is held to 60 frames a second
 
     static Uint64 s_nsLastPresent;
-    const Uint64 knsFrameMin = SDL_NS_PER_SECOND / 240;
-    Uint64 nsNow = SDL_GetTicksNS();
-    if (s_nsLastPresent != 0 && nsNow - s_nsLastPresent < knsFrameMin)
-        SDL_DelayPrecise(knsFrameMin - (nsNow - s_nsLastPresent));
+    SDL_WindowFlags wf = SDL_GetWindowFlags(s_window);
+    if (wf & (SDL_WINDOW_MINIMIZED | SDL_WINDOW_HIDDEN | SDL_WINDOW_OCCLUDED)) {
+        const Uint64 knsFrameMin = SDL_NS_PER_SECOND / 60;
+        Uint64 nsNow = SDL_GetTicksNS();
+        if (s_nsLastPresent != 0 && nsNow - s_nsLastPresent < knsFrameMin)
+            SDL_DelayPrecise(knsFrameMin - (nsNow - s_nsLastPresent));
+    }
     s_nsLastPresent = SDL_GetTicksNS();
 }
 

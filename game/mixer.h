@@ -24,6 +24,9 @@ void MixChannels16(Channel *achnl, int cchnl, short *ps, int csamples);
 // The same into interleaved stereo frames (cframes must be even), each
 // channel placed by its left and right gains.
 void MixChannelsStereo16(Channel *achnl, int cchnl, short *ps, int cframes);
+// Unclipped stereo sums at the same scale, and the clipper used above
+void MixChannelsStereo32(Channel *achnl, int cchnl, int *pn, int cframes);
+short SoftClip16(int n);
 
 } // namespace wi
 

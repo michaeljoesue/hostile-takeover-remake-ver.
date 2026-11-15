@@ -661,7 +661,6 @@ bool DisplayOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 void DisplayOptionsForm::InitResettableControls()
 {
 	SetControlChecked(kidcFullscreen, gpdisp->IsFullscreen());
-	SetControlChecked(kidcSmoothMotion, gfSmoothMotion);
 }
 
 void DisplayOptionsForm::OnControlSelected(word idc)
@@ -670,7 +669,6 @@ void DisplayOptionsForm::OnControlSelected(word idc)
 	case kidcOk:
 		{
 			gpdisp->SetFullscreen(GetControlChecked(kidcFullscreen));
-			gfSmoothMotion = GetControlChecked(kidcSmoothMotion);
 
 			ListControl *plstc = (ListControl *)GetControlPtr(kidcModesList);
 			if (plstc->GetFlags() & kfCtlVisible) {
@@ -694,7 +692,6 @@ void DisplayOptionsForm::OnControlSelected(word idc)
 			ListControl *plstc = (ListControl *)GetControlPtr(kidcModesList);
 			plstc->Select(ggame.GetModeMatchBest(), true);
 			SetControlChecked(kidcFullscreen, true);
-			SetControlChecked(kidcSmoothMotion, true);
 		}
 		break;
 	}

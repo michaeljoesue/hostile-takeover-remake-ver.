@@ -4,6 +4,9 @@ namespace wi {
 
 SoundMgr gsndm;
 
+// The same sound isn't started again within this long of itself
+#define kmsSameSoundMin 40
+
 SoundMgr::SoundMgr()
 {
 	m_apcmh = NULL;
@@ -14,6 +17,9 @@ SoundMgr::SoundMgr()
 	m_psndd = NULL;
 	m_cChannels = 0;
 	memset(m_anPriorityChannel, 0, sizeof(m_anPriorityChannel));
+	memset(m_anSoundChannel, 0xff, sizeof(m_anSoundChannel));
+	memset(m_anVolumeChannel, 0, sizeof(m_anVolumeChannel));
+	memset(m_amsStartChannel, 0, sizeof(m_amsStartChannel));
 }
 
 SoundMgr::~SoundMgr()
@@ -178,39 +184,69 @@ void SoundMgr::PlaySfx(Sfx sfx, int nPan, int nVolume)
 	if (psfxe->nSound == 0xff)
 		return;
 
-	// Find a free channel, a channel playing the same priority sound effect,
-	// or channel playing a lower priority sound effect
+	// Choose a channel. In a big battle there are more sounds than
+	// channels, so:
+	// - the same sound starting again within a moment of itself isn't
+	//   started twice (a dozen identical shots sound like one, and would
+	//   otherwise fill every channel)
+	// - a free channel is used if there is one
+	// - otherwise the least important sound is replaced: a lower priority
+	//   one, or one of the same priority that is quieter (further away) or,
+	//   at the same volume, has been playing longest
+	// Important sounds (alerts, speech) are never cut off by battle noise.
 
-	// First look to see if this category effect is playing
-
+	dword dwBusy = m_psndd->GetBusyChannels();
+	long msNow = HostGetMillisecondCount();
 	int ichnlUse = -1;
-	byte nPriorityLowest = 0;
-
-
-	// If not playing, see if there is an empty channel. Keep track of lowest
-	// priority channel
-
-	if (ichnlUse == -1) {
-		for (int ichnl = 0; ichnl < m_cChannels; ichnl++) {
-			if (m_psndd->IsChannelFree(ichnl)) {
-				nPriorityLowest = 255;
-				ichnlUse = ichnl;
-				break;
-			}
-			if (m_anPriorityChannel[ichnl] >= nPriorityLowest) {
-				nPriorityLowest = m_anPriorityChannel[ichnl];
-				ichnlUse = ichnl;
-			}
+	for (int ichnl = 0; ichnl < m_cChannels; ichnl++) {
+		if (!(dwBusy & ((dword)1 << ichnl)))
+			continue;
+		if (m_anSoundChannel[ichnl] == psfxe->nSound &&
+				msNow - m_amsStartChannel[ichnl] < kmsSameSoundMin &&
+				m_anVolumeChannel[ichnl] >= nVolume)
+			return;
+	}
+	for (int ichnl = 0; ichnl < m_cChannels; ichnl++) {
+		if (!(dwBusy & ((dword)1 << ichnl))) {
+			ichnlUse = ichnl;
+			break;
 		}
 	}
+	if (ichnlUse == -1) {
+		for (int ichnl = 0; ichnl < m_cChannels; ichnl++) {
+			// Higher numbers are lower priority
+			if (m_anPriorityChannel[ichnl] < psfxe->nPriority)
+				continue;
+			if (ichnlUse == -1) {
+				ichnlUse = ichnl;
+				continue;
+			}
+			if (m_anPriorityChannel[ichnl] != m_anPriorityChannel[ichnlUse]) {
+				if (m_anPriorityChannel[ichnl] > m_anPriorityChannel[ichnlUse])
+					ichnlUse = ichnl;
+				continue;
+			}
+			if (m_anVolumeChannel[ichnl] != m_anVolumeChannel[ichnlUse]) {
+				if (m_anVolumeChannel[ichnl] < m_anVolumeChannel[ichnlUse])
+					ichnlUse = ichnl;
+				continue;
+			}
+			if (m_amsStartChannel[ichnl] - m_amsStartChannel[ichnlUse] < 0)
+				ichnlUse = ichnl;
+		}
+		if (ichnlUse == -1)
+			return;
 
-	// We need to replace a lower priority sound effect
-	// (higher numbers are lower priority)
+		// A quieter sound of the same priority doesn't replace a louder one
 
-	Assert(ichnlUse != -1);
-	if (psfxe->nPriority > nPriorityLowest)
-		return;
+		if (m_anPriorityChannel[ichnlUse] == psfxe->nPriority &&
+				m_anVolumeChannel[ichnlUse] > nVolume)
+			return;
+	}
 	m_anPriorityChannel[ichnlUse] = psfxe->nPriority;
+	m_anSoundChannel[ichnlUse] = psfxe->nSound;
+	m_anVolumeChannel[ichnlUse] = (short)nVolume;
+	m_amsStartChannel[ichnlUse] = msNow;
 
 	// Play the sound
 

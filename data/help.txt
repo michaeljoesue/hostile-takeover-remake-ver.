@@ -85,7 +85,7 @@ The Custom tab lists missions from mission packs (.pdb files made with the M mis
 There are three difficulty settings for the game. This setting can be changed at any time and will take effect immediately. <BR>
 Moving the volume slider to the right will increase the audio volume, moving it to the left will decrease the audio volume. You can mute all game sound by selecting the Mute checkbox.<BR>
 Moving the scroll speed slider to the right will increase the rate the map scrolls.<BR>
-Display options choose the game resolution (a larger resolution shows more of the map; the recommended one fits your screen), fullscreen or windowed play and Smooth Motion, which draws units moving smoothly at your screen's refresh rate. Press Alt+Enter or F11 at any time to switch between fullscreen and a window. The window can be resized; the game is scaled to fit.<BR>
+Display options choose the game resolution (a larger resolution shows more of the map; the recommended one fits your screen), and fullscreen or windowed play. The game is drawn as fast as your PC allows, with units, shots and scrolling moving smoothly. Press Alt+Enter or F11 at any time to switch between fullscreen and a window. The window can be resized; the game is scaled to fit.<BR>
 The + and - keys on the number pad change the game speed while playing.<BR>
 Clicking the Default button will restore these settings to their default values.</H2>
 <HR>

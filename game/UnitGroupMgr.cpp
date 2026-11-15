@@ -1210,7 +1210,7 @@ bool GuardUnitGroupAction::SaveState(Stream *pstm)
 {
 	pstm->WriteByte(knVerGuardUnitGroupActionState);
 	pstm->WriteByte(m_fWaiting);
-	pstm->WriteDword((word)m_tStart);
+	pstm->WriteDword((dword)m_tStart);
 
 	return pstm->IsSuccess();
 }

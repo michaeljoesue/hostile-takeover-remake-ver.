@@ -21,7 +21,7 @@ The engine has been updated from its 2007 handheld roots:
 
 - **SDL3 with GPU presentation.** The game's 8 bit frame is uploaded as a
   palettized texture and scaled by the GPU with sharp pixel-art filtering,
-  letterboxed to keep its shape. Vsync paces the frame rate.
+  letterboxed to keep its shape. The frame rate isn't limited (no vsync).
 - **Any resolution.** Choose the game resolution in Options > Display (from
   800x600 up to your desktop size; larger shows more of the map). The
   recommended one is 600 lines with your screen's shape, scaled up to fill
@@ -38,20 +38,23 @@ The engine has been updated from its 2007 handheld roots:
   stop, middle-drag panning and wheel scrolling (see Playing below).
 - **Smooth motion.** The simulation still runs at its original fixed rate
   (so gameplay is unchanged), but units and projectiles are drawn
-  interpolated between updates at the display's refresh rate. Keyboard
-  scrolling is continuous instead of a tile at a time, and the map scrolls
-  when the mouse is at the edge of the screen or window. Options > Display >
-  Smooth Motion turns it off.
+  interpolated between updates in every frame, as many frames a second as
+  the PC can draw. Keyboard scrolling is continuous instead of a tile at a
+  time, and the map scrolls when the mouse is at the edge of the screen or
+  window. (Sprite animations still have the frames the artists drew.)
 - **Higher limits, scaled to the map.** On a 64x64 map: 300 structures and
   500 units for the player, the same for the computer players together
   (originally 55/88 and 72/117), 600 scenery objects, 300 scorch marks and
   600 shots and explosions at once. Bigger maps get proportionally more, up
   to about 8x on the largest maps. Build queues hold 50 (was 10), and the
   graphics cache is larger.
-- **Better sound.** Effects are mixed in 16 bit on 16 channels (was 8 bit,
-  4 channels, averaged so effects got quieter as more played) with soft
-  clipping, and resampled by SDL3 to the output device's rate (typically
-  48 kHz stereo). The volume slider works.
+- **Better sound.** Effects are mixed in 16 bit on 32 channels (was 8 bit,
+  4 channels, averaged so effects got quieter as more played) with a
+  limiter, and resampled by SDL3 to the output device's rate (typically
+  48 kHz stereo). In big battles the same sound starting many times at
+  once plays once, and quieter (further away) sounds give way to louder
+  ones; alerts and speech are never cut off by battle noise. The volume
+  slider works.
 - **Positional sound.** Fights, shots, explosions and buildings being hit
   are panned left or right by where they happen relative to the middle of
   the view, and are quieter off screen, so you can hear where a fight is.

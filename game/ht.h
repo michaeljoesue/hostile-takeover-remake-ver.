@@ -6953,7 +6953,7 @@ extern CacheMgr gcam;
 
 // SoundMgr
 
-#define kcChannelsMax 16
+#define kcChannelsMax 32	// at most 32: SoundDevice::GetBusyChannels is a bit mask
 
 } // namespace wi
     
@@ -6995,6 +6995,9 @@ public:
 private:
 	int m_cChannels;
 	byte m_anPriorityChannel[kcChannelsMax];
+	byte m_anSoundChannel[kcChannelsMax];	// which sound each channel last started
+	short m_anVolumeChannel[kcChannelsMax];	// and how loud
+	long m_amsStartChannel[kcChannelsMax];	// and when
 	FileMap *m_afmap;
 	PcmHeader *m_apcmh;
 	int m_cpcmh;

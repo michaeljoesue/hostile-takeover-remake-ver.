@@ -499,12 +499,21 @@ bool Level::SaveState(Stream *pstm)
 	}
 	pstm->WriteWord(cgobs);
 
+	// Loading adds each gob to the front of the gob list, so save them last
+	// to first: the loaded game then has the gobs in the same order and
+	// updates them in the same order as before it was saved
+
+	Gob **apgob = new Gob *[cgobs > 0 ? cgobs : 1];
+	int igob = 0;
 	for (pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
-		if (pgobT->IsSavable()) {
-			pstm->WriteByte(pgobT->GetType());
-			pgobT->SaveState(pstm);
-		}
+		if (pgobT->IsSavable())
+			apgob[igob++] = pgobT;
 	}
+	while (igob-- > 0) {
+		pstm->WriteByte(apgob[igob]->GetType());
+		apgob[igob]->SaveState(pstm);
+	}
+	delete[] apgob;
 
 	// Save triggers
 

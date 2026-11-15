@@ -16,6 +16,8 @@ public:
             int nVolume = 256) = 0;
     virtual int GetChannelCount() = 0;
     virtual bool IsChannelFree(int ichnl) = 0;
+    // Bit n set if channel n is still playing (one lock for all channels)
+    virtual dword GetBusyChannels() = 0;
     virtual void ServiceProc() = 0;
     virtual bool IsSilent() = 0;
     virtual void SetVolume(int nVolume) = 0;

@@ -30,6 +30,7 @@ public:
     virtual void PlayAdpcm(int ichnl, byte *pb, word cb, int nPan, int nVolume);
     virtual int GetChannelCount();
     virtual bool IsChannelFree(int ichnl);
+    virtual dword GetBusyChannels();
     virtual void ServiceProc();
     virtual bool IsSilent();
     virtual void SetVolume(int nVolume);
@@ -44,6 +45,8 @@ private:
     Channel m_achnl[kcChannels];
     SDL_AudioStream *m_pstm;
     short m_asBuffer[1024];
+    int m_anMix[1024];
+    int m_nLimiterGain;     // 1/65536ths
 
     friend void SDLCALL AudioCallback(void *pvUser, SDL_AudioStream *pstm,
             int cbAdditional, int cbTotal);
@@ -67,6 +70,7 @@ SdlSoundDevice::SdlSoundDevice()
     m_tSilence = 0;
     m_nVolume = 255;
     m_pstm = NULL;
+    m_nLimiterGain = 65536;
     memset(m_achnl, 0, sizeof(m_achnl));
 }
 
@@ -144,6 +148,18 @@ bool SdlSoundDevice::IsChannelFree(int ichnl)
     return fFree;
 }
 
+dword SdlSoundDevice::GetBusyChannels()
+{
+    dword dw = 0;
+    SDL_LockAudioStream(m_pstm);
+    for (int ichnl = 0; ichnl < kcChannels; ichnl++) {
+        if (m_achnl[ichnl].pb < m_achnl[ichnl].pbEnd)
+            dw |= (dword)1 << ichnl;
+    }
+    SDL_UnlockAudioStream(m_pstm);
+    return dw;
+}
+
 bool SdlSoundDevice::IsSilent()
 {
     if (!m_fEnable)
@@ -218,7 +234,33 @@ void SdlSoundDevice::Fill(SDL_AudioStream *pstm, int cbNeeded)
         if (cframes > ARRAYSIZE(m_asBuffer) / 2)
             cframes = ARRAYSIZE(m_asBuffer) / 2;
         if (m_fEnable) {
-            MixChannelsStereo16(m_achnl, kcChannels, m_asBuffer, cframes);
+            // Limiter: when many sounds play at once the mix is turned down
+            // quickly and back up slowly, instead of clipping into noise in
+            // which single sounds can't be heard
+
+            MixChannelsStereo32(m_achnl, kcChannels, m_anMix, cframes);
+            int nPeak = 0;
+            for (int i = 0; i < cframes * 2; i++) {
+                int n = m_anMix[i] < 0 ? -m_anMix[i] : m_anMix[i];
+                if (n > nPeak)
+                    nPeak = n;
+            }
+            const int knTarget = 20000;
+            int nGainWanted = 65536;
+            if (nPeak > knTarget)
+                nGainWanted = (int)(((long long)knTarget << 16) / nPeak);
+            if (nGainWanted < m_nLimiterGain) {
+                m_nLimiterGain = nGainWanted;
+            } else {
+                // Release: about a third of a second back to full
+                m_nLimiterGain += (nGainWanted - m_nLimiterGain) / 8 + 1;
+                if (m_nLimiterGain > nGainWanted)
+                    m_nLimiterGain = nGainWanted;
+            }
+            for (int i = 0; i < cframes * 2; i++) {
+                m_asBuffer[i] = SoftClip16((int)(((long long)m_anMix[i] *
+                        m_nLimiterGain) >> 16));
+            }
         } else {
             memset(m_asBuffer, 0, cframes * cbFrame);
         }

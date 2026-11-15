@@ -198,9 +198,9 @@ void TriggerMgr::Update()
 
 	int *pct = m_actCountdown;
 	int i;	// thank you WinCE compiler for this
-	for (i = 0; i < m_cTimers; i++)
+	for (i = 0; i < m_cTimers; i++, pct++)
 		if (*pct != kctTimerNotStarted)
-			*pct++ -= dt;
+			*pct -= dt;
 
 	// For each side...
 

@@ -1800,7 +1800,7 @@ bool Game::FilterEvent(Event *pevt)
 		gcPaint++;
 
 		// With smooth motion, the playfield is redrawn every display frame
-		// (paced by vsync) with gobs at interpolated positions.
+		// (as fast as the PC allows) with gobs at interpolated positions.
 
 		{
 			bool fSmooth = m_pfrmSimUI != NULL && gsim.IsSmoothMotionActive();
