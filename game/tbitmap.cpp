@@ -133,6 +133,7 @@ bool TBitmap::InitClass()
 			{ kiclrRedSideFirst, kiclrRedSideLast },
 			{ kiclrYellowSideFirst, kiclrYellowSideLast },
 			{ kiclrCyanSideFirst, kiclrCyanSideLast },
+			{ kiclrCrimsonSideFirst, kiclrCrimsonSideLast },
 			{ kiclrWhite, kiclrWhite }
 	};
 
@@ -441,7 +442,7 @@ void TBitmap::BltTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, Side 
 		byte *pbDst = pbBits + (long)yDstT * cbRowDst + xDstT;
 
 		if ((short)side < 0) {
-			DrawDispatchThunk(pbDraw, (byte *)s_ampscaiclrSide[5], pbDst, cbRowDst - cx, s_ampscaiclrSide[5], gmpiclriclrShadow);
+			DrawDispatchThunk(pbDraw, (byte *)s_ampscaiclrSide[kiSideCodeWhite], pbDst, cbRowDst - cx, s_ampscaiclrSide[kiSideCodeWhite], gmpiclriclrShadow);
 		} else {
 			DrawDispatchThunk(pbDraw, NULL, pbDst, cbRowDst - cx, s_ampscaiclrSide[side], gmpiclriclrShadow);
 		}
@@ -470,7 +471,7 @@ void TBitmap::BltTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, Side 
 			int cbDrawReturn = sizClip.cx - cx;
 
 			if ((short)side < 0) {
-				DrawDispatchThunk(pbDraw, (byte *)s_ampscaiclrSide[5], pbDrawAt, cbDrawReturn, s_ampscaiclrSide[5], gmpiclriclrShadow);
+				DrawDispatchThunk(pbDraw, (byte *)s_ampscaiclrSide[kiSideCodeWhite], pbDrawAt, cbDrawReturn, s_ampscaiclrSide[kiSideCodeWhite], gmpiclriclrShadow);
 			} else {
 				DrawDispatchThunk(pbDraw, NULL, pbDrawAt, cbDrawReturn, s_ampscaiclrSide[side], gmpiclriclrShadow);
 			}
@@ -505,7 +506,7 @@ void TBitmap::BltTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, Side 
 			int cbDrawReturn = cbRunCopy - cx;
 
 			if ((short)side < 0) {
-				DrawDispatchThunk(pbDraw, (byte *)s_ampscaiclrSide[5], pbDrawAt, cbDrawReturn, s_ampscaiclrSide[5], gmpiclriclrShadow);
+				DrawDispatchThunk(pbDraw, (byte *)s_ampscaiclrSide[kiSideCodeWhite], pbDrawAt, cbDrawReturn, s_ampscaiclrSide[kiSideCodeWhite], gmpiclriclrShadow);
 			} else {
 				DrawDispatchThunk(pbDraw, NULL, pbDrawAt, cbDrawReturn, s_ampscaiclrSide[side], gmpiclriclrShadow);
 			}

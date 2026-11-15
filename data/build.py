@@ -50,6 +50,13 @@ PAL_SIZE = 256
 FIXED_PAL_SIZE = 131
 BACKGROUND_PAL_SIZE = 32
 
+# Side 5 (Crimson, #DC143C) has no slots in the fixed palette, so the
+# terrain palettes are made with 5 fewer colors and its ramp goes in
+# entries 251-255 (see gaclr8bpp in game/misc.cpp). The ramp scales the
+# color the same way the original red side ramp is scaled.
+SIDE5_RAMP = [tuple(round(c * k) for c in (220, 20, 60))
+        for k in (1.0, 196 / 232, 120 / 232, 92 / 232, 64 / 232)]
+
 AMX_SCALEARG = ['-scale', '1.3333333333333', '-noscaleicon']
 MAPBMP_SCALEARG = ['-scale', '1.3333333333333']
 FORMBMP_SCALEARG = ['-scale', '1.0']
@@ -287,6 +294,17 @@ def crunch_ini(pp, inicrunch, src, dst, extra_macros=None):
     os.remove(tmp)
 
 
+def append_side5_ramp(pal):
+    with open(pal) as f:
+        lines = [l.strip() for l in f if l.strip()]
+    entries = lines[3:3 + int(lines[2])]
+    entries += ['%d %d %d' % rgb for rgb in SIDE5_RAMP]
+    assert len(entries) == PAL_SIZE
+    with open(pal, 'w', newline='\n') as f:
+        f.write('JASC-PAL\n0100\n%d\n' % PAL_SIZE)
+        f.write('\n'.join(entries) + '\n')
+
+
 def build(args):
     inicrunch = find_inicrunch(args.inicrunch)
     os.chdir(DATA_DIR)
@@ -316,8 +334,10 @@ def build(args):
             '0.6'])
 
     for terrain, pal in (('desert', DESERT_PAL), ('grassy', GRASSY_PAL)):
-        run(['mcl.exe', '-makepal', TILESIZE, terrain + '.tc', PAL_SIZE,
-                FIXED_PAL_SIZE, BACKGROUND_PAL_SIZE, FIXED_PAL, pal])
+        run(['mcl.exe', '-makepal', TILESIZE, terrain + '.tc',
+                PAL_SIZE - len(SIDE5_RAMP), FIXED_PAL_SIZE,
+                BACKGROUND_PAL_SIZE, FIXED_PAL, pal])
+        append_side5_ramp(pal)
         run(['palbin.exe', pal, '%s/%s.palbin' % (OUTDIR, terrain)])
         run(['shadowmap.exe', pal,
                 '%s/%s.palbin.shadowmap' % (OUTDIR, terrain), '0.6'])

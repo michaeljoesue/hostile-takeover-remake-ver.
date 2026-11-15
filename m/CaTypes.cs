@@ -140,7 +140,8 @@ namespace m {
 		[DisplayName("Side 4")] Side4,
 		Enemies, Allies,
 		[DisplayName("All Sides")] AllSides,
-		[DisplayName("Current Side")] CurrentSide
+		[DisplayName("Current Side")] CurrentSide,
+		[DisplayName("Side 5 (Crimson)")] Side5
 	};
 
 	[Serializable]
@@ -149,6 +150,20 @@ namespace m {
 
 		public CaTypeSide() {
 			m_af = new bool[Enum.GetNames(typeof(CaSide)).Length];
+		}
+
+		// Masks saved before side 5 existed have fewer flags
+
+		bool[] Af {
+			get {
+				int c = Enum.GetNames(typeof(CaSide)).Length;
+				if (m_af.Length < c) {
+					bool[] af = new bool[c];
+					m_af.CopyTo(af, 0);
+					m_af = af;
+				}
+				return m_af;
+			}
 		}
 
 		public override CaType Clone() {
@@ -162,8 +177,8 @@ namespace m {
 				return "side";
 			} else {
 				string str = "";
-				for (int i = 0; i < m_af.Length; i++) {
-					if (m_af[i]) {
+				for (int i = 0; i < Af.Length; i++) {
+					if (Af[i]) {
 						if (str.Length != 0)
 							str += ", ";
 						str += Helper.GetDisplayName(typeof(CaSide), ((CaSide)i).ToString());
@@ -177,8 +192,8 @@ namespace m {
 			Regex re = new Regex(@"^(?<mask>\d+)(?<end>.*)$");
 			Match m = re.Match(strArgs);
 			uint dwMask = uint.Parse(m.Groups["mask"].Value);
-			for (int i = 0; i < m_af.Length; i++) {
-				m_af[i] = ((dwMask & (1 << i)) != 0);
+			for (int i = 0; i < Af.Length; i++) {
+				Af[i] = ((dwMask & (1 << i)) != 0);
 			}
 			m_fInit = true;
 			return m.Groups["end"].Value;
@@ -186,8 +201,8 @@ namespace m {
 
 		public override string ToSaveString() {
 			uint dwMask = 0;
-			for (int i = 0; i < m_af.Length; i++) {
-				if (m_af[i])
+			for (int i = 0; i < Af.Length; i++) {
+				if (Af[i])
 					dwMask |= (uint)(1 << i);
 			}
 			return dwMask.ToString();
@@ -197,30 +212,30 @@ namespace m {
 
 		public bool CurrentSide {
 			get {
-				return m_af[(int)CaSide.CurrentSide];
+				return Af[(int)CaSide.CurrentSide];
 			}
 			set {
-				m_af[(int)CaSide.CurrentSide] = value;
+				Af[(int)CaSide.CurrentSide] = value;
 				m_fInit = true;
 			}
 		}
 
 		public bool Enemies {
 			get {
-				return m_af[(int)CaSide.Enemies];
+				return Af[(int)CaSide.Enemies];
 			}
 			set {
-				m_af[(int)CaSide.Enemies] = value;
+				Af[(int)CaSide.Enemies] = value;
 				m_fInit = true;
 			}
 		}
 
 		public bool Allies {
 			get {
-				return m_af[(int)CaSide.Allies];
+				return Af[(int)CaSide.Allies];
 			}
 			set {
-				m_af[(int)CaSide.Allies] = value;
+				Af[(int)CaSide.Allies] = value;
 				m_fInit = true;
 			}
 		}
@@ -228,10 +243,10 @@ namespace m {
 		[System.ComponentModel.DisplayName("Side 1 (ACME)")]
 		public bool Side1 {
 			get {
-				return m_af[(int)CaSide.Side1];
+				return Af[(int)CaSide.Side1];
 			}
 			set {
-				m_af[(int)CaSide.Side1] = value;
+				Af[(int)CaSide.Side1] = value;
 				m_fInit = true;
 			}
 		}
@@ -239,50 +254,61 @@ namespace m {
 		[System.ComponentModel.DisplayName("Side 2 (OMNI)")]
 		public bool Side2 {
 			get {
-				return m_af[(int)CaSide.Side2];
+				return Af[(int)CaSide.Side2];
 			}
 			set {
-				m_af[(int)CaSide.Side2] = value;
+				Af[(int)CaSide.Side2] = value;
 				m_fInit = true;
 			}
 		}
 
 		public bool Side3 {
 			get {
-				return m_af[(int)CaSide.Side3];
+				return Af[(int)CaSide.Side3];
 			}
 			set {
-				m_af[(int)CaSide.Side3] = value;
+				Af[(int)CaSide.Side3] = value;
 				m_fInit = true;
 			}
 		}
 
 		public bool Side4 {
 			get {
-				return m_af[(int)CaSide.Side4];
+				return Af[(int)CaSide.Side4];
 			}
 			set {
-				m_af[(int)CaSide.Side4] = value;
+				Af[(int)CaSide.Side4] = value;
+				m_fInit = true;
+			}
+		}
+
+		[System.ComponentModel.DisplayName("Side 5 (Crimson)")]
+		public bool Side5 {
+			get {
+				return Af[(int)CaSide.Side5];
+			}
+			set {
+				Af[(int)CaSide.Side5] = value;
 				m_fInit = true;
 			}
 		}
 
 		public bool AllSides {
 			get {
-				return m_af[(int)CaSide.AllSides];
+				return Af[(int)CaSide.AllSides];
 			}
 			set {
-				m_af[(int)CaSide.AllSides] = value;
+				Af[(int)CaSide.AllSides] = value;
 				m_fInit = true;
 			}
 		}
 
 		public bool SideNeutral {
 			get {
-				return m_af[(int)CaSide.SideNeutral];
+				return Af[(int)CaSide.SideNeutral];
 			}
 			set {
-				m_af[(int)CaSide.SideNeutral] = value;
+				Af[(int)CaSide.SideNeutral] = value;
 				m_fInit = true;
 			}
 		}

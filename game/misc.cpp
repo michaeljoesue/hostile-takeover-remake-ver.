@@ -1257,6 +1257,13 @@ Color gaclr4bpp[] = {
 	0x000f, // neutral side 2
 	0x000f, // neutral side 3
 	0x000f, // neutral side 4
+	0x0007, // Galaxite fullness indicator
+	0x0007, // side 5 color
+	0x0007, // crimson side 0
+	0x0008, // crimson side 1
+	0x0009, // crimson side 2
+	0x000a, // crimson side 3
+	0x000b, // crimson side 4
 };
 
 Color gaclr8bpp[] = {
@@ -1309,9 +1316,15 @@ Color gaclr8bpp[] = {
 	40,		// neutral side 3
 	45,		// neutral side 4
 	52,		// Galaxite fullness indicator/neon pink
+	251,	// side 5 color
+	251,	// crimson side 0 (terrain palettes reserve 251-255 for side 5)
+	252,	// crimson side 1
+	253,	// crimson side 2
+	254,	// crimson side 3
+	255,	// crimson side 4
 };
 
-int gaiclrSide[kcSides] = { kiclrSideNeutral, kiclrSide1, kiclrSide2, kiclrSide3, kiclrSide4 };
+int gaiclrSide[kcSides] = { kiclrSideNeutral, kiclrSide1, kiclrSide2, kiclrSide3, kiclrSide4, kiclrSide5 };
 
 void DrawBorder(DibBitmap *pbm, Rect *prc, int nThickness, Color clr, UpdateMap *pupd)
 {

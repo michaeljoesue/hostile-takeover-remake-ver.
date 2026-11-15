@@ -573,7 +573,12 @@ SideMask GetSideMaskFromCaSideMask(Side sideCur, word wfCaSideMask)
 
 	// TODO: this approach is expensive at run-time
 
-	SideMask sidm = wfCaSideMask & ksidmAll;
+	// Bits 0-4 are neutral and sides 1-4; side 5 was appended after the
+	// special values (bit 9) so masks saved by older levels stay valid
+
+	SideMask sidm = wfCaSideMask & (ksidmNeutral | ksidmSide1 | ksidmSide2 | ksidmSide3 | ksidmSide4);
+	if (wfCaSideMask & (1 << knCaSideSide5))
+		sidm |= ksidmSide5;
 	if (wfCaSideMask & (1 << knCaSideAllSides)) {
 		sidm |= ksidmAll;
 	} else {
