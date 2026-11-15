@@ -47,7 +47,12 @@ namespace m
 
 		static public void AppendText(string strFormat, params object[] aob) {
 			string str = String.Format(strFormat, aob);
-			s_frm.tbcOutput.AppendText(str);
+			s_frm.tbcOutput.AppendText(WindowsLines(str));
+		}
+
+		// The callers end lines with \n; a Windows text box needs \r\n
+		static string WindowsLines(string str) {
+			return str.Replace("\r\n", "\n").Replace("\n", "\r\n");
 		}
 
 		static public void Error(LevelDoc lvld, object ob, string strFormat, params object[] aob) {
@@ -57,7 +62,7 @@ namespace m
 
 		public void AddError(LevelDoc lvld, object ob, string str) {
 			int i = m_alLevelErrors.Add(new LevelError(lvld, ob));
-			tbcOutput.AppendText(i.ToString() + "> " + str);
+			tbcOutput.AppendText(WindowsLines(i.ToString() + "> " + str));
 		}
 
 		private System.Windows.Forms.TextBox tbcOutput;
@@ -137,7 +142,9 @@ namespace m
 			// scan backwards from the insertion point to the beginning of the line
 
 			string strT = tbcOutput.Text;
-			int i = tbcOutput.SelectionStart;
+			int i = Math.Min(tbcOutput.SelectionStart, strT.Length - 1);
+			if (i < 0)
+				return;
 			while (i > 0 && strT[i] != '\n')
 				i--;
 			if (i != 0)
