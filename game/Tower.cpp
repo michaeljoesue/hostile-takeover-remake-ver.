@@ -40,7 +40,7 @@ TowerGob::TowerGob(TowerConsts *ptwrc) : StructGob(ptwrc)
 	SetAnimationStrip(&m_aniTurret, m_ptwrc->anFiringStripIndices[m_dir16Turret]);
 }
 
-#define knVerTowerGobState 1
+#define knVerTowerGobState 2
 bool TowerGob::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
@@ -54,6 +54,7 @@ bool TowerGob::LoadState(Stream *pstm)
 	m_tLastFire = gsim.GetTickCount() - pstm->ReadDword();
 	m_wptTarget.wx = pstm->ReadCoord();
 	m_wptTarget.wy = pstm->ReadCoord();
+	m_gidForceTarget = pstm->ReadWord();
 	return StructGob::LoadState(pstm);
 }
 
@@ -66,6 +67,7 @@ bool TowerGob::SaveState(Stream *pstm)
 	pstm->WriteDword((dword)(gsim.GetTickCount() - m_tLastFire));
 	pstm->WriteCoord(m_wptTarget.wx);
 	pstm->WriteCoord(m_wptTarget.wy);
+	pstm->WriteWord(m_gidForceTarget);
 	return StructGob::SaveState(pstm);
 }
 
