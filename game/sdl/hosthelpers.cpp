@@ -17,6 +17,8 @@ static std::string gstrTempDir;
 static std::string gstrSaveGamesDir;
 static std::string gstrCompletesDir;    // "mission completed" tracking
 static std::string gstrPrefsFilename;
+static std::string gstrUserMissionsDir; // custom mission packs, per user
+static std::string gstrGameMissionsDir; // custom mission packs, next to the exe
 
 // Directories are returned with a trailing path separator removed, except
 // for the completes directory, whose users append file names directly.
@@ -59,10 +61,13 @@ bool HostHelpers::Init()
     gstrSaveGamesDir = gstrUserDir + "\\SaveGames";
     gstrCompletesDir = gstrUserDir + "\\Completes\\";
     gstrPrefsFilename = gstrUserDir + "\\prefs.bin";
+    gstrUserMissionsDir = gstrUserDir + "\\Missions";
+    gstrGameMissionsDir = gstrMainDataDir + "\\Missions";
 
     MakeDir(gstrTempDir);
     MakeDir(gstrSaveGamesDir);
     MakeDir(gstrCompletesDir);
+    MakeDir(gstrUserMissionsDir);
     return true;
 }
 
@@ -85,6 +90,16 @@ const char *HostHelpers::GetTempDir()
 const char *HostHelpers::GetSaveGamesDir()
 {
     return gstrSaveGamesDir.c_str();
+}
+
+const char *HostHelpers::GetUserMissionsDir()
+{
+    return gstrUserMissionsDir.c_str();
+}
+
+const char *HostHelpers::GetGameMissionsDir()
+{
+    return gstrGameMissionsDir.c_str();
 }
 
 const char *HostHelpers::GetCompletesDir()

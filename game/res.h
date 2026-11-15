@@ -199,6 +199,7 @@
 #define kidcCategories 1500
 #define kidcStoryList 1502
 #define kidcChallengeList 1503
+#define kidcCustomList 1504
 #define kidcMissionPackInfo 1002
 
 // UnitMenu constants

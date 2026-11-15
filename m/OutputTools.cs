@@ -213,6 +213,37 @@ namespace m
 			lvld.AddMapItems((IMapItem[])alsTiles.ToArray(typeof(IMapItem)));
 		}
 
+		// Base name of the files a level is saved as in a mission pack.
+		//
+		// This isn't unique which can cause problems due to how packfiles work.
+		// Note1: set next mission action requires predictable filename
+		// Note2: mission sorting is based on filename, not title
+		//
+		// Hack: filename length 29
+		// Maximum extension on filename: 7
+
+		public static string GetExpansionBaseName(LevelDoc lvld) {
+			string strBase = lvld.Title;
+			if (strBase.Length > 29 - 7)
+				strBase = strBase.Substring(0, 29 - 7);
+
+			// If multiplayer, add "m_" to the name by losing the last two characters
+			// so sort order is preserved
+
+			if (lvld.MaxPlayers > 1)
+				strBase = "m_" + strBase.Substring(0, strBase.Length - 2);
+			return strBase;
+		}
+
+		// The .lvl name of a level in a mission pack, which is what the game
+		// is told to load
+
+		public static string GetExpansionLevelName(LevelDoc lvld) {
+			if (lvld.OutputFilename != null)
+				return lvld.OutputFilename;
+			return GetExpansionBaseName(lvld) + ".lvl";
+		}
+
 		public static void SaveExpansionPdb(string strFile, Document[] adoc, string strVersion) {
             // First save all level docs
 
@@ -249,7 +280,6 @@ namespace m
 
             // Compile levels
 
-            Random rand = new Random();
             ArrayList alsTileSets = new ArrayList();
             foreach (LevelDoc lvld in adoc) {
                 // Need to do this unfortunately; some of the "saving" code relies on what the "active" document
@@ -277,45 +307,7 @@ namespace m
                     alsTileSets.Add(tset);
                 }
 
-#if false
-                // Generate base file name for this level (this is never user-visible, but it should be
-                // as unique as possible
-
-                char[] achBase = new char[16];
-                for (int n = 0; n < achBase.Length; n++) {
-                    int nT = rand.Next() % (26 + 10);
-                    if (nT < 26) {
-                        achBase[n] = (char)(nT + 97);
-                    } else {
-                        achBase[n] = (char)(nT + 48 - 26);
-                    }
-                }
-                if (lvld.MaxPlayers > 1) {
-                    achBase[0] = 'm';
-                    achBase[1] = '_';
-                }
-                string strBase = new String(achBase);
-#else
-                // This isn't unique which can cause problems due to how packfiles work.
-                // Could change packfile api to accept .pdb parameter.
-                // Note1: set next mission action requires predictable filename
-                // Note2: mission sorting is based on filename, not title
-                // Could put lots of "support" in to fix these problems, or just ship
-                // it like this.
-                //
-                // Hack: filename length 29
-                // Maximum extension on filename: 7
-
-                string strBase = lvld.Title;
-                if (strBase.Length > 29 - 7)
-                    strBase = strBase.Substring(0, 29 - 7);
-
-                // If multiplayer, add "m_" to the name by losing the last two characters
-                // so sort order is preserved
-
-                if (lvld.MaxPlayers > 1)
-                    strBase = "m_" + strBase.Substring(0, strBase.Length - 2);
-#endif
+                string strBase = GetExpansionBaseName(lvld);
 
                 // Get tile map file for this level
 
@@ -351,10 +343,7 @@ namespace m
                 iniPreProcessed.SaveBinary(stmLvldPreProcessedBinary);
                 stmLvldPreProcessedBinary.Close();
 
-				string strLvlName = lvld.OutputFilename;
-				if (strLvlName == null) {
-					strLvlName = strBase + ".lvl";
-				}
+				string strLvlName = GetExpansionLevelName(lvld);
                 pdbp.Add(new PdbPacker.File(strLvlName, stmLvldPreProcessedBinary.ToArray()));
                 stmLvldPreProcessedBinary.Close();
             }

@@ -154,5 +154,29 @@ the same name (C# projects for Visual Studio, plus `inicrunch`, which is
 built by CMake). `legacy\docs` has the original design documents and the
 mission authoring guide, `AuthorKit.chm`.
 
-To edit a mission, open its `.ld` file from the `data` folder in M, then
-rebuild the data file as above.
+### Making missions with M
+
+M needs the .NET Framework 4.8, which is part of Windows 11. Start
+`bin\m.exe`, and open a mission (`.ld`) from the `data` folder or make a new
+one with File > New.
+
+- **Misc > Run (F5)** test-plays the mission: M checks it, exports it to a
+  temporary mission pack and starts the game straight into it with
+  `HostileTakeover.exe -pdb <pack> -l <level>`. M looks for the game next to
+  itself and in `build\bin\<config>`, and asks where it is otherwise (the
+  answer is saved as `GamePath` in `bin\m.ini`).
+- **File > Export Mission Pack** saves one or more open missions as a mission
+  pack (`.pdb`). Copy it into a `Missions` folder next to
+  `HostileTakeover.exe`, or into `%APPDATA%\Spiffcode\HostileTakeover\Missions`,
+  and its missions appear in the game under **Play > Custom**. Packs can be
+  shared with other players this way.
+- From the command line, `bin\mcl.exe -pack out.pdb mission.ld [...]` makes a
+  mission pack too.
+
+To change the built-in missions instead, edit their `.ld` files and rebuild
+the data file as above. The editor's own help (Help in M, `m\m.chm`) and
+`legacy\docs\AuthorKit.chm` describe the old AuthorKit's `run.bat`; Run (F5)
+replaces it.
+
+M is built from `m\m.sln` (Visual Studio, .NET Framework 4.8); `m\deploy.bat`
+copies the Release build to `bin`.

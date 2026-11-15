@@ -54,6 +54,25 @@ namespace m
 			case "-testimport":
 				OutputTools.ImportExportPdbs(astr);
 				break;
+
+			case "-pack":
+				// -pack out.pdb level.ld [level.ld ...]
+				// Exports levels to a mission pack, like M's Export Mission Pack
+
+				{
+					ArrayList alsDocs = new ArrayList();
+					for (int i = 2; i < astr.Length; i++) {
+						Document doc = DocManager.OpenDocument(astr[i]);
+						if (doc == null) {
+							Console.WriteLine("Error: couldn't open " + astr[i]);
+							Environment.Exit(1);
+						}
+						alsDocs.Add(doc);
+					}
+					OutputTools.SaveExpansionPdb(astr[1], (Document[])alsDocs.ToArray(typeof(Document)), "1.1");
+					Console.WriteLine("Wrote " + astr[1]);
+				}
+				break;
 			}
 		}
 	}

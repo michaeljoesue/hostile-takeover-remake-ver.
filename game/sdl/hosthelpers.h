@@ -22,6 +22,8 @@ public:
     static const char *GetCompletesDir();
     static const char *GetSaveGamesDir();
     static const char *GetPrefsFilename();
+    static const char *GetUserMissionsDir();
+    static const char *GetGameMissionsDir();
 };
 
 } // namespace wi

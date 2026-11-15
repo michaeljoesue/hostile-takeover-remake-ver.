@@ -92,9 +92,12 @@ void Shell::Launch(bool fLoadReinitializeSave, MissionIdentifier *pmiid)
 	if (gevm.IsAppStopping())
 		return;
 
-	// Are we launching immediately into a saved game?
+	// Are we launching immediately into a saved game? A level that was asked
+	// for (e.g. from the map editor) comes first.
 
-	Stream *pstm = HostOpenSaveGameStream(knGameReinitializeSave, true);
+	Stream *pstm = NULL;
+	if (pmiid == NULL)
+		pstm = HostOpenSaveGameStream(knGameReinitializeSave, true);
 
 	if (pstm != NULL) {
 

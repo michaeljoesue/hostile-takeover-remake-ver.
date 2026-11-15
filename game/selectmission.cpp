@@ -26,7 +26,7 @@ bool SelectMissionForm::Init(FormMgr *pfrmm, IniReader *pini, word idf) {
 
     // Format the lists, one per mission type
 
-    int aidcList[] = { kidcStoryList, kidcChallengeList };
+    int aidcList[] = { kidcStoryList, kidcChallengeList, kidcCustomList };
     for (int i = 0; i < ARRAYSIZE(aidcList); i++) {
         ListControl *plstc = (ListControl *)GetControlPtr(aidcList[i]);
         m_aplstc[i] = plstc;
@@ -72,6 +72,8 @@ int SelectMissionForm::IndexFromMissionType(MissionType mt) {
         return 0;
     case kmtChallenge:
         return 1;
+    case kmtCustom:
+        return 2;
     default:
         return -1;
     }
@@ -83,6 +85,8 @@ MissionType SelectMissionForm::MissionTypeFromIndex(int i) {
         return kmtStory;
     case 1:
         return kmtChallenge;
+    case 2:
+        return kmtCustom;
     default:
         return kmtUnknown;
     }
@@ -119,7 +123,7 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
         if (!m_pml->GetMissionDescription(i, &md)) {
             continue;
         }
-        if (md.mt != kmtStory && md.mt != kmtChallenge) {
+        if (IndexFromMissionType(md.mt) < 0) {
             continue;
         }
 
@@ -265,7 +269,8 @@ void SelectMissionForm::OnControlNotify(word idc, int nNotify) {
         SwitchToMissionType(mtNew);
     }
 
-    if (idc == kidcStoryList || idc == kidcChallengeList) {
+    if (idc == kidcStoryList || idc == kidcChallengeList ||
+            idc == kidcCustomList) {
         // Update the mission description
         UpdateDescription();
     }
@@ -302,7 +307,11 @@ void SelectMissionForm::UpdateDescription() {
     LabelControl *plbl = (LabelControl *)GetControlPtr(kidcMissionPackInfo);
     ListControl *plstc = m_aplstc[IndexFromMissionType(m_mt)];
     if (plstc->GetSelectedItemIndex() == -1) {
-        plbl->SetText("");
+        if (m_mt == kmtCustom) {
+            plbl->SetText("No custom missions. Put mission packs in the Missions folder.");
+        } else {
+            plbl->SetText("");
+        }
         return;
     }
     int i = GetSelectedMissionIndex(plstc);
@@ -311,8 +320,12 @@ void SelectMissionForm::UpdateDescription() {
         plbl->SetText("");
         return;
     }
-    plbl->SetText(base::Format::ToString("%s by Spiffcode, Inc.",
-            md.mt == kmtStory ? "Story Missions" : "Challenge Missions"));
+    if (md.mt == kmtCustom) {
+        plbl->SetText("Custom Mission");
+    } else {
+        plbl->SetText(base::Format::ToString("%s by Spiffcode, Inc.",
+                md.mt == kmtStory ? "Story Missions" : "Challenge Missions"));
+    }
 }
 
 bool SelectMissionForm::GetSelectedMission(MissionIdentifier *pmiid) {

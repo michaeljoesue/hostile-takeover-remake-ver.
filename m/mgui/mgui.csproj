@@ -9,7 +9,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>mgui</RootNamespace>
     <AssemblyName>mgui</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

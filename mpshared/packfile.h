@@ -112,6 +112,7 @@ struct FileMap // fmap
 
 #define PACKENUM_FIRST 0
 #define PACKENUM_LAST 1
+#define PACKENUM_ALL 2		// every pushed pdb, oldest first
 
 class PackFileReader // pakr
 {
@@ -130,6 +131,9 @@ public:
 
 	bool Push(const char *pszDir, const char *pszFn);
 	bool Pop();
+	int GetCount() {
+		return m_crnfo;
+	}
 
 private:
     virtual PdbReader *OpenPdb(const char *pszDir, const char *pszFn) = 0;

@@ -120,9 +120,13 @@ namespace m
 			LoadSettings();
 
 			if (Globals.IsKit()) {
-				// Remove stuff we don't want in the kit.
+				// Remove stuff we don't want in the kit. Validate and Run
+				// (test play in the game) stay.
 
-				mainMenu1.MenuItems.Remove(menuItemMisc);
+				menuItemMisc.MenuItems.Remove(menuItem8);
+				menuItemMisc.MenuItems.Remove(menuItemSaveTileMapBitmap);
+				menuItemMisc.MenuItems.Remove(menuItemSaveLevelBitmap);
+				menuItemMisc.MenuItems.Remove(menuItemRenameTemplates);
 			}
 
 			// After the main form and its menus are initialized we give plugins an opportunity
@@ -887,7 +891,8 @@ namespace m
 			secGeneral.Add(new Ini.Property("Y", Bounds.Y.ToString()));
 			secGeneral.Add(new Ini.Property("Width", Bounds.Width.ToString()));
 			secGeneral.Add(new Ini.Property("Height", Bounds.Height.ToString()));
-			secGeneral.Add(new Ini.Property("AuthorKitPath", AuthorKitPath));
+			if (GamePath != null)
+				secGeneral.Add(new Ini.Property("GamePath", GamePath));
 			secGeneral.Add(new Ini.Property("Kit", Globals.IsKit().ToString()));
 			secGeneral.Add(new Ini.Property("Eula", "1"));
 
@@ -946,20 +951,53 @@ namespace m
 				}
 			}
 
-			prop = sec["AuthorKitPath"];
-			if (prop != null)
-				AuthorKitPath = prop.Value;
+			prop = sec["GamePath"];
+			if (prop != null && prop.Value.Length != 0)
+				GamePath = prop.Value;
 		}
 
-		private string m_strAuthorKitPath;
+		// Path of HostileTakeover.exe, used by Run (F5). Saved in m.ini.
 
-		public string AuthorKitPath {
+		private string m_strGamePath;
+
+		public string GamePath {
 			get {
-				return m_strAuthorKitPath;
+				return m_strGamePath;
 			}
 			set {
-				m_strAuthorKitPath = value;
+				m_strGamePath = value;
 			}
+		}
+
+		const string kstrGameExe = "HostileTakeover.exe";
+
+		// Finds the game: the GamePath setting, next to M, or the CMake build
+		// folders of this source tree. Asks if it can't be found.
+
+		string FindGame() {
+			if (GamePath != null && File.Exists(GamePath))
+				return GamePath;
+
+			string strDir = Path.GetDirectoryName(Application.ExecutablePath);
+			string[] astrCandidates = {
+				Path.Combine(strDir, kstrGameExe),
+				Path.Combine(strDir, Path.Combine("..", kstrGameExe)),
+				Path.Combine(strDir, Path.Combine("..", Path.Combine("build", Path.Combine("bin", Path.Combine("Release", kstrGameExe))))),
+				Path.Combine(strDir, Path.Combine("..", Path.Combine("build", Path.Combine("bin", Path.Combine("RelWithDebInfo", kstrGameExe))))),
+				Path.Combine(strDir, Path.Combine("..", Path.Combine("build", Path.Combine("bin", Path.Combine("Debug", kstrGameExe))))),
+			};
+			foreach (string strPath in astrCandidates) {
+				if (File.Exists(strPath))
+					return Path.GetFullPath(strPath);
+			}
+
+			OpenFileDialog frmOpen = new OpenFileDialog();
+			frmOpen.Title = "Where is Hostile Takeover?";
+			frmOpen.Filter = "Hostile Takeover (" + kstrGameExe + ")|" + kstrGameExe;
+			if (frmOpen.ShowDialog() == DialogResult.Cancel)
+				return null;
+			GamePath = frmOpen.FileName;
+			return GamePath;
 		}
 
 		private void menuItemCascade_Click(object sender, System.EventArgs e) {
@@ -1064,34 +1102,56 @@ namespace m
 				CountersForm.DoModal("Counter", "", CaTypeCounter.GetCounterNames());
 		}
 
+		// Run (F5): plays the active level in the game. The level is exported
+		// to a temporary mission pack and the game is started with
+		// -pdb <pack> -l <level>, which goes straight into the level.
+
 		private void menuItemRun_Click(object sender, System.EventArgs e) {
 			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
-			if (lvld != null) {
-				lvld.Save();
+			if (lvld == null)
+				return;
+			lvld.Save();
 
-				while (true) {
-					Process[] apr = Process.GetProcessesByName("Warfare Incorporated");
-					if (apr.Length != 0)
-						MessageBox.Show("Please close Warfare Incorporated now.", "Warfare Incorporated already running");
-					else
-						break;
-				}
+			// Check it first; the game may not cope with an invalid level
 
-				ProcessStartInfo psi = new ProcessStartInfo("run.bat");
-//				psi.WindowStyle = ProcessWindowStyle.Hidden;
-				psi.Arguments = lvld.GetPath() + " " + Path.GetFileNameWithoutExtension(lvld.GetPath()) + ".lvl";
-				string strAuthorKitPath = AuthorKitPath;
-				if (strAuthorKitPath == null)
-					strAuthorKitPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-				psi.WorkingDirectory = strAuthorKitPath;
-				try {
-					Process ps = Process.Start(psi);
-				} catch (Win32Exception ex) {
-					if (ex.NativeErrorCode == 2)
-						MessageBox.Show("Can't find key AuthorKit files. Launch M.exe from inside the AuthorKit directory or specify the AuthorKitPath in m.ini.", "Error Launching Preview");
-					else
-						throw ex;
-				}
+			OutputForm.HideIt();
+			OutputForm.Clear();
+			int cErrors = lvld.Validate(new LevelDoc.ValidateErrorDelegate(ValidateCallback));
+			if (cErrors != 0) {
+				if (MessageBox.Show(DocManager.GetFrameParent(), lvld.GetName() + " has " + cErrors +
+						" error(s), listed in the Output window. Run it anyway?", "Run",
+						MessageBoxButtons.YesNo) != DialogResult.Yes)
+					return;
+			}
+
+			string strGame = FindGame();
+			if (strGame == null)
+				return;
+
+			// Only one copy of the game can run at a time
+
+			while (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(strGame)).Length != 0) {
+				if (MessageBox.Show(DocManager.GetFrameParent(), "Please close Hostile Takeover, then click Retry.", "Hostile Takeover is running", MessageBoxButtons.RetryCancel) == DialogResult.Cancel)
+					return;
+			}
+
+			string strPack = Path.Combine(Path.GetTempPath(), "HostileTakeoverRun.pdb");
+			try {
+				OutputTools.SaveExpansionPdb(strPack, new Document[] { lvld }, "1.1");
+			} catch (Exception ex) {
+				MessageBox.Show(DocManager.GetFrameParent(), "Couldn't export the level: " + ex.Message, "Run");
+				return;
+			}
+
+			ProcessStartInfo psi = new ProcessStartInfo(strGame);
+			psi.Arguments = "-pdb \"" + strPack + "\" -l \"" + OutputTools.GetExpansionLevelName(lvld) + "\"";
+			psi.WorkingDirectory = Path.GetDirectoryName(strGame);
+			psi.UseShellExecute = false;
+			try {
+				Process.Start(psi);
+			} catch (Win32Exception ex) {
+				MessageBox.Show(DocManager.GetFrameParent(), "Couldn't start " + strGame + ": " + ex.Message, "Run");
+				GamePath = null;
 			}
 		}
 
@@ -1203,6 +1263,10 @@ namespace m
 			// Export expansion .pdb
 
 			OutputTools.SaveExpansionPdb(frmSave.FileName, adoc, "1.1");
+			MessageBox.Show(DocManager.GetFrameParent(), "Saved " + Path.GetFileName(frmSave.FileName) +
+					".\n\nTo play it, copy it into the Missions folder next to HostileTakeover.exe, " +
+					"or into %APPDATA%\\Spiffcode\\HostileTakeover\\Missions. " +
+					"Its missions appear under Play > Custom.", "Export Mission Pack");
 		}
 
 		private void menuItemAbout_Click(object sender, System.EventArgs e) {

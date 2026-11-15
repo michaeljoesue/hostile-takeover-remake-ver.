@@ -14,6 +14,9 @@ int main(int argc, char *argv[])
     // Let the host have a pointer to the thread
     wi::HostSetGameThread(main_thread);
 
+    // -pdb <mission pack> and -l <level>, e.g. from the map editor's Run
+    wi::HostSetCommandLine(argc, argv);
+
     wi::GameMain((char *)"");
     return 0;
 }

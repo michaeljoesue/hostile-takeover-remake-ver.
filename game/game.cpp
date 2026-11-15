@@ -130,6 +130,13 @@ void GameMain(char *pszCmds)
         return;
     }
 
+    // A level given on the host's command line (e.g. by the map editor)
+
+    if (pszLevel == NULL && HostGetStartupLevel() != NULL) {
+        strncpyz(szLevel, HostGetStartupLevel(), sizeof(szLevel));
+        pszLevel = szLevel;
+    }
+
   	while (true) {
 		if (!ggame.Init(imm)) {
 			ggame.Exit();
@@ -139,6 +146,12 @@ void GameMain(char *pszCmds)
 		if (gfLoadReinitializeSave) {
 			gfLoadReinitializeSave = false;
 			gshl.Launch(true);
+		} else if (pszLevel != NULL) {
+			// Start straight into the level, once
+			MissionIdentifier miid;
+			strncpyz(miid.szLvlFilename, pszLevel, sizeof(miid.szLvlFilename));
+			pszLevel = NULL;
+			gshl.Launch(false, &miid);
 		} else {
 			gshl.Launch(false);
 		}
@@ -469,6 +482,11 @@ bool Game::LoadGameData()
 		HostMessageBox(TEXT("Required sound effects file missing"));
 		return false;
 	}
+
+	// Custom mission packs go on top, so their levels can be found (and so
+	// they can replace game files, for mods)
+
+	HostMountMissionPacks();
 
 
 	// Set global tile dimensions

@@ -3324,7 +3324,7 @@ private:
     MissionList *m_pml;
     const MissionIdentifier *m_pmiidFind;
     MissionType m_mt;
-    ListControl *m_aplstc[2];
+    ListControl *m_aplstc[3];
 };
 
 // LoadGameForm
@@ -7559,6 +7559,14 @@ SoundDevice *HostOpenSoundDevice();
 void HostSleep(dword ct);
 void HostSetGameThread(base::Thread *thread);
 base::Thread& HostGetGameThread();
+
+// Mission packs (custom missions). HostMountMissionPacks pushes the packs
+// in the Missions folders, and any given with -pdb on the command line, onto
+// gpakr. HostGetStartupLevel returns the level given with -l, or NULL.
+
+void HostSetCommandLine(int argc, char *argv[]);
+void HostMountMissionPacks();
+const char *HostGetStartupLevel();
 
 // Date
 

@@ -5,6 +5,10 @@
 #include "base/thread.h"
 #include "game/completemanager.h"
 #include <errno.h>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <filesystem>
 #include <time.h>
 #include <SDL3/SDL.h>
 
@@ -436,6 +440,71 @@ void HostSetGameThread(base::Thread *thread) {
 
 base::Thread& HostGetGameThread() {
     return *gpgt;
+}
+
+// Command line:
+//   -pdb <mission pack .pdb>   mount a mission pack (may be repeated)
+//   -l <level.lvl>             start this level instead of the main menu
+
+static std::vector<std::string> s_vecCmdLinePacks;
+static std::string s_strStartupLevel;
+
+void HostSetCommandLine(int argc, char *argv[])
+{
+    for (int i = 1; i < argc; i++) {
+        std::string strArg = argv[i];
+        if ((strArg == "-pdb" || strArg == "/pdb") && i + 1 < argc) {
+            s_vecCmdLinePacks.push_back(argv[++i]);
+        } else if ((strArg == "-l" || strArg == "/l") && i + 1 < argc) {
+            s_strStartupLevel = argv[++i];
+        }
+    }
+}
+
+const char *HostGetStartupLevel()
+{
+    return s_strStartupLevel.empty() ? NULL : s_strStartupLevel.c_str();
+}
+
+static void MountPack(const std::filesystem::path& path)
+{
+    std::string strDir = path.parent_path().u8string();
+    std::string strFn = path.filename().u8string();
+    if (gpakr.Push(strDir.c_str(), strFn.c_str())) {
+        LOG() << "Mounted mission pack " << path.u8string().c_str();
+    } else {
+        LOG() << "Couldn't open mission pack " << path.u8string().c_str();
+    }
+}
+
+static void MountPacksInDir(const char *pszDir)
+{
+    // Sorted so the mount order (which decides which pack wins when two
+    // contain the same file) is predictable
+
+    std::vector<std::filesystem::path> vecPaths;
+    std::error_code ec;
+    for (const auto& entry : std::filesystem::directory_iterator(
+            std::filesystem::u8path(pszDir), ec)) {
+        if (!entry.is_regular_file(ec))
+            continue;
+        std::string strExt = entry.path().extension().u8string();
+        std::transform(strExt.begin(), strExt.end(), strExt.begin(),
+                [](unsigned char ch) { return (char)tolower(ch); });
+        if (strExt == ".pdb")
+            vecPaths.push_back(entry.path());
+    }
+    std::sort(vecPaths.begin(), vecPaths.end());
+    for (const auto& path : vecPaths)
+        MountPack(path);
+}
+
+void HostMountMissionPacks()
+{
+    MountPacksInDir(HostHelpers::GetGameMissionsDir());
+    MountPacksInDir(HostHelpers::GetUserMissionsDir());
+    for (const auto& str : s_vecCmdLinePacks)
+        MountPack(std::filesystem::absolute(std::filesystem::u8path(str)));
 }
 
 } // namespace wi

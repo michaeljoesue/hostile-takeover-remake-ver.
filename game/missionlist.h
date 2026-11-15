@@ -7,10 +7,11 @@
 
 namespace wi {
 
-// Built-in single player missions. Story missions are s_*.lvl, challenge
-// missions are c_*.lvl.
+// Single player missions. Story missions are s_*.lvl, challenge missions are
+// c_*.lvl. Any other level, except multiplayer maps (m_*.lvl), comes from a
+// custom mission pack.
 
-enum MissionType { kmtStory, kmtChallenge, kmtUnknown };
+enum MissionType { kmtStory, kmtChallenge, kmtCustom, kmtUnknown };
 
 struct MissionDescription { // md
     char szLvlTitle[kcbLevelTitle];

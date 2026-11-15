@@ -1,5 +1,6 @@
 #include "game/ht.h"
 #include <algorithm>
+#include <set>
 
 namespace wi {
 
@@ -15,9 +16,13 @@ MissionList *CreateMissionList() {
 bool MissionList::Init() {
     m_vecLvl.clear();
 
+    // Levels from the game data and every mounted mission pack. A pack can
+    // replace a level with the same name; list it once.
+
+    std::set<std::string> setSeen;
     char szFn[kcbFilename];
     Enum enm;
-    while (gpakr.EnumFiles(&enm, PACKENUM_FIRST, szFn, sizeof(szFn))) {
+    while (gpakr.EnumFiles(&enm, PACKENUM_ALL, szFn, sizeof(szFn))) {
         int cch = (int)strlen(szFn);
         if (cch < 4 || strcmp(&szFn[cch - 4], ".lvl") != 0) {
             continue;
@@ -25,10 +30,16 @@ bool MissionList::Init() {
         if (GetMissionType(szFn) == kmtUnknown) {
             continue;
         }
+        std::string strLower = szFn;
+        std::transform(strLower.begin(), strLower.end(), strLower.begin(),
+                [](unsigned char ch) { return (char)tolower(ch); });
+        if (!setSeen.insert(strLower).second) {
+            continue;
+        }
         m_vecLvl.push_back(szFn);
     }
 
-    // Story missions first, then challenge missions, each sorted by filename
+    // Story, then challenge, then custom missions, each sorted by filename
 
     std::sort(m_vecLvl.begin(), m_vecLvl.end(),
             [](const std::string& a, const std::string& b) {
@@ -83,9 +94,15 @@ MissionType MissionList::GetMissionType(const char *pszLvl) {
         case 'c':
         case 'C':
             return kmtChallenge;
+
+        case 'm':   // multiplayer maps
+        case 'M':
+        case 'd':   // demo
+        case 'D':
+            return kmtUnknown;
         }
     }
-    return kmtUnknown;
+    return kmtCustom;
 }
 
 } // namespace wi

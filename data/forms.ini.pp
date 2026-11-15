@@ -120,9 +120,10 @@
 	FORM=(0 0 240 160) kidcCancel center
 	FORMBACKCOLOR=kiclrFormBackground
 	LABEL=0 (0 6 240 0) "PLAY SINGLE PLAYER MISSION" kifntTitle center
-	RADIOBUTTONBAR=kidcCategories (0 19 0 0) "Story|Challenge" kifntShadow
+	RADIOBUTTONBAR=kidcCategories (0 19 0 0) "Story|Challenge|Custom" kifntShadow
 	LIST=kidcStoryList (2 33 236 93) kifntShadow
 	LIST=kidcChallengeList (2 33 236 93) kifntShadow
+	LIST=kidcCustomList (2 33 236 93) kifntShadow
 	LABEL=kidcMissionPackInfo (2 127 236 12) "" kifntShadow
 	BUTTON=kidcOk (71 141 40 12) "PLAY" kifntButton
 	BUTTON=kidcCancel (126 141 40 12) "BACK" kifntButton

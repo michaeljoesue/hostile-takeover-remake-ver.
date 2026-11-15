@@ -255,6 +255,26 @@ dword PackFileReader::ftell(File *pfil)
 
 bool PackFileReader::EnumFiles(Enum *penm, int key, char *pszFn, int cb)
 {
+    if (key == PACKENUM_ALL) {
+        // m_wUser is the index of the pdb being enumerated
+        if (penm->m_pvNext == (void *)kEnmFirst) {
+            penm->m_pvNext = NULL;
+            penm->m_wUser = 0;
+            penm->m_dwUser = 0;
+        }
+        while ((int)penm->m_wUser < m_crnfo) {
+            ReaderInfo *prnfo = &m_arnfo[penm->m_wUser];
+            if ((int)penm->m_dwUser < prnfo->cEntries) {
+                strncpyz(pszFn, prnfo->pdir[penm->m_dwUser].szFn, cb);
+                penm->m_dwUser++;
+                return true;
+            }
+            penm->m_wUser++;
+            penm->m_dwUser = 0;
+        }
+        return false;
+    }
+
 	if (penm->m_pvNext == (void *)kEnmFirst) {
         if (m_crnfo == 0) {
             return false;
