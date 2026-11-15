@@ -136,6 +136,21 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 		break;
 
 	case SDL_EVENT_MOUSE_MOTION:
+        // Only the latest of a run of queued motion events matters. Gaming
+        // mice report up to 1000 times a second; handling every report one
+        // by one made the cursor, drag boxes and clicks lag behind.
+
+        while (true) {
+            SDL_Event eventNext;
+            if (SDL_PeepEvents(&eventNext, 1, SDL_PEEKEVENT, SDL_EVENT_FIRST,
+                    SDL_EVENT_LAST) != 1)
+                break;
+            if (eventNext.type != SDL_EVENT_MOUSE_MOTION)
+                break;
+            SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_MOUSE_MOTION,
+                    SDL_EVENT_MOUSE_MOTION);
+        }
+
         // Middle-button drags pan the battlefield; they're sent separately
         // so they don't select or press anything
 

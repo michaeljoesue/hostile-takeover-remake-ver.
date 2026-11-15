@@ -1348,8 +1348,7 @@ lbHitNoDamage:
 			Gob *pgobTarget = ggobm.GetGob(m_gidTarget);
 			if (pgobTarget == NULL || !IsValidTarget(pgobTarget)) {
 				int cpuntFound = 0;
-				Assert(gcbScratch >= kcpgobMax * sizeof(UnitGob *));
-				UnitGob **apuntFound = (UnitGob **)gpbScratch;
+				static UnitGob *apuntFound[kcpgobMax];
 
 				// UNDONE: only do this every few updates
 				// Find an enemy to attack

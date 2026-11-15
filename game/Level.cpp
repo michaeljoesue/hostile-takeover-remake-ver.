@@ -224,7 +224,10 @@ bool Level::LoadLevelConstants(const char *pszLevelName, IniReader *pini)
 	m_ptmap->GetMapSize(&sizMap);
 	Size sizTile;
 	m_ptmap->GetTileSize(&sizTile);
-	if (!ggobm.Init(sizMap.cx / sizTile.cx, sizMap.cy / sizTile.cy, kcpgobMax)) {
+	int ctxMap = sizMap.cx / sizTile.cx;
+	int ctyMap = sizMap.cy / sizTile.cy;
+	int cpgob = SetGobLimitsForMap(ctxMap, ctyMap);
+	if (!ggobm.Init(ctxMap, ctyMap, cpgob)) {
 		Assert(false);
 		return false;
 	}

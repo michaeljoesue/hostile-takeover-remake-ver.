@@ -656,7 +656,14 @@ PathHead *TerrainMap::AddPathHead(int wScoreKnown, int wScore, int cSteps, int o
 		ppathh = m_ppathhFreeList;
 		m_ppathhFreeList = ppathh->ppathhNext;
 	} else {
-		if (m_cNodes >= kcNodesMax)
+		// Futility cutoff scales with the map so the original 64x64 maps
+		// keep their original search effort (a bigger cutoff made units
+		// with unreachable targets search for much longer)
+
+		int ctMax = m_ctx > m_cty ? m_ctx : m_cty;
+		if (ctMax < 64)
+			ctMax = 64;
+		if (m_cNodes >= ctMax * 3 * 3)
 			return NULL;
 		ppathh = new PathHead;
 		if (ppathh == NULL)

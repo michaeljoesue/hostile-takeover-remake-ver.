@@ -419,13 +419,14 @@ bool Game::CheckMemoryAvailable()
 
 // max limits
 #define kcbDynMemMax 150000
-// The player's limits are raised for modern PCs (originally 55 structures and
-// 88 units). The computer's limits stay as they were so the missions keep
-// their original difficulty.
+// Limits for a 64x64 map. Raised for modern PCs (originally 55 structures and
+// 88 units for the player, 72 and 117 for the computer players). The
+// computer players together get as many as the player. Bigger maps scale
+// them all (see SetGobLimitsForMap).
 #define kcStructGobsHumanMaxSP 300
 #define kcMuntGobsHumanMaxSP 500
-#define kcStructGobsComputerMaxSP 72
-#define kcMuntGobsComputerMaxSP 117
+#define kcStructGobsComputerMaxSP 300
+#define kcMuntGobsComputerMaxSP 500
 
 #if (kcSceneryGobsLimit+kcScorchGobsLimit+kcSupportGobsLimit+kcStructGobsHumanMaxSP+kcStructGobsComputerMaxSP+kcMuntGobsHumanMaxSP+kcMuntGobsComputerMaxSP > kcpgobMax)
 #error Gob count limit error!
@@ -445,34 +446,51 @@ bool Game::CheckMemoryAvailable()
 	return true;
 }
 
+// Scales the unit, building, scenery, scorch mark and shot/explosion limits
+// with the map's area: a 64x64 map gets the limits above, a bigger one
+// proportionally more, until the game object pool (kcpgobMax) is full.
+// Returns the size of the pool to allocate for the map.
+
+int SetGobLimitsForMap(int ctx, int cty)
+{
+	const int cBase = kcSceneryGobsLimit + kcScorchGobsLimit + kcSupportGobsLimit +
+			kcStructGobsHumanMaxSP + kcStructGobsComputerMaxSP +
+			kcMuntGobsHumanMaxSP + kcMuntGobsComputerMaxSP;
+
+	// Scale in 1/256ths: area / (64 * 64), at least 1, capped by the pool
+	// (leaving room for gobs that aren't limited, e.g. walls and markers)
+
+	long nScale = ((long)ctx * cty * 256) / (64 * 64);
+	if (nScale < 256)
+		nScale = 256;
+	long nScaleMax = ((long)(kcpgobMax - 1) * 256) / (cBase + cBase / 4);
+	if (nScale > nScaleMax)
+		nScale = nScaleMax;
+
+	gcStructGobsHumanLimitSP = (int)(kcStructGobsHumanMaxSP * nScale / 256);
+	gcStructGobsComputerLimitSP = (int)(kcStructGobsComputerMaxSP * nScale / 256);
+	gcMuntGobsHumanLimitSP = (int)(kcMuntGobsHumanMaxSP * nScale / 256);
+	gcMuntGobsComputerLimitSP = (int)(kcMuntGobsComputerMaxSP * nScale / 256);
+	gcSceneryGobsLimit = (int)(kcSceneryGobsLimit * nScale / 256);
+	gcScorchGobsLimit = (int)(kcScorchGobsLimit * nScale / 256);
+	gcSupportGobsLimit = (int)(kcSupportGobsLimit * nScale / 256);
+
+	int cpgob = (int)((cBase + cBase / 4) * nScale / 256);
+	if (cpgob < 4096)
+		cpgob = 4096;
+	if (cpgob > kcpgobMax - 1)
+		cpgob = kcpgobMax - 1;
+	return cpgob;
+}
+
 void Game::CalcUnitCountDeltas(Level *plvl)
 {
-    // After the level is loaded this gets called. It calcs how many initial
-    // units there are and recalcs unit deltas.
-	//
-    // NOTE: For now all this does is take the computer's extra structure count
-    // and gives it to the human player.
+    // The original game took the structures the computer players weren't
+    // using and gave them to the player. The computer players now have
+    // their own limits, as large as the player's, so nothing is moved.
 
-	int cComputerStructuresInitial = 0;
-	for (int side = ksideNeutral; side < kcSides; side++) {
-		Player *pplr = gplrm.GetPlayer(side);
-		if (pplr->GetFlags() & kfPlrComputer)
-			cComputerStructuresInitial += plvl->GetSideInfo(side)->cStructuresInitial;
-	}
-
-	// HACK ALERT: Give the computer room to build 5 structures
-
-	int cStructuresAvailable = gcStructGobsComputerLimitSP - cComputerStructuresInitial - 5;
-
-	// Give the rest to the human player
-
-	if (cStructuresAvailable > 0) {
-		gcStructGobsComputerDeltaSP = -cStructuresAvailable;
-		gcStructGobsHumanDeltaSP = cStructuresAvailable;
-	} else {
-		gcStructGobsComputerDeltaSP = 0;
-		gcStructGobsHumanDeltaSP = 0;
-	}
+	gcStructGobsComputerDeltaSP = 0;
+	gcStructGobsHumanDeltaSP = 0;
 }
 
 bool Game::LoadGameData()

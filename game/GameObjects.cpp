@@ -1179,38 +1179,24 @@ bool GobMgr::Init(TCoord ctx, TCoord cty, int cpgobMax)
 	m_cty = cty;
 	m_cpgobMax = cpgobMax;
 
-	// Allocate master Gob list (+ 1 entry for free list terminator)
+	// Allocate master Gob list (+ 1 entry for free list terminator). On the
+	// heap: with limits scaled to the map it's larger than a storage memory
+	// chunk (64K).
 
-	Gob **apgobMaster = new Gob *[m_cpgobMax + 1];
-	Assert(apgobMaster != NULL, "out of memory!");
-	if (apgobMaster == NULL)
+	m_apgobMaster = new Gob *[m_cpgobMax + 1];
+	Assert(m_apgobMaster != NULL, "out of memory!");
+	if (m_apgobMaster == NULL)
 		return false;
-
-	// Alloc from storage ram
-
-	int cbT = sizeof(Gob **) * (m_cpgobMax + 1);
-	m_apgobMaster = (Gob **)gmmgr.AllocPtr(cbT);
-	if (m_apgobMaster == NULL) {
-		delete[] apgobMaster;
-		return false;
-	}
 
 	// Initialize free list. Notice that the Gob* in the array are holding Gob** when in the free list.
 
-	Gob **ppgobDstT = apgobMaster;
-	Gob **ppgobSrcT = m_apgobMaster;
-	Gob **ppgobFreeTail = apgobMaster + m_cpgobMax;
-	for (; ppgobDstT < ppgobFreeTail; ppgobDstT++, ppgobSrcT++)
-		*ppgobDstT = MakeFreeEntry((Gob *)(ppgobSrcT + 1));
+	Gob **ppgobDstT = m_apgobMaster;
+	Gob **ppgobFreeTail = m_apgobMaster + m_cpgobMax;
+	for (; ppgobDstT < ppgobFreeTail; ppgobDstT++)
+		*ppgobDstT = MakeFreeEntry((Gob *)(ppgobDstT + 1));
 	*ppgobFreeTail = NULL;
-
-	// Move to storage ram
-	// Free dyn ram version
-
-	gmmgr.WritePtr(m_apgobMaster, 0, apgobMaster, cbT);
 	m_ppgobFreeTail = m_apgobMaster + m_cpgobMax;
 	m_ppgobFreeHead = m_apgobMaster;
-	delete[] apgobMaster;
 
 	// Allocate gidMap
 
@@ -1292,7 +1278,7 @@ void GobMgr::Reset()
 	// Free master Gob list
 
 	if (m_apgobMaster != NULL) {
-		gmmgr.FreePtr(m_apgobMaster);
+		delete[] m_apgobMaster;
 		m_apgobMaster = NULL;
 	}
 
@@ -1350,7 +1336,7 @@ void GobMgr::AddGob(Gob *pgob, Gid gid)
 		Gob **ppgob = m_ppgobFreeHead;
 		Assert(*ppgob == MakeFreeEntry(*ppgob));
 		m_ppgobFreeHead = MakeUsedEntry(*ppgob);
-		gmmgr.WritePtr(m_apgobMaster, (byte *)ppgob - (byte *)m_apgobMaster, &pgob, sizeof(Gob *));
+		*ppgob = pgob;
 		//*ppgob = pgob;
 		gid = GidFromPpgob(ppgob);
 	} else {
@@ -1373,7 +1359,7 @@ void GobMgr::AddGob(Gob *pgob, Gid gid)
 
 			for (Gob ***pppgobT = (Gob ***)m_ppgobFreeHead; *pppgobT != NULL; pppgobT = (Gob ***)MakeUsedEntry(*pppgobT)) {
 				if (MakeUsedEntry(*pppgobT) == ppgobUse) {
-					gmmgr.WritePtr(m_apgobMaster, (byte *)pppgobT - (byte *)m_apgobMaster, ppgobUse, sizeof(Gob *));
+					*pppgobT = (Gob **)*ppgobUse;
 					//*pppgobT = (Gob **)*ppgobUse;
 
 					// update the tail pointer if necessary
@@ -1389,7 +1375,7 @@ void GobMgr::AddGob(Gob *pgob, Gid gid)
 		Assert(fFound);
 		if (!fFound)
 			return;
-		gmmgr.WritePtr(m_apgobMaster, (byte *)ppgobUse - (byte *)m_apgobMaster, &pgob, sizeof(Gob *));
+		*ppgobUse = pgob;
 		//*ppgobUse = pgob;
 	}
 
@@ -1435,10 +1421,10 @@ void GobMgr::RemoveGob(Gob *pgob)
 	Gob **ppgob = PpgobFromGid(pgob->m_gid);
 	pgob->m_gid = kgidNull;
 	Gob *pgobT = NULL;
-	gmmgr.WritePtr(m_apgobMaster, (byte *)ppgob - (byte *)m_apgobMaster, &pgobT, sizeof(Gob *));
+	*ppgob = pgobT;
 	//*ppgob = NULL;	// Mark new terminator
 	pgobT = MakeFreeEntry(ppgob);
-	gmmgr.WritePtr(m_apgobMaster, (byte *)m_ppgobFreeTail - (byte *)m_apgobMaster, &pgobT, sizeof(Gob *));
+	*m_ppgobFreeTail = pgobT;
 	//*m_ppgobFreeTail = MakeFreeEntry(ppgob);
 	m_ppgobFreeTail = ppgob;
 
@@ -2242,7 +2228,12 @@ void SortGobs(Gob **apgob, int cpgob)
 
 	// Prep for sorting
 
-	GobSort *ags = (GobSort *)gpbScratch;
+	// Not the scratch buffer: it only had room for ~2200 gobs, and a big
+	// screen can show more than that
+
+	static GobSort ags[kcpgobMax];
+	if (cpgob > kcpgobMax)
+		cpgob = kcpgobMax;
 	GobSort *pgsT = ags;
 	Gob **ppgobT = apgob;
 	int i;

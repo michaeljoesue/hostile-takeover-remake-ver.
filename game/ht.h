@@ -4201,7 +4201,8 @@ private:
 
 // Use min gob count for 68K build because of stack variables
 
-#define kcpgobMax 4096	// was 768 on the original devices
+#define kcpgobMax 32000	// pool ceiling (gids are 15 bit); was 768 on the original devices.
+								// The pool for a level is sized by SetGobLimitsForMap.
 #define kcpgobVisibleMax kcpgobMax
 
 class Simulation : public TimerMgr // sim
@@ -7207,6 +7208,7 @@ extern int gcMuntGobsComputerLimitSP;
 extern int gcStructGobsComputerDeltaSP;
 extern int gcStructGobsHumanDeltaSP;
 extern int gcSceneryGobsLimit;
+int SetGobLimitsForMap(int ctx, int cty);
 extern int gcScorchGobsLimit;
 extern int gcSupportGobsLimit;
 extern bool gfGrayscale;

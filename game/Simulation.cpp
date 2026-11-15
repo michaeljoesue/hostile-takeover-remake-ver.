@@ -492,7 +492,7 @@ void Simulation::Update(CommandQueue *pcmdq)
     // to the insertion or deletion of elements on the Gob list during the
     // kmidReserveUpdate callbacks.
 
-    Gid agid[kcpgobMax];
+    static Gid agid[kcpgobMax];
     Gid *pgidT = agid;
     int cgid = 0;
     Gob *pgobT;
@@ -626,7 +626,7 @@ void Simulation::SelectSameUnitTypes(UnitGob *punt, TRect *ptrc)
     UnitType ut = punt->GetUnitType();
 
     // Store the gobs on the stack.
-    Gob *apgob[kcpgobMax / 2];
+    static Gob *apgob[kcpgobMax / 2];
 
     int cpgob = ggobm.FindGobs(ptrc, apgob, ARRAYSIZE(apgob));
     for (int i = 0; i < cpgob; i++) {

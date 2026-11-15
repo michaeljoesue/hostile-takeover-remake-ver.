@@ -1034,22 +1034,28 @@ namespace m {
 
 			// Scenery limit: scenery past it isn't placed (kcSceneryGobsLimit)
 
-			int cSceneryMax = 600;
+			// The game scales its limits with the map's area (SetGobLimitsForMap
+			// in game/game.cpp): 1x for 64x64 and smaller, up to its pool size
+
+			double nScale = Math.Max(1.0, (Bounds.Width * Bounds.Height) / (64.0 * 64.0));
+			double nScaleMax = (32000 - 1) / ((3100 + 3100 / 4) * 1.0);
+			nScale = Math.Min(nScale, nScaleMax);
+
+			int cSceneryMax = (int)(600 * nScale);
 			if (cScenery > cSceneryMax) {
 				string strT = String.Format("{0} scenery; {1} allowed", cScenery, cSceneryMax);
 				dgt(this, ValidateError.Error, 0, 0, null, strT);
 				cError++;
 			}
 
-			// Units and buildings: the game has room for 4096 objects in
-			// all, shared with shots, explosions and scenery. The old per-side
-			// limits are gone: units placed on the map can exceed the build
-			// limits (the game allows for them).
+			// Units and buildings: the player and the computer players each
+			// have room for 800 (scaled with the map). Units placed on the map
+			// can exceed the build limits, but must fit the game's pool.
 
 			int cUnitsTotal = 0;
 			foreach (Side side in Enum.GetValues(typeof(Side)))
 				cUnitsTotal += acStructures[(int)side] + acMunts[(int)side];
-			int cUnitsTotalMax = 3000;
+			int cUnitsTotalMax = (int)(1600 * nScale);
 			if (cUnitsTotal > cUnitsTotalMax) {
 				string strT = String.Format("{0} units and buildings; {1} allowed", cUnitsTotal, cUnitsTotalMax);
 				dgt(this, ValidateError.Error, 0, 0, null, strT);

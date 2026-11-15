@@ -42,12 +42,12 @@ The engine has been updated from its 2007 handheld roots:
   scrolling is continuous instead of a tile at a time, and the map scrolls
   when the mouse is at the edge of the screen or window. Options > Display >
   Smooth Motion turns it off.
-- **Higher limits.** Up to 4096 game objects (was 768), 500 units and 300
-  structures for the player (was 88 and 55), 600 shots and explosions, 300
-  scorch marks and 600 scenery objects on the map at once (was 50, 30 and
-  100), build queues of 50 (was 10), and a larger graphics cache. The
-  computer players keep their original limits so the missions keep their
-  original difficulty.
+- **Higher limits, scaled to the map.** On a 64x64 map: 300 structures and
+  500 units for the player, the same for the computer players together
+  (originally 55/88 and 72/117), 600 scenery objects, 300 scorch marks and
+  600 shots and explosions at once. Bigger maps get proportionally more, up
+  to about 8x on the largest maps. Build queues hold 50 (was 10), and the
+  graphics cache is larger.
 - **Better sound.** Effects are mixed in 16 bit on 16 channels (was 8 bit,
   4 channels, averaged so effects got quieter as more played) with soft
   clipping, and resampled by SDL3 to the output device's rate (typically
@@ -266,8 +266,9 @@ Maps, sides and limits:
   can use it like the others.
 - **Limits.** M no longer stops a mission for exceeding the old limits. It
   only reports what the game itself can't handle: more than 1024 triggers per
-  side, 64 switches, 64 areas, 600 scenery objects, or 3000 units and
-  buildings placed on the map.
+  side, 64 switches or 64 areas, or more scenery objects (600) and units
+  and buildings placed on the map (1600) than the game has room for. The
+  last two grow with the map like the game's limits.
 
 Missions (`.ld`) and tile sets (`.tc`) are saved in M's own file format
 (`m\DocFormat.cs`). Files from older versions of M, which used .NET's
