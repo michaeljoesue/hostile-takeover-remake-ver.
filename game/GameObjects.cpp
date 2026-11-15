@@ -1716,7 +1716,7 @@ AreaMask GobMgr::CalcAreaMask(TCoord tx, TCoord ty)
 	AreaMask am = 0;
 	for (int nArea = 0; nArea < m_car; nArea++) {
 		if (m_aar[nArea].trc.PtIn(tx, ty)) {
-			am |= (1UL << nArea);
+			am |= ((AreaMask)1 << nArea);
 		}
 	}
 	Assert(am != 0);
@@ -1728,10 +1728,9 @@ AreaMask GobMgr::CalcAreaMask(TCoord tx, TCoord ty)
 
 int GobMgr::GetAreasFromMask(AreaMask am, int *pnArea)
 {
-	Assert(kcAreasMax <= 32);
 	int cArea = 0;
 	for (int n = 0; n < kcAreasMax && am != 0; n++) {
-		if (am & (1UL << n)) {
+		if (am & ((AreaMask)1 << n)) {
 			*pnArea++ = n;
 			cArea++;
 			am &= (am - 1);
@@ -1974,9 +1973,10 @@ bool GobMgr::LoadAreas(IniReader *pini)
 		int nLeft, nTop, nWidth, nHeight;
 		if (!pini->GetPropertyValue(&findArea, "%d,%d,%d,%d", &nLeft, &nTop, &nWidth, &nHeight))
 			return false;
+		if (m_car >= kcAreasMax)
+			break;
 		m_aar[m_car].trc.Set(nLeft, nTop, nLeft + nWidth, nTop + nHeight);
 		m_car++;
-		Assert(m_car <= kcAreasMax);
 	}
 	return true;
 }

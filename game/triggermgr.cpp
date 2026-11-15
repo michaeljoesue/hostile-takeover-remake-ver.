@@ -175,7 +175,7 @@ bool TriggerMgr::AssignTriggerSides(int ntgr, char *psz)
 		Assert(side >= ksideNeutral && side < kcSides);
 		Assert(nIndex >= 0 && nIndex < kcTriggersPerSide);
 		if (nIndex < kcTriggersPerSide)
-			m_mpSide2nTrigger[side][nIndex] = (byte)ntgr;
+			m_mpSide2nTrigger[side][nIndex] = (word)ntgr;
 		if (cArgs == 2)
 			break;
 	}
@@ -207,8 +207,8 @@ void TriggerMgr::Update()
 	for (Side side = ksideNeutral; side < kcSides; side++) {
 		// Execute per-side triggers in the per-side specified order 
 
-		byte *pntgr = &m_mpSide2nTrigger[side][0];
-		for (; *pntgr != 0xff; pntgr++) {
+		word *pntgr = &m_mpSide2nTrigger[side][0];
+		for (; *pntgr != 0xffff; pntgr++) {
 			Assert(*pntgr < m_ctgr);
 
             // Subsequent triggers may have been disabled by the prior trigger

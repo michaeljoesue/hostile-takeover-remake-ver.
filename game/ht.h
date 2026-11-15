@@ -3844,8 +3844,9 @@ private:
 	char m_szAlert[80];
 };
 
-#define kcTriggersPerSide 128
-#define kcSwitchMax 16
+// Raised in 2.0 (were 128 and 16)
+#define kcTriggersPerSide 1024
+#define kcSwitchMax 64
 #define kcTriggerTimersMax 16
 #define kctTimerNotStarted -100000
 
@@ -3905,7 +3906,8 @@ private:
 
 	int m_ctgr;
 	Trigger *m_atgr;
-	byte m_mpSide2nTrigger[kcSides][kcTriggersPerSide];
+	// Each side's triggers in order, ended by 0xffff
+	word m_mpSide2nTrigger[kcSides][kcTriggersPerSide + 1];
 	SideMask m_asidmCondition[knConditionMax];
 	byte m_abSwitch[kcSwitchMax];
 	int m_cTimers;
@@ -4945,14 +4947,14 @@ Gob *CreateGob(GobType gt);
 const Gid kgidNull = (Gid)-1;
 const word kwfGidEndMarker = 0x8000;
 
-// AreaMask; assumes 32 areas max
+// AreaMask; one bit per area, 64 areas max (was 32)
 
-#define kcAreasMax 32
+#define kcAreasMax 64
 #define knAreaLastDiscovery -1
-#if kcAreasMax > 32
-#error Code assumes 32 areas max! Could change to 64 easily enough
+#if kcAreasMax > 64
+#error AreaMask holds 64 areas max
 #endif
-typedef dword AreaMask;
+typedef unsigned long long AreaMask;
 
 struct AreaEntry // are
 {
