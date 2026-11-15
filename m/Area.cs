@@ -278,7 +278,13 @@ namespace m
 				return m_strName;
 			}
 			set {
+				string strOld = m_strName;
 				m_strName = value;
+				if (strOld != value) {
+					LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
+					if (lvld != null && Array.IndexOf(lvld.MapItems, this) >= 0)
+						lvld.RenameAreaReferences(strOld, value);
+				}
 				OnPropertyChanged(this, "Bitmap");
 			}
 		}

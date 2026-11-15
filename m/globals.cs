@@ -223,12 +223,12 @@ namespace m {
 												  Color.FromArgb(0, 32, 64)		// (h: 149, s: 255, l: 32)
 											  },
 								  new Color[] {
-												  // red (h: 6)
-												  Color.FromArgb(232, 32, 0),
-												  Color.FromArgb(196, 28, 0),
-												  Color.FromArgb(128, 8, 0),
-												  Color.FromArgb(92, 8, 0),
-												  Color.FromArgb(64, 8, 0)
+												  // side 2 (OMNI): bright red #FF3333, same as the game
+												  Color.FromArgb(255, 51, 51),
+												  Color.FromArgb(215, 43, 43),
+												  Color.FromArgb(132, 26, 26),
+												  Color.FromArgb(101, 20, 20),
+												  Color.FromArgb(70, 14, 14)
 											  },
 								  new Color[] {
 												  // yellow (h: 42)
@@ -247,12 +247,12 @@ namespace m {
 												  Color.FromArgb(0, 63, 64)		// (h: 128, s: 255, l: 32)
 											  },
 								  new Color[] {
-												  // green (h: 104)
-												  Color.FromArgb(0, 232, 104),
-												  Color.FromArgb(0, 196, 88),
-												  Color.FromArgb(0, 120, 54),
-												  Color.FromArgb(0, 92, 41),
-												  Color.FromArgb(0, 64, 29)
+												  // side 5 (Crimson): #DC143C, same as the game
+												  Color.FromArgb(220, 20, 60),
+												  Color.FromArgb(186, 17, 51),
+												  Color.FromArgb(114, 10, 31),
+												  Color.FromArgb(87, 8, 24),
+												  Color.FromArgb(61, 6, 17)
 											  },
 			};
 

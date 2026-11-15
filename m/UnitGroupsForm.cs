@@ -308,6 +308,7 @@ namespace m
 			this.comboBoxSide.Location = new System.Drawing.Point(184, 7);
 			this.comboBoxSide.Name = "comboBoxSide";
 			this.comboBoxSide.Size = new System.Drawing.Size(80, 21);
+			this.comboBoxSide.DropDownWidth = 140;
 			this.comboBoxSide.TabIndex = 11;
 			this.comboBoxSide.SelectedIndexChanged += new System.EventHandler(this.comboBoxSide_SelectedIndexChanged);
 			// 
@@ -749,6 +750,7 @@ namespace m
 			comboBoxSide.Items.Add(Helper.GetDisplayName(typeof(Side), "side2"));
 			comboBoxSide.Items.Add(Helper.GetDisplayName(typeof(Side), "side3"));
 			comboBoxSide.Items.Add(Helper.GetDisplayName(typeof(Side), "side4"));
+			comboBoxSide.Items.Add(Helper.GetDisplayName(typeof(Side), "side5"));
 
 			if (m_ugSelected != null)
 				comboBoxSide.SelectedIndex = (int)m_ugSelected.Side - 1;

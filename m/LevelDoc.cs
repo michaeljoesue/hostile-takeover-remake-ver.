@@ -1712,6 +1712,42 @@ namespace m {
 			}
 		}
 
+		// Called when an area is renamed: triggers and unit groups refer to
+		// areas by name, so point them at the new one
+
+		public void RenameAreaReferences(string strOld, string strNew) {
+			if (strOld == null || strOld == strNew)
+				return;
+			bool fChanged = false;
+			foreach (Trigger tgr in m_tgrm.Triggers) {
+				fChanged |= RenameAreaReferences(tgr.Conditions, strOld, strNew);
+				fChanged |= RenameAreaReferences(tgr.Actions, strOld, strNew);
+			}
+			foreach (UnitGroup ug in m_ugm.Items) {
+				if (ug.SpawnArea == strOld) {
+					ug.SpawnArea = strNew;
+					fChanged = true;
+				}
+				fChanged |= RenameAreaReferences(ug.Actions, strOld, strNew);
+			}
+			if (fChanged)
+				SetModified(true);
+		}
+
+		static bool RenameAreaReferences(ArrayList alsCab, string strOld, string strNew) {
+			bool fChanged = false;
+			foreach (CaBase cab in alsCab) {
+				foreach (CaType cat in cab.GetTypes()) {
+					CaTypeArea catArea = cat as CaTypeArea;
+					if (catArea != null && catArea.Area == strOld) {
+						catArea.Area = strNew;
+						fChanged = true;
+					}
+				}
+			}
+			return fChanged;
+		}
+
 		void SetMapSize(int ctx, int cty) {
 			ctx = Math.Max(ktcMapMin, Math.Min(ktcMapMax, ctx));
 			cty = Math.Max(ktcMapMin, Math.Min(ktcMapMax, cty));
