@@ -4,7 +4,7 @@ using SpiffLib;
 
 namespace m {
 	[Serializable]
-	public class Trigger {
+	public class Trigger : System.Runtime.Serialization.IDeserializationCallback {
 		int m_nfSides;
 		ArrayList m_alsConditions;
 		ArrayList m_alsActions;
@@ -13,6 +13,19 @@ namespace m {
 			m_nfSides = 0;
 			m_alsConditions = new ArrayList();
 			m_alsActions = new ArrayList();
+		}
+
+		// Drop conditions / actions M no longer has (e.g. Modify Counter)
+
+		public void OnDeserialization(object sender) {
+			for (int i = m_alsConditions.Count - 1; i >= 0; i--) {
+				if (!(m_alsConditions[i] is CaBase))
+					m_alsConditions.RemoveAt(i);
+			}
+			for (int i = m_alsActions.Count - 1; i >= 0; i--) {
+				if (!(m_alsActions[i] is CaBase))
+					m_alsActions.RemoveAt(i);
+			}
 		}
 
 		public virtual Trigger Clone() {

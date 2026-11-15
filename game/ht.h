@@ -5699,6 +5699,8 @@ protected:
 	virtual void PerformAction(char *szAction);
 	bool InTransition();
 	void EndAttackMove();
+	UnitGob *FindEnemyWhenMoving(TCoord tcRange);
+	UnitGob *FindEnemyStructureNearby(TCoord tcRange);
 	void IssueOrder(Message *pmsg);
 	void StartQueuedOrder();
 
@@ -6306,6 +6308,10 @@ private:
 	int m_wxDragStart, m_wyDragStart;
 	TCoord m_txStart, m_tyStart;
 	bool m_fDragging;
+	bool m_fHaveMouse;		// the placement follows the mouse
+	bool m_fValid;			// the building fits where it is
+	int m_xMouse, m_yMouse;	// last mouse position on the playfield
+	void FollowMouse(int x, int y);
 };
 
 
@@ -7379,6 +7385,7 @@ void HostOutputDebugString(char *pszFormat, ...);
 long HostGetTickCount();
 dword HostGetModifiers();
 void HostSetTargetCursor(bool fTarget);
+bool HostGetMousePosition(int *px, int *py);	// game screen pixels
 long HostGetMillisecondCount();
 dword HostGetCurrentKeyState(dword keyBit);
 void HostMessageBox(TCHAR *pszFormat, ...);

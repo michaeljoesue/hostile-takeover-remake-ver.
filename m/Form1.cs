@@ -68,7 +68,6 @@ namespace m
 		private System.Windows.Forms.ToolStripMenuItem menuItemRun;
 		private System.Windows.Forms.ToolStripSeparator menuItem8;
 		private System.Windows.Forms.ToolStripMenuItem menuItemSwitches;
-		private System.Windows.Forms.ToolStripMenuItem menuItemCounters;
 		private System.Windows.Forms.ToolStripMenuItem menuItemText;
 		private System.Windows.Forms.ToolStripMenuItem menuItemValidate;
 		private System.Windows.Forms.ToolStripMenuItem menuItemMisc;
@@ -177,7 +176,6 @@ namespace m
 			this.menuItemTriggers = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemUnitGroups = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSwitches = new System.Windows.Forms.ToolStripMenuItem();
-			this.menuItemCounters = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemText = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItem7 = new System.Windows.Forms.ToolStripSeparator();
 			this.menuItemLevelDocProperties = new System.Windows.Forms.ToolStripMenuItem();
@@ -336,7 +334,6 @@ namespace m
 																					  this.menuItemTriggers,
 																					  this.menuItemUnitGroups,
 																					  this.menuItemSwitches,
-																					  this.menuItemCounters,
 																					  this.menuItemText,
 																					  this.menuItem7,
 																					  this.menuItemLevelDocProperties,
@@ -366,11 +363,6 @@ namespace m
 			// 
 			this.menuItemSwitches.Text = "&Switches...";
 			this.menuItemSwitches.Click += new System.EventHandler(this.menuItemSwitches_Click);
-			// 
-			// menuItemCounters
-			// 
-			this.menuItemCounters.Text = "&Counters...";
-			this.menuItemCounters.Click += new System.EventHandler(this.menuItemCounters_Click);
 			// 
 			// menuItemText
 			// 
@@ -1075,12 +1067,6 @@ namespace m
 			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
 			if (lvld != null)
 				SwitchesForm.DoModal("Switch", "", CaTypeSwitch.GetSwitchNames());
-		}
-
-		private void menuItemCounters_Click(object sender, System.EventArgs e) {
-			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
-			if (lvld != null)
-				CountersForm.DoModal("Counter", "", CaTypeCounter.GetCounterNames());
 		}
 
 		// Run (F5): plays the active level in the game. The level is exported

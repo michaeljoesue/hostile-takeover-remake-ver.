@@ -499,6 +499,70 @@ void MobileUnitGob::EndAttackMove()
 
 // Set while SimUIForm gives an attack-move order (A + click)
 
+// Moving units only hear about enemy mobile units (NotifyEnemyNearby leaves
+// out towers). An attack-move also fights the enemy structures it passes,
+// defence towers first.
+
+UnitGob *MobileUnitGob::FindEnemyWhenMoving(TCoord tcRange)
+{
+	UnitGob *punt = FindEnemyNearby(tcRange);
+	if (punt != NULL)
+		return punt;
+	if (m_mua == kmuaMove && m_msgAction.mid == kmidAttackMoveCommand)
+		return FindEnemyStructureNearby(tcRange);
+	return NULL;
+}
+
+UnitGob *MobileUnitGob::FindEnemyStructureNearby(TCoord tcRange)
+{
+	// Structures are listed at their top left tile; look far enough up and
+	// left to catch the largest one
+
+	const TCoord ktcStructMax = 4;
+	TCoord ctx, cty;
+	ggobm.GetMapSize(&ctx, &cty);
+	TCoord tx = TcFromWc(m_wx);
+	TCoord ty = TcFromWc(m_wy);
+	TCoord txLeft = _max(0, tx - tcRange - ktcStructMax);
+	TCoord tyTop = _max(0, ty - tcRange - ktcStructMax);
+	TCoord txRight = _min(ctx, tx + tcRange + 1);
+	TCoord tyBottom = _min(cty, ty + tcRange + 1);
+
+	UnitGob *puntBest = NULL;
+	TCoord tcBest = 0;
+	bool fBestTower = false;
+	for (TCoord tyT = tyTop; tyT < tyBottom; tyT++) {
+		for (TCoord txT = txLeft; txT < txRight; txT++) {
+			for (Gid gid = ggobm.GetFirstGid(txT, tyT); gid != kgidNull; gid = ggobm.GetNextGid(gid)) {
+				Gob *pgob = ggobm.GetGob(gid);
+				if (pgob == NULL)
+					continue;
+				dword ff = pgob->GetFlags();
+				if ((ff & (kfGobStructure | kfGobUnit | kfGobActive)) != (kfGobStructure | kfGobUnit | kfGobActive))
+					continue;
+				UnitGob *punt = (UnitGob *)pgob;
+				if (IsAlly(punt->GetSide()) || GetDamageTo(punt) <= 0)
+					continue;
+
+				// In firing range by the same test the attack state uses
+
+				if (!IsGobWithinRange(punt, tcRange))
+					continue;
+				TCoord tc = CalcRange(tx, ty, punt);
+
+				bool fTower = (punt->GetConsts()->um & kumTowers) != 0;
+				if (puntBest == NULL || (fTower && !fBestTower) ||
+						(fTower == fBestTower && tc < tcBest)) {
+					puntBest = punt;
+					tcBest = tc;
+					fBestTower = fTower;
+				}
+			}
+		}
+	}
+	return puntBest;
+}
+
 bool gfAttackMoveOrder = false;
 
 // Set while SimUIForm gives a queued order (Shift+right-click)
@@ -1076,7 +1140,7 @@ lbHitNoDamage:
 				// unit it should attack it.
 
 				if (m_wfMunt & kfMuntAttackEnemiesWhenMoving) {
-					UnitGob *puntTarget = FindEnemyNearby(m_pmuntc->tcFiringRange);
+					UnitGob *puntTarget = FindEnemyWhenMoving(m_pmuntc->tcFiringRange);
 					if (puntTarget != NULL) {
 						m_gidTarget = puntTarget->GetId();
 						puntTarget->GetAttackPoint(&m_wptTarget);

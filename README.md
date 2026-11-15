@@ -119,13 +119,14 @@ Modern RTS controls:
 | | |
 |---|---|
 | Left-click | Select a unit or building (enemies too, to look at them). Clicking one of your buildings also opens its menu. Clicking the ground deselects. |
+| Placing a building | After Build, the building follows the mouse: left-click puts it down (white tiles: it fits; red: it doesn't), right-click or Esc cancels |
 | Drag a box | Select your units in it (Shift+drag adds to the selection) |
 | Double-click, Ctrl+click | Select all your units of that type on screen |
 | Shift+click | Add a unit to the selection, or take it out |
 | Right-click | Move to the ground, attack an enemy, or open the menu of one of your units or buildings; cancels building placement |
 | Shift+right-click | Queue a move or attack: units carry it out after their current orders (up to 16) |
 | Ctrl+right-click | Force attack: attack the unit or building clicked, even your own or an ally's (Ctrl+Shift queues it). Destroying a friend isn't counted as a kill |
-| A, then left-click | Attack-move: units fight enemies they meet, then carry on |
+| A, then left-click | Attack-move: units fight enemies they meet, including towers and other buildings in range (towers first), then carry on |
 | S | Stop |
 | Ctrl+1 to 9 | Make the selection control group 1 to 9 (Shift+number adds to it) |
 | 1 to 9 | Select a control group; press twice quickly to go to it |
@@ -134,6 +135,7 @@ Modern RTS controls:
 | Middle-drag | Pan the map |
 | Mouse wheel | Scroll the map up and down (Shift+wheel: sideways) |
 | Arrow keys, mouse at the edge, mini map | Scroll the map |
+| F | Show or hide the frames-per-second counter |
 
 The mini map (bottom right) is about a third of the screen's height
 whatever the map's size, and shows units moving smoothly.
@@ -277,6 +279,11 @@ Maps, sides and limits:
   side, 64 switches or 64 areas, or more scenery objects (600) and units
   and buildings placed on the map (1600) than the game has room for. The
   last two grow with the map like the game's limits.
+- **Counters removed.** The game never had Counters (the Counter condition
+  and Modify Counter action did nothing), so M no longer has the Counters
+  menu or the Modify Counter action. Older missions still open; any Modify
+  Counter actions in them are dropped. Hunt Units (trigger action) and Hunt
+  Enemies (unit group action) are real game features and stay.
 
 Missions (`.ld`) and tile sets (`.tc`) are saved in M's own file format
 (`m\DocFormat.cs`). Files from older versions of M, which used .NET's

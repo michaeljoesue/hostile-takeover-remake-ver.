@@ -39,7 +39,6 @@ namespace m {
 		TriggerManager m_tgrm = new TriggerManager();
 		UnitGroupManager m_ugm = new UnitGroupManager();
 		SwitchManager m_swm = new SwitchManager();
-		CounterManager m_ctrm = new CounterManager();
 		string m_strComment;
 		int[] m_mpDirToDx = new int[] { 0, 1, 1, 1, 0, -1, -1, -1 };
 		int[] m_mpDirToDy = new int[] { -1, -1, 0, 1, 1, 1, 0, -1 };
@@ -126,14 +125,6 @@ namespace m {
 				m_swm = new SwitchManager();
 			}
 
-			// CounterManager
-
-			try {
-				m_ctrm = (CounterManager)info.GetValue("CounterManager", typeof(CounterManager));
-			} catch (SerializationException) {
-				m_ctrm = new CounterManager();
-			}
-
 			// Comment string
 
 			try {
@@ -210,7 +201,6 @@ namespace m {
 			info.AddValue("TriggerManager", m_tgrm);
 			info.AddValue("UnitGroupManager", m_ugm);
 			info.AddValue("SwitchManager", m_swm);
-			info.AddValue("CounterManager", m_ctrm);
 			info.AddValue("Comment", m_strComment);
 			if (m_tmpd == null) {
 				info.AddValue("TemplatesFileName", "");
@@ -1667,13 +1657,6 @@ namespace m {
 		public SwitchManager SwitchManager {
 			get {
 				return m_swm;
-			}
-		}
-
-		[BrowsableAttribute(false)]
-		public CounterManager CounterManager {
-			get {
-				return m_ctrm;
 			}
 		}
 

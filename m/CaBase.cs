@@ -152,11 +152,7 @@ namespace m
 				cab = new CountdownTimerCondition();
 				break;
 
-			case 15: // knCounterCondition
-#if false
-				cab = new CounterCondition();
-#endif
-				break;
+			// 15 was knCounterCondition; the game has no Counters
 
 			case 16: // knTestPvarCondition
 				cab = new TestPvarCondition();
@@ -294,9 +290,7 @@ namespace m
 				cab = new ModifyCreditsTriggerAction();
 				break;
 
-			case 24: // knModifyCounterTriggerAction
-				cab = new ModifyCounterTriggerAction();
-				break;
+			// 24 was knModifyCounterTriggerAction; the game has no Counters
 
 			case 25: // knMoveUnitsInAreaTriggerAction
 				cab = new MoveUnitsInAreaTriggerAction();
@@ -688,20 +682,6 @@ namespace m
 		}
 	}
 
-#if false
-	[Serializable]
-	[DisplayName("Counter")]
-	[Description("Use this condition to respond to Counter going above or below a value of interest.")]
-	public class CounterCondition : CaBase {
-		override public string GetString() {
-			return "Counter '$1' is $2";
-		}
-		public CounterCondition() {
-			m_acat = new CaType[] { new CaTypeCounter(), new CaTypeQualifiedNumber() };
-		}
-	}
-#endif
-
 	[Serializable]
 	[DisplayName("Test Persistent Variable")]
 	[Description("Use this condition to test whether a persistent variable is above, below, or equal to a value interest.")]
@@ -1055,18 +1035,6 @@ namespace m
 		}
 	}
 	
-	[Serializable]
-	[DisplayName("Modify Counter")]
-	[Description("Use this to modify the value of a Counter.")]
-	public class ModifyCounterTriggerAction : CaBase {
-		override public string GetString() {
-			return "Counter '$1': $2 $3";
-		}
-		public ModifyCounterTriggerAction() {
-			m_acat = new CaType[] { new CaTypeCounter(), new CaTypeModifyNumber(), new CaTypeNumber() };
-		}
-	}
-
 	[Serializable]
 	[DisplayName("Move Units In Area")]
 	[Description("Use this to units from one area to another.")]

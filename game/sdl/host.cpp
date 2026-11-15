@@ -322,6 +322,26 @@ dword HostGetModifiers()
 
 // Crosshair while the player picks a target (attack-move)
 
+bool HostGetMousePosition(int *px, int *py)
+{
+    float x, y;
+    SDL_GetMouseState(&x, &y);
+    if (gpdisp == NULL || gpdisp->GetRenderer() == NULL)
+        return false;
+    float xR, yR;
+    if (!SDL_RenderCoordinatesFromWindow(gpdisp->GetRenderer(), x, y, &xR, &yR))
+        return false;
+    Size siz;
+    gpdisp->GetSize(&siz);
+    int xT = (int)SDL_floorf(xR);
+    int yT = (int)SDL_floorf(yR);
+    if (xT < 0 || yT < 0 || xT >= siz.cx || yT >= siz.cy)
+        return false;
+    *px = xT;
+    *py = yT;
+    return true;
+}
+
 void HostSetTargetCursor(bool fTarget)
 {
     static SDL_Cursor *s_pcurTarget;

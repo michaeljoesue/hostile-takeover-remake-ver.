@@ -28,8 +28,6 @@
     <Compile Include="CaTypes.cs" />
     <Compile Include="CaTypeUnitTypesForm.cs" />
     <Compile Include="CaTypeUpgradeTypesForm.cs" />
-    <Compile Include="Counter.cs" />
-    <Compile Include="CountersForm.cs" />
     <Compile Include="Doc.cs" />
     <Compile Include="DocFormat.cs" />
     <Compile Include="EditCommentsForm.cs" />

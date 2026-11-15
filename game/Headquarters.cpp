@@ -520,6 +520,8 @@ PlaceStructureForm::PlaceStructureForm()
 {
 	m_pgobOwner = NULL;
 	m_fDragging = false;
+	m_fHaveMouse = false;
+	m_fValid = false;
 	m_wf |= kfFrmTranslucent;
 }
 
@@ -621,9 +623,50 @@ void PlaceStructureForm::SetOwner(BuilderGob *pgobOwner, UnitType ut)
 	m_wxPen = m_wxDragStart = 0;
 	m_wyPen = m_wyDragStart = 0;
 
+	// The form covers the whole playfield (forms.ini has a handheld sized
+	// 320x320 rect, so clicks on the right of a PC screen missed it)
+
+	Rect rcForm;
+	rcForm.Set(0, 0, sizPlayfield.cx, sizPlayfield.cy);
+	SetRect(&rcForm);
+
+	// Modern placement: the building follows the mouse, a left click
+	// places it, right click or Escape cancels. No Ok / Cancel buttons.
+
+	GetControlPtr(kidcOk)->Show(false);
+	GetControlPtr(kidcCancel)->Show(false);
+
 	// use UpdatePlacementIndicator to get the buttons initialized to the correct location
 
 	UpdatePlacementIndicator(wxView, wyView, wxView, wyView);
+
+	int x, y;
+	m_fHaveMouse = false;
+	if (HostGetMousePosition(&x, &y) && x < sizPlayfield.cx && y < sizPlayfield.cy)
+		FollowMouse(x, y);
+}
+
+// Centers the placement under the mouse (x, y: playfield pixels)
+
+void PlaceStructureForm::FollowMouse(int x, int y)
+{
+	m_fHaveMouse = true;
+	m_xMouse = x;
+	m_yMouse = y;
+
+	WCoord wxView, wyView;
+	gsim.GetViewPos(&wxView, &wyView);
+	TCoord tx = TcFromWc(WcFromPc(x) + wxView) - (m_pstruc->ctxReserve - 1) / 2;
+	TCoord ty = TcFromWc(WcFromPc(y) + wyView) - (m_pstruc->ctyReserve - 1) / 2;
+
+	// UpdatePlacementIndicator places at start + pen - drag start
+
+	m_txStart = tx;
+	m_tyStart = ty;
+	m_wxPen = m_wxDragStart = 0;
+	m_wyPen = m_wyDragStart = 0;
+	UpdatePlacementIndicator(wxView, wyView, wxView, wyView);
+	gevm.SetRedrawFlags(kfRedrawDirty);
 }
 
 #define kwcButtonInset 56
@@ -736,89 +779,34 @@ void PlaceStructureForm::UpdatePlacementIndicator(WCoord wxViewStart, WCoord wyV
 	}
 
 
-	// Show ok button if valid
+	// Modern placement: no Ok button; a left click places when valid
 
-	pbtn = (ButtonControl *)GetControlPtr(kidcOk);
-	pbtn->Show(fValid || gfGodMode);
+	m_fValid = fValid || gfGodMode;
+	GetControlPtr(kidcOk)->Show(false);
+	GetControlPtr(kidcCancel)->Show(false);
 }
 
 bool PlaceStructureForm::OnPenEvent(Event *pevt)
 {
-    // If captured, do regular processing
-    if (m_pctlCapture != NULL) {
-        return Form::OnPenEvent(pevt);
-    }
+	switch (pevt->eType) {
+	case penHoverEvent:
+	case penMoveEvent:
+		FollowMouse(pevt->x, pevt->y);
+		return true;
 
-    // Give the form controls first crack at handling the event.  Form
-    // controls include: soft menu button, mode cancel button, status
-    // label)
+	case penDownEvent:
+		{
+			// Left click places the building if it fits there
 
-    if (Form::OnPenEvent(pevt)) {
-        return true;
-    }
-
-	// Handle drag-scrolling mode (shift-drag or graffiti-scroll)
-
-	if (m_fDragging) {
-		switch (pevt->eType) {
-		case penDownEvent:
-			// Something strange is going on, fall through to penUpEvent to
-			// clear dragging flag and complete in-progress drag operation.
-
-			// ...FALL THROUGH...
-
-		case penUpEvent:
-			m_fDragging = false;
-
-			// ...FALL THROUGH...
-
-		case penMoveEvent:
-			{
-				WCoord wxView, wyView;
-				gsim.GetViewPos(&wxView, &wyView);
-
-				// remember where the pen is for scrolling on update
-				// do everything in world coordinates so we don't get confused
-				// when the view scrolls
-
-				m_wxPen = WcFromPc(pevt->x) + wxView;
-				m_wyPen = WcFromPc(pevt->y) + wyView;
-
-                // Pen may move into a graffiti area, but we'll go no farther
-                // than the playfield to keep the Placement Indicator at least
-                // partly on screen. This won't mess up scrolling because it is
-                // triggered by pen position, not by a pen move event.
-
-				Size sizPlayfield;
-				ggame.GetPlayfieldSize(&sizPlayfield);
-				WCoord wcxPlayfield = WcFromUpc(sizPlayfield.cx);
-				WCoord wcyPlayfield = WcFromUpc(sizPlayfield.cy);
-
-				if (m_wxPen > wxView + wcxPlayfield) 
-					m_wxPen = wxView + wcxPlayfield;
-				if (m_wxPen < wxView)
-					m_wxPen = wxView;
-				if (m_wyPen > wyView + wcyPlayfield) 
-					m_wyPen = wyView + wcyPlayfield;
-				if (m_wyPen < wyView)
-					m_wyPen = wyView;
-
-				// move structure outline, but keep it within the map boundry
-				// no change in view
-
-				UpdatePlacementIndicator(wxView, wyView, wxView, wyView);
+			FollowMouse(pevt->x, pevt->y);
+			if (m_fValid) {
+				OnControlSelected(kidcOk);
+			} else {
+				gsndm.PlaySfx(ksfxGuiFormHide);
 			}
-			break;
 		}
-	} else {
-		// do our regular thing
-
-		if (pevt->eType == penDownEvent) {
-            UpdatePosition(pevt);
-            m_fDragging = true;
-		}
+		return true;
 	}
-
 	return true;
 }
 
@@ -866,62 +854,17 @@ void PlaceStructureForm::UpdatePosition(Event *pevt)
 
 void PlaceStructureForm::OnTimer(long tCurrent)
 {
-	// Something may have moved under it.
-	// NOTE: this could be faster by remembering during paint
+	// The view may have scrolled (mouse at the screen edge, arrow keys)
+	// under a still mouse; keep the placement under it. Something may also
+	// have moved under the placement, which changes whether it fits.
 
-	// get fancy with scrolling. World Coordinates, please
-	// imitated from SimUI.cpp::Update
-
-	WCoord wx, wy;
-	wx = m_wxPen;	// where the pen last moved
-	wy = m_wyPen;
-
-	WCoord wxView, wyView;
-	gsim.GetViewPos(&wxView, &wyView);
-
-	Size sizPlayfield;
-	ggame.GetPlayfieldSize(&sizPlayfield);
-	WCoord wcxPlayfield = WcFromUpc(sizPlayfield.cx);
-	WCoord wcyPlayfield = WcFromUpc(sizPlayfield.cy);
-	
-	WCoord wxViewNew = wxView;
-	WCoord wyViewNew = wyView;
-
-	// is the pen near an edge? if so, scroll
-
-	if (m_fDragging) {
-		// Screen edge
-
-		if (wx < wxView + kwcScrollBorderSize) {
-			wxViewNew -= kwcScrollStepSize;
-		} else if (wx > wxView + wcxPlayfield - kwcScrollBorderSize) {
-			wxViewNew += kwcScrollStepSize;
-		}
-		if (wy < wyView + kwcScrollBorderSize) {
-			wyViewNew -= kwcScrollStepSize;
-		} else if (wy > wyView + wcyPlayfield - kwcScrollBorderSize) {
-			wyViewNew += kwcScrollStepSize;
-		}
+	if (m_fHaveMouse) {
+		FollowMouse(m_xMouse, m_yMouse);
+	} else {
+		WCoord wxView, wyView;
+		gsim.GetViewPos(&wxView, &wyView);
+		UpdatePlacementIndicator(wxView, wyView, wxView, wyView);
 	}
-
-	// if we should scroll: update the view, the position of the pen 
-	// and the structure outline by the amount we scrolled.
-	// setting the viewpos and re-getting it lets the sim
-	// deal with map edges for us
-
-	if (wxViewNew != wxView || wyViewNew != wyView)
-		gsim.SetViewPos(wxViewNew, wyViewNew);
-
-	WCoord wxViewActual, wyViewActual;
-	gsim.GetViewPos(&wxViewActual, &wyViewActual);
-
-	m_wxPen += wxViewActual - wxView;
-	m_wyPen += wyViewActual - wyView;
-
-	UpdatePlacementIndicator(wxView, wyView, wxViewActual, wyViewActual);
-
-	// Cause a redraw to drag independently from the game rate
-
 	gevm.SetRedrawFlags(kfRedrawDirty | kfRedrawBeforeTimer);
 }
 

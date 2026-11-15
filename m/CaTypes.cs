@@ -1261,57 +1261,6 @@ namespace m {
 	}
 
 	[Serializable]
-	public class CaTypeCounter : CaType {
-		Counter m_ctr;
-
-		public CaTypeCounter() {
-			m_ctr = null;
-		}
-
-		public override string ToString() {
-			if (!m_fInit)
-				return "Counter";
-			return m_ctr.Name;
-		}
-
-		public override string FromSaveString(string strArgs, bool fLast) {
-			Regex re = new Regex(@"^(?<index>(-)?\d+)(?<end>.*)$");
-			Match m = re.Match(strArgs);
-			int index = int.Parse(m.Groups["index"].Value);
-			StringCollection strc = GetCounterNames();
-			if (index >= 0 && index < strc.Count) {
-				m_ctr.Name = strc[index];
-				m_fInit = true;
-			}
-			return m.Groups["end"].Value;
-		}
-
-		public override string ToSaveString() {
-			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
-			return lvld.CounterManager.Items.IndexOf(m_ctr).ToString();
-		}
-
-		public static StringCollection GetCounterNames() {
-			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
-			StringCollection strc = new StringCollection();
-			foreach (Counter ctr in lvld.CounterManager.Items)
-				strc.Add(ctr.Name);
-			return strc;
-		}
-
-		public override bool EditProperties() {
-			StringCollection strc = GetCounterNames();
-			string strName = m_ctr != null ? m_ctr.Name : "";
-			Counter ctr = CountersForm.DoModal("Counter", strName, strc);
-			if (ctr == null)
-				return false;
-			m_ctr = ctr;
-			m_fInit = true;
-			return true;
-		}
-	}
-
-	[Serializable]
 	public class CaTypeArea : CaType {
 		string m_strArea;
 

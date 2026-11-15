@@ -439,7 +439,10 @@ namespace m
 							anIndex[n] = iT % acLengths[n];
 							iT /= acLengths[n];
 						}
-						arr.SetValue(ReadValue(), anIndex);
+						object obElement = ReadValue();
+						if (obElement is RemovedObject)
+							obElement = null;
+						arr.SetValue(obElement, anIndex);
 					}
 					m_aob[id] = arr;
 					return arr;
@@ -548,10 +551,20 @@ namespace m
 
 		static Dictionary<string, Type> s_mptype = new Dictionary<string, Type>();
 
+		// Types that older documents may contain but M no longer has. They
+		// read as RemovedObject, which the owners then drop.
+
+		static readonly string[] s_astrRemovedTypes = {
+			"m.CounterManager", "m.Counter", "m.CounterCondition",
+			"m.ModifyCounterTriggerAction", "m.CaTypeCounter",
+		};
+
 		static Type ResolveType(string strName) {
 			Type type;
 			if (s_mptype.TryGetValue(strName, out type))
 				return type;
+			if (Array.IndexOf(s_astrRemovedTypes, strName) >= 0)
+				return typeof(RemovedObject);
 
 			if (strName.EndsWith("]")) {
 				int ich = strName.LastIndexOf('[');
@@ -575,6 +588,18 @@ namespace m
 				throw new SerializationException("Unknown type " + strName);
 			s_mptype[strName] = type;
 			return type;
+		}
+	}
+
+	// Stands in for an object of a type M no longer has (see ResolveType)
+
+	[Serializable]
+	public class RemovedObject : ISerializable {
+		public RemovedObject() {
+		}
+		protected RemovedObject(SerializationInfo info, StreamingContext ctx) {
+		}
+		public void GetObjectData(SerializationInfo info, StreamingContext ctx) {
 		}
 	}
 }
