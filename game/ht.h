@@ -2989,7 +2989,11 @@ private:
 	long m_msLastTimer;
 	double m_wcScrollRemainder;
 	long m_cmsCheckScroll;
+	int m_xSelectionInfo;
+	int m_cxSelectionInfo;
+	char m_szSelectionInfo[200];
 
+	void UpdateSelectionInfo();
 	void InGameMenu();
 	void TestOptions();
 };

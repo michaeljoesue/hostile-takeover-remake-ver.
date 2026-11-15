@@ -13,6 +13,7 @@
 	BUTTON=kidcMenuButton (0 0 23 7) "" kifntButton nocenter menuup.tbm menudown.tbm
 	POWER=kidcPower (86 0 40 0)
 	CREDITS=kidcCreditsLabel (40 0 40 0)
+	LABEL=kidcSelectionInfo (0 0 0 0) "" kifntShadow
 
 [kidfMiniMap]
 	FORM=(0 0 0 0) kidcOk

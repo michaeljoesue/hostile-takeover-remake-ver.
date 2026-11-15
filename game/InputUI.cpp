@@ -15,6 +15,9 @@ InputUIForm::InputUIForm()
 	m_msLastTimer = 0;
 	m_wcScrollRemainder = 0.0;
 	m_cmsCheckScroll = 0;
+	m_xSelectionInfo = 0;
+	m_cxSelectionInfo = 0;
+	m_szSelectionInfo[0] = 0;
 }
 
 InputUIForm::~InputUIForm()
@@ -67,6 +70,18 @@ bool InputUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	pctlMenuButton->SetPosition(0, 0);
 	pctlCredits->SetPosition(rcMenuButton.right + cxSpace, 1);
 	pctlPower->SetPosition(rcMenuButton.right + cxSpace + rcCredits.Width() + cxSpace, 1);
+
+	// What's selected, between the power meter and the mini map
+
+	m_xSelectionInfo = rcMenuButton.right + cxSpace + rcCredits.Width() + cxSpace +
+			rcPower.Width() + cxSpace / 6;
+	m_cxSelectionInfo = xLeftMiniMap - m_xSelectionInfo - 4;
+	m_szSelectionInfo[0] = 0;
+	Control *pctlSel = GetControlPtr(kidcSelectionInfo);
+	if (pctlSel != NULL) {
+		pctlSel->SetPosition(m_xSelectionInfo, 1);
+		pctlSel->Show(m_cxSelectionInfo > 0);
+	}
 	
 	// Run often so keyboard scrolling is smooth; the scroll distance is
 	// based on elapsed time.
@@ -88,6 +103,81 @@ void InputUIForm::Update()
 
 	PowerControl *pctlPower = (PowerControl *)GetControlPtr(kidcPower);
 	pctlPower->Update(gpplrLocal->GetPowerDemand(), gpplrLocal->GetPowerSupply());
+
+	UpdateSelectionInfo();
+}
+
+// The bar shows what's selected: one unit's name and health, or how many of
+// each type ("Light Tank x3, Rocket Vehicle x2").
+
+void InputUIForm::UpdateSelectionInfo()
+{
+	LabelControl *plbl = (LabelControl *)GetControlPtr(kidcSelectionInfo);
+	if (plbl == NULL || m_cxSelectionInfo <= 0)
+		return;
+
+	int acType[kutMax];
+	memset(acType, 0, sizeof(acType));
+	int cSelected = 0;
+	UnitGob *puntOnly = NULL;
+	for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
+		if ((pgobT->GetFlags() & (kfGobUnit | kfGobSelected | kfGobActive)) !=
+				(kfGobUnit | kfGobSelected | kfGobActive))
+			continue;
+		UnitGob *punt = (UnitGob *)pgobT;
+		UnitType ut = punt->GetUnitType();
+		if (ut >= 0 && ut < kutMax)
+			acType[ut]++;
+		puntOnly = punt;
+		cSelected++;
+	}
+
+	char szT[200];
+	szT[0] = 0;
+	if (cSelected == 1) {
+		UnitConsts *puntc = puntOnly->GetConsts();
+		int nPercent = (int)(((long long)puntOnly->GetHealth() * 100) / puntc->GetArmorStrength());
+		if (nPercent < 1)
+			nPercent = 1;
+		sprintf(szT, "%s  %d%%", puntc->szLongName, nPercent);
+	} else if (cSelected > 1) {
+		// Most numerous first
+
+		Font *pfnt = gapfnt[kifntShadow];
+		bool afDone[kutMax];
+		memset(afDone, 0, sizeof(afDone));
+		while (true) {
+			int utBest = -1;
+			for (int ut = 0; ut < kutMax; ut++) {
+				if (!afDone[ut] && acType[ut] != 0 &&
+						(utBest < 0 || acType[ut] > acType[utBest]))
+					utBest = ut;
+			}
+			if (utBest < 0)
+				break;
+			afDone[utBest] = true;
+			char szItem[80];
+			sprintf(szItem, "%s%s x%d", szT[0] != 0 ? ", " : "",
+					gapuntc[utBest]->szLongName, acType[utBest]);
+			char szTry[200];
+			strncpyz(szTry, szT, sizeof(szTry));
+			strncat(szTry, szItem, sizeof(szTry) - strlen(szTry) - 1);
+			if (pfnt->GetTextExtent(szTry) > m_cxSelectionInfo) {
+				// Doesn't fit: the total instead
+				if (szT[0] == 0 || pfnt->GetTextExtent(szT) + pfnt->GetTextExtent(", ...") > m_cxSelectionInfo)
+					sprintf(szT, "%d units", cSelected);
+				else
+					strncat(szT, ", ...", sizeof(szT) - strlen(szT) - 1);
+				break;
+			}
+			strncpyz(szT, szTry, sizeof(szT));
+		}
+	}
+
+	if (strcmp(szT, m_szSelectionInfo) != 0) {
+		strncpyz(m_szSelectionInfo, szT, sizeof(m_szSelectionInfo));
+		plbl->SetText(szT);
+	}
 }
 
 void InputUIForm::OnTimer(long tCurrent)

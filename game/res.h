@@ -59,6 +59,7 @@
 #define kidcHelp 2004
 #define kidcDefault 2005
 #define kidcAlert 2006
+#define kidcSelectionInfo 2007
 
 // Gob types
 
