@@ -12,6 +12,9 @@ extern bool gfSingleStep;
 InputUIForm::InputUIForm()
 {
 	m_fTimerAdded = false;
+	m_msLastTimer = 0;
+	m_wcScrollRemainder = 0.0;
+	m_cmsCheckScroll = 0;
 }
 
 InputUIForm::~InputUIForm()
@@ -98,7 +101,10 @@ bool InputUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 		}
 	}
 
-	gtimm.AddTimer(this, kctMapScrollRate);
+	// Run often so keyboard scrolling is smooth; the scroll distance is
+	// based on elapsed time.
+
+	gtimm.AddTimer(this, 1);
 	m_fTimerAdded = true;
 
 	return true;
@@ -119,12 +125,26 @@ void InputUIForm::Update()
 
 void InputUIForm::OnTimer(long tCurrent)
 {
+	long msNow = HostGetMillisecondCount();
+	long cms = m_msLastTimer == 0 ? 0 : msNow - m_msLastTimer;
+	if (cms < 0 || cms > 100)
+		cms = 100;
+	m_msLastTimer = msNow;
+
 	if (gpmfrmm->GetFocus() == this) {
 		dword dwKeys = HostGetCurrentKeyState(keyBitDpadLeft | keyBitDpadRight | keyBitPageUp | keyBitPageDown | keyBitHard1 | keyBitHard2 | keyBitHard3 | keyBitHard4 | keyBitRockerUp | keyBitRockerDown | keyBitRockerLeft | keyBitRockerRight);
-		if (dwKeys != 0) {
+		if (dwKeys == 0) {
+			m_wcScrollRemainder = 0.0;
+		} else {
 			WCoord wxView, wyView;
 			gsim.GetViewPos(&wxView, &wyView);
-			WCoord wcStep = kwcTile;
+
+			// 12.5 tiles a second at scroll speed 1.0, the same speed as the
+			// original's 1 tile per 80ms, but continuous
+
+			m_wcScrollRemainder += kwcTile * 12.5 * gnScrollSpeed * cms / 1000.0;
+			WCoord wcStep = (WCoord)m_wcScrollRemainder;
+			m_wcScrollRemainder -= wcStep;
 
 			if (dwKeys & (keyBitPageUp | keyBitRockerUp))
 				wyView -= wcStep;
@@ -140,7 +160,14 @@ void InputUIForm::OnTimer(long tCurrent)
 	}
 
 
-    ggame.GetSimUIForm()->GetPenHandler()->CheckScroll();
+	// Scrolling while drag selecting at the screen edge keeps its original
+	// rate
+
+	m_cmsCheckScroll += cms;
+	if (m_cmsCheckScroll >= kctMapScrollRate * 10) {
+		m_cmsCheckScroll = 0;
+		ggame.GetSimUIForm()->GetPenHandler()->CheckScroll();
+	}
 
 }
 

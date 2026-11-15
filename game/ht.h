@@ -450,6 +450,7 @@ const WCoord kwcMax = ktcMax * 256;
 const WCoord kwcTile = 0x0100;
 const WCoord kwcTileHalf = kwcTile / 2;
 const WCoord kwcTile16th = kwcTile / 16;
+const WCoord kwxInvalidPrev = -32768;	// Gob::m_wxPrev when there is none
 
 #define kwcScrollLeftExtra 0
 
@@ -1769,7 +1770,7 @@ private:
 
 };
 
-const int kcmsgCommandQueueMax = 300;
+const int kcmsgCommandQueueMax = 2000;	// was 300
 
 class CommandQueue // cmdq
 {
@@ -3127,6 +3128,9 @@ public:
 
 private:
 	bool m_fTimerAdded;
+	long m_msLastTimer;
+	double m_wcScrollRemainder;
+	long m_cmsCheckScroll;
 
 	void InGameMenu();
 	void TestOptions();
@@ -4357,8 +4361,8 @@ private:
 
 // Use min gob count for 68K build because of stack variables
 
-#define kcpgobMax 768
-#define kcpgobVisibleMax 200
+#define kcpgobMax 4096	// was 768 on the original devices
+#define kcpgobVisibleMax kcpgobMax
 
 class Simulation : public TimerMgr // sim
 {
@@ -4411,6 +4415,11 @@ public:
 	void FindVisibleGobs(Gob ***pppgobVisible = NULL, int *pcgobVisible = NULL);
 	void SetSelection(Rect *prc);
 
+	// Smooth motion: true while the simulation is running and frames
+	// in between updates should be drawn with interpolated positions
+	bool IsSmoothMotionActive();
+	int GetInterpolationAlpha();
+
 	// TimerMgr override
 
 	virtual long GetTickCount();
@@ -4434,6 +4443,7 @@ private:
 	WCoord m_wyViewSave;
 	int m_cUpdatesSave;
 	int m_cupdTriggerMgrUpdateLast;
+	long m_msLastUpdate;
 };
 extern Simulation gsim;
 
@@ -5051,10 +5061,47 @@ public:
 
 	TRectSmall m_trcBoundingLast;
 
+	// Smooth motion. The position at the start of the latest simulation
+	// update is kept so drawing can interpolate between it and the current
+	// position. Not saved; kwxInvalid means don't interpolate.
+
+	WCoord m_wxPrev, m_wyPrev;
+
+	void SavePrevPosition() {
+		m_wxPrev = m_wx;
+		m_wyPrev = m_wy;
+	}
+
+	// Temporarily moves the gob to where it should be drawn nAlpha/256 of
+	// the way from its previous to its current position. Returns false (and
+	// changes nothing) if the gob shouldn't be interpolated.
+
+	bool BeginInterpolatedDraw(int nAlpha) {
+		if (m_wxPrev == kwxInvalidPrev)
+			return false;
+		int dx = m_wx - m_wxPrev;
+		int dy = m_wy - m_wyPrev;
+		if (dx == 0 && dy == 0)
+			return false;
+		if (dx > 2 * kwcTile || dx < -2 * kwcTile || dy > 2 * kwcTile || dy < -2 * kwcTile)
+			return false;
+		m_wxDraw = m_wx;
+		m_wyDraw = m_wy;
+		m_wx = (WCoord)(m_wxPrev + dx * nAlpha / 256);
+		m_wy = (WCoord)(m_wyPrev + dy * nAlpha / 256);
+		return true;
+	}
+
+	void EndInterpolatedDraw() {
+		m_wx = m_wxDraw;
+		m_wy = m_wyDraw;
+	}
+
 protected:
 	Gid m_gid;
 	dword m_ff;
 	WCoord m_wx, m_wy;
+	WCoord m_wxDraw, m_wyDraw;
 	Player *m_pplr;
 
 private:
@@ -5905,7 +5952,7 @@ const int knMoveWaiting = 3;
 const int kxInvalid = -1000;
 const WCoord kwxInvalid = -1000;
 const TCoord ktxInvalid = -100;
-const word kcBuildQueueMax = 10;
+const word kcBuildQueueMax = 50;	// was 10
 
 class BuildQueue
 {
@@ -6971,7 +7018,7 @@ private:
 	void ValidateHandle(HMem hmem);
 #endif
 
-	Heap *m_apheap[64];
+	Heap *m_apheap[250];	// HMemStruct::iheap is a byte
 	int m_cheap;
 	HandleTable **m_aphtab;
 	int m_chtab;

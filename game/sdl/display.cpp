@@ -392,6 +392,16 @@ void Display::RenderGameSurface() {
         s_psprm->DrawSprites(s_renderer, s_siz);
 
     SDL_RenderPresent(s_renderer);
+
+    // Present normally waits for vsync. In case it doesn't (vsync off in the
+    // driver, minimized window), don't spin faster than 240 frames a second.
+
+    static Uint64 s_nsLastPresent;
+    const Uint64 knsFrameMin = SDL_NS_PER_SECOND / 240;
+    Uint64 nsNow = SDL_GetTicksNS();
+    if (s_nsLastPresent != 0 && nsNow - s_nsLastPresent < knsFrameMin)
+        SDL_DelayPrecise(knsFrameMin - (nsNow - s_nsLastPresent));
+    s_nsLastPresent = SDL_GetTicksNS();
 }
 
 void Display::ResetScrollOffset()

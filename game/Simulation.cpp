@@ -24,6 +24,34 @@ Simulation::Simulation()
     m_wxViewSave = 0;
     m_wyViewSave = 0;
     m_cUpdatesSave = -1;
+    m_msLastUpdate = 0;
+}
+
+bool Simulation::IsSmoothMotionActive()
+{
+    if (!gfSmoothMotion || m_plvl == NULL || m_fPaused)
+        return false;
+
+    // Only while updates are arriving; e.g. not while a modal dialog has
+    // stopped the simulation timer.
+
+    long cmsInterval = gtGameSpeed * 10;
+    long cmsSince = HostGetMillisecondCount() - m_msLastUpdate;
+    return m_msLastUpdate != 0 && cmsSince >= 0 &&
+            cmsSince < cmsInterval * 3 + 100;
+}
+
+int Simulation::GetInterpolationAlpha()
+{
+    long cmsInterval = gtGameSpeed * 10;
+    if (cmsInterval <= 0)
+        return 256;
+    long cmsSince = HostGetMillisecondCount() - m_msLastUpdate;
+    if (cmsSince <= 0)
+        return 0;
+    if (cmsSince >= cmsInterval)
+        return 256;
+    return (int)(cmsSince * 256 / cmsInterval);
 }
 
 Simulation::~Simulation()
@@ -397,6 +425,11 @@ void Simulation::Update(CommandQueue *pcmdq)
     if (m_fPaused)
         return;
 
+    // Remember where everything was, for smooth motion drawing
+
+    for (Gob *pgob = ggobm.GetFirstGob(); pgob != NULL; pgob = ggobm.GetNextGob(pgob))
+        pgob->SavePrevPosition();
+    m_msLastUpdate = HostGetMillisecondCount();
 
     // Advance Simulation time
 
@@ -621,6 +654,9 @@ void Simulation::FindVisibleGobs(Gob ***pppgobVisible, int *pcgobVisible)
         ggame.GetPlayfieldSize(&siz);
         short xView = PcFromUwc(m_wxView) & 0xfffe;
         short yView = PcFromUwc(m_wyView) & 0xfffe;
+        // (FindGobs includes a tile around the edges, so gobs moving into
+        // view are found while drawing smooth motion)
+
         Rect rcVisible;
         rcVisible.left = xView;
         rcVisible.top = yView;
@@ -712,6 +748,21 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
     if (!(gwfPerfOptions & kfPerfSymbolFlashing))
         ffLayers &= ~kfGobLayerSymbols;
 
+    // Smooth motion: draw moving gobs part way between their previous and
+    // current positions
+
+    static Gob *s_apgobInterpolated[kcpgobMax];
+    int cgobInterpolated = 0;
+    if (IsSmoothMotionActive()) {
+        int nAlpha = GetInterpolationAlpha();
+        if (nAlpha < 256) {
+            for (ppgobT = m_apgobVisible; ppgobT < ppgobStop; ppgobT++) {
+                if ((*ppgobT)->BeginInterpolatedDraw(nAlpha))
+                    s_apgobInterpolated[cgobInterpolated++] = *ppgobT;
+            }
+        }
+    }
+
     // Draw gobs. Skip layers that aren't in use; only call a gob if it wants to draw on
     // this layer
 
@@ -737,6 +788,11 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
         }
     }
 
+
+    // Put interpolated gobs back where they really are
+
+    for (int i = 0; i < cgobInterpolated; i++)
+        s_apgobInterpolated[i]->EndInterpolatedDraw();
 
     // Clear kfGobRedraw since the gobs are now "valid".
     // Do this after painting because some painting code ends up setting this bit

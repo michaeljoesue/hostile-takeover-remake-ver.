@@ -373,9 +373,11 @@ bool Game::CheckMemoryAvailable()
 
 // Non-unit gob limits.
 
-#define kcSceneryGobsLimit 100
-#define kcScorchGobsLimit 30
-#define kcSupportGobsLimit 50
+// Raised for modern PCs. The originals were 100, 30 and 50.
+
+#define kcSceneryGobsLimit 600
+#define kcScorchGobsLimit 300
+#define kcSupportGobsLimit 600
 
 // min limits
 #define kcbDynMemMin 130000
@@ -393,8 +395,11 @@ bool Game::CheckMemoryAvailable()
 
 // max limits
 #define kcbDynMemMax 150000
-#define kcStructGobsHumanMaxSP 55
-#define kcMuntGobsHumanMaxSP 88
+// The player's limits are raised for modern PCs (originally 55 structures and
+// 88 units). The computer's limits stay as they were so the missions keep
+// their original difficulty.
+#define kcStructGobsHumanMaxSP 300
+#define kcMuntGobsHumanMaxSP 500
 #define kcStructGobsComputerMaxSP 72
 #define kcMuntGobsComputerMaxSP 117
 
@@ -577,7 +582,7 @@ bool Game::InitMemMgr()
 
 #define kcbMinHires ((dword)512 * 1024)
 #define kcbWarnHires ((dword)768 * 1024)
-#define kcbMaxHires ((dword)1024 * 1024)
+#define kcbMaxHires ((dword)12 * 1024 * 1024)	// was 1MB
 
 #define kcbMinLores ((kcbMinHires - kcbFixed) * 2 / 3 + kcbFixed)
 #define kcbWarnLores ((kcbWarnHires - kcbFixed) * 2 / 3 + kcbFixed)
@@ -1787,9 +1792,21 @@ bool Game::FilterEvent(Event *pevt)
 		extern short gcPaint;
 		gcPaint++;
 
-		// Draw
+		// With smooth motion, the playfield is redrawn every display frame
+		// (paced by vsync) with gobs at interpolated positions.
 
-		gpmfrmm->DrawFrame(false);
+		{
+			bool fSmooth = m_pfrmSimUI != NULL && gsim.IsSmoothMotionActive();
+			if (fSmooth)
+				m_pfrmSimUI->InvalidateRect(NULL);
+
+			// Draw
+
+			gpmfrmm->DrawFrame(false);
+
+			if (fSmooth)
+				gevm.SetRedrawFlags(kfRedrawDirty);
+		}
 		return true;
 	}
 

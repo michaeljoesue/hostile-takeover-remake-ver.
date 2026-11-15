@@ -72,7 +72,7 @@ void MemMgr::OnRebootFreeStorageDatabase()
 {
 }
 
-#define kcbDynMemWindows (3 * 1024 * 1024)
+#define kcbDynMemWindows (16 * 1024 * 1024)
 
 void MemMgr::GetInitSize(dword cbDynReserve, dword *pcbDyn, dword *pcbStorage)
 {
@@ -956,30 +956,16 @@ void *MemMgr::AllocPtr(word cb)
 
 void MemMgr::FreePtr(void *pv)
 {
-	// Copy handle byte at a time to satisfy ARM
-
 	HMem hmem;
-	byte *pbSrc = (byte *)((HMem *)pv - 1);
-	byte *pbDst = (byte *)&hmem;
-	*pbDst++ = *pbSrc++;
-	*pbDst++ = *pbSrc++;
-	*pbDst++ = *pbSrc++;
-	*pbDst++ = *pbSrc++;
+	memcpy(&hmem, (HMem *)pv - 1, sizeof(hmem));
 	ClearLocked(hmem);
 	FreeHandle(hmem);
 }
 
 void MemMgr::WritePtr(void *pvDst, word ib, void *pvSrc, word cb)
 {
-	// Copy handle byte at a time to satisfy ARM
-
 	HMem hmem;
-	byte *pbSrc = (byte *)((HMem *)pvDst - 1);
-	byte *pbDst = (byte *)&hmem;
-	*pbDst++ = *pbSrc++;
-	*pbDst++ = *pbSrc++;
-	*pbDst++ = *pbSrc++;
-	*pbDst++ = *pbSrc++;
+	memcpy(&hmem, (HMem *)pvDst - 1, sizeof(hmem));
 	WriteHandle(hmem, ib + sizeof(HMem), pvSrc, cb);
 }
 

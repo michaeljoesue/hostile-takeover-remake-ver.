@@ -157,6 +157,12 @@ Gob::Gob()
 	m_gid = kgidNull;
 	m_pplr = &gplrDummy;
 	m_ff = kfGobRedraw;
+	m_wx = 0;
+	m_wy = 0;
+	m_wxPrev = kwxInvalidPrev;
+	m_wyPrev = kwxInvalidPrev;
+	m_wxDraw = 0;
+	m_wyDraw = 0;
 	m_trcBoundingLast.txLeft = 127;
 	m_trcBoundingLast.tyTop = 127;
 	m_trcBoundingLast.txRight = -128;

@@ -31,14 +31,14 @@ bool CommandQueue::Init(int cmsgMax)
 	m_cmsg = 0;
 	m_cmsgMax = cmsgMax;
 	Assert(m_amsg == NULL);
-	m_amsg = (Message *)gmmgr.AllocPtr(sizeof(Message) * m_cmsgMax);
+	m_amsg = new Message[m_cmsgMax];
 	return m_amsg != NULL;
 }
 
 void CommandQueue::Exit()
 {
 	if (m_amsg != NULL) {
-		gmmgr.FreePtr(m_amsg);
+		delete[] m_amsg;
 		m_amsg = NULL;
 	}
 }
@@ -104,7 +104,7 @@ void CommandQueue::Enqueue(Message *pmsg)
 void CommandQueue::SetEntry(Message *pmsg)
 {
 	if (m_cmsg < m_cmsgMax) {
-		gmmgr.WritePtr(m_amsg, m_cmsg * sizeof(Message), pmsg, sizeof(Message));
+		m_amsg[m_cmsg] = *pmsg;
 		m_cmsg++;
 	}
 }

@@ -290,6 +290,26 @@ dword HostGetCurrentKeyState(dword keyBit)
         dw |= keyBitRockerLeft;
     if (pbKeys[SDL_SCANCODE_RIGHT])
         dw |= keyBitRockerRight;
+
+    // In fullscreen, holding the mouse at a screen edge scrolls too
+
+    SDL_Window *pwnd = SDL_GetMouseFocus();
+    if (gfFullscreen && pwnd != NULL &&
+            (SDL_GetWindowFlags(pwnd) & SDL_WINDOW_INPUT_FOCUS)) {
+        float x, y;
+        SDL_GetMouseState(&x, &y);
+        int cx, cy;
+        SDL_GetWindowSize(pwnd, &cx, &cy);
+        const float kcEdge = 2.0f;
+        if (x < kcEdge)
+            dw |= keyBitRockerLeft;
+        if (x >= cx - kcEdge)
+            dw |= keyBitRockerRight;
+        if (y < kcEdge)
+            dw |= keyBitRockerUp;
+        if (y >= cy - kcEdge)
+            dw |= keyBitRockerDown;
+    }
     return dw & keyBit;
 }
 
