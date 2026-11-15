@@ -37,6 +37,9 @@ namespace m
 
 		public event EventHandler ScaleChanged;
 
+		// Zoom to fit once the window has its size (see ZoomToFit)
+		bool m_fZoomToFitPending = false;
+
 		public LevelView() {
 			m_lvld = null;
 		}
@@ -73,6 +76,32 @@ namespace m
 			// Check size
 
 			CheckSize();
+
+			m_fZoomToFitPending = true;
+		}
+
+		// Picks the zoom that shows the whole map as large as the window
+		// allows, in steps of 25%. It's never smaller than the display
+		// scaling (125%, 150%...), so map tiles are at least the size they
+		// were when Windows stretched M, and at most 300%.
+
+		public void ZoomToFit() {
+			if (m_lvld == null || Parent == null || m_bm == null)
+				return;
+			float flDisplay = DeviceDpi / 96.0f;
+			Size sizAvail = Parent.ClientSize;
+
+			// The toolbar floats over the top of the view
+			int cyToolbar = (int)(28 * flDisplay);
+			float flFit = Math.Min((float)(sizAvail.Width - 4) / m_bm.Width,
+					(float)(sizAvail.Height - cyToolbar) / m_bm.Height);
+			float flScale = (float)Math.Floor(flFit * 4.0f) / 4.0f;
+			float flMin = (float)Math.Round(flDisplay * 4.0f) / 4.0f;
+			if (flScale < flMin)
+				flScale = flMin;
+			if (flScale > 3.0f)
+				flScale = 3.0f;
+			SetScale(flScale);
 		}
 
 		public void SetScale(float flScale) {
@@ -291,6 +320,12 @@ namespace m
 		private void LevelView_Paint(object sender, System.Windows.Forms.PaintEventArgs e) {
 			if (m_lvld == null)
 				return;
+
+			// First paint: the window has its final size now
+			if (m_fZoomToFitPending) {
+				m_fZoomToFitPending = false;
+				BeginInvoke(new MethodInvoker(ZoomToFit));
+			}
 			DrawLevelImage(e.Graphics);
 		}
 
