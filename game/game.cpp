@@ -1786,8 +1786,11 @@ bool Game::FilterEvent(Event *pevt)
 
 		{
 			bool fSmooth = m_pfrmSimUI != NULL && gsim.IsSmoothMotionActive();
-			if (fSmooth)
+			if (fSmooth) {
 				m_pfrmSimUI->InvalidateRect(NULL);
+				if (gpmm != NULL)
+					gpmm->Invalidate();
+			}
 
 			// Draw
 

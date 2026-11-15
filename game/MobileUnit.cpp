@@ -139,6 +139,7 @@ MobileUnitGob::MobileUnitGob(MobileUnitConsts *pmuntc) : UnitGob(pmuntc)
 	m_muaPending = kmuaNone;
 	m_wfMunt = kfMuntReturnFire | kfMuntAttackEnemiesWhenGuarding | kfMuntAttackEnemiesWhenMoving;
 	m_stPending = kstReservedNull;
+	m_cmsgQueued = 0;
 	m_itptPath = 0;
 	m_ppathUnit = NULL;
 	m_ppathAvoid = NULL;
@@ -260,7 +261,7 @@ bool MobileUnitGob::Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword
 	return true;
 }
 
-#define knVerMobileUnitGobState 10
+#define knVerMobileUnitGobState 11
 bool MobileUnitGob::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
@@ -308,6 +309,11 @@ bool MobileUnitGob::LoadState(Stream *pstm)
 	m_tcTargetRadius = pstm->ReadWord();
 	m_wcMoveDistPerUpdate = pstm->ReadWord();
 	m_cupdLastHitOrNearbyAllyHit = pstm->ReadDword();
+	m_cmsgQueued = pstm->ReadByte();
+	if (m_cmsgQueued > kcmsgQueuedMax)
+		return false;
+	for (int i = 0; i < m_cmsgQueued; i++)
+		pstm->Read(&m_amsgQueued[i], sizeof(Message));
 	return UnitGob::LoadState(pstm);
 }
 
@@ -354,6 +360,9 @@ bool MobileUnitGob::SaveState(Stream *pstm)
 	pstm->WriteWord(m_tcTargetRadius);
 	pstm->WriteWord(m_wcMoveDistPerUpdate);
 	pstm->WriteDword(m_cupdLastHitOrNearbyAllyHit);
+	pstm->WriteByte((byte)m_cmsgQueued);
+	for (int i = 0; i < m_cmsgQueued; i++)
+		pstm->Write(&m_amsgQueued[i], sizeof(Message));
 	return UnitGob::SaveState(pstm);
 }
 
@@ -490,12 +499,50 @@ void MobileUnitGob::EndAttackMove()
 
 bool gfAttackMoveOrder = false;
 
+// Set while SimUIForm gives a queued order (Shift+right-click)
+
+bool gfQueueOrder = false;
+
+// Sends a player's order now, or with Shift+right-click puts it after the
+// orders the unit is carrying out
+
+void MobileUnitGob::IssueOrder(Message *pmsg)
+{
+	if (gfQueueOrder && (!IsIdle() || m_cmsgQueued != 0)) {
+		if (m_cmsgQueued < kcmsgQueuedMax)
+			m_amsgQueued[m_cmsgQueued++] = *pmsg;
+		return;
+	}
+	if (!gfQueueOrder)
+		gcmdq.Enqueue(kmidClearActionCommand, m_gid);
+	gcmdq.Enqueue(pmsg);
+}
+
+// When the unit has finished an order, start the next queued one
+
+void MobileUnitGob::StartQueuedOrder()
+{
+	if (m_cmsgQueued == 0 || (m_wfMunt & kfMuntCommandPending))
+		return;
+	Message msg = m_amsgQueued[0];
+	m_cmsgQueued--;
+	for (int i = 0; i < m_cmsgQueued; i++)
+		m_amsgQueued[i] = m_amsgQueued[i + 1];
+
+	// A queued attack on a unit that's gone is skipped
+
+	if (msg.mid == kmidAttackCommand && ggobm.GetGob(msg.AttackCommand.gidTarget) == NULL) {
+		StartQueuedOrder();
+		return;
+	}
+	gcmdq.Enqueue(&msg);
+}
+
 void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord wyCenter, TCoord tcRadius, WCoord wcMoveDistPerUpdate)
 {
 	// This is a new order from the player: it replaces an attack-move in
-	// progress
-
-	gcmdq.Enqueue(kmidClearActionCommand, m_gid);
+	// progress (IssueOrder sends kmidClearActionCommand first), unless it is
+	// queued with Shift+right-click
 
 	if (gid == kgidNull) {
 		// Send formed command
@@ -513,7 +560,7 @@ void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WC
 		msgT.MoveCommand.wptTargetCenter.wy = wyCenter;
 		msgT.MoveCommand.tcTargetRadius = tcRadius;
 		msgT.MoveCommand.wcMoveDistPerUpdate = wcMoveDistPerUpdate;
-		gcmdq.Enqueue(&msgT);
+		IssueOrder(&msgT);
 		return;
 	}
 
@@ -544,7 +591,7 @@ void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WC
 		msgT.MoveCommand.wptTargetCenter.wy = msgT.MoveCommand.wptTarget.wy;
 		msgT.MoveCommand.tcTargetRadius = 0;
 		msgT.MoveCommand.wcMoveDistPerUpdate = wcMoveDistPerUpdate;
-		gcmdq.Enqueue(&msgT);
+		IssueOrder(&msgT);
 		return;
 	}
 
@@ -583,7 +630,7 @@ void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WC
 	msgT.AttackCommand.wptTargetCenter.wy = wyCenter;
 	msgT.AttackCommand.tcTargetRadius = tcRadius;
 	msgT.AttackCommand.wcMoveDistPerUpdate = wcMoveDistPerUpdate;
-	gcmdq.Enqueue(&msgT);
+	IssueOrder(&msgT);
 }
 
 void SendAttackCommand(Gid gidReceiver, Gid gidTarget) 
@@ -749,11 +796,13 @@ BeginStateMachine
 
 	OnMsg(kmidClearActionCommand)
 		m_mua = kmuaNone;
+		m_cmsgQueued = 0;
 		if (IsHumanOrGodControlled())
 			m_wfMunt &= ~kfMuntAttackEnemiesWhenMoving;
 
 	OnMsg(kmidStopCommand)
 		m_mua = kmuaNone;
+		m_cmsgQueued = 0;
 		if (IsHumanOrGodControlled())
 			m_wfMunt &= ~kfMuntAttackEnemiesWhenMoving;
 		PendOrProcessCommand(pmsg, kstGuard);
@@ -895,6 +944,10 @@ lbHitNoDamage:
 			if (m_wfMunt & kfMuntMoveWaitingNearby)
 				NotifyMoveWaitingNearby(m_wx, m_wy);
 			Assert(!(m_wfMunt & (kfMuntPathPending | kfMuntMoveWaitingNearby)));
+
+			// Next Shift+right-click order, if any
+
+			StartQueuedOrder();
 
 		OnUpdate
 			// Note if an enemy is nearby the update interval is min-ed 

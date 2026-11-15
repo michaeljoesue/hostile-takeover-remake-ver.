@@ -559,7 +559,7 @@ bool SimUIForm::EventProc(Event *pevt)
 {
     switch (pevt->eType) {
     case rightDownEvent:
-        OnRightClick(pevt->x, pevt->y);
+        OnRightClick(pevt->x, pevt->y, (pevt->ffMods & kfModShift) != 0);
         return true;
 
     case middleDownEvent:
@@ -791,7 +791,7 @@ void SimUIForm::ScrollViewBy(WCoord dwx, WCoord dwy)
 // Right-click: on the ground, move the selected units there; on an enemy,
 // attack it; on one of the player's own units or buildings, open its menu.
 
-void SimUIForm::OnRightClick(int x, int y)
+void SimUIForm::OnRightClick(int x, int y, bool fQueue)
 {
     if (gpfrmPlace != NULL && gpfrmPlace->IsBusy())
         return;
@@ -808,10 +808,21 @@ void SimUIForm::OnRightClick(int x, int y)
     if (pgobHit != NULL && pgobHit->GetType() != kgtReplicator &&
             (pgobHit->GetFlags() & kfGobUnit) != 0 &&
             (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())) {
-        pgobHit->PopupMenu();
-        return;
+        // Shift+right-click on one of your own units queues a move there
+        // instead of opening its menu
+
+        if (!fQueue) {
+            pgobHit->PopupMenu();
+            return;
+        }
+        pgobHit = NULL;
     }
+
+    // Shift+right-click queues the order after the ones being carried out
+
+    gfQueueOrder = fQueue;
     MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, kfMasMove | kfMasAttack);
+    gfQueueOrder = false;
 }
 
 bool SimUIForm::OnPenEvent(Event *pevt)
@@ -1523,33 +1534,62 @@ MiniMapControl::MiniMapControl()
 	m_xOff = 0;
 	m_yOff = 0;
 	m_tInvalidateLast = 0;
+	m_axSrc = NULL;
+	m_aySrc = NULL;
+	m_nPpt = 1 << 16;
+	m_cxDisp = 0;
+	m_cyDisp = 0;
 }
 
 MiniMapControl::~MiniMapControl()
 {
 	gpmm = NULL;
 	delete m_pbm;
+	delete[] m_axSrc;
+	delete[] m_aySrc;
 }
 
-#define kcxyMiniMapLargeTiles 64
+// Mini map layout. The terrain is kept in a dib at 1 or 2 pixels per tile
+// (the mini tile sets' sizes) and stretched to the display size when
+// painted, so the mini map can be any size. Units are drawn on top at their
+// current (interpolated) positions every paint so they move smoothly.
+
+#define kpctMiniMapTarget 34	// mini map height as % of the playfield height
+#define kcxyMiniMapMin 96
+#define knPptMax (4 << 16)		// at most 4 pixels per tile (16.16)
+
+void MiniMapControl::CalcLayout(int *pnBase, int *pcxDisp, int *pcyDisp, int *pnPpt)
+{
+	Size siz;
+	ggame.GetPlayfieldSize(&siz);
+	Size sizMap;
+	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
+	int ctx = sizMap.cx / gcxTile;
+	int cty = sizMap.cy / gcyTile;
+	int ctMax = ctx > cty ? ctx : cty;
+	if (ctMax < 1)
+		ctMax = 1;
+
+	int cxyTarget = siz.cy * kpctMiniMapTarget / 100;
+	if (cxyTarget > siz.cx / 3)
+		cxyTarget = siz.cx / 3;
+	if (cxyTarget < kcxyMiniMapMin)
+		cxyTarget = kcxyMiniMapMin;
+	int nPpt = (int)(((long long)cxyTarget << 16) / ctMax);
+	if (nPpt > knPptMax)
+		nPpt = knPptMax;
+
+	*pnPpt = nPpt;
+	*pnBase = nPpt >= (2 << 16) ? 2 : 1;
+	*pcxDisp = (int)(((long long)ctx * nPpt) >> 16);
+	*pcyDisp = (int)(((long long)cty * nPpt) >> 16);
+}
 
 int MiniMapControl::CalcWidth()
 {
-	// Figure out scale based on playfield size
-
-	Size siz;
-	ggame.GetPlayfieldSize(&siz);
-	int nScale = 1;
-	if (siz.cx >= 240)
-		nScale = 2;
-
-	// Width
-
-	Size sizMap;
-	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
-	if (sizMap.cx > kcxyMiniMapLargeTiles * gcxTile || sizMap.cy > kcxyMiniMapLargeTiles * gcyTile)
-		nScale = 1;
-	return sizMap.cx / (gcxTile / nScale) + 1;
+	int nBase, cxDisp, cyDisp, nPpt;
+	CalcLayout(&nBase, &cxDisp, &cyDisp, &nPpt);
+	return cxDisp + 1;
 }
 
 bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
@@ -1559,85 +1599,40 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	if (!Control::Init(pfrm, pini, pfind))
 		return false;
 
-	// idc (x y cx cy) border
-
-	char szBorder[32];
-	int cArgs = pini->GetPropertyValue(pfind, "%*d (%*d %*d %*d %*d) %s", szBorder);
-
 	// Remember the size of the input UI area since our border drawing needs it
 
 	Size sizDib;
 	ggame.GetInputUIForm()->GetFormMgr()->GetDib()->GetSize(&sizDib);
 	m_cyInputUI = sizDib.cy;
 
-	// Our even aligned blts depend on having a border for odd width maps
-
 	m_cxyBorder = 1;
 
-	// Figure out scale based on playfield size
+	// Layout
 
-	Size siz;
-	ggame.GetPlayfieldSize(&siz);
-	m_nScale = 1;
-	if (siz.cx >= 240 && siz.cx < 320) {
-		if (siz.cy > siz.cx)
-			m_nScale = 2;
-	}
-	if (siz.cx >= 320)
-		m_nScale = 2;
-
-	// Maps bigger than the original 64x64 get 1 pixel per tile so the
-	// mini map stays at most 256 pixels square
-
-	Size sizMap;
-	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
-	if (sizMap.cx > kcxyMiniMapLargeTiles * gcxTile || sizMap.cy > kcxyMiniMapLargeTiles * gcyTile)
-		m_nScale = 1;
+	CalcLayout(&m_nScale, &m_cxDisp, &m_cyDisp, &m_nPpt);
 	gsim.SetMiniMapScale(m_nScale);
+	m_rc.left = m_rc.right - (m_cxDisp + m_cxyBorder);
+	m_rc.bottom = m_rc.top + m_cyDisp + m_cxyBorder;
+	m_xOff = 0;
+	m_yOff = 0;
 
-	// Size
+	// Terrain dib at the base scale
 
-	m_rc.left = m_rc.right - ((sizMap.cx / (gcxTile / m_nScale)) + m_cxyBorder);
-	m_rc.bottom = m_rc.top + (sizMap.cy / (gcyTile / m_nScale)) + m_cxyBorder;
-
-	// The map is aligned to an edge. The edge is even, and the dib starts on
-	// an even address, so we want the width to be even so our blts are aligned.
-	// If the map is odd, draw the border inside the dib to make it even. If the
-	// map is even, draw the border outside the dib.
-
-	int cx = m_rc.Width();
-	if (cx & 1) {
-		m_wfMm &= ~kfMmVertBorderInside;
-		cx -= m_cxyBorder;
-		m_xOff = 0;
-		m_yOff = m_cxyBorder;
-	} else {
-		m_wfMm |= kfMmVertBorderInside;
-		m_xOff = m_cxyBorder;
-		m_yOff = m_cxyBorder;
-	}
-
-	// Alloc a dib to hold it
-
-	m_pbm = CreateDibBitmap(NULL, cx, m_rc.Height());
+	ggobm.GetMapSize(&m_ctx, &m_cty);
+	m_pbm = CreateDibBitmap(NULL, m_ctx * m_nScale, m_cty * m_nScale);
 	if (m_pbm == NULL)
 		return false;
 
-	// Draw internal borders
+	// Stretch tables: display pixel -> terrain dib pixel
 
-	int x = 0;
-	int y = 0;
-	if (m_cxyBorder != 0) {
-		int iclr = kiclr0CyanSide;
-		Color clrBorder = GetColor(iclr);
-		if (m_wfMm & kfMmVertBorderInside) {
-			m_pbm->Fill(x + m_cxyBorder, y, m_rc.Width() - m_cxyBorder, m_cxyBorder, clrBorder);
-			m_pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, clrBorder);
-			m_pbm->Fill(x, y + m_rc.Height() - m_cyInputUI + 1, m_cxyBorder, m_rc.Height(), GetColor(kiclrBlack));
-		} else {
-			m_pbm->Fill(x, y, m_rc.Width(), m_cxyBorder, clrBorder);
-		}
-	}
+	delete[] m_axSrc;
+	delete[] m_aySrc;
+	m_axSrc = new int[m_cxDisp];
+	m_aySrc = new int[m_cyDisp];
+	for (int x = 0; x < m_cxDisp; x++)
+		m_axSrc[x] = (int)(((long long)x * m_ctx * m_nScale) / m_cxDisp);
+	for (int y = 0; y < m_cyDisp; y++)
+		m_aySrc[y] = (int)(((long long)y * m_cty * m_nScale) / m_cyDisp);
 
 	// Stuff constants
 
@@ -1646,7 +1641,6 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	m_pbTileData = (byte *)(pmtseth + 1);
 	m_pwTileMap = ptmap->m_pwMapData;
 	m_pbFogMap = gsim.GetLevel()->GetFogMap()->GetMapPtr();
-	ggobm.GetMapSize(&m_ctx, &m_cty);
 	m_cbRowBytes = m_pbm->GetRowBytes();
 	m_clrBlack = (byte)GetColor(kiclrBlack);
 	m_clrWhite = (byte)GetColor(kiclrWhite);
@@ -1665,68 +1659,125 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	return true;
 }
 
+// Fills a rect clipped to the mini map's display area
+
+static void FillClipped(DibBitmap *pbm, Rect *prcClip, int x, int y, int cx, int cy, byte clr)
+{
+	Rect rc;
+	rc.Set(x, y, x + cx, y + cy);
+	if (!rc.Intersect(&rc, prcClip))
+		return;
+	pbm->Fill(rc.left, rc.top, rc.Width(), rc.Height(), clr);
+}
+
 void MiniMapControl::OnPaint(DibBitmap *pbm)
 {
 	Rect rcForm;
 	m_pfrm->GetRect(&rcForm);
 	int x = m_rc.left + rcForm.left;
 	int y = m_rc.top + rcForm.top;
+	int xMap = x + m_cxyBorder;
+	int yMap = y + m_cxyBorder;
 
-	// Lay down bits
+	// Border: top, and left down to the input bar
 
-	Size siz;
-	m_pbm->GetSize(&siz);
-	Rect rcSrc;
-	rcSrc.Set(0, 0, siz.cx, siz.cy);
+	int iclr = kiclr0CyanSide;
+	pbm->Fill(x, y, m_rc.Width(), m_cxyBorder, GetColor(iclr));
+	pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, GetColor(iclr));
+	pbm->Fill(x, y + m_rc.Height() - m_cyInputUI + 1, m_cxyBorder, m_cyInputUI, GetColor(kiclrBlack));
 
-	if (m_wfMm & kfMmVertBorderInside) {
-		pbm->Blt(m_pbm, &rcSrc, x, y);
-	} else {
-		pbm->Blt(m_pbm, &rcSrc, x + m_cxyBorder, y);
-		int iclr = kiclr0CyanSide;
-		pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, GetColor(iclr));
-		pbm->Fill(x, y + m_rc.Height() - m_cyInputUI + 1, m_cxyBorder, m_rc.Height(), GetColor(kiclrBlack));
+	// Stretch the terrain to the display size
+
+	Size sizDst;
+	pbm->GetSize(&sizDst);
+	Rect rcClip;
+	rcClip.Set(xMap, yMap, xMap + m_cxDisp, yMap + m_cyDisp);
+	Rect rcDst;
+	rcDst.Set(0, 0, sizDst.cx, sizDst.cy);
+	if (!rcClip.Intersect(&rcClip, &rcDst))
+		return;
+
+	byte *pbSrcBase = m_pbm->GetBits();
+	byte *pbDstBase = pbm->GetBits();
+	int cbRowDst = pbm->GetRowBytes();
+	for (int yD = rcClip.top; yD < rcClip.bottom; yD++) {
+		byte *pbSrcRow = pbSrcBase + (long)m_aySrc[yD - yMap] * m_cbRowBytes;
+		byte *pbDst = pbDstBase + (long)yD * cbRowDst + rcClip.left;
+		int *pxSrc = &m_axSrc[rcClip.left - xMap];
+		for (int xD = rcClip.left; xD < rcClip.right; xD++)
+			*pbDst++ = pbSrcRow[*pxSrc++];
 	}
 
-	// Draw box showing the full-screen visible area of the map
+	// Units and buildings, where they are being drawn right now
 
-	WCoord wxViewT, wyViewT;
-	gsim.GetViewPos(&wxViewT, &wyViewT);
-	short xView = PcFromUwc(wxViewT) & 0xfffe;
-	short yView = PcFromUwc(wyViewT) & 0xfffe;
-	WCoord wxView = WcFromUpc(xView);
-	WCoord wyView = WcFromUpc(yView);
+	int nAlpha = 256;
+	if (gsim.IsSmoothMotionActive())
+		nAlpha = gsim.GetInterpolationAlpha();
+	int cxyUnit = m_nPpt >> 16;
+	if (cxyUnit < 2)
+		cxyUnit = 2;
+	for (Gob *pgob = ggobm.GetFirstGob(); pgob != NULL; pgob = ggobm.GetNextGob(pgob)) {
+		dword ff = pgob->GetFlags();
+		if (!(ff & kfGobUnit))
+			continue;
+		if ((ff & (kfGobMobileUnit | kfGobActive)) == kfGobMobileUnit)
+			continue;
+		WCoord wx, wy;
+		pgob->GetDrawPosition(nAlpha, &wx, &wy);
+		TCoord tx = TcFromWc(wx);
+		TCoord ty = TcFromWc(wy);
+		if (tx < 0 || ty < 0 || tx >= m_ctx || ty >= m_cty)
+			continue;
+		if (IsFogOpaque(m_pbFogMap[ty * m_ctx + tx]))
+			continue;
+		UnitGob *punt = (UnitGob *)pgob;
+		byte clr = (ff & kfGobSelected) ? m_clrWhite : m_aclrSide[punt->GetSide()];
+		int xU = xMap + (int)(((long long)wx * m_nPpt) >> 24);
+		int yU = yMap + (int)(((long long)wy * m_nPpt) >> 24);
+		if (ff & kfGobStructure) {
+			StructConsts *pstruc = (StructConsts *)punt->GetConsts();
+			int cx = (int)(((long long)pstruc->ctx * m_nPpt) >> 16);
+			int cy = (int)(((long long)pstruc->cty * m_nPpt) >> 16);
+			FillClipped(pbm, &rcClip, xU, yU, cx < 2 ? 2 : cx, cy < 2 ? 2 : cy, clr);
+		} else {
+			// Mobile units are positioned by their center
+			FillClipped(pbm, &rcClip, xU - cxyUnit / 2, yU - cxyUnit / 2, cxyUnit, cxyUnit, clr);
+		}
+	}
 
-	int cxTile = gcxTile / m_nScale;
-	int cyTile = gcyTile / m_nScale;
+	// Draw box showing the visible area of the map
 
-	Rect rc;
-	rc.left = x + m_cxyBorder + PcFromUwc(wxView) / cxTile;
-	rc.top = y + m_cxyBorder + PcFromUwc(wyView) / cyTile;
+	WCoord wxView, wyView;
+	gsim.GetViewPos(&wxView, &wyView);
+	Size siz;
 	ggame.GetPlayfieldSize(&siz);
-	rc.right = rc.left + (siz.cx + cxTile - 1) / cxTile;
-	rc.bottom = rc.top + (siz.cy + cyTile - 1) / cyTile;
-	DrawBorder(pbm, &rc, 1, GetColor(kiclrWhite));
+	Rect rc;
+	rc.left = xMap + (int)(((long long)wxView * m_nPpt) >> 24);
+	rc.top = yMap + (int)(((long long)wyView * m_nPpt) >> 24);
+	rc.right = rc.left + (int)(((long long)WcFromPc(siz.cx < kpcMax ? siz.cx : kpcMax) * m_nPpt) >> 24);
+	rc.bottom = rc.top + (int)(((long long)WcFromPc(siz.cy < kpcMax ? siz.cy : kpcMax) * m_nPpt) >> 24);
+	if (rc.right > rcClip.right)
+		rc.right = rcClip.right;
+	if (rc.bottom > rcClip.bottom)
+		rc.bottom = rcClip.bottom;
+	if (rc.left < rcClip.left)
+		rc.left = rcClip.left;
+	if (rc.top < rcClip.top)
+		rc.top = rcClip.top;
+	if (rc.Width() > 1 && rc.Height() > 1)
+		DrawBorder(pbm, &rc, 1, GetColor(kiclrWhite));
 }
 
 //TUNE:
 #define kctMiniMapInvalidateRate 25
 
 void MiniMapControl::Update()
-{	
-    // Gets called at Update time. If the minimap is dirty and it's been at
-    // least kctMiniMapUpdateRate ticks since the last invalidate, invalidate
-    // it now. This gives us immediate invalidates in many cases, but ensures
-    // there is at least kctMiniMapUpdateRate ticks between invalidates.
+{
+	// Units are drawn on the mini map as it paints, so repaint it every
+	// update (with smooth motion it is also repainted every frame)
 
-    long tCurrent = gtimm.GetTickCount();
-	if (m_wfMm & kfMmRedraw) {
-		if (m_tInvalidateLast == 0 || tCurrent - m_tInvalidateLast >= kctMiniMapInvalidateRate) {
-			m_tInvalidateLast = tCurrent;
-			m_wfMm &= ~kfMmRedraw;
-			Invalidate();
-		}
-	}
+	m_wfMm &= ~kfMmRedraw;
+	Invalidate();
 }
 
 void MiniMapControl::Redraw()
@@ -1758,29 +1809,18 @@ void MiniMapControl::OnPenEvent(Event *pevt)
 
 	Size sizPlayfield;
 	ggame.GetPlayfieldSize(&sizPlayfield);
+	WCoord wcxView = WcFromPc(sizPlayfield.cx < kpcMax ? sizPlayfield.cx : kpcMax);
+	WCoord wcyView = WcFromPc(sizPlayfield.cy < kpcMax ? sizPlayfield.cy : kpcMax);
 
 	if (pevt->eType == penDownEvent) {
-		// Calc the rectangle (in minimap pixel coordinates) bounding the map
-		// area currently being viewed.
+		// Pen down inside the view rect? Then drag it; otherwise center the
+		// view on the point clicked
 
-		Rect rcView;
-		rcView.left = TcFromWc(wxView) * m_nScale;
-		rcView.top = TcFromWc(wyView) * m_nScale;
-		rcView.right = rcView.left + (((sizPlayfield.cx + gcxTile - 1) / gcxTile) * m_nScale);
-		rcView.bottom = rcView.top + (((sizPlayfield.cy + gcyTile - 1) / gcyTile) * m_nScale);
-
-        
-		// Pen down inside the view rect?
-
-		if (!rcView.PtIn(xPen, yPen)) {
-
-			// No, set the view to be centered around the point tapped
-
-			TCoord tx = xPen / m_nScale;
-			TCoord ty = yPen / m_nScale;
-
-			wxView = WcFromTc(tx - (sizPlayfield.cx / gcxTile) / 2);
-			wyView = WcFromTc(ty - ((sizPlayfield.cy + gcyTile - 1) / gcyTile) / 2);
+		WCoord wxPen = (WCoord)(((long long)xPen << 24) / m_nPpt);
+		WCoord wyPen = (WCoord)(((long long)yPen << 24) / m_nPpt);
+		if (!(wxPen >= wxView && wxPen < wxView + wcxView && wyPen >= wyView && wyPen < wyView + wcyView)) {
+			wxView = wxPen - wcxView / 2;
+			wyView = wyPen - wcyView / 2;
 		}
 
 		s_xPenDown = xPen;
@@ -1788,12 +1828,8 @@ void MiniMapControl::OnPenEvent(Event *pevt)
 		s_wxViewDown = wxView;
 		s_wyViewDown = wyView;
 	} else {
-        int dx = xPen - s_xPenDown;
-		wxView = s_wxViewDown + WcFromTc(dx / m_nScale);
-        wxView += (dx % m_nScale) * kwcTile / m_nScale;
-        int dy = yPen - s_yPenDown;
-		wyView = s_wyViewDown + WcFromTc(dy / m_nScale);
-        wyView += (dy % m_nScale) * kwcTile / m_nScale;
+		wxView = s_wxViewDown + (WCoord)(((long long)(xPen - s_xPenDown) << 24) / m_nPpt);
+		wyView = s_wyViewDown + (WCoord)(((long long)(yPen - s_yPenDown) << 24) / m_nPpt);
 	}
 
 	gsim.SetViewPos(wxView, wyView);
@@ -1856,126 +1892,42 @@ void MiniMapControl::RedrawTRect(TRect *ptrc)
 #pragma clang diagnostic pop
 #endif
 
-	// Redraw this rect
+	// Redraw the terrain, fog and Galaxite of this rect in the terrain dib.
+	// Units are drawn over it when the mini map paints.
 
-	byte *pbDst = m_pbm->GetBits() + (long)ptrc->top * m_cbRowBytes * m_nScale +
-			ptrc->left * m_nScale + (long)m_yOff * m_cbRowBytes + m_xOff;
-	int cbDstReturn = m_cbRowBytes - ptrc->Width() * m_nScale;
-	long offset = (long)ptrc->top * m_ctx + ptrc->left;
-	byte *pbFogMap = m_pbFogMap + offset;
-	word *pwTileMap = m_pwTileMap + offset;
-	int ctReturn = m_ctx - ptrc->Width();
-
-	if (m_nScale == 1) {
-		for (TCoord ty = ptrc->top; ty < ptrc->bottom; ty++) {
-			for (TCoord tx = ptrc->left; tx < ptrc->right; tx++, pbFogMap++, pwTileMap++) {
-				// Fogged?
-
-				if (IsFogOpaque(*pbFogMap)) {
-					*pbDst++ = m_clrBlack;
-					continue;
-				}
-
-				// Not fogged; remember to redraw the minimap to the screen next timer
-
+	for (TCoord ty = ptrc->top; ty < ptrc->bottom; ty++) {
+		for (TCoord tx = ptrc->left; tx < ptrc->right; tx++) {
+			long offset = (long)ty * m_ctx + tx;
+			byte bFog = m_pbFogMap[offset];
+			byte *pbDst = m_pbm->GetBits() + (long)ty * m_nScale * m_cbRowBytes + tx * m_nScale;
+			byte ab[4];
+			if (IsFogOpaque(bFog)) {
+				ab[0] = ab[1] = ab[2] = ab[3] = m_clrBlack;
+			} else {
 				m_wfMm |= kfMmRedraw;
-
-				// Unit gob?
-
-				UnitGob *punt = ggobm.GetUnitGob(tx, ty);
-
-				// don't show inactive munts
-
-				if (punt != NULL) {
-					dword wf = punt->GetFlags();
-					if ((wf & (kfGobMobileUnit | kfGobActive)) != (kfGobMobileUnit))  {
-						if (wf & kfGobSelected) {
-							*pbDst++ = m_clrWhite;
-						} else {
-							*pbDst++ = m_aclrSide[punt->GetSide()];
-						}
-						continue;
+				if (HasGalaxite(bFog)) {
+					ab[0] = ab[1] = ab[2] = ab[3] = m_clrGalaxite;
+				} else {
+					int nTile = (BigWord(m_pwTileMap[offset]) & 0x7fc);
+					if (m_nScale == 1) {
+						ab[0] = m_pbTileData[nTile >> 2];
+					} else {
+						byte *pbSrc = &m_pbTileData[nTile];
+						ab[0] = pbSrc[0];
+						ab[1] = pbSrc[1];
+						ab[2] = pbSrc[2];
+						ab[3] = pbSrc[3];
 					}
 				}
-
-				// Galaxite?
-
-				if (HasGalaxite(*pbFogMap)) {
-					*pbDst++ = m_clrGalaxite;
-					continue;
-				}
-
-				// Tile
-
-				int nTile = (BigWord(*pwTileMap) & 0x7fc);
-				*pbDst++ = m_pbTileData[nTile >> 2];
-				continue;
 			}
-			pwTileMap += ctReturn;
-			pbFogMap += ctReturn;
-			pbDst += cbDstReturn;
-		}
-	} else if (m_nScale == 2) {
-		for (TCoord ty = ptrc->top; ty < ptrc->bottom; ty++) {
-			for (TCoord tx = ptrc->left; tx < ptrc->right; tx++, pbFogMap++, pwTileMap++) {
-				// Fogged?
-
-				if (IsFogOpaque(*pbFogMap)) {
-					*pbDst++ = m_clrBlack;
-					*pbDst++ = m_clrBlack;
-					*(pbDst + m_cbRowBytes - 2) = m_clrBlack;
-					*(pbDst + m_cbRowBytes - 1) = m_clrBlack;
-					continue;
-				}
-
-				// Not fogged; remember to redraw the minimap to the screen next timer
-
-				m_wfMm |= kfMmRedraw;
-
-				// Unit gob?
-
-				UnitGob *punt = ggobm.GetUnitGob(tx, ty);
-				if (punt != NULL) {
-					dword wf = punt->GetFlags();
-					if ((wf & (kfGobMobileUnit | kfGobActive)) != (kfGobMobileUnit))  {
-						byte clr;
-						if (wf & kfGobSelected) {
-							clr = m_clrWhite;
-						} else {
-							clr = m_aclrSide[punt->GetSide()];
-						}
-
-						*pbDst++ = clr;
-						*pbDst++ = clr;
-						*(pbDst + m_cbRowBytes - 2) = clr;
-						*(pbDst + m_cbRowBytes - 1) = clr;
-						continue;
-					}
-				}
-
-				// Galaxite?
-
-				if (HasGalaxite(*pbFogMap)) {
-					*pbDst++ = m_clrGalaxite;
-					*pbDst++ = m_clrGalaxite;
-					*(pbDst + m_cbRowBytes - 2) = m_clrGalaxite;
-					*(pbDst + m_cbRowBytes - 1) = m_clrGalaxite;
-					continue;
-				}
-
-				// Tile
-
-				int nTile = (BigWord(*pwTileMap) & 0x7fc);
-				byte *pbSrc = &m_pbTileData[nTile];
-				*pbDst++ = *pbSrc++;
-				*pbDst++ = *pbSrc++;
-				*(pbDst + m_cbRowBytes - 2) = *pbSrc++;
-				*(pbDst + m_cbRowBytes - 1) = *pbSrc++;
-				continue;
+			if (m_nScale == 1) {
+				*pbDst = ab[0];
+			} else {
+				pbDst[0] = ab[0];
+				pbDst[1] = ab[1];
+				pbDst[m_cbRowBytes] = ab[2];
+				pbDst[m_cbRowBytes + 1] = ab[3];
 			}
-			pwTileMap += ctReturn;
-			pbFogMap += ctReturn;
-			pbDst += cbDstReturn + m_cbRowBytes;
 		}
 	}
 }

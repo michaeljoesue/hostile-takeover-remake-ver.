@@ -120,6 +120,7 @@ Modern RTS controls:
 | Double-click, Ctrl+click | Select all your units of that type on screen |
 | Shift+click | Add a unit to the selection, or take it out |
 | Right-click | Move to the ground, attack an enemy, or open the menu of one of your units or buildings; cancels building placement |
+| Shift+right-click | Queue a move or attack: units carry it out after their current orders (up to 16) |
 | A, then left-click | Attack-move: units fight enemies they meet, then carry on |
 | S | Stop |
 | Ctrl+1 to 9 | Make the selection control group 1 to 9 (Shift+number adds to it) |
@@ -130,8 +131,11 @@ Modern RTS controls:
 | Mouse wheel | Scroll the map up and down (Shift+wheel: sideways) |
 | Arrow keys, mouse at the edge, mini map | Scroll the map |
 
+The mini map (bottom right) is about a third of the screen's height
+whatever the map's size, and shows units moving smoothly.
+
 - The bar at the bottom shows what's selected: one unit's name and health,
-  or how many of each type. Damaged units show a health bar.
+  or how many of each type.
 - **Menu** (bottom left, or M) has save, load, options and help.
 - Alt+Enter or F11 switches between fullscreen and a window; numpad + and -
   change the game speed.

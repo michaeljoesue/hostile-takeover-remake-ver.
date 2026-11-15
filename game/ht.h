@@ -2856,8 +2856,15 @@ public:
 	static int CalcWidth();
 
 private:
+	static void CalcLayout(int *pnBase, int *pcxDisp, int *pcyDisp, int *pnPpt);
+
 	long m_tInvalidateLast;
-	int m_nScale;
+	int m_nScale;		// terrain dib pixels per tile (1 or 2)
+	int m_nPpt;			// display pixels per tile, 16.16
+	int m_cxDisp;
+	int m_cyDisp;
+	int *m_axSrc;
+	int *m_aySrc;
 	int m_cyInputUI;
 	int m_cxyBorder;
 	DibBitmap *m_pbm;
@@ -3094,7 +3101,7 @@ private:
 
 	MobileUnitGob *SetSelectionTargets(Gid gid, WCoord wxTarget,
             WCoord wyTarget);
-    void OnRightClick(int x, int y);
+    void OnRightClick(int x, int y, bool fQueue = false);
     void ScrollViewBy(WCoord dwx, WCoord dwy);
 
     // Control groups: Ctrl+1..9 sets, 1..9 selects
@@ -4896,6 +4903,22 @@ public:
 		return true;
 	}
 
+	// Where the gob is drawn nAlpha/256 of the way between its previous
+	// and current positions (like BeginInterpolatedDraw, without moving it)
+
+	void GetDrawPosition(int nAlpha, WCoord *pwx, WCoord *pwy) {
+		*pwx = m_wx;
+		*pwy = m_wy;
+		if (nAlpha >= 256 || m_wxPrev == kwxInvalidPrev)
+			return;
+		int dx = m_wx - m_wxPrev;
+		int dy = m_wy - m_wyPrev;
+		if (dx > 2 * kwcTile || dx < -2 * kwcTile || dy > 2 * kwcTile || dy < -2 * kwcTile)
+			return;
+		*pwx = (WCoord)(m_wxPrev + dx * nAlpha / 256);
+		*pwy = (WCoord)(m_wyPrev + dy * nAlpha / 256);
+	}
+
 	void EndInterpolatedDraw() {
 		m_wx = m_wxDraw;
 		m_wy = m_wyDraw;
@@ -5368,8 +5391,6 @@ public:
 	void NotifyNearbyAlliesOfHit(Gid gidAssailant);
 	void ShowDamageIndicator();
 	void ClearDamageIndicator();
-	bool IsDamaged();
-	void UpdateDamagedIndicator();
 	int GetDamageTo(UnitGob *puntTarget);
 	void RecalcEnemyNearby(bool fClearOnly);
 
@@ -5656,6 +5677,8 @@ protected:
 	virtual void PerformAction(char *szAction);
 	bool InTransition();
 	void EndAttackMove();
+	void IssueOrder(Message *pmsg);
+	void StartQueuedOrder();
 
 private:
 	bool IsAttackPointWithinFiringRangeOfTarget(UnitGob *puntTarget);
@@ -5696,6 +5719,9 @@ protected:
 	Gid m_gidTarget;
 	long m_tLastFire;
 	Message m_msgPending;
+#define kcmsgQueuedMax 16
+	Message m_amsgQueued[kcmsgQueuedMax];	// Shift+right-click orders waiting their turn
+	int m_cmsgQueued;
 	Message m_msgAction;
 	int m_cCountdown;		// multi-purpose countdown timer
 	int m_cMoveStepsRemaining;
@@ -7106,6 +7132,7 @@ extern bool gfAutosave;
 extern DibBitmap *gpbmClip;
 extern FormMgr *gpfrmmSim;
 extern bool gfAttackMoveOrder;
+extern bool gfQueueOrder;	// Shift+right-click: queue the order after the current ones
 
 // Allies share vision: the local player sees what their allies' units and
 // buildings see
@@ -7431,7 +7458,7 @@ bool PickSaveGameStream(Stream **ppstm);
 void DeleteStaleSaveGames();
 // Version of the saved game format. Saved games of other versions can't be
 // loaded.
-const byte knVerGameState = 11;
+const byte knVerGameState = 12;
 bool CheckSaveGameVersion(char *pszVersion, byte bVer);
 bool HostDeleteSaveGame(char *psz, int nGame);
 
