@@ -142,10 +142,14 @@ void TowerGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord 
 	if (pgobTarget == NULL)
 		return;
 
-	// If target is an ally, ignore
+	// If target is an ally, ignore, unless the player forces the attack
+	// (Ctrl+right-click)
 
-	if (IsAlly(pgobTarget->GetSide()))
+	if (IsAlly(pgobTarget->GetSide()) && !gfForceAttackOrder)
 		return;
+	if (gid == m_gid)
+		return;
+	m_gidForceTarget = gfForceAttackOrder ? gid : kgidNull;
 
 	// Attack it!
 	// Flash the target Gob
@@ -320,6 +324,7 @@ BeginStateMachine
 						// primary enemy is dead/gone or taken over, we can forget it.
 
 						m_gidTargetPrimary = kgidNull;
+						m_gidForceTarget = kgidNull;
 						puntTarget = NULL;
 					} else if (!IsGobWithinRange(puntTarget, m_ptwrc->tcFiringRange)) {
 						

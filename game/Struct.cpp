@@ -883,8 +883,11 @@ BeginStateMachine
 			fxDamage = (fix)mulfx(fxDamage, (itofx(knDecreasedDamagePercent) / 100));
 		SetHealth(subfx(m_fxHealth, fxDamage));
 		if (m_fxHealth <= 0) {
+			// Destroying a friend (Ctrl+right-click) doesn't count as a kill
+
 			Player *pplr = gplrm.GetPlayer(pmsg->Hit.sideAssailant);
-			pplr->IncEnemyStructuresKilled();
+			if (!IsAlly(pmsg->Hit.sideAssailant))
+				pplr->IncEnemyStructuresKilled();
 			m_pplr->IncStructuresLost();
 
 			SetState(kstDying);

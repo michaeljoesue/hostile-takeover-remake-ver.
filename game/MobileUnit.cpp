@@ -261,7 +261,7 @@ bool MobileUnitGob::Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword
 	return true;
 }
 
-#define knVerMobileUnitGobState 11
+#define knVerMobileUnitGobState 12
 bool MobileUnitGob::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
@@ -309,6 +309,7 @@ bool MobileUnitGob::LoadState(Stream *pstm)
 	m_tcTargetRadius = pstm->ReadWord();
 	m_wcMoveDistPerUpdate = pstm->ReadWord();
 	m_cupdLastHitOrNearbyAllyHit = pstm->ReadDword();
+	m_gidForceTarget = pstm->ReadWord();
 	m_cmsgQueued = pstm->ReadByte();
 	if (m_cmsgQueued > kcmsgQueuedMax)
 		return false;
@@ -360,6 +361,7 @@ bool MobileUnitGob::SaveState(Stream *pstm)
 	pstm->WriteWord(m_tcTargetRadius);
 	pstm->WriteWord(m_wcMoveDistPerUpdate);
 	pstm->WriteDword(m_cupdLastHitOrNearbyAllyHit);
+	pstm->WriteWord(m_gidForceTarget);
 	pstm->WriteByte((byte)m_cmsgQueued);
 	for (int i = 0; i < m_cmsgQueued; i++)
 		pstm->Write(&m_amsgQueued[i], sizeof(Message));
@@ -503,6 +505,10 @@ bool gfAttackMoveOrder = false;
 
 bool gfQueueOrder = false;
 
+// Set while SimUIForm gives a force attack order (Ctrl+right-click)
+
+bool gfForceAttackOrder = false;
+
 // Sends a player's order now, or with Shift+right-click puts it after the
 // orders the unit is carrying out
 
@@ -606,9 +612,12 @@ void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WC
 		wy = wpt.wy;
 	}
 
-	// Friend or Foe? No special action for friends
+	// Friend or Foe? No special action for friends, unless the player
+	// forces the attack (Ctrl+right-click)
 
-	if (IsAlly(pgobTarget->GetSide()))
+	if (IsAlly(pgobTarget->GetSide()) && !gfForceAttackOrder)
+		return;
+	if (gid == m_gid)
 		return;
 
 	// Foe -- attack!
@@ -620,7 +629,7 @@ void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WC
 	// Queue attack command
 
 	Message msgT;
-	msgT.mid = kmidAttackCommand;
+	msgT.mid = gfForceAttackOrder ? kmidForceAttackCommand : kmidAttackCommand;
 	msgT.smidSender = m_gid;
 	msgT.smidReceiver = m_gid;
 	msgT.AttackCommand.wptTarget.wx = wx;
@@ -803,6 +812,7 @@ BeginStateMachine
 	OnMsg(kmidStopCommand)
 		m_mua = kmuaNone;
 		m_cmsgQueued = 0;
+		m_gidForceTarget = kgidNull;
 		if (IsHumanOrGodControlled())
 			m_wfMunt &= ~kfMuntAttackEnemiesWhenMoving;
 		PendOrProcessCommand(pmsg, kstGuard);
@@ -819,6 +829,7 @@ BeginStateMachine
 	OnMsg(kmidMoveCommand)
 		if (PendOrProcessCommand(pmsg, kstMove)) {
 lbMoveCommand:
+			m_gidForceTarget = kgidNull;
 			// Stash move parameters to be picked up by the move state
 			// Adjust target x/y to point to the closest tile center. We like tile centers.
 
@@ -830,9 +841,17 @@ lbMoveCommand:
 			m_wcMoveDistPerUpdate = pmsg->MoveCommand.wcMoveDistPerUpdate;
 		}
 
+	OnMsg(kmidForceAttackCommand)
+		if (PendOrProcessCommand(pmsg, kstAttack)) {
+			m_gidForceTarget = pmsg->AttackCommand.gidTarget;
+			goto lbAttackParams;
+		}
+
 	OnMsg(kmidAttackCommand)
 		if (PendOrProcessCommand(pmsg, kstAttack)) {
 lbAttackCommand:
+			m_gidForceTarget = kgidNull;
+lbAttackParams:
 			// stash attack parameters to be picked up by the attack state
 
 			m_gidTarget = pmsg->AttackCommand.gidTarget;
@@ -868,8 +887,11 @@ lbAttackCommand:
 		}
 
 		if (m_fxHealth <= 0) {
+			// Destroying a friend (Ctrl+right-click) doesn't count as a kill
+
 			Player *pplr = gplrm.GetPlayer(pmsg->Hit.sideAssailant);
-			pplr->IncEnemyMobileUnitsKilled();
+			if (!IsAlly(pmsg->Hit.sideAssailant))
+				pplr->IncEnemyMobileUnitsKilled();
 			m_pplr->IncMobileUnitsLost();
 
 			SetState(kstDying);
@@ -944,6 +966,11 @@ lbHitNoDamage:
 			if (m_wfMunt & kfMuntMoveWaitingNearby)
 				NotifyMoveWaitingNearby(m_wx, m_wy);
 			Assert(!(m_wfMunt & (kfMuntPathPending | kfMuntMoveWaitingNearby)));
+
+			// A forced (Ctrl+right-click) attack is over; its target must not
+			// stay a valid target (its gid may be reused)
+
+			m_gidForceTarget = kgidNull;
 
 			// Next Shift+right-click order, if any
 

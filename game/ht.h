@@ -3101,7 +3101,7 @@ private:
 
 	MobileUnitGob *SetSelectionTargets(Gid gid, WCoord wxTarget,
             WCoord wyTarget);
-    void OnRightClick(int x, int y, bool fQueue = false);
+    void OnRightClick(int x, int y, bool fQueue = false, bool fForce = false);
     void ScrollViewBy(WCoord dwx, WCoord dwy);
 
     // Control groups: Ctrl+1..9 sets, 1..9 selects
@@ -5434,6 +5434,11 @@ public:
 	virtual void GetCenter(WPoint *pwpt);
 	virtual void PopupMenu();
 
+	// The friendly unit this unit was told to attack with Ctrl+right-click
+	// (kgidNull if none); it counts as a valid target
+
+	Gid m_gidForceTarget;
+
 protected:
 	void RememberEnemyNearby(Gid gidEnemy);
 	TCoord CalcRange(TCoord tx, TCoord ty, Gob *pgob);
@@ -7136,7 +7141,8 @@ extern bool gfAutosave;
 extern DibBitmap *gpbmClip;
 extern FormMgr *gpfrmmSim;
 extern bool gfAttackMoveOrder;
-extern bool gfQueueOrder;	// Shift+right-click: queue the order after the current ones
+extern bool gfQueueOrder;
+extern bool gfForceAttackOrder;	// Ctrl+right-click: attack the unit even if it is a friend	// Shift+right-click: queue the order after the current ones
 
 // Allies share vision: the local player sees what their allies' units and
 // buildings see

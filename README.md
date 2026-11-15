@@ -124,6 +124,7 @@ Modern RTS controls:
 | Shift+click | Add a unit to the selection, or take it out |
 | Right-click | Move to the ground, attack an enemy, or open the menu of one of your units or buildings; cancels building placement |
 | Shift+right-click | Queue a move or attack: units carry it out after their current orders (up to 16) |
+| Ctrl+right-click | Force attack: attack the unit or building clicked, even your own or an ally's (Ctrl+Shift queues it). Destroying a friend isn't counted as a kill |
 | A, then left-click | Attack-move: units fight enemies they meet, then carry on |
 | S | Stop |
 | Ctrl+1 to 9 | Make the selection control group 1 to 9 (Shift+number adds to it) |

@@ -202,6 +202,7 @@ UnitGob::UnitGob(UnitConsts *puntc)
 	m_ff |= kfGobUnit | kfGobStateMachine | kfGobLayerDepthSorted;
 	m_puntc = puntc;
 	m_wfUnit = 0;
+	m_gidForceTarget = kgidNull;
 	for (int n = 0; n < ARRAYSIZE(m_agidEnemyNearby); n++)
 		m_agidEnemyNearby[n] = kgidNull;
 
@@ -388,8 +389,16 @@ bool UnitGob::IsIdle()
 
 bool UnitGob::IsValidTarget(Gob *pgobTarget)
 {
-	return (pgobTarget->GetFlags() & (kfGobUnit | kfGobActive)) == (kfGobUnit | kfGobActive)
-			&& !IsAlly(pgobTarget->GetSide());
+	if ((pgobTarget->GetFlags() & (kfGobUnit | kfGobActive)) != (kfGobUnit | kfGobActive))
+		return false;
+	if (pgobTarget == this)
+		return false;
+
+	// A friend is a target only when the player ordered this unit to attack
+	// it (Ctrl+right-click)
+
+	return !IsAlly(pgobTarget->GetSide()) ||
+			(m_gidForceTarget != kgidNull && pgobTarget->GetId() == m_gidForceTarget);
 }
 
 void UnitGob::SetTarget(Gid gid, WCoord wxTarget, WCoord wyTarget, WCoord wxCenter, WCoord wyCenter, TCoord tcRange, WCoord wcMoveDistPerUpdate)

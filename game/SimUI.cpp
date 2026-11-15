@@ -559,7 +559,8 @@ bool SimUIForm::EventProc(Event *pevt)
 {
     switch (pevt->eType) {
     case rightDownEvent:
-        OnRightClick(pevt->x, pevt->y, (pevt->ffMods & kfModShift) != 0);
+        OnRightClick(pevt->x, pevt->y, (pevt->ffMods & kfModShift) != 0,
+                (pevt->ffMods & kfModCtrl) != 0);
         return true;
 
     case middleDownEvent:
@@ -791,7 +792,7 @@ void SimUIForm::ScrollViewBy(WCoord dwx, WCoord dwy)
 // Right-click: on the ground, move the selected units there; on an enemy,
 // attack it; on one of the player's own units or buildings, open its menu.
 
-void SimUIForm::OnRightClick(int x, int y, bool fQueue)
+void SimUIForm::OnRightClick(int x, int y, bool fQueue, bool fForce)
 {
     if (gpfrmPlace != NULL && gpfrmPlace->IsBusy())
         return;
@@ -805,6 +806,21 @@ void SimUIForm::OnRightClick(int x, int y, bool fQueue)
 
     WCoord wxTarget, wyTarget;
     Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
+
+    // Ctrl+right-click on a unit or building: force attack, even a friend.
+    // Ctrl+Shift queues it.
+
+    if (fForce && pgobHit != NULL && pgobHit->GetType() != kgtReplicator &&
+            (pgobHit->GetFlags() & (kfGobUnit | kfGobActive)) == (kfGobUnit | kfGobActive)) {
+        gfForceAttackOrder = true;
+        gfQueueOrder = fQueue;
+        SetSelectionTargets(pgobHit->GetId(), wxTarget, wyTarget);
+        gfQueueOrder = false;
+        gfForceAttackOrder = false;
+        pgobHit->Flash();
+        return;
+    }
+
     if (pgobHit != NULL && pgobHit->GetType() != kgtReplicator &&
             (pgobHit->GetFlags() & kfGobUnit) != 0 &&
             (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())) {
