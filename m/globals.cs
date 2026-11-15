@@ -13,7 +13,7 @@ namespace m {
 	public class Globals {
 		public static Ini GobTemplatesIni = null;
 		public static PropertyGrid PropertyGrid;
-		public static StatusBar StatusBar;
+		public static ToolStripStatusLabel StatusBar;
 		private static ArrayList m_alsGobImages = new ArrayList();
 		public static Font LabelFont;
 		public static ArrayList Plugins = new ArrayList();

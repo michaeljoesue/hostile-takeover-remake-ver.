@@ -17,8 +17,8 @@ namespace m
 		Bitmap m_bm;
 		LevelDoc m_lvld;
 		Rectangle m_rcDragStart = Rectangle.Empty;
-		System.Windows.Forms.ContextMenu m_contextMenu;
-		System.Windows.Forms.MenuItem menuItemRemove;
+		System.Windows.Forms.ContextMenuStrip m_contextMenu;
+		System.Windows.Forms.ToolStripMenuItem menuItemRemove;
 		IMapItem m_miContextMenu;
 		Point m_ptDragSelectAnchor = new Point(0, 0);
 		Rectangle m_rcDragSelect;
@@ -30,7 +30,7 @@ namespace m
 		TemplateDoc m_tmpd = null;
 		LayerFlags m_lyrf = LayerFlags.Default;
 		Bitmap m_bmDrag = null;
-		private System.Windows.Forms.MenuItem menuItemSelectSame;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSelectSame;
 		Rectangle m_rcDragBoundsLast = Rectangle.Empty;
 		Point m_ptMouseDown;
 		IMapItem m_miCapturedMouse = null;
@@ -174,25 +174,23 @@ namespace m
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.m_contextMenu = new System.Windows.Forms.ContextMenu();
-			this.menuItemRemove = new System.Windows.Forms.MenuItem();
-			this.menuItemSelectSame = new System.Windows.Forms.MenuItem();
+			this.m_contextMenu = new System.Windows.Forms.ContextMenuStrip();
+			this.menuItemRemove = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSelectSame = new System.Windows.Forms.ToolStripMenuItem();
 			// 
 			// m_contextMenu
 			// 
-			this.m_contextMenu.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.m_contextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																						  this.menuItemRemove,
 																						  this.menuItemSelectSame});
 			// 
 			// menuItemRemove
 			// 
-			this.menuItemRemove.Index = 0;
 			this.menuItemRemove.Text = "Remove";
 			this.menuItemRemove.Click += new System.EventHandler(this.menuItemRemove_Click);
 			// 
 			// menuItemSelectSame
 			// 
-			this.menuItemSelectSame.Index = 1;
 			this.menuItemSelectSame.Text = "Select Same";
 			this.menuItemSelectSame.Click += new System.EventHandler(this.menuItemSelectSame_Click);
 			// 

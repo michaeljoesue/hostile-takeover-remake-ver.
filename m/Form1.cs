@@ -16,26 +16,26 @@ namespace m
 	/// </summary>
 	public class MainForm : System.Windows.Forms.Form
 	{
-		private System.Windows.Forms.MainMenu mainMenu1;
-		private System.Windows.Forms.MenuItem menuItemFile;
-		private System.Windows.Forms.MenuItem menuItemExit;
+		private System.Windows.Forms.MenuStrip mainMenu1;
+		private System.Windows.Forms.ToolStripMenuItem menuItemFile;
+		private System.Windows.Forms.ToolStripMenuItem menuItemExit;
 		private System.ComponentModel.IContainer components = null;
-		private System.Windows.Forms.MenuItem menuItemOpenLevelDoc;
-		private System.Windows.Forms.MenuItem menuItemSaveLevelDoc;
-		private System.Windows.Forms.MenuItem menuItemSaveLevelDocAs;
-		private System.Windows.Forms.MenuItem menuItem2;
-		private System.Windows.Forms.MenuItem menuItemNewLevelDoc;
+		private System.Windows.Forms.ToolStripMenuItem menuItemOpenLevelDoc;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSaveLevelDoc;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSaveLevelDocAs;
+		private System.Windows.Forms.ToolStripSeparator menuItem2;
+		private System.Windows.Forms.ToolStripMenuItem menuItemNewLevelDoc;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.Panel panel4;
 		private System.Windows.Forms.Panel panelLeft;
-		private System.Windows.Forms.MenuItem menuItem4;
-		private System.Windows.Forms.MenuItem menuItemLevelDocProperties;
-		private System.Windows.Forms.MenuItem menuItemSide1Properties;
-		private System.Windows.Forms.MenuItem menuItemSide2Properties;
-		private System.Windows.Forms.MenuItem menuItemSide3Properties;
-		private System.Windows.Forms.MenuItem menuItemSide4Properties;
-		private System.Windows.Forms.MenuItem menuItemSaveTileMapBitmap;
-		private System.Windows.Forms.MenuItem menuItemSaveLevelBitmap;
+		private System.Windows.Forms.ToolStripMenuItem menuItem4;
+		private System.Windows.Forms.ToolStripMenuItem menuItemLevelDocProperties;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSide1Properties;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSide2Properties;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSide3Properties;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSide4Properties;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSaveTileMapBitmap;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSaveLevelBitmap;
 		private System.Windows.Forms.Splitter splitterMapRight;
 		private System.Windows.Forms.Panel panelRight;
 		private System.Windows.Forms.PropertyGrid propertyGrid1;
@@ -43,42 +43,43 @@ namespace m
 		private System.Windows.Forms.Panel panel6;
 		private System.Windows.Forms.PictureBox pictureBox1;
 		private System.Windows.Forms.Splitter splitterMapLeft;
-		private System.Windows.Forms.MenuItem menuItemClose;
-		private System.Windows.Forms.MenuItem menuItem6;
-		private System.Windows.Forms.MenuItem menuItemWindow;
-		private System.Windows.Forms.MenuItem menuItemCascade;
-		private System.Windows.Forms.MenuItem menuItemTileHorizontal;
-		private System.Windows.Forms.MenuItem menuItemTileVertical;
+		private System.Windows.Forms.ToolStripMenuItem menuItemClose;
+		private System.Windows.Forms.ToolStripSeparator menuItem6;
+		private System.Windows.Forms.ToolStripMenuItem menuItemWindow;
+		private System.Windows.Forms.ToolStripMenuItem menuItemCascade;
+		private System.Windows.Forms.ToolStripMenuItem menuItemTileHorizontal;
+		private System.Windows.Forms.ToolStripMenuItem menuItemTileVertical;
 		private m.GobPanel ctlGobPanel;
 		private m.TemplatePanel ctlTemplatePanel;
-		private System.Windows.Forms.MenuItem menuItem1;
-		private System.Windows.Forms.MenuItem menuItemCut;
-		private System.Windows.Forms.MenuItem menuItemCopy;
-		private System.Windows.Forms.MenuItem menuItemPaste;
-		private System.Windows.Forms.MenuItem menuItemDelete;
-		private System.Windows.Forms.MenuItem menuItemRenameTemplates;
-		private System.Windows.Forms.MenuItem menuItemTest;
-		private System.Windows.Forms.MenuItem menuItemTriggers;
-		private System.Windows.Forms.MenuItem menuItemUnitGroups;
-		private System.Windows.Forms.MenuItem menuItem7;
-		private System.Windows.Forms.MenuItem menuItem3;
-		private System.Windows.Forms.MenuItem menuItemComments;
-		private System.Windows.Forms.MenuItem menuItem9;
-		private System.Windows.Forms.MenuItem menuItemRun;
-		private System.Windows.Forms.MenuItem menuItem8;
-		private System.Windows.Forms.MenuItem menuItemSwitches;
-		private System.Windows.Forms.MenuItem menuItemCounters;
-		private System.Windows.Forms.MenuItem menuItemText;
-		private System.Windows.Forms.MenuItem menuItemValidate;
-		private System.Windows.Forms.MenuItem menuItemMisc;
-		private System.Windows.Forms.MenuItem menuItem10;
-		private System.Windows.Forms.StatusBar statusBar1;
-		private System.Windows.Forms.MenuItem menuItem5;
-		private System.Windows.Forms.MenuItem menuItemAbout;
+		private System.Windows.Forms.ToolStripMenuItem menuItem1;
+		private System.Windows.Forms.ToolStripMenuItem menuItemCut;
+		private System.Windows.Forms.ToolStripMenuItem menuItemCopy;
+		private System.Windows.Forms.ToolStripMenuItem menuItemPaste;
+		private System.Windows.Forms.ToolStripMenuItem menuItemDelete;
+		private System.Windows.Forms.ToolStripMenuItem menuItemRenameTemplates;
+		private System.Windows.Forms.ToolStripMenuItem menuItemTest;
+		private System.Windows.Forms.ToolStripMenuItem menuItemTriggers;
+		private System.Windows.Forms.ToolStripMenuItem menuItemUnitGroups;
+		private System.Windows.Forms.ToolStripSeparator menuItem7;
+		private System.Windows.Forms.ToolStripSeparator menuItem3;
+		private System.Windows.Forms.ToolStripMenuItem menuItemComments;
+		private System.Windows.Forms.ToolStripSeparator menuItem9;
+		private System.Windows.Forms.ToolStripMenuItem menuItemRun;
+		private System.Windows.Forms.ToolStripSeparator menuItem8;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSwitches;
+		private System.Windows.Forms.ToolStripMenuItem menuItemCounters;
+		private System.Windows.Forms.ToolStripMenuItem menuItemText;
+		private System.Windows.Forms.ToolStripMenuItem menuItemValidate;
+		private System.Windows.Forms.ToolStripMenuItem menuItemMisc;
+		private System.Windows.Forms.ToolStripSeparator menuItem10;
+		private System.Windows.Forms.StatusStrip statusBar1;
+		private System.Windows.Forms.ToolStripStatusLabel statusLabel1;
+		private System.Windows.Forms.ToolStripMenuItem menuItem5;
+		private System.Windows.Forms.ToolStripMenuItem menuItemAbout;
 		private System.Windows.Forms.Splitter splitterGobTiles;
-		private System.Windows.Forms.MenuItem menuItemHelp;
-		private System.Windows.Forms.MenuItem menuItem11;
-		private System.Windows.Forms.MenuItem menuItem12;
+		private System.Windows.Forms.ToolStripMenuItem menuItemHelp;
+		private System.Windows.Forms.ToolStripMenuItem menuItem11;
+		private System.Windows.Forms.ToolStripMenuItem menuItem12;
 		string m_strFileSettings = null;
 
 		public MainForm()
@@ -113,7 +114,7 @@ namespace m
 			//
 			InitializeComponent();
 			Globals.PropertyGrid = propertyGrid1;
-			Globals.StatusBar = statusBar1;
+			Globals.StatusBar = statusLabel1;
 
 			// Load settings
 
@@ -123,10 +124,10 @@ namespace m
 				// Remove stuff we don't want in the kit. Validate and Run
 				// (test play in the game) stay.
 
-				menuItemMisc.MenuItems.Remove(menuItem8);
-				menuItemMisc.MenuItems.Remove(menuItemSaveTileMapBitmap);
-				menuItemMisc.MenuItems.Remove(menuItemSaveLevelBitmap);
-				menuItemMisc.MenuItems.Remove(menuItemRenameTemplates);
+				menuItemMisc.DropDownItems.Remove(menuItem8);
+				menuItemMisc.DropDownItems.Remove(menuItemSaveTileMapBitmap);
+				menuItemMisc.DropDownItems.Remove(menuItemSaveLevelBitmap);
+				menuItemMisc.DropDownItems.Remove(menuItemRenameTemplates);
 			}
 
 			// After the main form and its menus are initialized we give plugins an opportunity
@@ -155,52 +156,52 @@ namespace m
 		/// </summary>
 		private void InitializeComponent() {
 			System.Resources.ResourceManager resources = new System.Resources.ResourceManager(typeof(MainForm));
-			this.mainMenu1 = new System.Windows.Forms.MainMenu();
-			this.menuItemFile = new System.Windows.Forms.MenuItem();
-			this.menuItemNewLevelDoc = new System.Windows.Forms.MenuItem();
-			this.menuItemOpenLevelDoc = new System.Windows.Forms.MenuItem();
-			this.menuItemClose = new System.Windows.Forms.MenuItem();
-			this.menuItem6 = new System.Windows.Forms.MenuItem();
-			this.menuItemSaveLevelDoc = new System.Windows.Forms.MenuItem();
-			this.menuItemSaveLevelDocAs = new System.Windows.Forms.MenuItem();
-			this.menuItem2 = new System.Windows.Forms.MenuItem();
-			this.menuItem10 = new System.Windows.Forms.MenuItem();
-			this.menuItemExit = new System.Windows.Forms.MenuItem();
-			this.menuItem1 = new System.Windows.Forms.MenuItem();
-			this.menuItemCut = new System.Windows.Forms.MenuItem();
-			this.menuItemCopy = new System.Windows.Forms.MenuItem();
-			this.menuItemPaste = new System.Windows.Forms.MenuItem();
-			this.menuItemDelete = new System.Windows.Forms.MenuItem();
-			this.menuItem4 = new System.Windows.Forms.MenuItem();
-			this.menuItemTriggers = new System.Windows.Forms.MenuItem();
-			this.menuItemUnitGroups = new System.Windows.Forms.MenuItem();
-			this.menuItemSwitches = new System.Windows.Forms.MenuItem();
-			this.menuItemCounters = new System.Windows.Forms.MenuItem();
-			this.menuItemText = new System.Windows.Forms.MenuItem();
-			this.menuItem7 = new System.Windows.Forms.MenuItem();
-			this.menuItemLevelDocProperties = new System.Windows.Forms.MenuItem();
-			this.menuItem3 = new System.Windows.Forms.MenuItem();
-			this.menuItemSide1Properties = new System.Windows.Forms.MenuItem();
-			this.menuItemSide2Properties = new System.Windows.Forms.MenuItem();
-			this.menuItemSide3Properties = new System.Windows.Forms.MenuItem();
-			this.menuItemSide4Properties = new System.Windows.Forms.MenuItem();
-			this.menuItem9 = new System.Windows.Forms.MenuItem();
-			this.menuItemComments = new System.Windows.Forms.MenuItem();
-			this.menuItemMisc = new System.Windows.Forms.MenuItem();
-			this.menuItemValidate = new System.Windows.Forms.MenuItem();
-			this.menuItemRun = new System.Windows.Forms.MenuItem();
-			this.menuItem8 = new System.Windows.Forms.MenuItem();
-			this.menuItemSaveTileMapBitmap = new System.Windows.Forms.MenuItem();
-			this.menuItemSaveLevelBitmap = new System.Windows.Forms.MenuItem();
-			this.menuItemRenameTemplates = new System.Windows.Forms.MenuItem();
-			this.menuItemWindow = new System.Windows.Forms.MenuItem();
-			this.menuItemCascade = new System.Windows.Forms.MenuItem();
-			this.menuItemTileHorizontal = new System.Windows.Forms.MenuItem();
-			this.menuItemTileVertical = new System.Windows.Forms.MenuItem();
-			this.menuItem5 = new System.Windows.Forms.MenuItem();
-			this.menuItemHelp = new System.Windows.Forms.MenuItem();
-			this.menuItemAbout = new System.Windows.Forms.MenuItem();
-			this.menuItemTest = new System.Windows.Forms.MenuItem();
+			this.mainMenu1 = new System.Windows.Forms.MenuStrip();
+			this.menuItemFile = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemNewLevelDoc = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemOpenLevelDoc = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemClose = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem6 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItemSaveLevelDoc = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSaveLevelDocAs = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem2 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItem10 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItemExit = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemCut = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemCopy = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemPaste = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemDelete = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem4 = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemTriggers = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemUnitGroups = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSwitches = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemCounters = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemText = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem7 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItemLevelDocProperties = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem3 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItemSide1Properties = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSide2Properties = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSide3Properties = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSide4Properties = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem9 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItemComments = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemMisc = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemValidate = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemRun = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem8 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItemSaveTileMapBitmap = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSaveLevelBitmap = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemRenameTemplates = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemWindow = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemCascade = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemTileHorizontal = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemTileVertical = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem5 = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemHelp = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemAbout = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemTest = new System.Windows.Forms.ToolStripMenuItem();
 			this.splitterMapLeft = new System.Windows.Forms.Splitter();
 			this.panelLeft = new System.Windows.Forms.Panel();
 			this.panel1 = new System.Windows.Forms.Panel();
@@ -210,13 +211,14 @@ namespace m
 			this.ctlGobPanel = new m.GobPanel();
 			this.splitterMapRight = new System.Windows.Forms.Splitter();
 			this.panelRight = new System.Windows.Forms.Panel();
-			this.statusBar1 = new System.Windows.Forms.StatusBar();
+			this.statusBar1 = new System.Windows.Forms.StatusStrip();
+			this.statusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
 			this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
 			this.label1 = new System.Windows.Forms.Label();
 			this.panel6 = new System.Windows.Forms.Panel();
 			this.pictureBox1 = new System.Windows.Forms.PictureBox();
-			this.menuItem11 = new System.Windows.Forms.MenuItem();
-			this.menuItem12 = new System.Windows.Forms.MenuItem();
+			this.menuItem11 = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem12 = new System.Windows.Forms.ToolStripMenuItem();
 			this.panelLeft.SuspendLayout();
 			this.panel1.SuspendLayout();
 			this.panel4.SuspendLayout();
@@ -226,7 +228,7 @@ namespace m
 			// 
 			// mainMenu1
 			// 
-			this.mainMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.mainMenu1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																					  this.menuItemFile,
 																					  this.menuItem1,
 																					  this.menuItem4,
@@ -237,8 +239,7 @@ namespace m
 			// 
 			// menuItemFile
 			// 
-			this.menuItemFile.Index = 0;
-			this.menuItemFile.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.menuItemFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																						 this.menuItemNewLevelDoc,
 																						 this.menuItemOpenLevelDoc,
 																						 this.menuItemClose,
@@ -254,62 +255,49 @@ namespace m
 			// 
 			// menuItemNewLevelDoc
 			// 
-			this.menuItemNewLevelDoc.Index = 0;
-			this.menuItemNewLevelDoc.Shortcut = System.Windows.Forms.Shortcut.CtrlN;
+			this.menuItemNewLevelDoc.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N;
 			this.menuItemNewLevelDoc.Text = "&New";
 			this.menuItemNewLevelDoc.Click += new System.EventHandler(this.menuItemNewLevelDoc_Click);
 			// 
 			// menuItemOpenLevelDoc
 			// 
-			this.menuItemOpenLevelDoc.Index = 1;
-			this.menuItemOpenLevelDoc.Shortcut = System.Windows.Forms.Shortcut.CtrlO;
+			this.menuItemOpenLevelDoc.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O;
 			this.menuItemOpenLevelDoc.Text = "&Open...";
 			this.menuItemOpenLevelDoc.Click += new System.EventHandler(this.menuItemOpenLevelDoc_Click);
 			// 
 			// menuItemClose
 			// 
-			this.menuItemClose.Index = 2;
 			this.menuItemClose.Text = "&Close";
 			this.menuItemClose.Click += new System.EventHandler(this.menuItemClose_Click);
 			// 
 			// menuItem6
 			// 
-			this.menuItem6.Index = 3;
-			this.menuItem6.Text = "-";
 			// 
 			// menuItemSaveLevelDoc
 			// 
-			this.menuItemSaveLevelDoc.Index = 4;
-			this.menuItemSaveLevelDoc.Shortcut = System.Windows.Forms.Shortcut.CtrlS;
+			this.menuItemSaveLevelDoc.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S;
 			this.menuItemSaveLevelDoc.Text = "&Save";
 			this.menuItemSaveLevelDoc.Click += new System.EventHandler(this.menuItemSaveLevelDoc_Click);
 			// 
 			// menuItemSaveLevelDocAs
 			// 
-			this.menuItemSaveLevelDocAs.Index = 5;
 			this.menuItemSaveLevelDocAs.Text = "&Save As...";
 			this.menuItemSaveLevelDocAs.Click += new System.EventHandler(this.menuItemSaveLevelDocAs_Click);
 			// 
 			// menuItem2
 			// 
-			this.menuItem2.Index = 6;
-			this.menuItem2.Text = "-";
 			// 
 			// menuItem10
 			// 
-			this.menuItem10.Index = 9;
-			this.menuItem10.Text = "-";
 			// 
 			// menuItemExit
 			// 
-			this.menuItemExit.Index = 10;
 			this.menuItemExit.Text = "&Exit";
 			this.menuItemExit.Click += new System.EventHandler(this.menuItemExit_Click);
 			// 
 			// menuItem1
 			// 
-			this.menuItem1.Index = 1;
-			this.menuItem1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.menuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																					  this.menuItemCut,
 																					  this.menuItemCopy,
 																					  this.menuItemPaste,
@@ -318,36 +306,31 @@ namespace m
 			// 
 			// menuItemCut
 			// 
-			this.menuItemCut.Index = 0;
-			this.menuItemCut.Shortcut = System.Windows.Forms.Shortcut.CtrlX;
+			this.menuItemCut.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X;
 			this.menuItemCut.Text = "Cu&t";
 			this.menuItemCut.Click += new System.EventHandler(this.menuItemCut_Click);
 			// 
 			// menuItemCopy
 			// 
-			this.menuItemCopy.Index = 1;
-			this.menuItemCopy.Shortcut = System.Windows.Forms.Shortcut.CtrlC;
+			this.menuItemCopy.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C;
 			this.menuItemCopy.Text = "&Copy";
 			this.menuItemCopy.Click += new System.EventHandler(this.menuItemCopy_Click);
 			// 
 			// menuItemPaste
 			// 
-			this.menuItemPaste.Index = 2;
-			this.menuItemPaste.Shortcut = System.Windows.Forms.Shortcut.CtrlP;
+			this.menuItemPaste.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P;
 			this.menuItemPaste.Text = "&Paste";
 			this.menuItemPaste.Click += new System.EventHandler(this.menuItemPaste_Click);
 			// 
 			// menuItemDelete
 			// 
-			this.menuItemDelete.Index = 3;
-			this.menuItemDelete.Shortcut = System.Windows.Forms.Shortcut.Del;
+			this.menuItemDelete.ShortcutKeys = Keys.Delete;
 			this.menuItemDelete.Text = "&Delete";
 			this.menuItemDelete.Click += new System.EventHandler(this.menuItemDelete_Click);
 			// 
 			// menuItem4
 			// 
-			this.menuItem4.Index = 2;
-			this.menuItem4.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.menuItem4.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																					  this.menuItemTriggers,
 																					  this.menuItemUnitGroups,
 																					  this.menuItemSwitches,
@@ -366,93 +349,75 @@ namespace m
 			// 
 			// menuItemTriggers
 			// 
-			this.menuItemTriggers.Index = 0;
-			this.menuItemTriggers.Shortcut = System.Windows.Forms.Shortcut.CtrlT;
+			this.menuItemTriggers.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.T;
 			this.menuItemTriggers.Text = "T&riggers...";
 			this.menuItemTriggers.Click += new System.EventHandler(this.menuItemTriggers_Click);
 			// 
 			// menuItemUnitGroups
 			// 
-			this.menuItemUnitGroups.Index = 1;
-			this.menuItemUnitGroups.Shortcut = System.Windows.Forms.Shortcut.CtrlG;
+			this.menuItemUnitGroups.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.G;
 			this.menuItemUnitGroups.Text = "Unit &Groups...";
 			this.menuItemUnitGroups.Click += new System.EventHandler(this.menuItemUnitGroups_Click);
 			// 
 			// menuItemSwitches
 			// 
-			this.menuItemSwitches.Index = 2;
 			this.menuItemSwitches.Text = "&Switches...";
 			this.menuItemSwitches.Click += new System.EventHandler(this.menuItemSwitches_Click);
 			// 
 			// menuItemCounters
 			// 
-			this.menuItemCounters.Index = 3;
 			this.menuItemCounters.Text = "&Counters...";
 			this.menuItemCounters.Click += new System.EventHandler(this.menuItemCounters_Click);
 			// 
 			// menuItemText
 			// 
-			this.menuItemText.Index = 4;
-			this.menuItemText.Shortcut = System.Windows.Forms.Shortcut.CtrlL;
+			this.menuItemText.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.L;
 			this.menuItemText.Text = "Level &Text...";
 			this.menuItemText.Click += new System.EventHandler(this.menuItemText_Click);
 			// 
 			// menuItem7
 			// 
-			this.menuItem7.Index = 5;
-			this.menuItem7.Text = "-";
 			// 
 			// menuItemLevelDocProperties
 			// 
-			this.menuItemLevelDocProperties.Index = 6;
 			this.menuItemLevelDocProperties.Text = "&Level";
 			this.menuItemLevelDocProperties.Click += new System.EventHandler(this.menuItemLevelDocProperties_Click);
 			// 
 			// menuItem3
 			// 
-			this.menuItem3.Index = 7;
-			this.menuItem3.Text = "-";
 			// 
 			// menuItemSide1Properties
 			// 
-			this.menuItemSide1Properties.Index = 8;
 			this.menuItemSide1Properties.Text = "Side &1";
 			this.menuItemSide1Properties.Click += new System.EventHandler(this.menuItemSide1Properties_Click);
 			// 
 			// menuItemSide2Properties
 			// 
-			this.menuItemSide2Properties.Index = 9;
 			this.menuItemSide2Properties.Text = "Side &2";
 			this.menuItemSide2Properties.Click += new System.EventHandler(this.menuItemSide2Properties_Click);
 			// 
 			// menuItemSide3Properties
 			// 
-			this.menuItemSide3Properties.Index = 10;
 			this.menuItemSide3Properties.Text = "Side &3";
 			this.menuItemSide3Properties.Click += new System.EventHandler(this.menuItemSide3Properties_Click);
 			// 
 			// menuItemSide4Properties
 			// 
-			this.menuItemSide4Properties.Index = 11;
 			this.menuItemSide4Properties.Text = "Side &4";
 			this.menuItemSide4Properties.Click += new System.EventHandler(this.menuItemSide4Properties_Click);
 			// 
 			// menuItem9
 			// 
-			this.menuItem9.Index = 12;
-			this.menuItem9.Text = "-";
 			// 
 			// menuItemComments
 			// 
-			this.menuItemComments.Index = 13;
-			this.menuItemComments.Shortcut = System.Windows.Forms.Shortcut.CtrlShiftC;
+			this.menuItemComments.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift | System.Windows.Forms.Keys.C;
 			this.menuItemComments.Text = "Comments...";
 			this.menuItemComments.Click += new System.EventHandler(this.menuItemComments_Click);
 			// 
 			// menuItemMisc
 			// 
-			this.menuItemMisc.Index = 3;
-			this.menuItemMisc.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.menuItemMisc.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																						 this.menuItemValidate,
 																						 this.menuItemRun,
 																						 this.menuItem8,
@@ -463,47 +428,39 @@ namespace m
 			// 
 			// menuItemValidate
 			// 
-			this.menuItemValidate.Index = 0;
-			this.menuItemValidate.Shortcut = System.Windows.Forms.Shortcut.F7;
+			this.menuItemValidate.ShortcutKeys = System.Windows.Forms.Keys.F7;
 			this.menuItemValidate.Text = "&Validate";
 			this.menuItemValidate.Click += new System.EventHandler(this.menuItemValidate_Click);
 			// 
 			// menuItemRun
 			// 
-			this.menuItemRun.Index = 1;
-			this.menuItemRun.Shortcut = System.Windows.Forms.Shortcut.F5;
+			this.menuItemRun.ShortcutKeys = System.Windows.Forms.Keys.F5;
 			this.menuItemRun.Text = "&Run";
 			this.menuItemRun.Click += new System.EventHandler(this.menuItemRun_Click);
 			// 
 			// menuItem8
 			// 
-			this.menuItem8.Index = 2;
-			this.menuItem8.Text = "-";
 			// 
 			// menuItemSaveTileMapBitmap
 			// 
-			this.menuItemSaveTileMapBitmap.Index = 3;
 			this.menuItemSaveTileMapBitmap.Text = "Save TileMap Bitmap...";
 			this.menuItemSaveTileMapBitmap.Visible = false;
 			this.menuItemSaveTileMapBitmap.Click += new System.EventHandler(this.menuItemSaveTileMapBitmap_Click);
 			// 
 			// menuItemSaveLevelBitmap
 			// 
-			this.menuItemSaveLevelBitmap.Index = 4;
 			this.menuItemSaveLevelBitmap.Text = "Save Level Bitmap...";
 			this.menuItemSaveLevelBitmap.Click += new System.EventHandler(this.menuItemSaveLevelBitmap_Click);
 			// 
 			// menuItemRenameTemplates
 			// 
-			this.menuItemRenameTemplates.Index = 5;
 			this.menuItemRenameTemplates.Text = "Rename Templates...";
 			this.menuItemRenameTemplates.Click += new System.EventHandler(this.menuItemRenameTemplates_Click);
 			// 
 			// menuItemWindow
 			// 
-			this.menuItemWindow.Index = 4;
-			this.menuItemWindow.MdiList = true;
-			this.menuItemWindow.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.mainMenu1.MdiWindowListItem = this.menuItemWindow;
+			this.menuItemWindow.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																						   this.menuItemCascade,
 																						   this.menuItemTileHorizontal,
 																						   this.menuItemTileVertical});
@@ -511,45 +468,38 @@ namespace m
 			// 
 			// menuItemCascade
 			// 
-			this.menuItemCascade.Index = 0;
 			this.menuItemCascade.Text = "&Cascade";
 			this.menuItemCascade.Click += new System.EventHandler(this.menuItemCascade_Click);
 			// 
 			// menuItemTileHorizontal
 			// 
-			this.menuItemTileHorizontal.Index = 1;
 			this.menuItemTileHorizontal.Text = "&Tile Horizontal";
 			this.menuItemTileHorizontal.Click += new System.EventHandler(this.menuItemTileHorizontal_Click);
 			// 
 			// menuItemTileVertical
 			// 
-			this.menuItemTileVertical.Index = 2;
 			this.menuItemTileVertical.Text = "&Tile Vertical";
 			this.menuItemTileVertical.Click += new System.EventHandler(this.menuItemTileVertical_Click);
 			// 
 			// menuItem5
 			// 
-			this.menuItem5.Index = 5;
-			this.menuItem5.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.menuItem5.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																					  this.menuItemHelp,
 																					  this.menuItemAbout});
 			this.menuItem5.Text = "&Help";
 			// 
 			// menuItemHelp
 			// 
-			this.menuItemHelp.Index = 0;
 			this.menuItemHelp.Text = "Help...";
 			this.menuItemHelp.Click += new System.EventHandler(this.menuItemHelp_Click);
 			// 
 			// menuItemAbout
 			// 
-			this.menuItemAbout.Index = 1;
 			this.menuItemAbout.Text = "About...";
 			this.menuItemAbout.Click += new System.EventHandler(this.menuItemAbout_Click);
 			// 
 			// menuItemTest
 			// 
-			this.menuItemTest.Index = 6;
 			this.menuItemTest.Text = "&Test";
 			this.menuItemTest.Visible = false;
 			this.menuItemTest.Click += new System.EventHandler(this.menuItemTest_Click);
@@ -656,9 +606,15 @@ namespace m
 			this.statusBar1.Location = new System.Drawing.Point(0, 528);
 			this.statusBar1.Name = "statusBar1";
 			this.statusBar1.Size = new System.Drawing.Size(156, 22);
+			this.statusBar1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+				this.statusLabel1});
 			this.statusBar1.SizingGrip = false;
 			this.statusBar1.TabIndex = 3;
-			this.statusBar1.TabStop = true;
+			// 
+			// statusLabel1
+			// 
+			this.statusLabel1.Spring = true;
+			this.statusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 
 			// propertyGrid1
 			// 
@@ -713,13 +669,11 @@ namespace m
 			// 
 			// menuItem11
 			// 
-			this.menuItem11.Index = 8;
 			this.menuItem11.Text = "Export Mission Pack...";
 			this.menuItem11.Click += new System.EventHandler(this.menuItemExportMissionPack_Click);
 			// 
 			// menuItem12
 			// 
-			this.menuItem12.Index = 7;
 			this.menuItem12.Text = "Import Mission Pack...";
 			this.menuItem12.Click += new System.EventHandler(this.menuItemImportMissionPack_Click);
 			// 
@@ -734,7 +688,8 @@ namespace m
 			this.Controls.Add(this.panelLeft);
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.IsMdiContainer = true;
-			this.Menu = this.mainMenu1;
+			this.Controls.Add(this.mainMenu1);
+			this.MainMenuStrip = this.mainMenu1;
 			this.Name = "MainForm";
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.Text = "m";
@@ -1288,7 +1243,7 @@ namespace m
 	//
 
 	public interface IPlugin {
-		void HackMenus(MainMenu mnu);
+		void HackMenus(MenuStrip mnu);
 		IMapItem[] GetMapItems();
 	}
 }

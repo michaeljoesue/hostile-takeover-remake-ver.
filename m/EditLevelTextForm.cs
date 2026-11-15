@@ -16,20 +16,20 @@ namespace m
 		private string m_strLevelText;
 		private LevelDoc m_lvld;
 		public System.Windows.Forms.RichTextBox richTextBox1;
-		private System.Windows.Forms.MainMenu mainMenu1;
-		private System.Windows.Forms.MenuItem menuItem1;
-		private System.Windows.Forms.MenuItem menuItem2;
-		private System.Windows.Forms.MenuItem mniExport;
-		private System.Windows.Forms.MenuItem mniImport;
+		private System.Windows.Forms.MenuStrip mainMenu1;
+		private System.Windows.Forms.ToolStripMenuItem menuItem1;
+		private System.Windows.Forms.ToolStripMenuItem menuItem2;
+		private System.Windows.Forms.ToolStripMenuItem mniExport;
+		private System.Windows.Forms.ToolStripMenuItem mniImport;
 		private System.Windows.Forms.OpenFileDialog ofd;
 		private System.Windows.Forms.SaveFileDialog sfd;
-		private System.Windows.Forms.MenuItem mniExit;
-		private System.Windows.Forms.MenuItem mniCut;
-		private System.Windows.Forms.MenuItem mniCopy;
-		private System.Windows.Forms.MenuItem mniPaste;
-		private System.Windows.Forms.MenuItem mniFind;
-		private System.Windows.Forms.MenuItem menuItem9;
-		private System.Windows.Forms.MenuItem mniSave;
+		private System.Windows.Forms.ToolStripMenuItem mniExit;
+		private System.Windows.Forms.ToolStripMenuItem mniCut;
+		private System.Windows.Forms.ToolStripMenuItem mniCopy;
+		private System.Windows.Forms.ToolStripMenuItem mniPaste;
+		private System.Windows.Forms.ToolStripMenuItem mniFind;
+		private System.Windows.Forms.ToolStripSeparator menuItem9;
+		private System.Windows.Forms.ToolStripMenuItem mniSave;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -70,18 +70,18 @@ namespace m
 		private void InitializeComponent()
 		{
 			this.richTextBox1 = new System.Windows.Forms.RichTextBox();
-			this.mainMenu1 = new System.Windows.Forms.MainMenu();
-			this.menuItem1 = new System.Windows.Forms.MenuItem();
-			this.mniSave = new System.Windows.Forms.MenuItem();
-			this.mniImport = new System.Windows.Forms.MenuItem();
-			this.mniExport = new System.Windows.Forms.MenuItem();
-			this.mniExit = new System.Windows.Forms.MenuItem();
-			this.menuItem2 = new System.Windows.Forms.MenuItem();
-			this.mniCut = new System.Windows.Forms.MenuItem();
-			this.mniCopy = new System.Windows.Forms.MenuItem();
-			this.mniPaste = new System.Windows.Forms.MenuItem();
-			this.menuItem9 = new System.Windows.Forms.MenuItem();
-			this.mniFind = new System.Windows.Forms.MenuItem();
+			this.mainMenu1 = new System.Windows.Forms.MenuStrip();
+			this.menuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.mniSave = new System.Windows.Forms.ToolStripMenuItem();
+			this.mniImport = new System.Windows.Forms.ToolStripMenuItem();
+			this.mniExport = new System.Windows.Forms.ToolStripMenuItem();
+			this.mniExit = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem2 = new System.Windows.Forms.ToolStripMenuItem();
+			this.mniCut = new System.Windows.Forms.ToolStripMenuItem();
+			this.mniCopy = new System.Windows.Forms.ToolStripMenuItem();
+			this.mniPaste = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem9 = new System.Windows.Forms.ToolStripSeparator();
+			this.mniFind = new System.Windows.Forms.ToolStripMenuItem();
 			this.ofd = new System.Windows.Forms.OpenFileDialog();
 			this.sfd = new System.Windows.Forms.SaveFileDialog();
 			this.SuspendLayout();
@@ -98,14 +98,13 @@ namespace m
 			// 
 			// mainMenu1
 			// 
-			this.mainMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.mainMenu1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																					  this.menuItem1,
 																					  this.menuItem2});
 			// 
 			// menuItem1
 			// 
-			this.menuItem1.Index = 0;
-			this.menuItem1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.menuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																					  this.mniSave,
 																					  this.mniImport,
 																					  this.mniExport,
@@ -114,33 +113,28 @@ namespace m
 			// 
 			// mniSave
 			// 
-			this.mniSave.Index = 0;
-			this.mniSave.Shortcut = System.Windows.Forms.Shortcut.CtrlS;
+			this.mniSave.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S;
 			this.mniSave.Text = "&Save";
 			this.mniSave.Click += new System.EventHandler(this.mniSave_Click);
 			// 
 			// mniImport
 			// 
-			this.mniImport.Index = 1;
 			this.mniImport.Text = "&Import...";
 			this.mniImport.Click += new System.EventHandler(this.mniImport_Click);
 			// 
 			// mniExport
 			// 
-			this.mniExport.Index = 2;
 			this.mniExport.Text = "&Export...";
 			this.mniExport.Click += new System.EventHandler(this.mniExport_Click);
 			// 
 			// mniExit
 			// 
-			this.mniExit.Index = 3;
 			this.mniExit.Text = "E&xit";
 			this.mniExit.Click += new System.EventHandler(this.mniExit_Click);
 			// 
 			// menuItem2
 			// 
-			this.menuItem2.Index = 1;
-			this.menuItem2.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.menuItem2.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																					  this.mniCut,
 																					  this.mniCopy,
 																					  this.mniPaste,
@@ -150,34 +144,28 @@ namespace m
 			// 
 			// mniCut
 			// 
-			this.mniCut.Index = 0;
-			this.mniCut.Shortcut = System.Windows.Forms.Shortcut.CtrlX;
+			this.mniCut.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X;
 			this.mniCut.Text = "C&ut";
 			this.mniCut.Click += new System.EventHandler(this.mniCut_Click);
 			// 
 			// mniCopy
 			// 
-			this.mniCopy.Index = 1;
-			this.mniCopy.Shortcut = System.Windows.Forms.Shortcut.CtrlC;
+			this.mniCopy.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C;
 			this.mniCopy.Text = "&Copy";
 			this.mniCopy.Click += new System.EventHandler(this.mniCopy_Click);
 			// 
 			// mniPaste
 			// 
-			this.mniPaste.Index = 2;
-			this.mniPaste.Shortcut = System.Windows.Forms.Shortcut.CtrlV;
+			this.mniPaste.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V;
 			this.mniPaste.Text = "&Paste";
 			this.mniPaste.Click += new System.EventHandler(this.mniPaste_Click);
 			// 
 			// menuItem9
 			// 
-			this.menuItem9.Index = 3;
-			this.menuItem9.Text = "-";
 			// 
 			// mniFind
 			// 
-			this.mniFind.Index = 4;
-			this.mniFind.Shortcut = System.Windows.Forms.Shortcut.CtrlF;
+			this.mniFind.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F;
 			this.mniFind.Text = "&Find...";
 			this.mniFind.Click += new System.EventHandler(this.mniFind_Click);
 			// 
@@ -200,7 +188,8 @@ namespace m
 			this.ClientSize = new System.Drawing.Size(720, 710);
 			this.Controls.AddRange(new System.Windows.Forms.Control[] {
 																		  this.richTextBox1});
-			this.Menu = this.mainMenu1;
+			this.Controls.Add(this.mainMenu1);
+			this.MainMenuStrip = this.mainMenu1;
 			this.Name = "EditLevelTextForm";
 			this.Text = "Level Text";
 			this.ResumeLayout(false);

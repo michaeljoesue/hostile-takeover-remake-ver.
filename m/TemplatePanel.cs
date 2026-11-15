@@ -17,34 +17,34 @@ namespace m
 	{
 		private System.Windows.Forms.ComboBox comboDocs;
 		private m.FlowPanel flowPanel;
-		private System.Windows.Forms.ToolBar toolBar;
+		private System.Windows.Forms.ToolStrip toolBar;
 		protected internal System.Windows.Forms.ImageList imageList1;
-		private System.Windows.Forms.ToolBarButton toolBarButtonNew;
-		private System.Windows.Forms.ToolBarButton toolBarButtonOpen;
-		private System.Windows.Forms.ToolBarButton toolBarButtonSave;
-		private System.Windows.Forms.ContextMenu contextMenuTiles;
-		private System.Windows.Forms.MenuItem menuItemDeleteTile;
-		private System.Windows.Forms.MenuItem menuItemTileBackground;
+		private System.Windows.Forms.ToolStripButton toolBarButtonNew;
+		private System.Windows.Forms.ToolStripButton toolBarButtonOpen;
+		private System.Windows.Forms.ToolStripSplitButton toolBarButtonSave;
+		private System.Windows.Forms.ContextMenuStrip contextMenuTiles;
+		private System.Windows.Forms.ToolStripMenuItem menuItemDeleteTile;
+		private System.Windows.Forms.ToolStripMenuItem menuItemTileBackground;
 		private System.ComponentModel.IContainer components;
-		private System.Windows.Forms.ToolBarButton toolBarButtonClose;
-		private System.Windows.Forms.ContextMenu contextMenuToolbar;
-		private System.Windows.Forms.MenuItem menuItemAddTemplates;
-		private System.Windows.Forms.MenuItem menuItemEditTerrain;
-		private System.Windows.Forms.ToolBarButton toolBarButtonMisc;
-		private System.Windows.Forms.ToolBarButton toolBarButtonSeparator;
-		private System.Windows.Forms.ContextMenu contextMenuSave;
-		private System.Windows.Forms.MenuItem menuItemSaveAs;
-		private System.Windows.Forms.MenuItem menuItemSaveAll;
-		private System.Windows.Forms.MenuItem menuItemSave;
-		private System.Windows.Forms.MenuItem menuItemProperties;
-		private System.Windows.Forms.MenuItem menuItem2;
-		private System.Windows.Forms.MenuItem menuItemTemplProperties;
-		private System.Windows.Forms.MenuItem menuItemImportBitmap;
-		private System.Windows.Forms.MenuItem menuItemExportBitmap;
-		private System.Windows.Forms.MenuItem menuItemScaleDown;
-		private System.Windows.Forms.MenuItem menuItemSavePalette;
-		private System.Windows.Forms.MenuItem menuItemQuantizeOnly;
-		private System.Windows.Forms.MenuItem menuItem1;
+		private System.Windows.Forms.ToolStripButton toolBarButtonClose;
+		private System.Windows.Forms.ContextMenuStrip contextMenuToolbar;
+		private System.Windows.Forms.ToolStripMenuItem menuItemAddTemplates;
+		private System.Windows.Forms.ToolStripMenuItem menuItemEditTerrain;
+		private System.Windows.Forms.ToolStripSplitButton toolBarButtonMisc;
+		private System.Windows.Forms.ToolStripSeparator toolBarButtonSeparator;
+		private System.Windows.Forms.ContextMenuStrip contextMenuSave;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSaveAs;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSaveAll;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSave;
+		private System.Windows.Forms.ToolStripMenuItem menuItemProperties;
+		private System.Windows.Forms.ToolStripSeparator menuItem2;
+		private System.Windows.Forms.ToolStripMenuItem menuItemTemplProperties;
+		private System.Windows.Forms.ToolStripMenuItem menuItemImportBitmap;
+		private System.Windows.Forms.ToolStripMenuItem menuItemExportBitmap;
+		private System.Windows.Forms.ToolStripMenuItem menuItemScaleDown;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSavePalette;
+		private System.Windows.Forms.ToolStripMenuItem menuItemQuantizeOnly;
+		private System.Windows.Forms.ToolStripSeparator menuItem1;
 		private System.Windows.Forms.ToolTip toolTip;
 		TemplateDoc m_tmpdActive = null;
 
@@ -289,37 +289,17 @@ namespace m
 			m_tmpdActive.AddTemplates(frmOpen.FileNames);
 		}
 
-		private void toolBar_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e) {
-			switch (toolBar.Buttons.IndexOf(e.Button)) {
-			case 0:
-				DocManager.NewDocument(typeof(TemplateDoc), null);
-				break;
+		private void toolBarButtonNew_Click(object sender, System.EventArgs e) {
+			DocManager.NewDocument(typeof(TemplateDoc), null);
+		}
 
-			case 1:
-				DocManager.OpenDocument(typeof(TemplateDoc));
-				break;
+		private void toolBarButtonOpen_Click(object sender, System.EventArgs e) {
+			DocManager.OpenDocument(typeof(TemplateDoc));
+		}
 
-			case 2:
-				if (m_tmpdActive != null)
-					m_tmpdActive.Save();
-				break;
-
-			case 3:
-				AddTemplates();
-				//Rectangle rc = toolBar.Buttons[toolBar.Buttons.IndexOf(e.Button)].Rectangle;
-				//contextMenuToolbar.Show(toolBar, new Point(rc.X, rc.Y + rc.Height));
-				break;
-
-			case 4:
-				// Separator
-				break;
-
-			case 5:
-				if (m_tmpdActive == null)
-					return;
+		private void toolBarButtonClose_Click(object sender, System.EventArgs e) {
+			if (m_tmpdActive != null)
 				m_tmpdActive.Close();
-				break;
-			}
 		}
 
 		private void menuItemSave_Click(object sender, System.EventArgs e) {
@@ -348,7 +328,7 @@ namespace m
 		}
 
 		private IMapItem GetMapItem(Object sender) {
-			ContextMenu contextMenu = (ContextMenu)((MenuItem)sender).Parent;
+			ContextMenuStrip contextMenu = (ContextMenuStrip)((ToolStripItem)sender).Owner;
 			return (IMapItem)((PictureBox)contextMenu.SourceControl).Tag;
 		}
 		
@@ -471,33 +451,33 @@ namespace m
 			this.components = new System.ComponentModel.Container();
 			this.comboDocs = new System.Windows.Forms.ComboBox();
 			this.flowPanel = new m.FlowPanel();
-			this.toolBar = new System.Windows.Forms.ToolBar();
-			this.toolBarButtonNew = new System.Windows.Forms.ToolBarButton();
-			this.toolBarButtonOpen = new System.Windows.Forms.ToolBarButton();
-			this.toolBarButtonSave = new System.Windows.Forms.ToolBarButton();
-			this.contextMenuSave = new System.Windows.Forms.ContextMenu();
-			this.menuItemSave = new System.Windows.Forms.MenuItem();
-			this.menuItemSaveAs = new System.Windows.Forms.MenuItem();
-			this.menuItemSaveAll = new System.Windows.Forms.MenuItem();
-			this.toolBarButtonMisc = new System.Windows.Forms.ToolBarButton();
-			this.contextMenuToolbar = new System.Windows.Forms.ContextMenu();
-			this.menuItemAddTemplates = new System.Windows.Forms.MenuItem();
-			this.menuItemEditTerrain = new System.Windows.Forms.MenuItem();
-			this.menuItemScaleDown = new System.Windows.Forms.MenuItem();
-			this.menuItemQuantizeOnly = new System.Windows.Forms.MenuItem();
-			this.menuItemSavePalette = new System.Windows.Forms.MenuItem();
-			this.menuItem1 = new System.Windows.Forms.MenuItem();
-			this.menuItemProperties = new System.Windows.Forms.MenuItem();
-			this.toolBarButtonSeparator = new System.Windows.Forms.ToolBarButton();
-			this.toolBarButtonClose = new System.Windows.Forms.ToolBarButton();
+			this.toolBar = new System.Windows.Forms.ToolStrip();
+			this.toolBarButtonNew = new System.Windows.Forms.ToolStripButton();
+			this.toolBarButtonOpen = new System.Windows.Forms.ToolStripButton();
+			this.toolBarButtonSave = new System.Windows.Forms.ToolStripSplitButton();
+			this.contextMenuSave = new System.Windows.Forms.ContextMenuStrip();
+			this.menuItemSave = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSaveAs = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSaveAll = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolBarButtonMisc = new System.Windows.Forms.ToolStripSplitButton();
+			this.contextMenuToolbar = new System.Windows.Forms.ContextMenuStrip();
+			this.menuItemAddTemplates = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemEditTerrain = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemScaleDown = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemQuantizeOnly = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSavePalette = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem1 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItemProperties = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolBarButtonSeparator = new System.Windows.Forms.ToolStripSeparator();
+			this.toolBarButtonClose = new System.Windows.Forms.ToolStripButton();
 			this.imageList1 = new System.Windows.Forms.ImageList(this.components);
-			this.contextMenuTiles = new System.Windows.Forms.ContextMenu();
-			this.menuItemImportBitmap = new System.Windows.Forms.MenuItem();
-			this.menuItemExportBitmap = new System.Windows.Forms.MenuItem();
-			this.menuItemDeleteTile = new System.Windows.Forms.MenuItem();
-			this.menuItemTileBackground = new System.Windows.Forms.MenuItem();
-			this.menuItem2 = new System.Windows.Forms.MenuItem();
-			this.menuItemTemplProperties = new System.Windows.Forms.MenuItem();
+			this.contextMenuTiles = new System.Windows.Forms.ContextMenuStrip();
+			this.menuItemImportBitmap = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemExportBitmap = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemDeleteTile = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemTileBackground = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItem2 = new System.Windows.Forms.ToolStripSeparator();
+			this.menuItemTemplProperties = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.SuspendLayout();
 			// 
@@ -525,75 +505,73 @@ namespace m
 			// 
 			// toolBar
 			// 
-			this.toolBar.Appearance = System.Windows.Forms.ToolBarAppearance.Flat;
-			this.toolBar.Buttons.AddRange(new System.Windows.Forms.ToolBarButton[] {
-																					   this.toolBarButtonNew,
-																					   this.toolBarButtonOpen,
-																					   this.toolBarButtonSave,
-																					   this.toolBarButtonMisc,
-																					   this.toolBarButtonSeparator,
-																					   this.toolBarButtonClose});
-			this.toolBar.ButtonSize = new System.Drawing.Size(16, 16);
-			this.toolBar.DropDownArrows = true;
+			this.toolBar.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
 			this.toolBar.ImageList = this.imageList1;
+			this.toolBar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+				this.toolBarButtonNew,
+				this.toolBarButtonOpen,
+				this.toolBarButtonSave,
+				this.toolBarButtonMisc,
+				this.toolBarButtonSeparator,
+				this.toolBarButtonClose});
 			this.toolBar.Name = "toolBar";
-			this.toolBar.ShowToolTips = true;
-			this.toolBar.Size = new System.Drawing.Size(168, 24);
 			this.toolBar.TabIndex = 2;
-			this.toolBar.ButtonClick += new System.Windows.Forms.ToolBarButtonClickEventHandler(this.toolBar_ButtonClick);
 			// 
 			// toolBarButtonNew
 			// 
+			this.toolBarButtonNew.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.toolBarButtonNew.ImageIndex = 0;
 			this.toolBarButtonNew.ToolTipText = "New Template Collection";
+			this.toolBarButtonNew.Click += new System.EventHandler(this.toolBarButtonNew_Click);
 			// 
 			// toolBarButtonOpen
 			// 
+			this.toolBarButtonOpen.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.toolBarButtonOpen.ImageIndex = 1;
 			this.toolBarButtonOpen.ToolTipText = "Open Template Collection";
+			this.toolBarButtonOpen.Click += new System.EventHandler(this.toolBarButtonOpen_Click);
 			// 
 			// toolBarButtonSave
 			// 
-			this.toolBarButtonSave.DropDownMenu = this.contextMenuSave;
+			this.toolBarButtonSave.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+			this.toolBarButtonSave.DropDown = this.contextMenuSave;
 			this.toolBarButtonSave.ImageIndex = 2;
-			this.toolBarButtonSave.Style = System.Windows.Forms.ToolBarButtonStyle.DropDownButton;
 			this.toolBarButtonSave.ToolTipText = "Save Template Collection";
+			this.toolBarButtonSave.ButtonClick += new System.EventHandler(this.menuItemSave_Click);
 			// 
 			// contextMenuSave
 			// 
-			this.contextMenuSave.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.contextMenuSave.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																							this.menuItemSave,
 																							this.menuItemSaveAs,
 																							this.menuItemSaveAll});
 			// 
 			// menuItemSave
 			// 
-			this.menuItemSave.Index = 0;
 			this.menuItemSave.Text = "Save";
 			this.menuItemSave.Click += new System.EventHandler(this.menuItemSave_Click);
 			// 
 			// menuItemSaveAs
 			// 
-			this.menuItemSaveAs.Index = 1;
 			this.menuItemSaveAs.Text = "Save As...";
 			this.menuItemSaveAs.Click += new System.EventHandler(this.menuItemSaveAs_Click);
 			// 
 			// menuItemSaveAll
 			// 
-			this.menuItemSaveAll.Index = 2;
 			this.menuItemSaveAll.Text = "Save All";
 			this.menuItemSaveAll.Click += new System.EventHandler(this.menuItemSaveAll_Click);
 			// 
 			// toolBarButtonMisc
 			// 
-			this.toolBarButtonMisc.DropDownMenu = this.contextMenuToolbar;
+			this.toolBarButtonMisc.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+			this.toolBarButtonMisc.DropDown = this.contextMenuToolbar;
 			this.toolBarButtonMisc.ImageIndex = 4;
-			this.toolBarButtonMisc.Style = System.Windows.Forms.ToolBarButtonStyle.DropDownButton;
 			this.toolBarButtonMisc.ToolTipText = "Add Templates and other tools";
+			this.toolBarButtonMisc.ButtonClick += new System.EventHandler(this.menuItemAddTemplates_Click);
 			// 
 			// contextMenuToolbar
 			// 
-			this.contextMenuToolbar.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.contextMenuToolbar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																							   this.menuItemAddTemplates,
 																							   this.menuItemEditTerrain,
 																							   this.menuItemScaleDown,
@@ -604,53 +582,43 @@ namespace m
 			// 
 			// menuItemAddTemplates
 			// 
-			this.menuItemAddTemplates.Index = 0;
 			this.menuItemAddTemplates.Text = "Add Templates...";
 			this.menuItemAddTemplates.Click += new System.EventHandler(this.menuItemAddTemplates_Click);
 			// 
 			// menuItemEditTerrain
 			// 
-			this.menuItemEditTerrain.Index = 1;
 			this.menuItemEditTerrain.Text = "Edit Terrain...";
 			this.menuItemEditTerrain.Click += new System.EventHandler(this.menuItemEditTerrain_Click);
 			// 
 			// menuItemScaleDown
 			// 
-			this.menuItemScaleDown.Index = 2;
 			this.menuItemScaleDown.Text = "Scale && Quantize...";
 			this.menuItemScaleDown.Click += new System.EventHandler(this.menuItemScaleDown_Click);
 			// 
 			// menuItemQuantizeOnly
 			// 
-			this.menuItemQuantizeOnly.Index = 3;
 			this.menuItemQuantizeOnly.Text = "Quantize Only...";
 			this.menuItemQuantizeOnly.Click += new System.EventHandler(this.menuItemQuantizeOnly_Click);
 			// 
 			// menuItemSavePalette
 			// 
-			this.menuItemSavePalette.Index = 4;
 			this.menuItemSavePalette.Text = "Save Palette...";
 			this.menuItemSavePalette.Click += new System.EventHandler(this.menuItemSavePalette_Click);
 			// 
 			// menuItem1
 			// 
-			this.menuItem1.Index = 5;
-			this.menuItem1.Text = "-";
 			// 
 			// menuItemProperties
 			// 
-			this.menuItemProperties.Index = 6;
 			this.menuItemProperties.Text = "Properties";
 			this.menuItemProperties.Click += new System.EventHandler(this.menuItemProperties_Click);
 			// 
-			// toolBarButtonSeparator
-			// 
-			this.toolBarButtonSeparator.Style = System.Windows.Forms.ToolBarButtonStyle.Separator;
-			// 
 			// toolBarButtonClose
 			// 
+			this.toolBarButtonClose.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.toolBarButtonClose.ImageIndex = 5;
 			this.toolBarButtonClose.ToolTipText = "Close Template Collection";
+			this.toolBarButtonClose.Click += new System.EventHandler(this.toolBarButtonClose_Click);
 			// 
 			// imageList1
 			// 
@@ -660,7 +628,7 @@ namespace m
 			// 
 			// contextMenuTiles
 			// 
-			this.contextMenuTiles.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+			this.contextMenuTiles.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
 																							 this.menuItemImportBitmap,
 																							 this.menuItemExportBitmap,
 																							 this.menuItemDeleteTile,
@@ -670,36 +638,29 @@ namespace m
 			// 
 			// menuItemImportBitmap
 			// 
-			this.menuItemImportBitmap.Index = 0;
 			this.menuItemImportBitmap.Text = "Import Bitmap...";
 			this.menuItemImportBitmap.Click += new System.EventHandler(this.menuItemImportBitmap_Click);
 			// 
 			// menuItemExportBitmap
 			// 
-			this.menuItemExportBitmap.Index = 1;
 			this.menuItemExportBitmap.Text = "Export Bitmap...";
 			this.menuItemExportBitmap.Click += new System.EventHandler(this.menuItemExportBitmap_Click);
 			// 
 			// menuItemDeleteTile
 			// 
-			this.menuItemDeleteTile.Index = 2;
 			this.menuItemDeleteTile.Text = "Remove";
 			this.menuItemDeleteTile.Click += new System.EventHandler(this.menuItemDeleteTile_Click);
 			// 
 			// menuItemTileBackground
 			// 
-			this.menuItemTileBackground.Index = 3;
 			this.menuItemTileBackground.Text = "Background";
 			this.menuItemTileBackground.Click += new System.EventHandler(this.menuItemTileBackground_Click);
 			// 
 			// menuItem2
 			// 
-			this.menuItem2.Index = 4;
-			this.menuItem2.Text = "-";
 			// 
 			// menuItemTemplProperties
 			// 
-			this.menuItemTemplProperties.Index = 5;
 			this.menuItemTemplProperties.Text = "Properties";
 			this.menuItemTemplProperties.Click += new System.EventHandler(this.menuItemTemplProperties_Click);
 			// 

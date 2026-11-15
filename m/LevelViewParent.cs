@@ -14,21 +14,21 @@ namespace m
 	public class LevelViewParent : System.Windows.Forms.UserControl, ICommandTarget
 	{
 		private m.LevelView view;
-		private System.Windows.Forms.ToolBar toolBar1;
+		private System.Windows.Forms.ToolStrip toolBar1;
 		private System.Windows.Forms.ComboBox comboDocs;
 		private System.Windows.Forms.ImageList imageList1;
-		private System.Windows.Forms.ToolBarButton toolBarButtonHideToolbar;
+		private System.Windows.Forms.ToolStripButton toolBarButtonHideToolbar;
 		private System.Windows.Forms.Panel panelToolbar;
 		private System.Windows.Forms.Panel panelShowToolbar;
-		private System.Windows.Forms.ToolBar toolBarShowToolbar;
-		private System.Windows.Forms.ToolBarButton toolBarButtonShowToolbar;
-		private System.Windows.Forms.ToolBarButton toolBarButtonToggleTemplates;
-		private System.Windows.Forms.ToolBarButton toolBarButtonToggleGobs;
+		private System.Windows.Forms.ToolStrip toolBarShowToolbar;
+		private System.Windows.Forms.ToolStripButton toolBarButtonShowToolbar;
+		private System.Windows.Forms.ToolStripButton toolBarButtonToggleTemplates;
+		private System.Windows.Forms.ToolStripButton toolBarButtonToggleGobs;
 		private System.ComponentModel.IContainer components;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.ComboBox comboZoom;
-		private System.Windows.Forms.ToolBarButton toolBarButtonToggleAreas;
+		private System.Windows.Forms.ToolStripButton toolBarButtonToggleAreas;
 		TemplateDoc m_tmpdCurrent = null;
 
 		public LevelViewParent()
@@ -139,16 +139,16 @@ namespace m
 			this.label2 = new System.Windows.Forms.Label();
 			this.comboZoom = new System.Windows.Forms.ComboBox();
 			this.label1 = new System.Windows.Forms.Label();
-			this.toolBar1 = new System.Windows.Forms.ToolBar();
-			this.toolBarButtonToggleTemplates = new System.Windows.Forms.ToolBarButton();
-			this.toolBarButtonToggleGobs = new System.Windows.Forms.ToolBarButton();
-			this.toolBarButtonToggleAreas = new System.Windows.Forms.ToolBarButton();
-			this.toolBarButtonHideToolbar = new System.Windows.Forms.ToolBarButton();
+			this.toolBar1 = new System.Windows.Forms.ToolStrip();
+			this.toolBarButtonToggleTemplates = new System.Windows.Forms.ToolStripButton();
+			this.toolBarButtonToggleGobs = new System.Windows.Forms.ToolStripButton();
+			this.toolBarButtonToggleAreas = new System.Windows.Forms.ToolStripButton();
+			this.toolBarButtonHideToolbar = new System.Windows.Forms.ToolStripButton();
 			this.imageList1 = new System.Windows.Forms.ImageList(this.components);
 			this.comboDocs = new System.Windows.Forms.ComboBox();
 			this.panelShowToolbar = new System.Windows.Forms.Panel();
-			this.toolBarShowToolbar = new System.Windows.Forms.ToolBar();
-			this.toolBarButtonShowToolbar = new System.Windows.Forms.ToolBarButton();
+			this.toolBarShowToolbar = new System.Windows.Forms.ToolStrip();
+			this.toolBarButtonShowToolbar = new System.Windows.Forms.ToolStripButton();
 			this.panelToolbar.SuspendLayout();
 			this.panelShowToolbar.SuspendLayout();
 			this.SuspendLayout();
@@ -219,49 +219,53 @@ namespace m
 			// toolBar1
 			// 
 			this.toolBar1.Anchor = System.Windows.Forms.AnchorStyles.Left;
-			this.toolBar1.Appearance = System.Windows.Forms.ToolBarAppearance.Flat;
-			this.toolBar1.Buttons.AddRange(new System.Windows.Forms.ToolBarButton[] {
-																						this.toolBarButtonToggleTemplates,
-																						this.toolBarButtonToggleGobs,
-																						this.toolBarButtonToggleAreas,
-																						this.toolBarButtonHideToolbar});
-			this.toolBar1.ButtonSize = new System.Drawing.Size(16, 15);
-			this.toolBar1.Divider = false;
+			this.toolBar1.BackColor = System.Drawing.Color.White;
 			this.toolBar1.Dock = System.Windows.Forms.DockStyle.None;
-			this.toolBar1.DropDownArrows = true;
+			this.toolBar1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
 			this.toolBar1.ImageList = this.imageList1;
-			this.toolBar1.Location = new System.Drawing.Point(357, 1);
+			this.toolBar1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+				this.toolBarButtonToggleTemplates,
+				this.toolBarButtonToggleGobs,
+				this.toolBarButtonToggleAreas,
+				this.toolBarButtonHideToolbar});
+			this.toolBar1.Location = new System.Drawing.Point(357, 0);
 			this.toolBar1.Name = "toolBar1";
-			this.toolBar1.ShowToolTips = true;
-			this.toolBar1.Size = new System.Drawing.Size(99, 22);
+			this.toolBar1.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
 			this.toolBar1.TabIndex = 2;
-			this.toolBar1.ButtonClick += new System.Windows.Forms.ToolBarButtonClickEventHandler(this.toolBar1_ButtonClick);
 			// 
 			// toolBarButtonToggleTemplates
 			// 
+			this.toolBarButtonToggleTemplates.Checked = true;
+			this.toolBarButtonToggleTemplates.CheckOnClick = true;
+			this.toolBarButtonToggleTemplates.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.toolBarButtonToggleTemplates.ImageIndex = 8;
-			this.toolBarButtonToggleTemplates.Pushed = true;
-			this.toolBarButtonToggleTemplates.Style = System.Windows.Forms.ToolBarButtonStyle.ToggleButton;
 			this.toolBarButtonToggleTemplates.ToolTipText = "Toggle Templates";
+			this.toolBarButtonToggleTemplates.Click += new System.EventHandler(this.toolBarButtonToggleTemplates_Click);
 			// 
 			// toolBarButtonToggleGobs
 			// 
+			this.toolBarButtonToggleGobs.Checked = true;
+			this.toolBarButtonToggleGobs.CheckOnClick = true;
+			this.toolBarButtonToggleGobs.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.toolBarButtonToggleGobs.ImageIndex = 9;
-			this.toolBarButtonToggleGobs.Pushed = true;
-			this.toolBarButtonToggleGobs.Style = System.Windows.Forms.ToolBarButtonStyle.ToggleButton;
 			this.toolBarButtonToggleGobs.ToolTipText = "Toggle Gobs";
+			this.toolBarButtonToggleGobs.Click += new System.EventHandler(this.toolBarButtonToggleGobs_Click);
 			// 
 			// toolBarButtonToggleAreas
 			// 
+			this.toolBarButtonToggleAreas.Checked = true;
+			this.toolBarButtonToggleAreas.CheckOnClick = true;
+			this.toolBarButtonToggleAreas.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.toolBarButtonToggleAreas.ImageIndex = 10;
-			this.toolBarButtonToggleAreas.Pushed = true;
-			this.toolBarButtonToggleAreas.Style = System.Windows.Forms.ToolBarButtonStyle.ToggleButton;
 			this.toolBarButtonToggleAreas.ToolTipText = "Toggle Areas";
+			this.toolBarButtonToggleAreas.Click += new System.EventHandler(this.toolBarButtonToggleAreas_Click);
 			// 
 			// toolBarButtonHideToolbar
 			// 
+			this.toolBarButtonHideToolbar.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.toolBarButtonHideToolbar.ImageIndex = 6;
 			this.toolBarButtonHideToolbar.ToolTipText = "Hide Toolbar";
+			this.toolBarButtonHideToolbar.Click += new System.EventHandler(this.toolBarButtonHideToolbar_Click);
 			// 
 			// imageList1
 			// 
@@ -295,23 +299,23 @@ namespace m
 			// 
 			// toolBarShowToolbar
 			// 
-			this.toolBarShowToolbar.Appearance = System.Windows.Forms.ToolBarAppearance.Flat;
-			this.toolBarShowToolbar.Buttons.AddRange(new System.Windows.Forms.ToolBarButton[] {
-																								  this.toolBarButtonShowToolbar});
-			this.toolBarShowToolbar.ButtonSize = new System.Drawing.Size(16, 15);
+			this.toolBarShowToolbar.BackColor = System.Drawing.Color.White;
 			this.toolBarShowToolbar.Dock = System.Windows.Forms.DockStyle.None;
-			this.toolBarShowToolbar.DropDownArrows = true;
+			this.toolBarShowToolbar.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
 			this.toolBarShowToolbar.ImageList = this.imageList1;
+			this.toolBarShowToolbar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+				this.toolBarButtonShowToolbar});
+			this.toolBarShowToolbar.Location = new System.Drawing.Point(2, 4);
 			this.toolBarShowToolbar.Name = "toolBarShowToolbar";
-			this.toolBarShowToolbar.ShowToolTips = true;
-			this.toolBarShowToolbar.Size = new System.Drawing.Size(25, 24);
+			this.toolBarShowToolbar.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
 			this.toolBarShowToolbar.TabIndex = 0;
-			this.toolBarShowToolbar.ButtonClick += new System.Windows.Forms.ToolBarButtonClickEventHandler(this.toolBarShowToolbar_ButtonClick);
 			// 
 			// toolBarButtonShowToolbar
 			// 
+			this.toolBarButtonShowToolbar.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 			this.toolBarButtonShowToolbar.ImageIndex = 7;
 			this.toolBarButtonShowToolbar.ToolTipText = "Show Toolbar";
+			this.toolBarButtonShowToolbar.Click += new System.EventHandler(this.toolBarButtonShowToolbar_Click);
 			// 
 			// LevelViewParent
 			// 
@@ -328,34 +332,26 @@ namespace m
 		}
 		#endregion
 
-		private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e) {
-			switch (toolBar1.Buttons.IndexOf(e.Button)) {
-			case 0:
-				view.SetLayerFlags(view.GetLayerFlags() ^ LayerFlags.Templates);
-				break;
-
-			case 1:
-				view.SetLayerFlags(view.GetLayerFlags() ^ LayerFlags.Gobs);
-				break;
-
-			case 2:
-				view.SetLayerFlags(view.GetLayerFlags() ^ LayerFlags.Areas);
-				break;
-
-			case 3:
-				panelToolbar.Hide();
-				panelShowToolbar.Show();
-				break;
-			}		
+		private void toolBarButtonToggleTemplates_Click(object sender, System.EventArgs e) {
+			view.SetLayerFlags(view.GetLayerFlags() ^ LayerFlags.Templates);
 		}
 
-		private void toolBarShowToolbar_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e) {
-			switch (toolBarShowToolbar.Buttons.IndexOf(e.Button)) {
-			case 0:
-				panelShowToolbar.Hide();
-				panelToolbar.Show();
-				break;
-			}
+		private void toolBarButtonToggleGobs_Click(object sender, System.EventArgs e) {
+			view.SetLayerFlags(view.GetLayerFlags() ^ LayerFlags.Gobs);
+		}
+
+		private void toolBarButtonToggleAreas_Click(object sender, System.EventArgs e) {
+			view.SetLayerFlags(view.GetLayerFlags() ^ LayerFlags.Areas);
+		}
+
+		private void toolBarButtonHideToolbar_Click(object sender, System.EventArgs e) {
+			panelToolbar.Hide();
+			panelShowToolbar.Show();
+		}
+
+		private void toolBarButtonShowToolbar_Click(object sender, System.EventArgs e) {
+			panelShowToolbar.Hide();
+			panelToolbar.Show();
 		}
 
 		private void comboDocs_SelectedIndexChanged(object sender, System.EventArgs e) {
