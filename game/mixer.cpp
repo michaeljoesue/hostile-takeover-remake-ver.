@@ -227,4 +227,37 @@ void MixChannels16(Channel *achnl, int cchnl, short *ps, int csamples)
 	}
 }
 
+void MixChannelsStereo16(Channel *achnl, int cchnl, short *ps, int cframes)
+{
+	short *psEnd = ps + (cframes & ~1) * 2;
+	while (ps < psEnd) {
+		int nSumL1 = 0, nSumR1 = 0;
+		int nSumL2 = 0, nSumR2 = 0;
+		for (int ichnl = 0; ichnl < cchnl; ichnl++) {
+			Channel *pchnl = &achnl[ichnl];
+			if (pchnl->pb < pchnl->pbEnd) {
+				int nDelta = (*pchnl->pb) >> 4;
+				pchnl->bSampleLast += gabAdpcmSteppings[pchnl->nStepIndex][nDelta];
+				int n1 = (int)pchnl->bSampleLast - 128;
+				pchnl->nStepIndex = ganStepIndexMap[pchnl->nStepIndex][nDelta];
+				nDelta = (*pchnl->pb) & 0xf;
+				pchnl->bSampleLast += gabAdpcmSteppings[pchnl->nStepIndex][nDelta];
+				int n2 = (int)pchnl->bSampleLast - 128;
+				pchnl->nStepIndex = ganStepIndexMap[pchnl->nStepIndex][nDelta];
+				pchnl->pb++;
+				nSumL1 += n1 * pchnl->nGainLeft;
+				nSumR1 += n1 * pchnl->nGainRight;
+				nSumL2 += n2 * pchnl->nGainLeft;
+				nSumR2 += n2 * pchnl->nGainRight;
+			}
+		}
+
+		// Gains are 1/256ths; same 16 bit scaling as MixChannels16
+		*ps++ = SoftClip(nSumL1 / 2);
+		*ps++ = SoftClip(nSumR1 / 2);
+		*ps++ = SoftClip(nSumL2 / 2);
+		*ps++ = SoftClip(nSumR2 / 2);
+	}
+}
+
 } // namespace wi

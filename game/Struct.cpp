@@ -899,7 +899,7 @@ BeginStateMachine
 
 				// Play damaged sound
 
-				gsndm.PlaySfx(m_pstruc->sfxDamaged);
+				gsndm.PlaySfxAt(m_pstruc->sfxDamaged, m_wx, m_wy);
 
 				if (gsim.GetTickCount() - m_tLastSmoke > 200) {
 					int cSmokes = (GetRandom() % 3) + 2;
@@ -1016,7 +1016,7 @@ BeginStateMachine
 				Deactivate();
 			m_ff ^= kfGobLayerDepthSorted | kfGobLayerSurfaceDecal;
 
-			gsndm.PlaySfx(m_pstruc->sfxDestroyed);
+			gsndm.PlaySfxAt(m_pstruc->sfxDestroyed, m_wx, m_wy);
 			StartAnimation(&m_ani, 2, 0, kfAniIgnoreFirstAdvance);	// UNDONE: hardcoded
 
 			// dont remove ourselves from the "occupied" map until it's all over

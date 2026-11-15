@@ -6954,7 +6954,8 @@ public:
 	void Exit();
 	void Enable(bool fEnable);
 	bool IsEnabled();
-	void PlaySfx(Sfx sfx);
+	void PlaySfx(Sfx sfx, int nPan = 0, int nVolume = 256);
+	void PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy);
 	void WaitSilence();
 	long FilterSleepTicks(long ct);
 	void SetVolume(int nVolume);

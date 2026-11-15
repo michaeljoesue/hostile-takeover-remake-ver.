@@ -65,7 +65,7 @@ bool ArtilleryGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, W
 
 	// Play sound
 
-	gsndm.PlaySfx(m_pmuntc->sfxFire);
+	gsndm.PlaySfxAt(m_pmuntc->sfxFire, m_wx, m_wy);
 
 	return true;
 }

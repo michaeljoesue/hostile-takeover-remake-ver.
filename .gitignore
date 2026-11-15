@@ -10,3 +10,4 @@ CMakeUserPresets.json
 obj/
 Debug/
 Release/
+__pycache__/

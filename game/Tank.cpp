@@ -134,7 +134,7 @@ bool TankGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord
 
 	// Play sound
 
-	gsndm.PlaySfx(m_pmuntc->sfxFire);
+	gsndm.PlaySfxAt(m_pmuntc->sfxFire, m_wx, m_wy);
 
 	return true;
 }
@@ -401,7 +401,7 @@ void MTankGob::DefUpdate()
 				delete m_pgobSecondShot;
 			}
 			m_pgobSecondShot = NULL;
-			gsndm.PlaySfx(m_pmuntc->sfxFire);
+			gsndm.PlaySfxAt(m_pmuntc->sfxFire, m_wx, m_wy);
 		}
 	}
 	TankGob::DefUpdate();
@@ -537,7 +537,7 @@ bool GTankGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoor
 
 	// Play sound
 
-	gsndm.PlaySfx(m_pmuntc->sfxFire);
+	gsndm.PlaySfxAt(m_pmuntc->sfxFire, m_wx, m_wy);
 
 	return true;
 }
@@ -771,7 +771,7 @@ BeginStateMachine
 				UnitGob *punt = (UnitGob *)ggobm.GetGob(m_gidOwner);
 				if (punt != NULL) {
 					UnitConsts *puntc = (UnitConsts *)punt->GetConsts();
-					gsndm.PlaySfx(puntc->sfxImpact);
+					gsndm.PlaySfxAt(puntc->sfxImpact, m_wx, m_wy);
 				}
 
 				// Start the impact animation

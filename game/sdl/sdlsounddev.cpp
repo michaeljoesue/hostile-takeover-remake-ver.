@@ -7,8 +7,9 @@
 namespace wi {
 
 // The game's sound effects are 8 kHz mono ADPCM. They're decoded and mixed
-// into 16 bit samples at 8 kHz, and SDL's audio stream resamples the mix to
-// whatever the output device uses (typically 48 kHz stereo).
+// into 16 bit stereo at 8 kHz, each placed left or right by where it happens
+// on the battlefield, and SDL's audio stream resamples the mix to whatever
+// the output device uses (typically 48 kHz).
 
 #define kcChannels kcChannelsMax
 #define knSourceRate 8000
@@ -26,7 +27,7 @@ public:
     bool Init();
     virtual void Enable(bool fEnable);
     virtual bool IsEnabled();
-    virtual void PlayAdpcm(int ichnl, byte *pb, word cb);
+    virtual void PlayAdpcm(int ichnl, byte *pb, word cb, int nPan, int nVolume);
     virtual int GetChannelCount();
     virtual bool IsChannelFree(int ichnl);
     virtual void ServiceProc();
@@ -87,7 +88,7 @@ bool SdlSoundDevice::Init()
 
     SDL_AudioSpec spec;
     spec.format = SDL_AUDIO_S16;
-    spec.channels = 1;
+    spec.channels = 2;
     spec.freq = knSourceRate;
     m_pstm = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
             &spec, AudioCallback, this);
@@ -159,7 +160,8 @@ void SdlSoundDevice::ServiceProc()
 {
 }
 
-void SdlSoundDevice::PlayAdpcm(int ichnl, byte *pb, word cb)
+void SdlSoundDevice::PlayAdpcm(int ichnl, byte *pb, word cb, int nPan,
+        int nVolume)
 {
     if (ichnl < 0 || ichnl >= kcChannels)
         return;
@@ -172,6 +174,16 @@ void SdlSoundDevice::PlayAdpcm(int ichnl, byte *pb, word cb)
 	pchnl->pbEnd = pb + cb;
 	pchnl->nStepIndex = 0;
 	pchnl->bSampleLast = 128;
+
+    // Constant-power-ish pan: centre is full in both ears, a sound far to
+    // one side is quiet in the other ear but not silent
+
+    nPan = SDL_clamp(nPan, -256, 256);
+    nVolume = SDL_clamp(nVolume, 0, 256);
+    int nLeft = nPan <= 0 ? 256 : 256 - nPan * 3 / 4;
+    int nRight = nPan >= 0 ? 256 : 256 + nPan * 3 / 4;
+    pchnl->nGainLeft = nLeft * nVolume / 256;
+    pchnl->nGainRight = nRight * nVolume / 256;
 
     // Each byte is 2 samples at 8 kHz, i.e. 1/40th of a 10ms tick. Allow a
     // little extra for the output latency.
@@ -199,18 +211,19 @@ int SdlSoundDevice::GetVolume()
 
 void SdlSoundDevice::Fill(SDL_AudioStream *pstm, int cbNeeded)
 {
+    const int cbFrame = 2 * (int)sizeof(short);
     while (cbNeeded > 0) {
-        int csamples = cbNeeded / (int)sizeof(short);
-        csamples = (csamples + 1) & ~1;
-        if (csamples > ARRAYSIZE(m_asBuffer))
-            csamples = ARRAYSIZE(m_asBuffer);
+        int cframes = (cbNeeded + cbFrame - 1) / cbFrame;
+        cframes = (cframes + 1) & ~1;
+        if (cframes > ARRAYSIZE(m_asBuffer) / 2)
+            cframes = ARRAYSIZE(m_asBuffer) / 2;
         if (m_fEnable) {
-            MixChannels16(m_achnl, kcChannels, m_asBuffer, csamples);
+            MixChannelsStereo16(m_achnl, kcChannels, m_asBuffer, cframes);
         } else {
-            memset(m_asBuffer, 0, csamples * sizeof(short));
+            memset(m_asBuffer, 0, cframes * cbFrame);
         }
-        SDL_PutAudioStreamData(pstm, m_asBuffer, csamples * sizeof(short));
-        cbNeeded -= csamples * sizeof(short);
+        SDL_PutAudioStreamData(pstm, m_asBuffer, cframes * cbFrame);
+        cbNeeded -= cframes * cbFrame;
     }
 }
 

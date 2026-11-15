@@ -123,7 +123,7 @@ BeginStateMachine
 			Deactivate();
 			m_ff ^= kfGobLayerDepthSorted | kfGobLayerSurfaceDecal;
 
-			gsndm.PlaySfx(SfxFromCategory(m_pmuntc->sfxcDestroyed));
+			gsndm.PlaySfxAt(SfxFromCategory(m_pmuntc->sfxcDestroyed), m_wx, m_wy);
 			m_ani.Start("die 3", kfAniIgnoreFirstAdvance);
 			MarkRedraw();
 

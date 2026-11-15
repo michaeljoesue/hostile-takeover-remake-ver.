@@ -121,7 +121,49 @@ bool SoundMgr::IsEnabled()
 	return false;
 }
 
-void SoundMgr::PlaySfx(Sfx sfx)
+// Battle sounds come from where they happen: panned left or right of the
+// centre of the view, and quieter the further off screen they are (but
+// never silent, so the player can tell where a fight is).
+
+void SoundMgr::PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy)
+{
+	Size sizPlayfield;
+	ggame.GetPlayfieldSize(&sizPlayfield);
+	WCoord wxView, wyView;
+	gsim.GetViewPos(&wxView, &wyView);
+	int cxHalf = WcFromPc(sizPlayfield.cx) / 2;
+	int cyHalf = WcFromPc(sizPlayfield.cy) / 2;
+	if (cxHalf <= 0 || cyHalf <= 0) {
+		PlaySfx(sfx);
+		return;
+	}
+	int dx = (int)wx - ((int)wxView + cxHalf);
+	int dy = (int)wy - ((int)wyView + cyHalf);
+
+	// Pan: the edges of the view are halfway, further off screen fully
+
+	int nPan = dx * 128 / cxHalf;
+	if (nPan > 256)
+		nPan = 256;
+	if (nPan < -256)
+		nPan = -256;
+
+	// Volume: full on screen, falling to a quarter by 3 screens away
+
+	int nOutX = abs(dx) - cxHalf;
+	int nOutY = abs(dy) - cyHalf;
+	int nOut = 0;
+	if (nOutX > 0)
+		nOut = nOutX * 256 / cxHalf;
+	if (nOutY > 0)
+		nOut = _max(nOut, nOutY * 256 / cyHalf);
+	int nVolume = 256 - nOut * 192 / (256 * 4);
+	if (nVolume < 64)
+		nVolume = 64;
+	PlaySfx(sfx, nPan, nVolume);
+}
+
+void SoundMgr::PlaySfx(Sfx sfx, int nPan, int nVolume)
 {
 	// Get the sfx entry and channel
 
@@ -173,7 +215,7 @@ void SoundMgr::PlaySfx(Sfx sfx)
 	// Play the sound
 
 	PcmHeader *pcmh = &m_apcmh[psfxe->nSound];
-	m_psndd->PlayAdpcm(ichnlUse, pcmh->pb, pcmh->cb);
+	m_psndd->PlayAdpcm(ichnlUse, pcmh->pb, pcmh->cb, nPan, nVolume);
 }
 
 void SoundMgr::WaitSilence()
