@@ -127,18 +127,10 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
             continue;
         }
 
-        // The first locked mission is kcUnlockAhead missions ahead of the
-        // last complete story mission.
+        // All missions are unlocked: any can be played in any order
 
         ListControl *plstc = m_aplstc[IndexFromMissionType(md.mt)];
         bool fLocked = false;
-        if (md.mt == kmtStory) {
-            int iliMissionLocked = iliLastCompleteStory + 1 + kcUnlockAhead;
-            int iliNext = plstc->GetCount();
-            if (iliNext >= iliMissionLocked) {
-                fLocked = true;
-            }
-        }
 
         // Get the status - LOCKED, Complete, or nothing
 

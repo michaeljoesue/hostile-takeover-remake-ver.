@@ -388,12 +388,12 @@ namespace m
 			// 
 			// menuItemSide1Properties
 			// 
-			this.menuItemSide1Properties.Text = "Side &1";
+			this.menuItemSide1Properties.Text = "Side &1 (ACME)";
 			this.menuItemSide1Properties.Click += new System.EventHandler(this.menuItemSide1Properties_Click);
 			// 
 			// menuItemSide2Properties
 			// 
-			this.menuItemSide2Properties.Text = "Side &2";
+			this.menuItemSide2Properties.Text = "Side &2 (OMNI)";
 			this.menuItemSide2Properties.Click += new System.EventHandler(this.menuItemSide2Properties_Click);
 			// 
 			// menuItemSide3Properties

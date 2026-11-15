@@ -6,13 +6,40 @@ namespace m
 {
 	// Capitalized this way on purpose for ToString() niceness
 
+	[System.ComponentModel.TypeConverter(typeof(SideConverter))]
 	public enum Side { 
 		[DisplayName("neutral")] sideNeutral = 0, 
-		[DisplayName("side 1")] side1, 
-		[DisplayName("side 2")] side2,
+		[DisplayName("side 1 (ACME)")] side1, 
+		[DisplayName("side 2 (OMNI)")] side2,
 		[DisplayName("side 3")] side3, 
 		[DisplayName("side 4")] side4 
 	};
+
+	// Shows sides by their display names in the property grid
+
+	public class SideConverter : System.ComponentModel.EnumConverter {
+		public SideConverter() : base(typeof(Side)) {
+		}
+
+		public override object ConvertTo(System.ComponentModel.ITypeDescriptorContext context,
+				System.Globalization.CultureInfo culture, object value, Type destinationType) {
+			if (destinationType == typeof(string) && value is Side)
+				return Helper.GetDisplayName(typeof(Side), value.ToString());
+			return base.ConvertTo(context, culture, value, destinationType);
+		}
+
+		public override object ConvertFrom(System.ComponentModel.ITypeDescriptorContext context,
+				System.Globalization.CultureInfo culture, object value) {
+			string str = value as string;
+			if (str != null) {
+				foreach (Side side in Enum.GetValues(typeof(Side))) {
+					if (Helper.GetDisplayName(typeof(Side), side.ToString()) == str)
+						return side;
+				}
+			}
+			return base.ConvertFrom(context, culture, value);
+		}
+	}
 
 	[AttributeUsage(AttributeTargets.All, Inherited = true, AllowMultiple = false)]
 	class DisplayNameAttribute : Attribute {

@@ -129,7 +129,19 @@ namespace m {
 	}
 
 	[Flags]
-	public enum CaSide { SideNeutral, Side1, Side2, Side3, Side4, Enemies, Allies, AllSides, CurrentSide };
+	// The order is the bit order in saved trigger masks; add new values at
+	// the end
+
+	public enum CaSide {
+		[DisplayName("Neutral")] SideNeutral,
+		[DisplayName("Side 1 (ACME)")] Side1,
+		[DisplayName("Side 2 (OMNI)")] Side2,
+		[DisplayName("Side 3")] Side3,
+		[DisplayName("Side 4")] Side4,
+		Enemies, Allies,
+		[DisplayName("All Sides")] AllSides,
+		[DisplayName("Current Side")] CurrentSide
+	};
 
 	[Serializable]
 	public class CaTypeSide : CaType {
@@ -154,7 +166,7 @@ namespace m {
 					if (m_af[i]) {
 						if (str.Length != 0)
 							str += ", ";
-						str += ((CaSide)i).ToString();
+						str += Helper.GetDisplayName(typeof(CaSide), ((CaSide)i).ToString());
 					}
 				}
 				return str;
@@ -213,6 +225,7 @@ namespace m {
 			}
 		}
 
+		[System.ComponentModel.DisplayName("Side 1 (ACME)")]
 		public bool Side1 {
 			get {
 				return m_af[(int)CaSide.Side1];
@@ -223,6 +236,7 @@ namespace m {
 			}
 		}
 
+		[System.ComponentModel.DisplayName("Side 2 (OMNI)")]
 		public bool Side2 {
 			get {
 				return m_af[(int)CaSide.Side2];
@@ -475,7 +489,7 @@ namespace m {
 		}
 
 		public override string ToString() {
-			return m_side.ToString();
+			return Helper.GetDisplayName(typeof(Side), m_side.ToString());
 		}
 
 		public override string FromSaveString(string strArgs, bool fLast) {

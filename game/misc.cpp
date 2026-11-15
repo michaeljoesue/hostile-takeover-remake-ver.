@@ -646,6 +646,40 @@ const word SCALEMAX = 256 * (word)SCALEFACTOR;
 // nSatMultiplier is in the range from -100 to +100 and is scaled non-linearly
 // to cover the desired (finely tuned) range.
 
+// Side colours. Each side is drawn with a 5-colour ramp in the palette,
+// brightest first. Side 2's ramp was orange-red; it's recoloured to bright
+// red #FF3333, keeping the ramp's relative brightness. Only palettes that
+// hold the original ramp at that place (the game's, the shell's and the
+// cutscenes') are changed.
+
+struct SideRecolor {
+	int iFirst;
+	byte abOrig[5][3];
+	byte abNew[3];
+};
+
+static const SideRecolor s_asrc[] = {
+	{ 21, { { 232, 32, 0 }, { 196, 28, 0 }, { 120, 8, 0 }, { 92, 8, 0 },
+			{ 64, 8, 0 } }, { 0xff, 0x33, 0x33 } },
+};
+
+static void RecolorSides(byte (*argb)[3], int cEntries)
+{
+	for (int n = 0; n < ARRAYSIZE(s_asrc); n++) {
+		const SideRecolor *psrc = &s_asrc[n];
+		if (psrc->iFirst + 5 > cEntries)
+			continue;
+		if (memcmp(argb[psrc->iFirst], psrc->abOrig, sizeof(psrc->abOrig)) != 0)
+			continue;
+		int nMax0 = _max(psrc->abOrig[0][0], _max(psrc->abOrig[0][1], psrc->abOrig[0][2]));
+		for (int i = 0; i < 5; i++) {
+			int nMax = _max(psrc->abOrig[i][0], _max(psrc->abOrig[i][1], psrc->abOrig[i][2]));
+			for (int c = 0; c < 3; c++)
+				argb[psrc->iFirst + i][c] = (byte)((psrc->abNew[c] * nMax + nMax0 / 2) / nMax0);
+		}
+	}
+}
+
 void SetHslAdjustedPalette(Palette *ppal, short nHueOffset, short nSatMultiplier, short nLumOffset)
 {
 	if (nSatMultiplier < -100)
@@ -672,8 +706,13 @@ void SetHslAdjustedPalette(Palette *ppal, short nHueOffset, short nSatMultiplier
 
 	word nH, nS, nL;
 
+	// Start from the palette with the side colours applied
+
+	memcpy(ppalMod->argb, ppal->argb, cEntries * sizeof(ppal->argb[0]));
+	RecolorSides(ppalMod->argb, cEntries);
+
 	for (int i = 0; i < cEntries; i++) {
-		RgbToHsl(ppal->argb[i][0], ppal->argb[i][1], ppal->argb[i][2], &nH, &nS, &nL);
+		RgbToHsl(ppalMod->argb[i][0], ppalMod->argb[i][1], ppalMod->argb[i][2], &nH, &nS, &nL);
 
 		int nT = nH + nHueAdd;
 		if (nT >= 6 * SCALEFACTOR)
