@@ -77,13 +77,9 @@ void SimUIForm::StylusHandler::OnPenDown(Event *pevt)
 	s_wptSelect1.wy = wyTarget;
 	s_wptSelect2 = s_wptSelect1;
 
-	if (gfLassoSelection) {
-		s_awptSelection[0] = s_wptSelect1;
-		s_cwptSelection = 1;
-	} else {
-		gwrcSelection.Set(s_wptSelect1, s_wptSelect2);
-		gsim.SetSelection(&gwrcSelection);
-	}
+	gwrcSelection.Set(s_wptSelect1, s_wptSelect2);
+	gsim.SetSelection(&gwrcSelection);
+	
 
 	// Only Select. Leave moving and attacking to the pen up handler.
 
@@ -98,26 +94,7 @@ void SimUIForm::StylusHandler::OnPenUp(Event *pevt)
 // TUNE:
 #define kwcMinSelection WcFromTile16ths(8)
 
-// The WI playfield finger UI:
-//
-// 1. One finger for selecting and rubber banding around troops
-// 2. Two fingers for scrolling the map.
-// 3. Two finger flick for momentum scrolls.
-//
-// Notes:
-// - During a select operation, the second finger may come down. This cancels
-//   the selection and enters scroll mode. Units that were selected as part of
-//   entering the mode are unselected when entering scroll mode. Units that
-//   were selected before select mode was entered are left selected.
-//
-// - Once entered, scroll mode remains even if one of the fingers goes up
-//
-// - At the beginning of scroll mode, the first down is the reference
-//   point.
-//
-// - If in scroll mode, and one of the fingers goes up while the other remains
-//   down, the aggregate is still down, and the coordinate is based on the
-//   reference point so there is no map jumping.
+// Mouse drag on the playfield rubber-bands a selection rectangle.
 
 void SimUIForm::StylusHandler::OnPenDrag(Event *pevt)
 {
@@ -151,36 +128,6 @@ void SimUIForm::StylusHandler::OnPenDrag(Event *pevt)
 
 			gfDragSelecting = false;
 
-			if (gfLassoSelection && s_cwptSelection > 1) {
-				bool fGobsSelected = false;
-
-				Gob *pgobT;
-				for (pgobT = ggobm.GetFirstGob(); pgobT != NULL;
-                        pgobT = ggobm.GetNextGob(pgobT)) {
-					dword ff = pgobT->GetFlags();
-
-                    // If were in select mode then only Gobs inside the
-                    // selection rectangle get to be selected.
-
-					bool fSelect = false;
-					if ((gfGodMode || pgobT->GetOwner() == gpplrLocal) &&
-                            ((ff & (kfGobActive | kfGobUnit)) ==
-                            (kfGobActive | kfGobUnit))) {
-						WPoint wptGobCenter;
-						pgobT->GetCenter(&wptGobCenter);
-						if (PtInPolygon(s_awptSelection, s_cwptSelection,
-                                wptGobCenter.wx, wptGobCenter.wy)) {
-							fSelect = true;
-							fGobsSelected = true;
-						}
-					}
-					if (ff & kfGobUnit) {
-						((UnitGob *)pgobT)->Select(fSelect);
-                    }
-				}
-
-				s_cwptSelection = 0;
-			}
 		} else {
 			m_psui->MoveOrAttackOrSelect(pevt->x, pevt->y, kfMasMove | kfMasAttack | kfMasShowMenu);
 		}
@@ -213,9 +160,6 @@ void SimUIForm::StylusHandler::OnPenDrag(Event *pevt)
 
 				m_psui->InvalidateDragSelection();
 
-				if (gfLassoSelection) {
-					AddPointToLassoSelection(s_wptSelect2);
-                }
 
 				gsim.SetSelection(&gwrcSelection);
 			}
@@ -301,8 +245,6 @@ void SimUIForm::StylusHandler::CheckScroll()
         s_wptSelect2.wy += wyViewActual - wyView;
         gwrcSelection.Set(s_wptSelect1, s_wptSelect2);
 
-        if (gfLassoSelection)
-            AddPointToLassoSelection(s_wptSelect2);
 
         gsim.SetSelection(&gwrcSelection);
     }

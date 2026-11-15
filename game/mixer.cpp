@@ -186,39 +186,6 @@ char ganStepIndexMap[89][16] = {
     87, 87, 87, 87, 88, 88, 88, 88, 87, 87, 87, 87, 88, 88, 88, 88,
 };
 
-void MixChannels(Channel *achnl, int cchnl, byte *pb, word cb)
-{
-	byte *pbT = pb;
-	while (pbT < &pb[cb]) {
-		word cMixed = 0;
-		word cSum1 = 0;
-		word cSum2 = 0;
-
-		for (int ichnl = 0; ichnl < cchnl; ichnl++) {
-			Channel *pchnl = &achnl[ichnl];
-			if (pchnl->pb < pchnl->pbEnd) {
-				int nDelta = (*pchnl->pb) >> 4;
-				pchnl->bSampleLast += gabAdpcmSteppings[pchnl->nStepIndex][nDelta];
-				cSum1 += (word)pchnl->bSampleLast;
-				pchnl->nStepIndex = ganStepIndexMap[pchnl->nStepIndex][nDelta];
-				nDelta = (*pchnl->pb) & 0xf;
-				pchnl->bSampleLast += gabAdpcmSteppings[pchnl->nStepIndex][nDelta];
-				cSum2 += (word)pchnl->bSampleLast;
-				pchnl->nStepIndex = ganStepIndexMap[pchnl->nStepIndex][nDelta];
-				pchnl->pb++;
-				cMixed++;
-			}
-		}
-		if (cMixed == 0) {
-			*pbT++ = 128;
-			*pbT++ = 128;
-		} else {
-			*pbT++ = cSum1 / cMixed;
-			*pbT++ = cSum2 / cMixed;
-		}
-	}
-}
-
 static inline short SoftClip(int n)
 {
     // Linear up to the knee, then compress smoothly toward full scale

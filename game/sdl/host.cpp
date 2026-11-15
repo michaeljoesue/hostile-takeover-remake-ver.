@@ -16,7 +16,6 @@ namespace wi {
 
 SdlPackFileReader gpakr;
 CompleteManager *gpcptm;
-base::Thread *gpgt;
 
 bool HostInit()
 {
@@ -206,33 +205,6 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
     return true;
 }
 
-bool ProcessMessage(base::Message *pmsg, Event *pevt)
-{
-    memset(pevt, 0, sizeof(*pevt));
-    switch (pmsg->id) {
-    case base::kidmNullEvent:
-        pevt->eType = nullEvent;
-        pevt->ff = 0;
-        break;
-
-    default:
-        return false;
-    }
-
-    pevt->dw = 0;
-    pevt->x = pmsg->x;
-    pevt->y = pmsg->y;
-    pevt->ms = pmsg->ms;
-    if (pmsg->ff & kfMsgCoalesce) {
-        pevt->ff |= kfEvtCoalesce;
-    }
-    if (pmsg->ff & kfMsgCancelMode) {
-        pevt->dw = 1;
-    }
-    
-    return true;
-}
-
 bool HostGetEvent(Event *pevt, long ctWait)
 {
     base::Thread& thread = base::Thread::current();
@@ -242,11 +214,6 @@ bool HostGetEvent(Event *pevt, long ctWait)
             return false;
         }
 
-        if (msg.handler != NULL) {
-            thread.Dispatch(&msg);
-            continue;
-        }
-
         if (msg.id == kidmSdlEvent) {
             if (ProcessSdlEvent(&msg, pevt)) {
                 return true;
@@ -254,9 +221,6 @@ bool HostGetEvent(Event *pevt, long ctWait)
             continue;
         }
 
-        if (ProcessMessage(&msg, pevt)) {
-            return true;
-        }
     }
 }
 
@@ -327,42 +291,9 @@ void HostMessageBox(TCHAR *pszFormat, ...)
 
 // UNDONE: prefix directory?
 
-FileHandle HostOpenFile(const char *pszFilename, word wf)
-{
-    const char *pszMode;
-    if (wf == kfOfRead)
-        pszMode = "rb";
-    else if (wf == kfOfWrite)
-        pszMode = "wb";
-    else if (wf == (kfOfRead | kfOfWrite))
-        pszMode = "rb+";
-
-    return (FileHandle)fopen((char *)pszFilename, pszMode);
-}
-
-void HostCloseFile(FileHandle hf)
-{
-    fclose((FILE *)hf);
-}
-
-dword HostWriteFile(FileHandle hf, void *pv, dword cb)
-{
-    return fwrite(pv, 1, cb, (FILE *)hf);
-}
-
-dword HostReadFile(FileHandle hf, void *pv, dword cb)
-{
-    return fread(pv, 1, cb, (FILE *)hf);
-}
-
 void HostSleep(dword ct)
 {
     SDL_Delay(ct * 10);
-}
-
-void HostGetSilkRect(int irc, Rect *prc)
-{
-    return;
 }
 
 // Figure out what kind of sound device exists, and return a SoundDevice for it
@@ -377,15 +308,6 @@ SoundDevice::~SoundDevice()
 }
 
 // Used for sound buffer maintenance requirements
-
-void HostGetCurrentDate(Date *pdate)
-{
-    time_t result = time(NULL);
-    struct tm *ptm = localtime(&result);
-    pdate->nYear = ptm->tm_year + 1900;
-    pdate->nMonth = ptm->tm_mon + 1;
-    pdate->nDay = ptm->tm_mday;
-}
 
 bool HostSavePreferences(void *pv, int cb)
 {
@@ -424,22 +346,9 @@ const char *HostGetMainDataDir()
     return HostHelpers::GetMainDataDir();
 }
 
-const char *HostGetSaveGamesDir()
-{
-    return HostHelpers::GetSaveGamesDir();
-}
-
 void HostNotEnoughMemory(bool fStorage, dword cbFree, dword cbNeed)
 {
 	HostMessageBox(TEXT((char *)"Need %ld bytes of memory but only %ld bytes are free!"), cbNeed, cbFree);
-}
-
-void HostSetGameThread(base::Thread *thread) {
-    gpgt = thread;
-}
-
-base::Thread& HostGetGameThread() {
-    return *gpgt;
 }
 
 // Command line:

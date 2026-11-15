@@ -68,10 +68,6 @@ MemMgr::~MemMgr()
 	Assert(m_chtab == 0);
 }
 
-void MemMgr::OnRebootFreeStorageDatabase()
-{
-}
-
 #define kcbDynMemWindows (16 * 1024 * 1024)
 
 void MemMgr::GetInitSize(dword cbDynReserve, dword *pcbDyn, dword *pcbStorage)

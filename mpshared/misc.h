@@ -11,9 +11,6 @@ namespace wi {
 
 extern void strncpyz(char *pszDst, const char *pszSrc, int cb);
 extern int stricmp(const char *psz1, const char *psz2);
-extern dword HashString(const char *s);
-extern char *AllocString(const char *psz);
-extern const char *StripWhitespace(const char *sz, int *pcch);
 
 } // namespace wi
 

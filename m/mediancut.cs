@@ -58,24 +58,8 @@ namespace m {
 			}
 		}
 	    
-		int getColorCount() {
-			int count = 0;
-			for (int i=0; i<HSIZE; i++)
-				if (hist[i]>0) count++;
-			return count;
-		}
 	    
 
-		Color getModalColor() {
-			int max=0;
-			int c = 0;
-			for (int i=0; i<HSIZE; i++)
-				if (hist[i]>max) {
-					max = hist[i];
-					c = i;
-				}
-			return Color.FromArgb(red(c), green(c), blue(c));
-		}
 	    
 
 #if false
@@ -455,32 +439,6 @@ namespace m {
 	}
 
 #if false
-		public Image makeImage() {
-		// Generate 8-bit image
-	    
-#if false
-			Image img8;
-#endif
-			byte[] pixels8;
-			int color16;
-	        
-			pixels8 = new byte[width*height];
-			for (int i=0; i<width*height; i++) {
-				color16 = rgb(pixels32[i]);
-				pixels8[i] = (byte)hist[color16];
-			}
-#if false
-			img8 = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(width, height, cm, pixels8, 0, width));
-#else
-			Bitmap img8 = new Bitmap(width, height);
-			for (int y = 0; y < height; y++) {
-				for (int x = 0; x < width; x++) {
-					img8.SetPixel(x, y, m_pal[pixels8[y * width + x]]);
-				}
-			}
-#endif
-			return img8;
-		}
 #endif
 	    
 	} //class MedianCut
@@ -499,13 +457,5 @@ namespace m {
 			count = 0;
 		}   
 
-		public String toString() {
-			String s = "lower=" + lower + " upper=" + upper;
-			s = s + " count=" + count + " level=" + level;
-			s = s + " rmin=" + rmin + " rmax=" + rmax;
-			s = s + " gmin=" + gmin + " gmax=" + gmax;
-			s = s + " bmin=" + bmin + " bmax=" + bmax;
-			return s;
-		}
 	}
 }

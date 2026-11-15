@@ -125,23 +125,6 @@ namespace SpiffLib
 		/// 
 		/// </summary>
 		/// <param name="strFile"></param>
-		public void SaveBin(string strFile) {
-			// Write binary palette
-			Stream stm = new FileStream(strFile, FileMode.Create, FileAccess.Write, FileShare.None);
-			BinaryWriter bwtr = new BinaryWriter(stm);
-			bwtr.Write(Misc.SwapUShort((ushort)m_aclr.Length));
-			foreach (Color clr in m_aclr) {
-				bwtr.Write(clr.R);
-				bwtr.Write(clr.G);
-				bwtr.Write(clr.B);
-			}
-			bwtr.Close();
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="strFile"></param>
 		/// <returns></returns>
 		public bool LoadJasc(string strFile) {
 			m_htbl.Clear();		// in case of Palette reuse

@@ -76,7 +76,6 @@ struct ModeInfo
 {
     int cx;
     int cy;
-    int cyGraffiti;
     int nDepth;
     bool fNative;
     int nDegreeOrientation;
@@ -87,7 +86,6 @@ struct Palette;
 class Rect;
 class DibBitmap;
 class UpdateMap;
-class SpriteManager;
 class FormMgr;
 
 class Display // disp
@@ -102,16 +100,12 @@ public:
     void GetModeInfo(int imode, ModeInfo *pmode);
     int GetMode(ModeInfo *pmode);
     bool SetMode(int imode);
-    void DrawText(const char *psz, int x, int y, word wf);
-    void DrawFrameInclusive(Rect *prc);
     DibBitmap *GetBackDib();
     DibBitmap *GetFrontDib();
     DibBitmap *GetClippingDib();
-    void GetHslAdjustments(short *pnHueOffset, short *pnSatMultiplier, short *pnLumOffset);
     void FrameStart();
     void FrameComplete(int cfrmm, UpdateMap **apupd, Rect *arc, bool fScrolled);
     void ResetScrollOffset();
-    SpriteManager *GetSpriteManager();
     void RenderGameSurface();
     bool IsFullscreen();
     void SetFullscreen(bool fFullscreen);
@@ -137,16 +131,9 @@ private:
     dword m_palette[256];
 };
 
-#define kfDtClearLine 1
-
 extern Display *gpdisp;
 extern bool gfFullscreen;
 void HostDestroyWindow();
-
-class PlatformSprite {
-public:
-    virtual void Draw(void *pv, Size *psiz) = 0;
-};
 
 class SoundDevice;
 SoundDevice *CreateSdlSoundDevice();

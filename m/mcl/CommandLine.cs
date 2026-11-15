@@ -20,10 +20,6 @@ namespace m
 			DocManager.AddTemplate(new TemplateDocTemplate());
 
 			switch (astr[0]) {
-			case "-mixmaps":
-				OutputTools.ExportMixMaps(astr);
-				break;
-
 			case "-levels":
 				OutputTools.ExportLevels(astr, 0);
 				break;
@@ -36,23 +32,12 @@ namespace m
 				OutputTools.MakePalette(astr);
 				break;
 
-			case "-special":
-				char sep = Path.DirectorySeparatorChar;
-				string root = sep + "ht" + sep + "data" + sep;
-				OutputTools.MixMapImportSpecial(Theater.Desert, (TemplateDoc)DocManager.OpenDocument(root + "desert.tc"), root + "desert24.tc");
-				OutputTools.MixMapImportSpecial(Theater.Temperate, (TemplateDoc)DocManager.OpenDocument(root + "temperate.tc"), root + "temperate24.tc");
-				break;
-
 			case "-exporttext":
 				OutputTools.ExportText(astr);
 				break;
 
 			case "-importtext":
 				OutputTools.ImportText(astr);
-				break;
-
-			case "-testimport":
-				OutputTools.ImportExportPdbs(astr);
 				break;
 
 			case "-pack":

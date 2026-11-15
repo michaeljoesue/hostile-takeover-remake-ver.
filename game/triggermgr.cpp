@@ -626,23 +626,6 @@ bool ParseNumber(char **ppsz, int *pn)
 	return cArgs >= 1;
 }
 
-bool ParseLong(char **ppsz, long *pn)
-{
-	int nch = 0;
-	int cArgs = IniScanf(*ppsz, "%ld,%+", pn, &nch);
-
-	// If this is the last of a comma separated list of items set the
-	// string pointer to point to the zero-terminator so subsequent
-	// calls will fail.
-
-	if (cArgs == 1) {
-		*ppsz += strlen(*ppsz);
-	} else {
-		*ppsz += nch;
-	}
-	return cArgs >= 1;
-}
-
 bool ParseArea(char **ppsz, int *pn)
 {
 	if (!ParseNumber(ppsz, pn))

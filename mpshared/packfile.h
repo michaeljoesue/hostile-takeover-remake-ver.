@@ -131,9 +131,6 @@ public:
 
 	bool Push(const char *pszDir, const char *pszFn);
 	bool Pop();
-	int GetCount() {
-		return m_crnfo;
-	}
 
 private:
     virtual PdbReader *OpenPdb(const char *pszDir, const char *pszFn) = 0;

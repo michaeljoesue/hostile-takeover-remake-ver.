@@ -130,12 +130,6 @@ void StateMachineMgr::SendMsg(MessageId mid, StateMachineId smidSender, StateMac
 	RouteMessage(&msg);
 }
 
-void StateMachineMgr::PostMsg(Message *pmsg)
-{
-	pmsg->tDelivery = 0;
-	StoreDelayedMessage(pmsg);
-}
-
 void StateMachineMgr::PostMsg(MessageId mid, StateMachineId smidSender, StateMachineId smidReceiver)
 {
 	Message msg;

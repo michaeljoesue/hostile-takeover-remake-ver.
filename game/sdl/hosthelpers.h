@@ -15,10 +15,8 @@ public:
     static void Log(const char *pszFormat, ...);
     static void Log(const char *pszFormat, va_list va);
     static void MessageBox(const char *pszFormat, va_list va);
-    static void Break();
 
     static const char *GetMainDataDir();
-    static const char *GetTempDir();
     static const char *GetCompletesDir();
     static const char *GetSaveGamesDir();
     static const char *GetPrefsFilename();

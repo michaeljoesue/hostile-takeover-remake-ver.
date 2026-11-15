@@ -84,20 +84,11 @@ bool Form::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 		else if (strcmp(szProp, "BITMAP") == 0) {
 			pctl = new BitmapControl;
 		}
-		else if (strcmp(szProp, "EDIT") == 0) {
-			pctl = new EditControl;
-		}
 		else if (strcmp(szProp, "LIST") == 0) {
 			pctl = new ListControl;
 		}
 		else if (strcmp(szProp, "ANIMLIST") == 0) {
 			pctl = new BuildListControl;
-		}
-		else if (strcmp(szProp, "GRAFFITISCROLL") == 0) {
-			pctl = new GraffitiScrollControl;
-		}
-		else if (strcmp(szProp, "SILKBUTTON") == 0) {
-			pctl = new SilkButtonControl;
 		}
 		else if (strcmp(szProp, "SLIDER") == 0) {
 			pctl = new SliderControl;
@@ -251,17 +242,6 @@ bool Form::InitFromProperties(FormMgr *pfrmm, word idf, IniReader *pini, char *p
 			m_wf |= kfFrmHasShadowMap;
 	}
 
-	return true;
-}
-
-bool Form::AddControl(Control *pctl)
-{
-	// Add it to the list for this form
-
-	// bottommost
-
-	Assert(m_cctl < kcControlsMax);
-	m_apctl[m_cctl++] = pctl;
 	return true;
 }
 
@@ -482,38 +462,15 @@ bool Form::OnPenEvent(Event *pevt)
 }
 
 Control *Form::HitTestControls(Event *pevt) {
-    // Finger input may register hits on more than one control at a time.
-    // In this case, use the "closest" control, measured by hit distance.
-    // Pen input will simply register on the first control registering a hit.
+    // Input registers on the topmost control that reports a hit
 
-    int nControlBest = -1;
-    int nDistanceBest = 9999;
 	for (int n = m_cctl - 1; n >= 0; n--) {
-		// Is it on this control?
-
 		Control *pctl = m_apctl[n];
-        int nDistance = pctl->OnHitTest(pevt);
-		if (nDistance < 0) {
-			continue;
-        }
-
-        // Remember closest
-
-        if (nDistance < nDistanceBest) {
-            nDistanceBest = nDistance;
-            nControlBest = n;
-        }
-
-        // No need to enumerate all controls if not finger input
-
-        if (!(pevt->ff & kfEvtFinger)) {
-            break;
-        }
-    }
-    if (nControlBest >= 0) {
-        return m_apctl[nControlBest];
-    }
-    return NULL;
+		if (pctl->OnHitTest(pevt) >= 0) {
+			return pctl;
+		}
+	}
+	return NULL;
 }
 
 void Form::BreakCapture()
@@ -530,24 +487,7 @@ bool Form::OnHitTest(Event *pevt)
 	if (!(m_wf & kfFrmVisible))
 		return false;
 
-
-    // If this is a finger event, Check first if any control reports hittest.
-    // This allows hit testing outside the normal rect of the form.
-
-    bool fHit = false;
-    if (pevt->ff & kfEvtFinger) {
-        for (int n = 0; n < m_cctl; n++) {
-            Control *pctl = m_apctl[n];
-            if (pctl->OnHitTest(pevt) >= 0) {
-                fHit = true;
-                break;
-            }
-        }
-    }
-
-    if (!fHit) {
-        fHit = m_rc.PtIn(pevt->x, pevt->y);
-    }
+    bool fHit = m_rc.PtIn(pevt->x, pevt->y);
 
 	if (fHit || !(m_wf & kfFrmAutoTakedown))
 		return fHit;
@@ -985,19 +925,8 @@ int Control::OnHitTest(Event *pevt)
     m_pfrm->GetRect(&rcForm);
     int nDist = m_rc.GetDistance(pevt->x - rcForm.left, pevt->y - rcForm.top);
 
-    // Finger input hits on a larger rect and returns the distance to
-    // the inner rect. Non-finger input just hits against the inner rect.
-
-    if (pevt->ff & kfEvtFinger) {
-        Rect rcT;
-        GetFingerRect(&rcT);
-        if (rcT.PtIn(pevt->x - rcForm.left, pevt->y - rcForm.top)) {
-            return nDist;
-        }
-    } else {
-        if (nDist == 0) {
-            return 0;
-        }
+    if (nDist == 0) {
+        return 0;
     }
 
     // No hit
@@ -1013,14 +942,6 @@ word Control::GetId()
 void Control::GetRect(Rect *prc)
 {
 	*prc = m_rc;
-}
-
-void Control::GetFingerRect(Rect *prc)
-{
-	*prc = m_rc;
-
-    // Hack for now
-    prc->Inflate(20, 20);
 }
 
 void Control::OnBreakCapture()

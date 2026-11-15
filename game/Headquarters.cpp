@@ -520,54 +520,7 @@ PlaceStructureForm::PlaceStructureForm()
 {
 	m_pgobOwner = NULL;
 	m_fDragging = false;
-    m_fPassOnInput = false;
 	m_wf |= kfFrmTranslucent;
-}
-
-bool PlaceStructureForm::OnHitTest(Event *pevt)
-{
-    // If not passing on input to the form below, do normal form
-    // processing
-
-    if (!m_fPassOnInput) {
-        return Form::OnHitTest(pevt);
-    }
-
-    // Nothing goes to an invisible form
-
-	if (!(m_wf & kfFrmVisible)) {
-		return false;
-    }
-
-    // If the form has the mouse captured it should get input
-
-    if (HasCapture()) {
-        return true;
-    }
-
-    // Otherwise, input not on the placement form is passed on. This
-    // is because the SimUI form moves the map with finger input.
-
-    for (int n = 0; n < m_cctl; n++) {
-        Control *pctl = m_apctl[n];
-        if (pctl->OnHitTest(pevt) >= 0) {
-            return true;
-        }
-    }
-
-    // On the placement form somewhere else?
-
-	WCoord wxViewOrigin, wyViewOrigin;
-	gsim.GetViewPos(&wxViewOrigin, &wyViewOrigin);
-    Rect rcInside, rcOutside;
-    GetSubRects(wxViewOrigin, wyViewOrigin, &rcInside, &rcOutside);
-    if (rcOutside.PtIn(pevt->x, pevt->y)) {
-        return true;
-    }
-
-    // Pass it on to next form
-
-    return false;
 }
 
 void PlaceStructureForm::OnControlSelected(word idc)
@@ -789,36 +742,6 @@ void PlaceStructureForm::UpdatePlacementIndicator(WCoord wxViewStart, WCoord wyV
 	pbtn->Show(fValid || gfGodMode);
 }
 
-bool PlaceStructureForm::FingerHitTest(Event *pevt) {
-    // Check to see if the input is over a control, while making sure
-    // the control doesn't steal input from the hash mark area.
-
-    Rect rcFinger;
-    Rect rcT;
-
-    // kidcOk is on the left
-
-	Control *pctl = GetControlPtr(kidcOk);
-    pctl->GetFingerRect(&rcFinger);
-    pctl->GetRect(&rcT);
-    rcFinger.right = rcT.right;
-    if (rcFinger.PtIn(pevt->x - m_rc.left, pevt->y - m_rc.top)) {
-        return true;
-    }
-
-    // kidcCancel is on the right
-
-	pctl = GetControlPtr(kidcCancel);
-    pctl->GetFingerRect(&rcFinger);
-    pctl->GetRect(&rcT);
-    rcFinger.left = rcT.left;
-    if (rcFinger.PtIn(pevt->x - m_rc.left, pevt->y - m_rc.top)) {
-        return true;
-    }
-
-    return false;
-}
-
 bool PlaceStructureForm::OnPenEvent(Event *pevt)
 {
     // If captured, do regular processing
@@ -826,24 +749,12 @@ bool PlaceStructureForm::OnPenEvent(Event *pevt)
         return Form::OnPenEvent(pevt);
     }
 
-    // If this is finger input, hit test the buttons specially.
-    // This is so the controls don't take input meant for the hash mark
-    // part of the form (the controls have extra wide finger hit test
-    // rects).
-    if (pevt->ff & kfEvtFinger) {
-        if (pevt->eType == penDownEvent && FingerHitTest(pevt)) {
-            if (Form::OnPenEvent(pevt)) {
-                return true;
-            }
-        }
-    } else {
-        // Give the form controls first crack at handling the event.  Form
-        // controls include: soft menu button, mode cancel button, status
-        // label)
+    // Give the form controls first crack at handling the event.  Form
+    // controls include: soft menu button, mode cancel button, status
+    // label)
 
-        if (Form::OnPenEvent(pevt)) {
-            return true;
-        }
+    if (Form::OnPenEvent(pevt)) {
+        return true;
     }
 
 	// Handle drag-scrolling mode (shift-drag or graffiti-scroll)

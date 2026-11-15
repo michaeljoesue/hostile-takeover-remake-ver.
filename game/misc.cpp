@@ -3,14 +3,6 @@
 
 namespace wi {
 
-// GCCBUG: We must not have this inline because when Gcc inlines the call to
-// the base classes' constructor (Timer::Timer) it gets the reference wrong.
-
-TimeoutTimer::TimeoutTimer() 
-{
-	m_ptimo = NULL;
-}
-
 //
 // CommandQueue implementation
 //
@@ -197,24 +189,6 @@ bool Rect::Intersect(Rect *prcSrc1, Rect *prcSrc2)
 
 	SetEmpty();
     return false;
-}
-
-void Rect::Set(Point pt1, Point pt2) 
-{
-	if (pt1.x < pt2.x) {
-		left = pt1.x;
-		right = pt2.x;
-	} else {
-		left = pt2.x;
-		right = pt1.x;
-	}
-	if (pt1.y < pt2.y) {
-		top = pt1.y;
-		bottom = pt2.y;
-	} else {
-		top = pt2.y;
-		bottom = pt1.y;
-	}
 }
 
 bool Rect::Subtract(Rect *prcSrc1, Rect *prcSrc2)
@@ -415,34 +389,6 @@ void WRect::FromTileRect(TRect *ptrc)
 
 // fgets
 
-char *_fgets(char *psz, int cch, File *pfil)
-{
-	// Read into the buffer
-
-	dword cbRead = gpakr.fread(psz, 1, cch, pfil);
-	if (cbRead == 0)
-		return NULL;
-	psz[cbRead] = 0;
-
-	// Look for a newline, and end there
-
-	int cchOld = (int)strlen(psz);
-	int nchNew;
-	for (nchNew = 0; nchNew < cchOld; nchNew++) {
-		if (psz[nchNew] == '\n') {
-			nchNew++;
-			psz[nchNew] = 0;
-			break;
-		}
-	}
-
-	// Set the file pointer backwards
-
-	int cchNew = nchNew;
-	gpakr.fseek(pfil, cchNew - cchOld, SEEK_CUR);
-	return psz;
-}
-
 // String uppercasing function because PalmOS doesn't have one
 
 void HtStrupr(char *psz)
@@ -555,12 +501,7 @@ DialogForm *CreateHtMessageBox(word idf, word wf, const char *pszTitle,
 #ifdef STATUS_LINE
 void Status(const char *psz)
 {
-	// Display::DrawText draws directly to the screen, no buffering
-
-	if (gpdisp != NULL) {
-		gpdisp->DrawText(psz, 0, -1, kfDtClearLine);
-		Trace((char *)psz);
-	}
+	Trace((char *)psz);
 }
 #endif
 
@@ -586,11 +527,6 @@ int _GetRandom()
 void SetRandomSeed(unsigned long nSeed)
 {
 	glSeed = (long)nSeed;
-}
-
-unsigned long GetRandomSeed()
-{
-	return glSeed;
 }
 
 // This random number generator does not need to be in sync across
@@ -712,21 +648,10 @@ const word SCALEMAX = 256 * (word)SCALEFACTOR;
 
 void SetHslAdjustedPalette(Palette *ppal, short nHueOffset, short nSatMultiplier, short nLumOffset)
 {
-	// Incorporate hardware-correcting values
-
-	short nHueT, nSatT, nLumT;
-	gpdisp->GetHslAdjustments(&nHueT, &nSatT, &nLumT);
-	nHueOffset += nHueT;
-	if (nHueT < -100)
-		nHueT = -100;
-	else if (nHueT > 100)
-		nHueT = 100;
-	nSatMultiplier += nSatT;
 	if (nSatMultiplier < -100)
 		nSatMultiplier = -100;
 	else if (nSatMultiplier > 100)
 		nSatMultiplier = 100;
-	nLumOffset += nLumT;
 	if (nLumOffset < -100)
 		nLumOffset = -100;
 	else if (nLumOffset > 100)
@@ -1471,19 +1396,6 @@ bool Dictionary::Set(const char *pszName, const char *pszValue)
 	return true;
 }
 
-bool Dictionary::Remove(const char *pszName)
-{
-	DictionaryEntry **ppde = Find(pszName);
-	if (*ppde == NULL)
-		return false;
-
-	m_cde--;
-	DictionaryEntry *pde = *ppde;
-	*ppde = pde->pdeNext;
-	delete pde;
-	return true;
-}
-
 #define knVerDictionaryState 0
 bool Dictionary::LoadState(Stream *pstm)
 {
@@ -1607,23 +1519,6 @@ void GetRankTitle(char *psz, int cb)
 // Helpers - no need to call runtime for these
 // These are here because Metrowerks doesn't have ARM runtime support for them, and we
 // don't want to create thunks
-
-int strnicmp(const char *psz1, const char *psz2, int cch)
-{
-	while (cch-- != 0) {
-		byte b1 = *psz1++;
-		if (b1 >= 'A' && b1 <= 'Z')
-			b1 += 'a' - 'A';
-		byte b2 = *psz2++;
-		if (b2 >= 'A' && b2 <= 'Z')
-			b2 += 'a' - 'A';		
-		if (b1 != b2)
-			return b1 - b2;
-		if (b1 == 0)
-			return 0;
-	}
-	return 0;
-}
 
 static void xtoa (
         unsigned long val,

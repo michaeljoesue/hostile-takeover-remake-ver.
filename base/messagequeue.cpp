@@ -4,17 +4,13 @@
 namespace base {
 
 MessageQueue::MessageQueue(EventServer *es) : es_(es), stop_(false),
-        pmsg_(NULL), pmsgDelayed_(NULL)
+        pmsg_(NULL)
 {
-    if (es_ == NULL) {
-        es_ = EventServer::Create();
-    }
 }
 
 MessageQueue::~MessageQueue()
 {
     Clear();
-    ClearDispose();
     delete es_;
 }
 
@@ -24,73 +20,15 @@ void MessageQueue::Stop()
     es_->WakeUp();
 }
 
-bool MessageQueue::IsStopping()
-{
-    return stop_;
-}
-
 bool MessageQueue::Get(Message *pmsg, long64 ctWait)
 {
-    long64 ctTotal = ctWait;
-    long64 ctElapsed = 0;
-    long64 ctDelayNext = kctForever;
     long64 tStart = GetTickCount();
-    long64 tCurrent = tStart;
     while (true) {
         {
             CritScope cs(&crit_);
-
-            // Check for timed messages (delayed messages, and timers)
-            if (pmsgDelayed_ != NULL) {
-                ctDelayNext = pmsgDelayed_->tTrigger - tCurrent;
-                if (ctDelayNext <= 0) {
-                    // If it's a delayed message, move it onto the message
-                    // queue, and we're good to go.
-                    if (!(pmsgDelayed_->ff & kfMsgTimer)) {
-                        Message *pmsgT = pmsgDelayed_;
-                        pmsgDelayed_ = pmsgDelayed_->pmsgNext;
-                        pmsgT->pmsgNext = pmsg_;
-                        pmsg_ = pmsgT;
-                    } else {
-                        // It is a timer, which means it goes off on time
-                        // at a constant rate. Remove it from the timer list,
-                        // since it will need to be re-inserted because of the
-                        // fixed sort.
-                        Message *pmsgT = pmsgDelayed_;
-                        pmsgDelayed_ = pmsgDelayed_->pmsgNext;
-                        
-                        // Make a copy and put it at the top of the regular
-                        // message queue, so it gets processed.
-                        Message *pmsgNew = new Message;
-                        if (pmsgNew != NULL) {
-                            *pmsgNew = *pmsgT;
-                            pmsgNew->pmsgNext = pmsg_;
-                            pmsg_ = pmsgNew;
-                        }
-
-                        // Adjust the trigger to track a constant rate, so
-                        // that processing time doesn't add to latency.
-                        pmsgT->tTrigger += pmsgT->ctRate;
-
-                        // Add latency if the trigger is already behind,
-                        // and insert it back into the delayed message list.
-                        if ((tCurrent - pmsgT->tTrigger) >= pmsgT->ctRate) {
-                            pmsgT->tTrigger = tCurrent;
-                        }
-                        InsertDelayedMessage(pmsgT);
-                    }
-                }
-            }
-
-            // Check for regular messages
-            while (pmsg_ != NULL) {
+            if (pmsg_ != NULL) {
                 Message *pmsgT = pmsg_;
                 pmsg_ = pmsg_->pmsgNext;
-                if (pmsgT->id == kidmDispose && pmsgT->handler == NULL) {
-                    delete pmsgT->data;
-                    delete pmsgT;
-                    continue;
-                }
                 *pmsg = *pmsgT;
                 delete pmsgT;
                 return true;
@@ -105,16 +43,11 @@ bool MessageQueue::Get(Message *pmsg, long64 ctWait)
 
         // Calculate wait remaining
 
-        long64 ctNext;
-        if (ctWait == kctForever) {
-            ctNext = ctDelayNext;
-        } else {
-            ctNext = ctTotal - ctElapsed;
+        long64 ctNext = kctForever;
+        if (ctWait != kctForever) {
+            ctNext = ctWait - (GetTickCount() - tStart);
             if (ctNext < 0) {
                 ctNext = 0;
-            }
-            if (ctDelayNext != kctForever && ctDelayNext < ctNext) {
-                ctNext = ctDelayNext;
             }
         }
 
@@ -124,20 +57,16 @@ bool MessageQueue::Get(Message *pmsg, long64 ctWait)
 
         // If the requested time has expired, return
 
-        tCurrent = GetTickCount();
-        ctElapsed = tCurrent - tStart;
-        if (ctWait != kctForever) {
-            if (ctElapsed >= ctWait) {
-                return false;
-            }
+        if (ctWait != kctForever && GetTickCount() - tStart >= ctWait) {
+            return false;
         }
     }
     return false;
 }
 
-void MessageQueue::Post(Message *pmsg, int idCoalesce, bool fEvenIfStopping)
+void MessageQueue::Post(Message *pmsg)
 {
-    if (stop_ && !fEvenIfStopping)
+    if (stop_)
         return;
 
     // Copy message before putting in queue
@@ -146,228 +75,27 @@ void MessageQueue::Post(Message *pmsg, int idCoalesce, bool fEvenIfStopping)
         return;
     }
     *pmsgNew = *pmsg;
+    pmsgNew->pmsgNext = NULL;
 
-    // Search for end or message to coalesce
+    // Put new message at the end
     CritScope cs(&crit_);
     Message **ppmsgT = &pmsg_;
-    Message *pmsgCoalesce = NULL;
     while (*ppmsgT != NULL) {
-        // Find the last posted message that matches pmsg->id. Allow
-        // idCoalesce after, but no others.
-        
-        if (idCoalesce != -1) {
-            if ((*ppmsgT)->id == pmsg->id) {
-                pmsgCoalesce = *ppmsgT;
-            } else {
-                if ((*ppmsgT)->id != idCoalesce) {
-                    pmsgCoalesce = NULL;
-                }
-            }
-        }
-
         ppmsgT = &((*ppmsgT)->pmsgNext);
     }
-   
-    // If coalesce message found, mark it as a message to be coalesced. The
-    // game will decide what to do with it.
-    
-    if (pmsgCoalesce != NULL) {
-        pmsgCoalesce->ff |= kfMsgCoalesce;
-    }
-    
-    // Put new message at the end
-    pmsgNew->pmsgNext = NULL;
     *ppmsgT = pmsgNew;
 
     es_->WakeUp();
 }
 
-void MessageQueue::PostDelayed(Message *pmsg, long ct, long ctBoost) {
-    if (stop_) {
-        return;
-    }
-
-    // Copy message and set timestamp before putting in queue
-    Message *pmsgNew = new Message;
-    if (pmsgNew == NULL) {
-        return;
-    }
-    *pmsgNew = *pmsg;
-    pmsgNew->ctRate = ct;
-    pmsgNew->tTrigger = GetTickCount() + ct + ctBoost;
-    InsertDelayedMessage(pmsgNew);
-
-    es_->WakeUp();
-}
-
-void MessageQueue::BoostTimer(int id, MessageHandler *handler, long ctBoost) {
-    // Find the timer, remove it, adjust trigger, then re-insert it
+void MessageQueue::Clear()
+{
     CritScope cs(&crit_);
-    Message **ppmsg = &pmsgDelayed_;
-    while (*ppmsg != NULL) {
-        Message *pmsgT = *ppmsg;
-        if (pmsgT->id == id && pmsgT->handler == handler) {
-            *ppmsg = pmsgT->pmsgNext;
-            pmsgT->tTrigger += ctBoost;
-            InsertDelayedMessage(pmsgT);
-            return;
-        }
-        ppmsg = &pmsgT->pmsgNext;
+    while (pmsg_ != NULL) {
+        Message *pmsgT = pmsg_;
+        pmsg_ = pmsg_->pmsgNext;
+        delete pmsgT;
     }
-}
-
-void MessageQueue::InsertDelayedMessage(Message *pmsg) {
-    // Perform insertion sort on timestamp
-    CritScope cs(&crit_);
-    Message **ppmsg = &pmsgDelayed_;
-    for (; (*ppmsg) != NULL; ppmsg = &(*ppmsg)->pmsgNext) {
-        if (pmsg->tTrigger < (*ppmsg)->tTrigger) {
-            pmsg->pmsgNext = *ppmsg;
-            *ppmsg = pmsg;
-            break;
-        }
-    }
-    if ((*ppmsg) == NULL) {
-        *ppmsg = pmsg;
-        pmsg->pmsgNext = NULL;
-    }
-}
-
-void MessageQueue::Clear(MessageHandler *handler, int id) {
-    CritScope cs(&crit_);
-    ClearChain(&pmsg_, handler, id);
-    ClearChain(&pmsgDelayed_, handler, id);
-}
-
-void MessageQueue::ClearDispose(MessageHandler *handler) {
-    // Restart loop if a data is deleted, since that can change the list
-    bool restart = false;
-    do {
-        Message **ppmsg = &pmsg_;
-        for (; (*ppmsg) != NULL; ppmsg = &(*ppmsg)->pmsgNext) {
-            Message *pmsg = *ppmsg;
-            if (pmsg->id != kidmDispose || pmsg->handler != NULL) {
-                continue;
-            }
-            DisposeData<void *> *dispose = (DisposeData<void *> *)pmsg->data;
-            if (handler == NULL || dispose->data_ == (void *)handler) {
-                *ppmsg = pmsg->pmsgNext;
-                delete pmsg->data;
-                delete pmsg;
-                restart = true;
-                break;
-            }
-        }
-    } while (restart);
-}
-
-void MessageQueue::ClearChain(Message **ppmsg, MessageHandler *handler,
-        int id) {
-    Message **ppmsgStart = ppmsg;
-    while (true) {
-        ppmsg = ppmsgStart;
-        bool restart = false;
-        while (!restart && (*ppmsg) != NULL) {
-            Message *pmsg = *ppmsg;
-            bool remove = false;
-            if (handler == NULL) {
-                if (id == kidmNone) {
-                    remove = true;
-                } else if (pmsg->id == id) {
-                    remove = true;
-                }
-            } else if (pmsg->handler == handler) {
-                if (id == -1) {
-                    remove = true;
-                } else if (pmsg->id == id) {
-                    remove = true;
-                }
-            }
-            if (remove) {
-                // Unlink the message first, and restart the scan if deleting
-                // data, since that can modify the message list.
-                *ppmsg = pmsg->pmsgNext;
-                if (pmsg->data != NULL) {
-                    delete pmsg->data;
-                    restart = true;
-                }
-                delete pmsg;
-                continue;
-            }
-            ppmsg = &(*ppmsg)->pmsgNext;
-        }
-        if (!restart) {
-            break;
-        }
-    }
-}
-
-void MessageQueue::Dispatch(Message *pmsg) {
-    if (pmsg->handler != NULL) {
-        pmsg->handler->OnMessage(pmsg);
-    } else {
-#ifdef LOGGING
-        if (pmsg->data != NULL) {
-            LOG() << "message " << pmsg->id << " NULL handler non-NULL data";
-        }
-#endif
-    }
-}
-
-bool MessageQueue::FindDispose(void *pv) {
-    for (Message *pmsg = pmsg_; pmsg != NULL; pmsg = pmsg->pmsgNext) {
-        if (pmsg->id != kidmDispose) {
-            continue;
-        }
-        DisposeData<void *> *dispose = (DisposeData<void *> *)pmsg->data;
-        if (dispose->data_ == pv) {
-            return true;
-        }
-    }
-    return false;
-}
-
-} // namespace base
-
-#include <condition_variable>
-#include <chrono>
-
-namespace base {
-
-// Default EventServer: waits on a condition variable
-
-class CondVarEventServer : public EventServer {
-public:
-    CondVarEventServer() : woken_(false) {}
-
-    virtual bool Wait(long64 ctWait) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (ctWait == kctForever) {
-            cv_.wait(lock, [this] { return woken_; });
-        } else {
-            cv_.wait_for(lock, std::chrono::milliseconds(ctWait * 10),
-                    [this] { return woken_; });
-        }
-        woken_ = false;
-        return true;
-    }
-
-    virtual void WakeUp() {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            woken_ = true;
-        }
-        cv_.notify_one();
-    }
-
-private:
-    std::mutex mutex_;
-    std::condition_variable cv_;
-    bool woken_;
-};
-
-EventServer *EventServer::Create() {
-    return new CondVarEventServer();
 }
 
 } // namespace base

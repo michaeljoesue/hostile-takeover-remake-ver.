@@ -29,7 +29,6 @@ bool gfSuspendUpdates = false;
 bool gfSingleStep = false;
 bool gfGodMode = false;
 bool gfAutosave = false;
-bool gfStylusUI = false;
 
 #define SetControlChecked(id, f) ((CheckBoxControl *)GetControlPtr(id))->SetChecked(f)
 #define GetControlChecked(id) ((CheckBoxControl *)GetControlPtr(id))->IsChecked()
@@ -273,12 +272,9 @@ bool InGameOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	if (!ShellForm::Init(pfrmm, pini, idf))
 		return false;
 
-	m_fLassoSelection = gfLassoSelection;
 	m_tGameSpeed = gtGameSpeed;
 	m_wfHandicap = gwfHandicap;
     m_nScrollSpeed = gnScrollSpeed;
-
-    GetControlPtr(kidcLassoSelection)->Show(false);
 
 	InitResettableControls();
 	return true;
@@ -299,10 +295,6 @@ void GetSpeedMultiplierString(char *psz, long tGameSpeed)
 
 void InGameOptionsForm::InitResettableControls()
 {
-	// Lasso
-
-	SetControlChecked(kidcLassoSelection, m_fLassoSelection);
-
 	// Game Speed
 
 	SliderControl *psldr = (SliderControl *)GetControlPtr(kidcGameSpeed);
@@ -379,9 +371,8 @@ void InGameOptionsForm::OnControlSelected(word idc)
 
 	case kidcOk:
 		{
-			// Lasso and game speed, other
+			// Game speed, other
 
-			gfLassoSelection = GetControlChecked(kidcLassoSelection);
 			SliderControl *psldr = (SliderControl *)GetControlPtr(kidcGameSpeed);
 			ggame.SetGameSpeed(gatGameSpeeds[psldr->GetValue()]);
 			psldr = (SliderControl *)GetControlPtr(kidcScrollSpeed);
@@ -410,7 +401,6 @@ void InGameOptionsForm::OnControlSelected(word idc)
 		break;
 
 	case kidcDefault:
-		m_fLassoSelection = false;
 		m_tGameSpeed = kcmsUpdate / 20;
         m_nScrollSpeed = 1.0;
 		m_wfHandicap = kfHcapDefault;
@@ -814,14 +804,8 @@ bool TestOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	SetControlChecked(kidcShowFPS, gfShowFPS);
 	SetControlChecked(kidcSuspendUpdates, gfSuspendUpdates);
 	SetControlChecked(kidcMaxRepaint, (gevm.GetRedrawFlags() & kfRedrawMax) != 0);
-#ifdef DRAW_UPDATERECTS
-	SetControlChecked(kidcDrawUpdateRects, gfDrawUpdateRects);
-#endif
 	SetControlChecked(kidcGodMode, gfGodMode);
 	SetControlChecked(kidcAutosave, gfAutosave);
-    SetControlChecked(kidcStylusUI, gfStylusUI);
-
-    dword ff = ggame.GetSimUIForm()->GetPenHandler()->GetFlags();
 
 	return true;
 }
@@ -860,12 +844,6 @@ void TestOptionsForm::OnControlSelected(word idc)
 		break;
 #endif
 
-    case kidcStylusUI:
-        gfStylusUI = !gfStylusUI;
-		ggame.GetSimUIForm()->SetUIType(gfStylusUI == true ?
-                kuitStylus : kuitFinger);
-        break;
-
 	case kidcOvermind:
 		{
 			for (Gob *pgob = ggobm.GetFirstGob(); pgob != NULL; pgob = ggobm.GetNextGob(pgob)) {
@@ -901,12 +879,6 @@ void TestOptionsForm::OnControlSelected(word idc)
 
 	case kidcSuspendUpdates:
 		gfSuspendUpdates = !gfSuspendUpdates;
-		break;
-
-	case kidcDrawUpdateRects:
-#ifdef DRAW_UPDATERECTS
-		gfDrawUpdateRects = !gfDrawUpdateRects;
-#endif
 		break;
 
 	case kidcGodMode:
@@ -1189,335 +1161,6 @@ bool GobCountForm::OnPenEvent(Event *pevt)
 		return true;
 	}
 	return false;
-}
-
-//
-// InputPanel form
-//
-
-class InputPanelForm : public ShellForm
-{
-public:
-	virtual void OnControlSelected(word idc);
-	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque);
-	virtual void OnPaint(DibBitmap *pbm);
-	virtual bool OnPenEvent(Event *pevt);
-	virtual bool EventProc(Event *pevt);
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
-
-	void SetLabel(const char *pszLabel);
-	void SetEdit(const char *pszEdit);
-	void GetEdit(char *psz, int cb);
-	void SetChars(char **ppsz, int cRows);
-	void SetValidateProc(bool (*pfnValidateInput)(const char *psz)) {
-		m_pfnValidateInput = pfnValidateInput;
-	}
-
-private:
-	char TrackPen(int x, int y, bool fDown);
-	void OnChar(char ch);
-	void OnBackspace();
-	int GetCharRect(int iCol, int iRow, char *pch, Rect *prcChar);
-
-	char **m_ppszChars;
-	int m_cRows;
-	int m_iColLast;
-	int m_iRowLast;
-	bool m_fDown;
-	int m_xForm;
-	int m_yForm;
-	Font *m_pfnt;
-	bool (*m_pfnValidateInput)(const char *psz);
-};
-
-bool DoInputPanelForm(char **ppszChars, int cRows, const char *pszLabel,
-        const char *pszEdit, char *pszOut, int cbOut,
-        bool (*pfnValidateInput)(const char *psz))
-{
-	InputPanelForm *pfrm = (InputPanelForm *)gpmfrmm->LoadForm(gpiniForms, kidfInputPanel, new InputPanelForm());
-	if (pfrm != NULL) {
-		pfrm->SetValidateProc(pfnValidateInput);
-		pfrm->SetLabel(pszLabel);
-		pfrm->SetEdit(pszEdit);
-		if (ppszChars != NULL)
-			pfrm->SetChars(ppszChars, cRows);
-		if (pfrm->DoModal()) {
-			pfrm->GetEdit(pszOut, cbOut);
-			delete pfrm;
-			return true;
-		} else {
-			strncpyz(pszOut, pszEdit, cbOut);
-			delete pfrm;
-			return false;
-		}
-	}
-
-	return false;
-}
-
-void DoInputPanelForm(Form *pfrm, word idcLabel, word idcEdit)
-{
-	LabelControl *plbl = (LabelControl *)pfrm->GetControlPtr(idcLabel);
-	const char *pszLabel = plbl->GetText();
-	char szEdit[128];
-	EditControl *pedt = (EditControl *)pfrm->GetControlPtr(idcEdit);
-	pedt->GetText(szEdit, sizeof(szEdit));
-	DoInputPanelForm(NULL, 0, pszLabel, szEdit, szEdit, sizeof(szEdit));
-	pedt->SetText(szEdit);
-}
-
-bool InputPanelForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
-{
-	// Get initial form dimensions before passing to ShellForm since it reformats
-
-	char szForm[32];
-	itoa(idf, szForm, 10);
-	int x, y, cx, cy;
-	pini->GetPropertyValue(szForm, "FORM", "(%d %d %d %d)", &x, &y, &cx, &cy);
-	Size siz;
-	pfrmm->GetDib()->GetSize(&siz);
-	m_xForm = (siz.cx - PcFromFc(cx)) / 2;
-	m_yForm = (siz.cy - PcFromFc(cy)) / 2;
-	m_pfnt = gapfnt[kifntShadow];
-	m_iColLast = -1;
-	m_iRowLast = -1;
-	m_fDown = false;
-
-	static char *s_apszChars[] = {
-		"ABCDEFGHIJKLM",
-		"NOPQRSTUVWXYZ",
-		"abcdefghijklm",
-		"nopqrstuvwxyz",
-		"1234567890?!*"
-	};
-
-	m_ppszChars = s_apszChars;
-	m_cRows = ARRAYSIZE(s_apszChars);
-	m_pfnValidateInput = NULL;
-
-	return ShellForm::Init(pfrmm, pini, idf);
-}
-
-const int kxBox = 5;
-const int kyBox = 35;
-const int kcxBox = (160 - (5 + 5));
-const int kcyBox = (118 - kyBox - 5);
-
-int InputPanelForm::GetCharRect(int iCol, int iRow, char *pch, Rect *prcChar)
-{
-	int cRows = m_cRows;
-	int cCols = (int)strlen(m_ppszChars[0]);
-	prcChar->SetEmpty();
-	if (iRow < 0 || iRow >= cRows)
-		return 0;
-	if (iCol < 0 || iCol >= (int)strlen(m_ppszChars[iRow]))
-		return 0;
-
-	prcChar->left = PcFromFc(kxBox) + PcFromFc(kcxBox) * iCol / cCols;
-	prcChar->right = PcFromFc(kxBox) + PcFromFc(kcxBox) * (iCol + 1) / cCols;
-	prcChar->top = PcFromFc(kyBox) + PcFromFc(kcyBox) * iRow / cRows;
-	prcChar->bottom = PcFromFc(kyBox) + PcFromFc(kcyBox) * (iRow + 1) / cRows;
-	prcChar->Offset(m_xForm, m_yForm);
-	*pch = m_ppszChars[iRow][iCol];
-	return m_pfnt->GetTextExtent(pch, 1);
-}
-
-char InputPanelForm::TrackPen(int x, int y, bool fDown)
-{
-	// Hittest
-
-	char ch = (char)-1;
-	Rect rcChar;
-	int iRow, iCol;
-	bool fFound = false;
-	for (iRow = 0; iRow < m_cRows; iRow++) {
-		int cCols = (int)strlen(m_ppszChars[iRow]);
-		for (iCol = 0; iCol < cCols; iCol++) {
-			GetCharRect(iCol, iRow, &ch, &rcChar);
-			if (rcChar.PtIn(x, y)) {
-				fFound = true;
-				break;
-			}
-		}
-		if (fFound)
-			break;
-	}
-
-	// Track
-
-	if (iRow != m_iRowLast || iCol != m_iColLast || fDown != m_fDown) {
-		char chT;
-		Rect rcT;
-		GetCharRect(iCol, iRow, &chT, &rcT);
-		InvalidateRect(&rcT);
-		GetCharRect(m_iColLast, m_iRowLast, &chT, &rcT);
-		InvalidateRect(&rcT);
-		m_iRowLast = iRow;
-		m_iColLast = iCol;
-	}
-	m_fDown = fDown;
-	return fFound ? ch : (char)-1;
-}
-
-bool InputPanelForm::OnPenEvent(Event *pevt)
-{
-	switch (pevt->eType) {
-	case penDownEvent:
-		TrackPen(pevt->x, pevt->y, true);
-		break;
-
-	case penUpEvent:
-		{
-			char ch = TrackPen(pevt->x, pevt->y, false);
-			if (ch != (char)-1) {
-				gsndm.PlaySfx(ksfxGuiButtonTap);
-				OnChar(ch);
-			}
-		}
-		break;
-
-	case penMoveEvent:
-		TrackPen(pevt->x, pevt->y, m_fDown);
-		break;
-	}
-
-	return ShellForm::OnPenEvent(pevt);
-}
-
-bool InputPanelForm::EventProc(Event *pevt)
-{
-	if (pevt->eType != keyDownEvent)
-		return ShellForm::EventProc(pevt);
-
-	// Keyboard interface
-
-	if (pevt->chr == chrBackspace || pevt->chr == chrDelete) {
-		OnBackspace();
-	} else {
-		for (int iRow = 0; iRow < m_cRows; iRow++) {
-			int cCols = (int)strlen(m_ppszChars[iRow]);
-			for (int iCol = 0; iCol < cCols; iCol++) {
-				if (pevt->chr == m_ppszChars[iRow][iCol])
-					OnChar(pevt->chr);
-			}
-		}
-	}
-
-	return false;
-}
-
-void InputPanelForm::OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque)
-{
-	ShellForm::OnUpdateMapInvalidate(pupd, prcOpaque);
-
-	Rect rc;
-	rc.SetEmpty();
-	for (int iRow = 0; iRow < m_cRows; iRow++) {
-		int cCols = (int)strlen(m_ppszChars[iRow]);
-		for (int iCol = 0; iCol < cCols; iCol++) {
-			Rect rcChar;
-			char ch;
-			GetCharRect(iCol, iRow, &ch, &rcChar);
-			rc.Union(&rcChar);
-		}
-	}
-	pupd->InvalidateRect(&rc);
-}
-
-void InputPanelForm::OnPaint(DibBitmap *pbm)
-{
-	ShellForm::OnPaint(pbm);
-
-	int cyChar = m_pfnt->GetHeight();
-	for (int iRow = 0; iRow < m_cRows; iRow++) {
-		int cCols = (int)strlen(m_ppszChars[iRow]);
-		for (int iCol = 0; iCol < cCols; iCol++) {
-			Rect rcChar;
-			char ch;
-			int cxChar = GetCharRect(iCol, iRow, &ch, &rcChar);
-			int xChar = rcChar.left + (rcChar.Width() - cxChar) / 2;
-			int yChar = rcChar.top + (rcChar.Height() - cyChar) / 2;
-			m_pfnt->DrawText(pbm, &ch, xChar, yChar, 1);
-			if (iCol == m_iColLast && iRow == m_iRowLast && m_fDown)
-				DrawBorder(pbm, &rcChar, 1, GetColor(kiclrWhite), NULL);
-		}
-	}
-}
-
-void InputPanelForm::OnChar(char ch)
-{
-	char szT[128];
-	GetEdit(szT, sizeof(szT));
-	int cch = (int)strlen(szT);
-	if (cch < sizeof(szT) - 1) {
-		szT[cch] = ch;
-		szT[cch + 1] = 0;
-		SetEdit(szT);
-	}
-}
-
-void InputPanelForm::OnBackspace()
-{
-	char szT[128];
-	GetEdit(szT, sizeof(szT));
-	int cch = (int)strlen(szT);
-	if (cch > 0) {
-		szT[cch - 1] = 0;
-		SetEdit(szT);
-	}
-}
-
-void InputPanelForm::OnControlSelected(word idc)
-{
-	if (idc == kidcInputEdit)
-		return;
-
-	if (idc == kidcBackspace) {
-		OnBackspace();
-		return;
-	}
-
-	if (idc == kidcOk) {
-		if (m_pfnValidateInput != NULL) {
-			char szT[255];
-			GetEdit(szT, sizeof(szT));
-			if (!m_pfnValidateInput(szT))
-				return;
-		}
-	}
-
-	ShellForm::OnControlSelected(idc);
-}
-
-void InputPanelForm::SetLabel(const char *pszLabel)
-{
-	LabelControl *plbl = (LabelControl *)GetControlPtr(kidcInputLabel);
-	plbl->SetText(pszLabel);
-	Rect rcLabel;
-	plbl->GetRect(&rcLabel);
-	EditControl *pedt = (EditControl *)GetControlPtr(kidcInputEdit);
-	Rect rcEdit;
-	pedt->GetRect(&rcEdit);
-	rcEdit.left = rcLabel.right + 3;
-	pedt->SetRect(&rcEdit);
-}
-
-void InputPanelForm::SetChars(char **ppsz, int cRows)
-{
-	m_ppszChars = ppsz;
-	m_cRows = cRows;
-}
-
-void InputPanelForm::SetEdit(const char *pszEdit)
-{
-	EditControl *pedt = (EditControl *)GetControlPtr(kidcInputEdit);
-	pedt->SetText(pszEdit);
-}
-
-void InputPanelForm::GetEdit(char *psz, int cb)
-{
-	EditControl *pedt = (EditControl *)GetControlPtr(kidcInputEdit);
-	pedt->GetText(psz, cb);
 }
 
 } // namespace wi

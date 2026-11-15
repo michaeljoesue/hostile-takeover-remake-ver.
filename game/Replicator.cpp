@@ -297,10 +297,6 @@ BeginStateMachine
 
 					pplr->SetCredits(cCredits - cReplicationCost, true);
 
-                    // Remove highlight
-
-                    pmunt->Hilight(false);
-
 					// Start the replicating animation
 
 					m_fReplicating = true;

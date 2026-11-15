@@ -42,10 +42,6 @@ namespace m {
 			return m_fModified;
 		}
 
-		public Switch[] GetSwitchList() {
-			return (Switch[])m_alsSwitches.ToArray(typeof(Switch));
-		}
-
 		public void AddSwitch(Switch sw) {
 			m_alsSwitches.Add(sw);
 			SetModified();
@@ -56,12 +52,6 @@ namespace m {
 			SetModified();
 		}
 
-		public void ModifySwitch(Switch swModify, Switch sw) {
-			int n = m_alsSwitches.IndexOf(swModify);
-			if (n >= 0)
-				m_alsSwitches[n] = sw;
-			SetModified();
-		}
 	}
 
 	[Serializable]

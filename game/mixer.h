@@ -13,7 +13,6 @@ struct Channel // chnl
     int nStepIndex;
 };
 
-void MixChannels(Channel *achnl, int cchnl, byte *pb, word cb);
 
 // Mixes into signed 16 bit samples (csamples must be even). Sounds are summed
 // with headroom and soft clipped rather than averaged, so each effect keeps

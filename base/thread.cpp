@@ -19,30 +19,4 @@ Thread::~Thread() {
     }
 }
 
-void Thread::RunLoop(long64 ct) {
-    Thread& thread = current();
-
-    long64 tEnd = 0;
-    if (ct != kctForever) {
-        tEnd = base::GetTickCount() + ct;
-    }
-    long64 ctNext = ct;
-
-    while (true) {
-        Message msg;
-        if (!thread.Get(&msg, ctNext)) {
-            return;
-        }
-        thread.Dispatch(&msg);
-
-        if (ct != kctForever) {
-            long64 tCur = base::GetTickCount();
-            if (tCur >= tEnd) {
-                return;
-            }
-            ctNext = tEnd - tCur;
-        }
-    }
-}
-
 } // namespace base

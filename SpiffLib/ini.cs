@@ -172,31 +172,6 @@ namespace SpiffLib
 			stm.Close();
 		}
 
-		public string GetProperty(string strSection, string strProp) {
-			Section sec = this[strSection];
-			if (sec == null)
-				return null;
-			Property prop = sec[strProp];
-			if (prop == null)
-				return null;
-			return prop.Value;
-		}
-
-		public void SetProperty(string strSection, string strProp, string strValue) {
-			Section sec = this[strSection];
-			if (sec == null) {
-				sec = new Section(strSection);
-				Add(sec);
-			}
-			Property prop = sec[strProp];
-			if (prop == null) {
-				prop = new Property(strProp, strValue);
-				sec.Add(prop);
-			} else {
-				prop.Value = strValue;
-			}
-		}
-
 		public Section Add(Section sec) {
 			if (!m_alsSections.Contains(sec))
 				m_alsSections.Add(sec);

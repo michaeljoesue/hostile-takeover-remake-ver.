@@ -33,42 +33,4 @@ int stricmp(const char *psz1, const char *psz2)
 	}
 }
 
-dword HashString(const char *s) {
-    dword h = 0;
-    for (int i = 0; *s != 0; s++, i++) {
-        h = 5 * (i + 1) * h + *s;
-    }
-    return h;
-}
-
-char *AllocString(const char *psz) {
-    int cb = (int)strlen(psz) + 1;
-    char *pszNew = new char[cb];
-    if (pszNew == NULL) {
-        return NULL;
-    }
-    strncpyz(pszNew, psz, cb);
-    return pszNew;
-}
-
-const char *StripWhitespace(const char *sz, int *pcch) {
-    int cch = (int)strlen(sz);
-    int start = 0;
-    for (int i = 0; i < cch; i++, start++) {
-        if (!isspace(sz[i])) {
-            break;
-        }
-    }
-
-    int end = cch;
-    for (int i = cch - 1; i >= start; i--, end--) {
-        if (!isspace(sz[i])) {
-            break;
-        }
-    }
-
-    *pcch = end - start;
-    return &sz[start];
-}
-
 } // namespace wi

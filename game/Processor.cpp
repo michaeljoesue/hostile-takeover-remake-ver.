@@ -373,7 +373,6 @@ lbError:
 			if (pgobMiner != NULL) {
 				pgobMiner->GetCenter(&m_wptFakeMiner);
 				pgobMiner->Select(false);
-                pgobMiner->Hilight(false);
 				StartAnimation(&m_aniOverlay, 3, 0, 0);
 				m_fDoorMoving = false;
 			}

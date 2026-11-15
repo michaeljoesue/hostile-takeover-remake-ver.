@@ -42,10 +42,6 @@ namespace m {
 			return m_fModified;
 		}
 
-		public Counter[] GetCounterList() {
-			return (Counter[])m_alsCounters.ToArray(typeof(Counter));
-		}
-
 		public void AddCounter(Counter ctr) {
 			m_alsCounters.Add(ctr);
 			SetModified();
@@ -56,12 +52,6 @@ namespace m {
 			SetModified();
 		}
 
-		public void ModifyCounter(Counter ctrModify, Counter ctr) {
-			int n = m_alsCounters.IndexOf(ctrModify);
-			if (n >= 0)
-				m_alsCounters[n] = ctr;
-			SetModified();
-		}
 	}
 
 	[Serializable]

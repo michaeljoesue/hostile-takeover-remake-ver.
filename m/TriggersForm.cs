@@ -306,13 +306,6 @@ namespace m
 			listBoxSides.SelectedIndex = Array.IndexOf(aside, sideSelected);
 		}
 
-		int GetSideMaskSelected() {
-			int nSide = listBoxSides.SelectedIndex;
-			if (nSide < 0)
-				return 0;
-			return m_tgrm.SideToMask(GetSideSelected());
-		}
-
 		Side GetSideSelected() {
 			Side[] aside = m_tgrm.GetTriggerSides();
 			return aside[listBoxSides.SelectedIndex];

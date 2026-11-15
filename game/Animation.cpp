@@ -76,16 +76,6 @@ int AnimationData::GetFrameCount(int nStrip)
 	return GetStripDataPtr(nStrip)->GetFrameCount();
 }
 
-void AnimationData::GetFrameOrigin(int nStrip, int nFrame, Point *pptOrigin)
-{
-	Assert(nStrip >= 0 && nStrip < GetStripCount());
-	Assert(nFrame >= 0 && nFrame < GetStripDataPtr(nStrip)->GetFrameCount());
-
-	FrameData *pfrmd = GetFrameDataPtr(nStrip, nFrame);
-	pptOrigin->x = pfrmd->xOrigin;
-	pptOrigin->y = pfrmd->yOrigin;
-}
-
 void AnimationData::GetSpecialPoint(int nStrip, int nFrame, Point *pptSpecial)
 {
 	Assert(nStrip >= 0 && nStrip < GetStripCount());
@@ -230,12 +220,6 @@ bool Animation::SaveState(Stream *pstm)
 	pstm->WriteByte(m_cCountdown);
 	pstm->WriteWord(m_wf);
 	return pstm->IsSuccess();
-}
-
-void Animation::SetStrip(const char *pszStripName)
-{
-	m_nStrip = m_panid->GetStripIndex(pszStripName);
-	m_cCountdown = m_panid->GetStripDelay(m_nStrip) + m_panid->GetFrameDelay(m_nStrip, 0);
 }
 
 bool Animation::Start(const char *pszStripName, word wf)

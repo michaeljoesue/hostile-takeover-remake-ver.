@@ -43,7 +43,7 @@ public:
 
             case 1:
                 // There is an event
-                base::Thread::current().Post(kidmSdlEvent, NULL);
+                base::Thread::current().Post(kidmSdlEvent);
                 return true;
 
             case 0:

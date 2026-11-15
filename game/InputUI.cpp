@@ -33,10 +33,7 @@ bool InputUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	DibBitmap *pbm = m_pfrmm->GetDib();
 	Size sizDib;
 	pbm->GetSize(&sizDib);
-	int cyCommandBar = sizDib.cy;
-	ModeInfo mode;
-	gpdisp->GetMode(&mode);
-	int cyInputForm = cyCommandBar + mode.cyGraffiti;
+	int cyInputForm = sizDib.cy;
 	Rect rcT;
 	rcT.Set(0, 0, sizDib.cx, cyInputForm);
 	SetRect(&rcT);
@@ -71,36 +68,6 @@ bool InputUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	pctlCredits->SetPosition(rcMenuButton.right + cxSpace, 1);
 	pctlPower->SetPosition(rcMenuButton.right + cxSpace + rcCredits.Width() + cxSpace, 1);
 	
-	// Handle silkscreen area
-
-	static int s_aidcLayout[] = {
-			kidcGraffitiScroll, kidcAppsSilkButton, kidcMenuSilkButton,
-			kidcCalcSilkButton, kidcFindSilkButton
-	};
-	static int s_aircGraffiti[] = {
-			kircSilkGraffiti, kircSilkApps, kircSilkMenu,
-			kircSilkCalc, kircSilkFind
-	};
-
-	if (mode.cyGraffiti == 0) {
-		// No silkscreen graffiti area, so hide the controls
-
-		for (int n = 0; n < ARRAYSIZE(s_aidcLayout); n++)
-			GetControlPtr(s_aidcLayout[n])->Show(false);
-	} else {
-		// Note the returned graffiti rects are in native coordinates
-		// from the top of the screen, whereas the input form starts on-screen,
-		// so the rects need to be adjusted
-		
-		int yOffset = mode.cy - cyCommandBar;
-		for (int n = 0; n < ARRAYSIZE(s_aidcLayout); n++) {
-			Rect rcT;
-			HostGetSilkRect(s_aircGraffiti[n], &rcT);
-			rcT.Offset(0, -yOffset);
-			GetControlPtr(s_aidcLayout[n])->SetRect(&rcT);
-		}
-	}
-
 	// Run often so keyboard scrolling is smooth; the scroll distance is
 	// based on elapsed time.
 
@@ -242,21 +209,7 @@ void InputUIForm::OnControlSelected(word idc)
 		break;
 
 
-	case kidcAppsSilkButton:
-		{
-			Event evt;
-			evt.eType = appStopEvent;
-			gevm.PostEvent(&evt);
-		}
-		break;
-
-	case kidcMenuSilkButton:
-		OnControlSelected(kidcMenuButton);
-		break;
-
-
 #if defined(DEV_BUILD)
-	case kidcFindSilkButton:
 	case kidcPower:
 		TestOptions();
 		break;
@@ -367,92 +320,6 @@ void InputUIForm::TestOptions()
 	pfrm->DoModal();
 	gsim.Pause(false);
 	delete pfrm;
-}
-
-//
-// Graffiti scroll control
-//
-
-GraffitiScrollControl::GraffitiScrollControl()
-{
-	m_nScale = 0;
-	m_xDragStart = 0;
-	m_yDragStart = 0;
-	m_wxViewStart = 0;
-	m_wyViewStart = 0;
-	m_fFrame = false;
-}
-
-bool GraffitiScrollControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
-{
-	// Base initialization
-
-	if (!Control::Init(pfrm, pini, pfind))
-		return false;
-
-	// idc (x y cx cy) nScale
-
-	char sz[32];
-	int cArgs = pini->GetPropertyValue(pfind, "%*d (%*d %*d %*d %*d) %d %s", &m_nScale, sz);
-	if (cArgs == 1) {
-		m_fFrame = false;
-		return true;
-	}
-	if (cArgs == 2 && strcmp(sz, "frame") == 0) {
-		m_fFrame = true;
-		return true;
-	}
-	return true;
-}
-
-void GraffitiScrollControl::OnPenEvent(Event *pevt)
-{
-	switch (pevt->eType) {
-	case penDownEvent:
-		m_xDragStart = pevt->x;
-		m_yDragStart = pevt->y;
-		gsim.GetViewPos(&m_wxViewStart, &m_wyViewStart);
-		break;
-
-	case penMoveEvent:
-		{
-			int pcMac = PcFromWc(kwcMax - 1);
-			int dxT = (pevt->x - m_xDragStart) * m_nScale;
-			if (dxT < -pcMac)
-				dxT = -pcMac;
-			if (dxT > pcMac)
-				dxT = pcMac;
-			int dyT = (pevt->y - m_yDragStart) * m_nScale;
-			if (dyT < -pcMac)
-				dyT = -pcMac;
-			if (dyT > pcMac)
-				dyT = pcMac;
-			gsim.SetViewPos(m_wxViewStart + WcFromPc(dxT), m_wyViewStart + WcFromPc(dyT));
-		}
-		break;
-	}
-}
-
-void GraffitiScrollControl::OnPaint(DibBitmap *pbm)
-{
-	if (!m_fFrame)
-		return;
-
-	Rect rcForm;
-	m_pfrm->GetRect(&rcForm);
-	Rect rcT = m_rc;
-	rcT.Offset(rcForm.left, rcForm.top);
-
-	int iclr = GetColor(kiclrWhite);
-	pbm->Fill(rcT.left + 1, rcT.top, rcT.Width() - 2, 1, iclr);
-	pbm->Fill(rcT.left, rcT.top + 1, 1, rcT.Height() - 2, iclr);
-	pbm->Fill(rcT.right - 1, rcT.top + 1, 1, rcT.Height() - 2, iclr);
-	pbm->Fill(rcT.left + 1, rcT.bottom - 1, rcT.Width() - 2, 1, iclr);
-}
-
-bool GraffitiScrollControl::IsPainting()
-{
-	return m_fFrame;
 }
 
 //

@@ -75,14 +75,6 @@ void DoAssertRip()
 	Break();
 }
 
-void dprintf(const char *psz, ...)
-{
-    va_list va;
-    va_start(va, psz);
-    vprintf(psz, va);
-    va_end(va);
-}
-
 } // namespace wi
     
 #endif // !RIP_DEFINED

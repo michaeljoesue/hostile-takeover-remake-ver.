@@ -709,56 +709,6 @@ void BitmapControl::SetBitmap(HtBitmap *phtbm)
 	Invalidate();
 }
 
-// Edit Control
-
-EditControl::EditControl()
-{
-	m_nfnt = 0;
-	m_szText[0] = 0;
-}
-
-bool EditControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
-{
-	// Base initialization
-
-	if (!Control::Init(pfrm, pini, pfind))
-		return false;
-
-	// idc (x y cx cy) "Text" nfnt
-
-	int cArgs = pini->GetPropertyValue(pfind, "%*d (%*d %*d %*d %*d) \"%s\" %d",
-			m_szText, &m_nfnt);
-	if (cArgs != 2)
-		return false;
-
-	if (m_rc.Height() == 0)
-		m_rc.bottom = m_rc.top + gapfnt[m_nfnt]->GetHeight();
-
-	return true;
-}
-
-void EditControl::OnPaint(DibBitmap *pbm)
-{
-	Font *pfnt = gapfnt[m_nfnt];
-	Rect rcForm;
-	m_pfrm->GetRect(&rcForm);
-	int x = m_rc.left + rcForm.left;
-	int y = m_rc.top + rcForm.top;
-	pbm->Fill(x, y + m_rc.Height() - 1, m_rc.Width(), 1, GetColor(kiclrButtonBorder));
-	pfnt->DrawText(pbm, m_szText, x + 1, y);
-}
-
-void EditControl::SetText(const char *psz)
-{
-	strncpyz(m_szText, psz, sizeof(m_szText));
-	Invalidate();
-}
-
-void EditControl::GetText(char *psz, int cb)
-{
-	strncpyz(psz, m_szText, cb);
-}
-
 //
 // List Control
 //
@@ -1199,11 +1149,9 @@ void ListControl::OnPenEvent2(Event *pevt)
 	Rect rcForm;
 	m_pfrm->GetRect(&rcForm);
 
-    // Finger hittesting works as follows:
-    // 1. Out of the desired hit test rects, find the "closest" one
-    // 2. See if the event is within the "finger rect", an expansion of the
-    //    regular rect.
-    
+    // Find the closest of the hit test rects; it registers a hit only if
+    // the event is inside it.
+
 	Rect rcInterior, rcUpArrow, rcDownArrow;
 	GetSubRects(&rcInterior, &rcUpArrow, &rcDownArrow);
 	rcInterior.Offset(rcForm.left, rcForm.top);
@@ -1232,9 +1180,6 @@ void ListControl::OnPenEvent2(Event *pevt)
     }
     
     int nDistHit = 0;
-    if (pevt->ff & kfEvtFinger) {
-        nDistHit = 20; // Need a constant here
-    }
    
     // Compare this best distance against the up and down arrows.    
     if (!(m_wf & kfLstcScrollPosition)) {
@@ -1316,11 +1261,6 @@ void ListControl::Clear()
 	m_iliTop = 0;
 
 	Invalidate();
-}
-
-Font *ListControl::GetFont()
-{
-    return gapfnt[m_nfnt];
 }
 
 int ListControl::GetCount()
@@ -1475,57 +1415,9 @@ ListItem *ListControl::GetSelectedItem()
 
 // set same item's data
 
-void ListControl::SetSelectedItemData(void *pvData)
-{
-	for (ListItem *pli = m_pliFirst; pli != NULL; pli = pli->pliNext)
-		if (pli->fSelected)
-			pli->pvData = pvData;
-}
-
 // Return first selected item's text
 
-bool ListControl::GetSelectedItemText(char *psz, int cb)
-{
-	for (ListItem *pli = m_pliFirst; pli != NULL; pli = pli->pliNext) {
-		if (pli->fSelected) {
-			strncpyz(psz, pli->szText, cb);
-			return true;
-		}
-	}
-
-	return false;
-}
-
 // Set first selected item's text
-
-bool ListControl::SetSelectedItemText(const char *psz)
-{
-	for (ListItem *pli = m_pliFirst; pli != NULL; pli = pli->pliNext) {
-		if (pli->fSelected) {
-			strncpyz(pli->szText, psz, sizeof(pli->szText));
-            Invalidate();
-			return true;
-		}
-	}
-
-	return false;
-}
-
-//
-// SilkButtonControl
-//
-
-void SilkButtonControl::OnSelect(int nSelect)
-{
-	switch (nSelect) {
-	case knSelMoveInside:
-	case knSelDownInside:
-		gsndm.PlaySfx(ksfxGuiButtonTap);
-		break;
-	}
-
-	Control::OnSelect(nSelect);
-}
 
 //
 // SliderControl

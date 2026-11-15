@@ -17,9 +17,6 @@ public:
     // Wait up to ctWait (1/100ths of a second), or until woken up.
     virtual bool Wait(long64 ctWait) = 0;
     virtual void WakeUp() = 0;
-
-    // Factory method for a default, condition variable based server
-    static EventServer *Create();
 };
 
 } // namespace base

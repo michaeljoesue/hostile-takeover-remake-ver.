@@ -42,7 +42,6 @@
     <Compile Include="LevelViewParent.cs" />
     <Compile Include="mapitem.cs" />
     <Compile Include="mediancut.cs" />
-    <Compile Include="mixsuck.cs" />
     <Compile Include="OutputForm.cs" />
     <Compile Include="OutputTools.cs" />
     <Compile Include="PickListForm.cs" />
@@ -68,12 +67,6 @@
     <Compile Include="..\SpiffLib\compressor.cs">
       <Link>compressor.cs</Link>
     </Compile>
-    <Compile Include="..\SpiffLib\AudioFormats.cs">
-      <Link>AudioFormats.cs</Link>
-    </Compile>
-    <Compile Include="..\SpiffLib\bitmapraw.cs">
-      <Link>bitmapraw.cs</Link>
-    </Compile>
     <Compile Include="..\SpiffLib\doublerect.cs">
       <Link>doublerect.cs</Link>
     </Compile>
@@ -91,9 +84,6 @@
     </Compile>
     <Compile Include="..\SpiffLib\PdbPacker.cs">
       <Link>PdbPacker.cs</Link>
-    </Compile>
-    <Compile Include="..\SpiffLib\tbitmap.cs">
-      <Link>tbitmap.cs</Link>
     </Compile>
     <Compile Include="..\SpiffLib\tbitmaptools.cs">
       <Link>tbitmaptools.cs</Link>

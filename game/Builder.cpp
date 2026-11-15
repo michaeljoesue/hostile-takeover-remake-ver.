@@ -124,24 +124,6 @@ int BuilderGob::GetGlobalQueuedCount(Player *pplr, word wfTest)
 	return cQueued;
 }
 
-int BuilderGob::GetQueuedCount(Player *pplr, word wfTest)
-{
-	int cQueued = 0;
-	for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
-		if (!(pgobT->GetFlags() & kfGobUnit))
-			continue;
-		UnitGob *puntT = (UnitGob *)pgobT;
-		if (puntT->GetOwner() != pplr)
-			continue;
-		if (!(puntT->GetConsts()->wf & wfTest))
-			continue;
-		BuilderGob *pbldr = (BuilderGob *)puntT;
-		cQueued += pbldr->m_bq.GetUnitCount(kutNone);
-	}
-
-	return cQueued;
-}
-
 void BuilderGob::Build(UnitType ut, Gid gid)
 {
 	// put it on the public build queue
@@ -1095,16 +1077,6 @@ void BuildQueue::SetSize(word cutMax)
 {
 	Assert(cutMax <= kcBuildQueueMax);
 	m_cchQueueMax = cutMax;
-}
-
-int BuildQueue::GetRemainingCapacity()
-{
-	int cSlotsOpen = 0;
-	for (int i = 0; i < m_cchQueueMax; i++) {
-		if (m_achBuildQueue[i] == (char)kutNone)
-			cSlotsOpen++;
-	}
-	return cSlotsOpen;
 }
 
 void BuildQueue::Enqueue(UnitType ut)

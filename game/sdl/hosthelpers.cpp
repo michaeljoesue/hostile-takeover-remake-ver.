@@ -82,11 +82,6 @@ const char *HostHelpers::GetMainDataDir()
     return gstrMainDataDir.c_str();
 }
 
-const char *HostHelpers::GetTempDir()
-{
-    return gstrTempDir.c_str();
-}
-
 const char *HostHelpers::GetSaveGamesDir()
 {
     return gstrSaveGamesDir.c_str();
@@ -133,11 +128,6 @@ void HostHelpers::MessageBox(const char *pszFormat, va_list va)
     Log("%s", sz);
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Hostile Takeover",
             sz, NULL);
-}
-
-void HostHelpers::Break()
-{
-    Log("BREAK!!");
 }
 
 

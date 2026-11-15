@@ -11,13 +11,10 @@ namespace base {
 
 class Thread : public MessageQueue {
 public:
-    Thread(EventServer *es = NULL);
+    Thread(EventServer *es);
     virtual ~Thread();
 
     static Thread& current() { return *s_current_; }
-    bool is_current() const { return s_current_ == this; }
-
-    static void RunLoop(long64 ct = -1);
 
 private:
     static Thread *s_current_;

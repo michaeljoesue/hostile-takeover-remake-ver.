@@ -179,15 +179,8 @@ void HelpControl::OnPenEvent(Event *pevt)
         m_hittest.y = pevt->y;
         m_hittest.dBest = 10000;
         Layout(m_nchCurrent, m_fLargeFont, NULL, HitTestChunk, &m_hittest);
-        if (pevt->ff & kfEvtFinger) {
-            // Need a constant here
-            if (m_hittest.dBest <= 20) {
-                m_hittest.fHit = true;
-            }
-        } else {
-            if (m_hittest.dBest == 0) {
-                m_hittest.fHit = true;
-            }
+        if (m_hittest.dBest == 0) {
+            m_hittest.fHit = true;
         }
         Invalidate();
         break;

@@ -1,5 +1,4 @@
 #include "../ht.h"
-#include "game/sdl/sdlspritemgr.h"
 #include "game/sdl/hosthelpers.h"
 #include <cmath>
 
@@ -11,8 +10,6 @@ namespace wi {
 
 static SDL_Window *s_window;
 static SDL_Renderer *s_renderer;
-static SdlSpriteManager *s_psprm;
-static Size s_siz;
 
 bool gfFullscreen = true;
 
@@ -105,7 +102,6 @@ static void AddMode(ModeInfo *amode, int *pcmodes, int cx, int cy,
     ModeInfo *pmode = &amode[(*pcmodes)++];
     pmode->cx = cx;
     pmode->cy = cy;
-    pmode->cyGraffiti = 0;
     pmode->nDepth = 8;
     pmode->fNative = fNative;
     pmode->nDegreeOrientation = 0;
@@ -311,22 +307,12 @@ bool Display::SetMode(int imode)
 	m_imode = imode;
     m_cx = cx;
     m_cy = cy;
-    s_siz.cx = cx;
-    s_siz.cy = cy;
 
     // Scale the game resolution to the window, keeping the aspect ratio
 
     SDL_SetRenderLogicalPresentation(s_renderer, cx, cy,
             SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	return true;
-}
-
-void Display::DrawText(const char *psz, int x, int y, word wf)
-{
-}
-
-void Display::DrawFrameInclusive(Rect *prc)
-{
 }
 
 DibBitmap *Display::GetBackDib()
@@ -347,13 +333,6 @@ DibBitmap *Display::GetClippingDib()
     delete m_pbmClip;
 	m_pbmClip = pbm;
 	return pbm;
-}
-
-void Display::GetHslAdjustments(short *pnHueOffset, short *pnSatMultiplier, short *pnLumOffset)
-{
-	*pnHueOffset = 0;
-	*pnSatMultiplier = 0;
-	*pnLumOffset = 0;
 }
 
 void Display::FrameStart()
@@ -386,11 +365,6 @@ void Display::RenderGameSurface() {
     SDL_RenderClear(s_renderer);
     SDL_RenderTexture(s_renderer, m_texture, NULL, NULL);
 
-    // Sprites draw on top, in game coordinates
-
-    if (s_psprm != NULL)
-        s_psprm->DrawSprites(s_renderer, s_siz);
-
     SDL_RenderPresent(s_renderer);
 
     // Present normally waits for vsync. In case it doesn't (vsync off in the
@@ -406,13 +380,6 @@ void Display::RenderGameSurface() {
 
 void Display::ResetScrollOffset()
 {
-}
-
-SpriteManager *Display::GetSpriteManager()
-{
-	if (s_psprm == NULL)
-		s_psprm = new SdlSpriteManager();
-	return s_psprm;
 }
 
 bool Display::IsFullscreen()

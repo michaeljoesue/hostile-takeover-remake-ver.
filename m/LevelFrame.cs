@@ -152,10 +152,6 @@ namespace m
 		}
 		#endregion
 
-		public Document GetDocument() {
-			return m_doc;
-		}
-
 		void ChangePanes(int nPaneStateNew) {
 			// If starting, create panes and views
 

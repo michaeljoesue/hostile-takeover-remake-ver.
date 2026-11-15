@@ -48,13 +48,6 @@ namespace m
 			SetModified();
 		}
 
-		public void ModifyUnitGroup(UnitGroup ugModify, UnitGroup ug) {
-			int n = m_alsUnitGroups.IndexOf(ugModify);
-			if (n >= 0)
-				m_alsUnitGroups[n] = ug;
-			SetModified();
-		}
-
 		public void SaveIni(Ini ini) {
 			for (int i = 0; i < m_alsUnitGroups.Count; i++) {
 				Ini.Section sec = new Ini.Section("UnitGroup " + i);

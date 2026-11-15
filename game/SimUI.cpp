@@ -33,14 +33,9 @@ static long s_tLastFPSUpdate = 0;
 bool gfDragSelecting;
 WPoint s_wptSelect1, s_wptSelect2;
 WRect gwrcSelection;
-WPoint s_awptSelection[250];
-int s_cwptSelection;
-bool gfLassoSelection = false;
 #ifdef STATS_DISPLAY
 long gcPathScoresCalced = 0;
 #endif
-
-bool PtInPolygon(WPoint *awpt, int cwpt, WCoord wx, WCoord wy);
 
 //
 // SimUIForm implementation
@@ -52,14 +47,12 @@ SimUIForm::SimUIForm()
 {
 	s_fReadyForPaint = false;
 	gfDragSelecting = false;
-	s_cwptSelection = 0;
     
 	m_fTimerAdded = false;
 
 	m_nStateMoveTarget = 0;
 
-    m_ppenh = NULL;
-    SetUIType(kuitStylus);
+    m_ppenh = new StylusHandler(this);
 }
 
 SimUIForm::~SimUIForm()
@@ -67,21 +60,6 @@ SimUIForm::~SimUIForm()
 	if (m_fTimerAdded)
 		gtimm.RemoveTimer(this);
     delete m_ppenh;
-}
-
-void SimUIForm::SetUIType(UIType uit)
-{
-    switch (uit) {
-    case kuitFinger:
-        delete m_ppenh;
-        m_ppenh = new FingerHandler(this);
-        break;
-
-    case kuitStylus:
-        delete m_ppenh;
-        m_ppenh = new StylusHandler(this);
-        break;
-    }
 }
 
 bool SimUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
@@ -256,17 +234,6 @@ void SimUIForm::Update()
 	gevm.SetRedrawFlags(kfRedrawDirty);
 }
 
-void AddPointToLassoSelection(WPoint wpt)
-{
-	// TUNE:
-	if (abs(s_awptSelection[s_cwptSelection - 1].wx - wpt.wx) >= WcFromTile16ths(4) ||
-			abs(s_awptSelection[s_cwptSelection - 1].wy - wpt.wy) >= WcFromTile16ths(4)) {
-		s_awptSelection[s_cwptSelection] = wpt;
-		if (s_cwptSelection < (sizeof(s_awptSelection) / sizeof(WPoint)) - 1)
-			s_cwptSelection++;
-	}
-}
-
 void SimUIForm::OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque)
 {
 #ifdef DRAW_LINES
@@ -390,47 +357,24 @@ void SimUIForm::InvalidateDragSelection()
 		WCoord wxView, wyView;
 		gsim.GetViewPos(&wxView, &wyView);
 
-		if (gfLassoSelection) {
-			// The slow redraw this causes is unavoidable unless we remove lasso as an option.
+		// PERF: there is a way to make selection drawing faster by only invalidating edges
+		// that move, and redrawing dirty cells only on the control layer. Can do if this isn't fast enough.
 
-			WPoint wptLast;
-			wptLast.wx = s_awptSelection[0].wx - wxView;
-			wptLast.wy = s_awptSelection[0].wy - wyView;
-			for (int i = 1; i < s_cwptSelection; i++) {
-				WPoint wptNext;
-				wptNext.wx = s_awptSelection[i].wx - wxView;
-				wptNext.wy = s_awptSelection[i].wy - wyView;
-				int x1 = PcFromWc(wptLast.wx);
-				int y1 = PcFromWc(wptLast.wy);
-				int x2 = PcFromWc(wptNext.wx);
-				int y2 = PcFromWc(wptNext.wy);
-				Rect rcT;
-				rcT.left = _min(x1, x2);
-				rcT.top = _min(y1, y2);
-				rcT.right = rcT.left + abs(x2 - x1) + 1;
-				rcT.bottom = rcT.top + abs(y2 - y1) + 1;
-				gpupdSim->InvalidateRect(&rcT);
-				wptLast = wptNext;
-			}
-		} else {
-			// PERF: there is a way to make selection drawing faster by only invalidating edges
-			// that move, and redrawing dirty cells only on the control layer. Can do if this isn't fast enough.
+		int xLeft = PcFromWc(gwrcSelection.left - wxView);
+		int yTop = PcFromWc(gwrcSelection.top - wyView);
+		int xRight = PcFromWc(gwrcSelection.right - wxView);
+		int yBottom = PcFromWc(gwrcSelection.bottom - wyView);
 
-			int xLeft = PcFromWc(gwrcSelection.left - wxView);
-			int yTop = PcFromWc(gwrcSelection.top - wyView);
-			int xRight = PcFromWc(gwrcSelection.right - wxView);
-			int yBottom = PcFromWc(gwrcSelection.bottom - wyView);
-
-			Rect rcT;
-			rcT.Set(xLeft, yTop, xRight, yTop + 1);
-			gpupdSim->InvalidateRect(&rcT);
-			rcT.Set(xRight - 1, yTop, xRight, yBottom);
-			gpupdSim->InvalidateRect(&rcT);
-			rcT.Set(xLeft, yBottom - 1, xRight, yBottom);
-			gpupdSim->InvalidateRect(&rcT);
-			rcT.Set(xLeft, yTop, xLeft + 1, yBottom);
-			gpupdSim->InvalidateRect(&rcT);
-		}
+		Rect rcT;
+		rcT.Set(xLeft, yTop, xRight, yTop + 1);
+		gpupdSim->InvalidateRect(&rcT);
+		rcT.Set(xRight - 1, yTop, xRight, yBottom);
+		gpupdSim->InvalidateRect(&rcT);
+		rcT.Set(xLeft, yBottom - 1, xRight, yBottom);
+		gpupdSim->InvalidateRect(&rcT);
+		rcT.Set(xLeft, yTop, xLeft + 1, yBottom);
+		gpupdSim->InvalidateRect(&rcT);
+		
 	}
 }
 
@@ -467,26 +411,13 @@ void SimUIForm::OnPaint(DibBitmap *pbm)
 		WCoord wxView, wyView;
 		gsim.GetViewPos(&wxView, &wyView);
 
-		if (gfLassoSelection) {
-			Color clr = GetColor(kiclrWhite);
-			WPoint wptLast;
-			wptLast.wx = s_awptSelection[0].wx - wxView;
-			wptLast.wy = s_awptSelection[0].wy - wyView;
-			for (int i = 1; i < s_cwptSelection; i++) {
-				WPoint wptNext;
-				wptNext.wx = s_awptSelection[i].wx - wxView;
-				wptNext.wy = s_awptSelection[i].wy - wyView;
-				pbm->DrawLine(PcFromWc(wptLast.wx), PcFromWc(wptLast.wy), PcFromWc(wptNext.wx), PcFromWc(wptNext.wy), clr);
-				wptLast = wptNext;
-			}
-		} else {
-			Rect rcT;
-			rcT.left = PcFromWc(gwrcSelection.left - wxView);
-			rcT.top = PcFromWc(gwrcSelection.top - wyView);
-			rcT.right = PcFromWc(gwrcSelection.right - wxView);
-			rcT.bottom = PcFromWc(gwrcSelection.bottom - wyView);
-			DrawBorder(pbm, &rcT, 1, GetColor(kiclrWhite));
-		}
+		Rect rcT;
+		rcT.left = PcFromWc(gwrcSelection.left - wxView);
+		rcT.top = PcFromWc(gwrcSelection.top - wyView);
+		rcT.right = PcFromWc(gwrcSelection.right - wxView);
+		rcT.bottom = PcFromWc(gwrcSelection.bottom - wyView);
+		DrawBorder(pbm, &rcT, 1, GetColor(kiclrWhite));
+		
 	}
 
 	// Handle placement form
@@ -982,18 +913,7 @@ MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord w
 	return pmuntSetTarget;
 }
 
-void SimUIForm::ClearSelection()
-{
-	s_wptSelect1.wx = 0;
-	s_wptSelect1.wy = 0;
-	s_wptSelect2 = s_wptSelect1;
-	s_cwptSelection = 0;
-	gwrcSelection.Set(s_wptSelect1, s_wptSelect2);
-	gsim.ClearGobSelection();
-}
-
-Gob *SimUIForm::HitTestGob(int x, int y, bool fFinger, WCoord *pwx,
-        WCoord *pwy, bool *pfHitSurrounding)
+Gob *SimUIForm::HitTestGob(int x, int y, WCoord *pwx, WCoord *pwy)
 {
 	WCoord wxTarget, wyTarget;
 	gsim.GetViewPos(&wxTarget, &wyTarget);
@@ -1012,25 +932,16 @@ Gob *SimUIForm::HitTestGob(int x, int y, bool fFinger, WCoord *pwx,
     *pwx = wxTarget;
     *pwy = wyTarget;
 
-    if (fFinger) {
-        return gsim.FingerHitTest(wxTarget, wyTarget, kfGobActive | kfGobUnit,
-                pfHitSurrounding);
-    } else {
-        Gob *pgobHit = NULL;
-        Enum enm;
-        gsim.HitTest(&enm, wxTarget, wyTarget, kfGobActive | kfGobUnit,
-                &pgobHit);
-        *pfHitSurrounding = false;
-        return pgobHit;
-    }
+    Gob *pgobHit = NULL;
+    Enum enm;
+    gsim.HitTest(&enm, wxTarget, wyTarget, kfGobActive | kfGobUnit, &pgobHit);
+    return pgobHit;
 }
 
 void SimUIForm::MoveOrAttackOrSelect(int x, int y, dword ff)
 {
 	WCoord wxTarget, wyTarget;
-    bool fHitSurrounding;
-    Gob *pgobHit = HitTestGob(x, y, false, &wxTarget, &wyTarget,
-            &fHitSurrounding);
+    Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
     MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, ff);
 }
 
@@ -1219,21 +1130,6 @@ bool SimUIForm::IsSelectionCommand(Gob *pgobHit)
     return fSelection;
 }
 
-bool SimUIForm::HasSelectedUnits()
-{
-    Gob *pgobT = ggobm.GetFirstGob();
-	for (; pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
-		if ((pgobT->GetFlags() & (kfGobUnit | kfGobSelected | kfGobStructure))
-                != (kfGobUnit | kfGobSelected)) {
-			continue;
-        }
-		if (((UnitGob *)pgobT)->GetOwner() == gpplrLocal) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void SimUIForm::ShowUnitMenu(Gob *pgob) {
     if (pgob != NULL && (pgob->GetFlags() & kfGobUnit) != 0) {
         // Don't popup menu if the player doesn't own the Gob (unless in
@@ -1274,25 +1170,6 @@ void SimUIForm::SelectSameUnitTypes(Gob *pgob, bool fSfx)
 
 void SimUIForm::CalcLevelSpecificConstants()
 {
-}
-
-// OPT: this isn't hideous but could be made faster
-
-bool PtInPolygon(WPoint *awpt, int cwpt, WCoord wx, WCoord wy)
-{
-	bool fInside = false;
-	WPoint *pwptI = &awpt[0];
-	WPoint *pwptJ = &awpt[cwpt - 1];
-	WPoint *pwptEnd = pwptJ + 1;
-
-    for (int i = 0; pwptI < pwptEnd; pwptI++) {
-		if ((((pwptI->wy <= wy) && (wy < pwptJ->wy)) || ((pwptJ->wy <= wy) && (wy < pwptI->wy))) &&
-				(wx < (pwptJ->wx - pwptI->wx) * (wy - pwptI->wy) / (pwptJ->wy - pwptI->wy) + pwptI->wx))
-			fInside = !fInside;
-		pwptJ = pwptI;
-    }
-
-    return fInside;
 }
 
 //
@@ -1483,20 +1360,6 @@ void MiniMapControl::OnPaint(DibBitmap *pbm)
 	rc.right = rc.left + (siz.cx + cxTile - 1) / cxTile;
 	rc.bottom = rc.top + (siz.cy + cyTile - 1) / cyTile;
 	DrawBorder(pbm, &rc, 1, GetColor(kiclrWhite));
-}
-
-int MiniMapControl::OnHitTest(Event *pevt)
-{
-    // Don't use finger hit testing on the minimap control; this way
-    // all input over the map goes to the map.
-
-    if (pevt->ff & kfEvtFinger) {
-        pevt->ff = ~kfEvtFinger;
-        int result = Control::OnHitTest(pevt);
-        pevt->ff |= kfEvtFinger;
-        return result;
-    }
-    return Control::OnHitTest(pevt);
 }
 
 //TUNE:

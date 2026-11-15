@@ -7,7 +7,6 @@ namespace base {
 
 extern long64 GetTickCount();
 extern long64 GetMillisecondCount();
-extern dword GetSecondsUnixEpocUTC();
 
 } // namespace base
 

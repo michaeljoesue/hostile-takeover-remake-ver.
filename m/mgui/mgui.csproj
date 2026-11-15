@@ -4,7 +4,6 @@
     <OutputType>WinExe</OutputType>
     <AssemblyName>mgui</AssemblyName>
     <RootNamespace>mgui</RootNamespace>
-    <TargetName>m</TargetName>
     <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -17,5 +16,16 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="mgui.cs" />
   </ItemGroup>
+
+  <!--
+    The editor ships as m.exe, but its assembly must keep the name mgui: the
+    editor's code is in m.dll, whose assembly is named m, and an m.exe
+    assembly would hide it. The compiler names the assembly after the output
+    file, so build mgui.exe and rename it.
+  -->
+  <Target Name="RenameToM" AfterTargets="Build">
+    <Move SourceFiles="$(OutDir)mgui.exe" DestinationFiles="$(OutDir)m.exe" />
+    <Move SourceFiles="$(OutDir)mgui.exe.config" DestinationFiles="$(OutDir)m.exe.config" Condition="Exists('$(OutDir)mgui.exe.config')" />
+  </Target>
 
 </Project>

@@ -23,9 +23,6 @@ int gcyTile;
 int gcxFullScreenFormDiv10;
 int gcxyBorder;
 bool gfGrayscale = false;
-#ifdef DRAW_UPDATERECTS
-bool gfDrawUpdateRects;
-#endif
 short *gmpPcFromWc;
 WCoord *gmpWcFromPc;
 DibBitmap *gpbmClip;
@@ -53,7 +50,6 @@ int gcStructGobsHumanDeltaSP;
 int gcSceneryGobsLimit;
 int gcScorchGobsLimit;
 int gcSupportGobsLimit;
-SpriteManager *gpsprm;
 
 // Game speeds, in 1/100ths of a second per update
 int gatGameSpeeds[15] = {
@@ -212,7 +208,6 @@ bool Game::Init(int imm)
 	// Suck what we can from preferences
 
 	gtGameSpeed = gprefsInit.ctGameSpeed;
-	gfLassoSelection = gprefsInit.fLassoSelection != 0;
 	gnHueOffset = gprefsInit.nHueOffset;
 	gnSatMultiplier = gprefsInit.nSatMultiplier;
 	gnLumOffset = gprefsInit.nLumOffset;
@@ -850,8 +845,6 @@ bool Game::InitDisplay(int immRequested)
 	if (gpdisp == NULL)
 		return false;	
 
-    gpsprm = gpdisp->GetSpriteManager();
-
 	// Find all raw data / mode matches
 
 	ddword ddwSizes8bpp = IsDataPresent(8);
@@ -1079,13 +1072,9 @@ bool Game::InitMultiFormMgr()
 
 	// cySim is the simulation area
 	// cyInput is the control stip at the bottom
-	// cyInputForm is present for capturing input in the graffiti area
-
 	int cyInput = sizMenuButton.cy;
 	int cySim = sizDib.cy - cyInput;
-	ModeInfo mode;
-	gpdisp->GetMode(&mode);
-	int cyInputForm = cyInput + mode.cyGraffiti;
+	int cyInputForm = cyInput;
 
 	// We know the playfield size
 
@@ -1624,23 +1613,6 @@ bool Game::InitSimulation(Stream *pstm, char *pszLevel) {
 	SetHslAdjustedPalette(ppal, gnHueOffset, gnSatMultiplier, gnLumOffset);
 	gmpiclriclrShadow = gsim.GetLevel()->GetShadowMap();
 
-    // Tell the sprite manager the clipping rects
-
-    Rect rcClip1;
-    rcClip1.left = 0;
-    rcClip1.top = 0;
-    rcClip1.right = m_sizPlayfield.cx - rcMiniMap.Width();
-    rcClip1.bottom = m_sizPlayfield.cy;
-    Rect rcClip2;
-    rcClip2.left = rcClip1.right;
-    rcClip2.top = 0;
-    rcClip2.right = m_sizPlayfield.cx;
-    rcClip2.bottom = rcT.top;
-    SpriteManager *psprm = gpdisp->GetSpriteManager();
-    if (psprm != NULL) {
-        psprm->SetClipRects(&rcClip1, &rcClip2);
-    }
-
 	return true;
 }
 
@@ -1846,11 +1818,6 @@ InputUIForm *Game::GetInputUIForm()
 	return m_pfrmInputUI;
 }
 
-Form *Game::GetMiniMapForm()
-{
-    return m_pfrmMiniMap;
-}
-
 int Game::PlaySavedGame(Stream *pstm)
 {
 	// Overall, look at build version first
@@ -2037,7 +2004,7 @@ void Game::SavePreferences()
 	prefs.nVolume = gsndm.GetVolume();
 	prefs.wfPerfOptions = (gwfPerfOptions & kfPerfAll) | (kfPerfMax & ~kfPerfAll);
 	prefs.ctGameSpeed = gtGameSpeed;
-	prefs.fLassoSelection = gfLassoSelection ? 1 : 0;
+	prefs.fReserved1 = 0;
 	prefs.nHueOffset = gnHueOffset;
 	prefs.nSatMultiplier = gnSatMultiplier;
 	prefs.nLumOffset = gnLumOffset;
@@ -2125,10 +2092,6 @@ bool Game::SetVar(const char *pszName, const char *pszValue)
 {
 	Assert(*pszName != '$', "Setting of sysvars not allowed.");
 	return m_dictPvars.Set(pszName, pszValue);
-}
-
-void Game::GamePause(bool fpause) {
-    gsim.Pause(fpause);
 }
 
 } // namespace wi

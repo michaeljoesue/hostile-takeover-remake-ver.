@@ -406,14 +406,6 @@ void EventMgr::PostEvent(Event *pevt, bool fCoalesce)
 	m_cevt++;
 }
 
-void EventMgr::PostEvent(int eType, bool fCoalesce)
-{
-	Event evt;
-	memset(&evt, 0, sizeof(evt));
-	evt.eType = eType;
-	PostEvent(&evt);
-}
-
 void EventMgr::SetPenEventInterval(word ctInterval)
 {
 	// Set the interval at which we'll accept pen events per second. This prevents the OS
@@ -437,20 +429,6 @@ void EventMgr::SetPenEventInterval(word ctInterval)
 	// there will always be a new pen position available, at the cost of some event overhead.
 
 	m_ctMoveEventInterval = (m_nctMoveEventFraction + 16) >> 5;
-}
-
-void EventMgr::ClearAppStopping()
-{
-	// Swallow the appStopEvent if it exists. Eating events may set fAppStopping again
-	// so clear it constantly
-
-	Event evt;
-	while (GetEvent(&evt, 0, false))
-		m_fAppStopping = false;
-
-	// Shouldn't be needed but just in case it is set and GetEvent returns false
-
-	m_fAppStopping = false;
 }
 
 } // namespace wi

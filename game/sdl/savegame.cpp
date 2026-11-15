@@ -171,13 +171,6 @@ bool FindSaveGame(int nGame, char *psz, int cb, int *pc = NULL)
 	return false;
 }
 
-int HostGetSaveGameCount()
-{
-	int c;
-	FindSaveGame(-1, NULL, 0, &c);
-	return c;
-}
-
 bool HostGetSaveGameName(int nGame, char *psz, int cb, Date *pdate, int *pnHours24, int *pnMinutes, int *pnSeconds)
 {
 	// Find the game

@@ -3,112 +3,42 @@
 
 #include "base/criticalsection.h"
 #include "base/eventserver.h"
-#include "base/messagehandler.h"
-#include "base/log.h"
 #include "inc/basictypes.h"
 #include <string.h>
 
 namespace base {
 
-class MessageData {
-public:
-    MessageData() {}
-    virtual ~MessageData() {}
-};
-
-template<class T>
-class DisposeData : public MessageData {
-public:
-    DisposeData(T *data) : data_(data) { }
-    virtual ~DisposeData() { delete data_; }
-    T *data_;
-};
-
-struct Message;
+// The main thread's message queue. The SDL event server posts a message
+// here whenever native events are waiting; HostGetEvent pulls them off and
+// turns them into game Events.
 
 struct Message {
     Message() { memset(this, 0, sizeof(*this)); }
     int id;
-    int x;
-    int y;
     long ms;
-    dword ff;
-    long64 ctRate;
-    long64 tTrigger;
-    MessageData *data;
-    MessageHandler *handler;
     Message *pmsgNext;
 };
-#define kfMsgCoalesce 0x1
-#define kfMsgCancelMode 0x2
-#define kfMsgTimer 0x4
-const int kidmDispose = 0x7f00;
-
-// New base messages are negative to avoid colliding with game idm's defined in input.h.
-const int kidmNone = -1;
-const int kidmNullEvent = -2;
 
 class MessageQueue {
 public:
-    MessageQueue(EventServer *es = NULL);
+    MessageQueue(EventServer *es);
     virtual ~MessageQueue();
 
-    EventServer& es() { return *es_; }
-    void set_es(EventServer *es) { delete es_; es_ = es; }
-
-    virtual void Stop();
-    virtual bool IsStopping();
-    virtual bool Get(Message *pmsg, long64 ctWait = kctForever);
-    virtual void Post(Message *pmsg, int idCoalesce = -1, bool fEvenIfStopping = false);
-    virtual void Post(int id, MessageHandler *handler,
-            MessageData *data = NULL) {
+    void Stop();
+    bool Get(Message *pmsg, long64 ctWait = kctForever);
+    void Post(Message *pmsg);
+    void Post(int id) {
         Message msg;
         msg.id = id;
-        msg.handler = handler;
-        msg.data = data;
         Post(&msg);
-    }
-    virtual void PostDelayed(Message *pmsg, long ct, long ctBoost = 0);
-    virtual void PostDelayed(int id, MessageHandler *handler, long ct,
-                long ctBoost = 0) {
-        Message msg;
-        msg.id = id;
-        msg.handler = handler;
-        PostDelayed(&msg, ct, ctBoost);
-    }
-    virtual void PostTimer(int id, MessageHandler *handler, long ct,
-            long ctBoost = 0) {
-        Message msg;
-        msg.id = id;
-        msg.handler = handler;
-        msg.ff = kfMsgTimer;
-        PostDelayed(&msg, ct, ctBoost);
-    }
-    virtual void BoostTimer(int id, MessageHandler *handler, long ctBoost);
-    virtual void Clear(MessageHandler *handler = NULL, int id = kidmNone);
-    virtual void ClearDispose(MessageHandler *handler = NULL);
-    virtual void Dispatch(Message *pmsg);
-
-    // Nice helper to async-delete objects
-    template<class T> void Dispose(T *obj) {
-        if (FindDispose(obj)) {
-            LOG() << "error - disposing twice!";
-            return;
-        }
-        if (obj != NULL) {
-            Post(kidmDispose, NULL, new DisposeData<T>(obj));
-        }
     }
 
 private:
-    bool FindDispose(void *pv);
-    void ClearChain(Message **ppmsg, MessageHandler *handler, int id);
-    void InsertDelayedMessage(Message *pmsg);
+    void Clear();
 
     EventServer *es_;
     bool stop_;
     Message *pmsg_;
-    Message *pmsgDelayed_;
     CriticalSection crit_;
 };
 

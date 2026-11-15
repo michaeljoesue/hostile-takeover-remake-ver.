@@ -12,13 +12,6 @@ static std::chrono::steady_clock::duration ElapsedSinceStart() {
     return std::chrono::steady_clock::now() - s_start;
 }
 
-void GetTimeOfDay(int *sec, int *usec) {
-    long64 us = std::chrono::duration_cast<std::chrono::microseconds>(
-            ElapsedSinceStart()).count();
-    *sec = (int)(us / 1000000);
-    *usec = (int)(us % 1000000);
-}
-
 long64 GetTickCount() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
             ElapsedSinceStart()).count() / 10;
@@ -27,11 +20,6 @@ long64 GetTickCount() {
 long64 GetMillisecondCount() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
             ElapsedSinceStart()).count();
-}
-
-dword GetSecondsUnixEpocUTC() {
-    time_t t = time(NULL);
-    return (dword)t;
 }
 
 } // namespace base

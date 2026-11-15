@@ -164,8 +164,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 	if (puntc->panid == NULL)
 		return false;
 
-    InitFingerUIBounds(puntc);
-
 	// If they aren't already loaded, load the scorch marks
 
 	if (gaptbmScorches[0] == NULL) {
@@ -176,25 +174,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 	}
 
 	return true;
-}
-
-void UnitGob::InitFingerUIBounds(UnitConsts *puntc)
-{
-    // Finger UI Bounds inflates the UI bounds for finger hit testing
-
-    WRect wrc = puntc->wrcUIBounds;
-
-    // Make sure height is kwcTile * 4, then adjust width to keep aspect
-    // ratio the same
-
-    int cy = wrc.Height();
-    int cx = wrc.Width();
-    if (cy < kwcTile * 4) {
-        cy = kwcTile * 4;
-        cx = cx * cy * 64 / wrc.Height() / 64;
-    }
-    wrc.Inflate((cx - wrc.Width()) / 2, (cy - wrc.Height()) / 2);
-    puntc->wrcUIBoundsFinger = wrc;
 }
 
 void UnitGob::ExitClass(UnitConsts *puntc)
@@ -229,13 +208,6 @@ UnitGob::UnitGob(UnitConsts *puntc)
 	// Just to be clear this Unit hasn't notified anyone about being hit for awhile
 
 	m_cupdLastHitNotify = -1000000;
-    m_panispr = NULL;
-}
-
-UnitGob::~UnitGob()
-{
-    delete m_panispr;
-    m_panispr = NULL;
 }
 
 bool UnitGob::Init(IniReader *pini, FindProp *pfind, const char *pszName)
@@ -387,11 +359,6 @@ void UnitGob::Deactivate()
 	Select(false);
 	m_pplr->DecUnitCount(m_puntc->ut);
 	ClearDamageIndicator();
-
-    // Delete the highlight sprite
-
-    delete m_panispr;
-    m_panispr = NULL;
 }
 
 bool UnitGob::IsIdle()
@@ -475,17 +442,6 @@ void UnitGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer)
 			DrawHealthIndicator(pbm, &rcT, m_fxHealth,
                     m_puntc->GetArmorStrength());
 		}
-
-        // If this gob is hilighted, draw the hilight indicator
-        if (m_wfUnit & kfUnitHilighted) {
-            if (m_panispr != NULL) {
-                int xT = PcFromUwc(m_wx) - xViewOrigin;
-                int yT = PcFromUwc(m_wy) - yViewOrigin;
-                m_panispr->SetPosition(xT, yT);
-                m_panispr->SetScale((float)(kwcTile * 4) / (float)m_puntc->wrcUIBounds.Height());
-                m_panispr->CaptureFrame(this);
-            }
-        }
 	}
 }
 
@@ -597,10 +553,7 @@ void UnitGob::Select(bool fSelect)
 		if (!(m_ff & kfGobSelected)) {
 			return;
         }
-        m_ff &= ~kfGobSelected;
-        if ((m_wfUnit & kfUnitHilighted) == 0) {
-            m_ff &= ~kfGobLayerSelection;
-        }
+        m_ff &= ~(kfGobSelected | kfGobLayerSelection);
 	}
 	MarkRedraw();
 
@@ -609,40 +562,6 @@ void UnitGob::Select(bool fSelect)
 	TRect trc;
 	GetTileRect(&trc);
 	gpmm->RedrawTRect(&trc);
-}
-
-void UnitGob::Hilight(bool fHilight)
-{
-    if (fHilight) {
-        if (m_wfUnit & kfUnitHilighted) {
-            return;
-        }
-        m_wfUnit |= kfUnitHilighted;
-        m_ff |= kfGobLayerSelection;
-        m_panispr = CreateHilightSprite();
-
-        // Only need to do this so the sprite captures the current frame
-        MarkRedraw();
-    } else {
-        if (!(m_wfUnit & kfUnitHilighted)) {
-            return;
-        }
-        m_wfUnit &= ~kfUnitHilighted;
-        if ((m_ff & kfGobSelected) == 0) {
-            m_ff &= ~kfGobLayerSelection;
-        }
-        delete m_panispr;
-        m_panispr = NULL;
-    }
-}
-
-AnimSprite *UnitGob::CreateHilightSprite()
-{
-    AnimSprite *panispr = gpsprm->CreateAnimSprite();
-    if (panispr != NULL) {
-        panispr->SetPalette(gsim.GetLevel()->GetPalette());
-    }
-    return panispr;
 }
 
 void UnitGob::SetHealth(fix fxHealth)
@@ -1155,18 +1074,9 @@ void UnitMenu::SetOwner(UnitGob *punt, bool fPerUnitInit)
 	rcUIBounds.Offset(xPos, yPos);
 
 	// Set form size/position
-    // Put title on top of hilight sprite, if there is one.
 
 	Rect rcForm;
-    AnimSprite *panispr = punt->GetAnimSprite();
-    if (panispr != NULL) {
-        Rect rcSpriteBounds;
-        panispr->GetBounds(&rcSpriteBounds);
-        rcSpriteBounds.Offset(xPos, yPos);
-        rcForm.top = rcSpriteBounds.top - cyTitle - kcyHealthBar;
-    } else {
-        rcForm.top = rcUIBounds.top - cyTitle - kcyHealthBar;
-    }
+	rcForm.top = rcUIBounds.top - cyTitle - kcyHealthBar;
 	rcForm.bottom = rcUIBounds.bottom + cyButton;
 	int cxForm = _max(rcUIBounds.Width(), cxTitleWhole);
 	if (cxForm < cxButtons)

@@ -72,18 +72,6 @@ Player *PlayerMgr::GetNextPlayer(Player *pplr)
 	return NULL;
 }
 
-Player *PlayerMgr::GetNextHumanPlayer(Player *pplr)
-{
-	int i = pplr == NULL ? 0 : pplr->m_pid + 1;
-	pplr = &m_aplr[i];
-	for (; i < kcPlayersMax; i++, pplr++) {
-		if ((pplr->m_wf & (kfPlrInUse | kfPlrComputer)) == kfPlrInUse)
-			return pplr;
-	}
-
-	return NULL;
-}
-
 int PlayerMgr::GetPlayerCount()
 {
 	int cplr = 0;
@@ -493,11 +481,6 @@ void Player::AddPowerSupplyAndDemand(int nPowerSupply, int nPowerDemand)
 	}
 }
 
-void Player::SetName(const char *pszName)
-{
-	strncpyz(m_szName, (char *)pszName, sizeof(m_szName));
-}
-
 UnitMask Player::GetUnitMask()
 {
 	UnitMask um = 0;
@@ -537,20 +520,6 @@ int Player::GetUnitInstanceCountFromMask(UnitMask um)
 		}
 	}
 	return cUnits;
-}
-
-int Player::GetCreditsDirection()
-{
-	int nDir = m_nDirCredits;
-	m_nDirCredits = 0;
-	return nDir;
-}
-
-int Player::GetCreditsConsumer()
-{
-	int nConsumer = m_nConsumerCredits;
-	m_nConsumerCredits = knConsumerMax;
-	return nConsumer;
 }
 
 void Player::SetCredits(int nCredits, bool fAffectTotals, int nConsumer)

@@ -1,40 +1,6 @@
 #include "ht.h"
-#include "base/messagequeue.h"
 
 namespace wi {
-
-//#define TIME_STEPPER
-
-#ifdef TIME_STEPPER
-// This makes time "stop" when in the debugger
-class TimeStepper : public base::MessageHandler {
-public:
-    TimeStepper() : m_ct(0), m_fInitialized(false) {}
-
-    long GetTickCount() {
-        if (!m_fInitialized) {
-            OneShot();
-            m_fInitialized = true;
-        }
-        return m_ct;
-    }
-
-private:
-    void OneShot() {
-        base::Message msg;
-        msg.handler = this;
-        thread_.PostDelayed(&msg, 1);
-    }
-
-    virtual void OnMessage(base::Message *pmsg) {
-        m_ct++;
-        OneShot();
-    }
-
-    long m_ct;
-    bool m_fInitialized;
-};
-#endif
 
 TimerMgr::TimerMgr()
 {
@@ -52,14 +18,7 @@ TimerMgr::~TimerMgr()
 
 long TimerMgr::GetTickCount()
 {
-#ifdef TIME_STEPPER
-    // Makes time stop while in the debugger, for easier debugging
-
-    static TimeStepper stepper;
-    return stepper.GetTickCount();
-#else
 	return HostGetTickCount();
-#endif
 }
 
 long TimerMgr::ScanDispatch(long tCurrent)
@@ -210,19 +169,8 @@ void TimerMgr::SetTimerRate(Timer *ptmr, long ct)
 	m_fForceScan = true;
 }
 
-void TimerMgr::BoostTimer(Timer *ptmr, long ct) {
-    ptmr->m_tTrigger += ct;
-	m_fForceScan = true;
-}
-
 // Force this timer to be dispatched at the next call to TimerMgr::ScanDispatch 
 // (presumably by EventMgr::GetEvent)
-
-void TimerMgr::TriggerTimer(Timer *ptmr)
-{
-	ptmr->m_tTrigger = GetTickCount();
-	m_fForceScan = true;
-}
 
 bool TimerMgr::IsAdded(Timer *ptmr)
 {

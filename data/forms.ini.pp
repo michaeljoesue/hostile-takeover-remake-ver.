@@ -11,11 +11,6 @@
 	FORM=(0 0 160 68) kidcOk
 	FORMBACKCOLOR=kiclrFormBackground
 	BUTTON=kidcMenuButton (0 0 23 7) "" kifntButton nocenter menuup.tbm menudown.tbm
-	GRAFFITISCROLL=kidcGraffitiScroll (0 9 0 0) 4
-	SILKBUTTON=kidcAppsSilkButton (0 0 0 0)
-	SILKBUTTON=kidcMenuSilkButton (0 0 0 0)
-	SILKBUTTON=kidcCalcSilkButton (0 0 0 0)
-	SILKBUTTON=kidcFindSilkButton (0 0 0 0)
 	POWER=kidcPower (86 0 40 0)
 	CREDITS=kidcCreditsLabel (40 0 40 0)
 
@@ -53,7 +48,6 @@
 	LABEL=0 (11 56 68 0) "Scroll Speed" kifntShadow
 	SLIDER=kidcScrollSpeed (11 70 95 8)
 	LABEL=kidcScrollSpeedLabel (121 70 17 0) "0" kifntShadow right
-	CHECKBOX=kidcLassoSelection (11 62 67 0) "Lasso Selection" kifntShadow
 	LABEL=0 (11 89 68 0) "Difficulty" kifntShadow
 	CHECKBOX=kidcEasy (11 99 67 0) "Easy" kifntShadow
 	CHECKBOX=kidcNormal (11 109 67 0) "Normal" kifntShadow
@@ -153,9 +147,7 @@
 	CHECKBOX=kidcGodMode (2 60 50 0) "God mode" kifntShadow
 	CHECKBOX=kidcSuspendUpdates (2 69 81 0) "Suspend Updates" kifntShadow
 	CHECKBOX=kidcAutosave (2 78 81 0) "Autosave" kifntShadow
-	CHECKBOX=kidcDrawUpdateRects (2 87 70 0) "Draw Update Rects" kifntShadow
-	CHECKBOX=kidcStylusUI (2 96 56 0) "Stylus UI" kifntShadow
-	CHECKBOX=kidcShowStats (2 96 56 0) "Show stats" kifntShadow
+	CHECKBOX=kidcShowStats (2 87 56 0) "Show stats" kifntShadow
 	BUTTON=kidcClearFog (104 14 54 12) "Clear Fog" kifntButton
 	BUTTON=kidcMemoryUse (104 30 54 12) "Memory..." kifntButton
 	BUTTON=kidcHelp (104 46 54 12) "Help" kifntButton
@@ -438,13 +430,6 @@
 	LABEL=kidcMessage (6 15 128 8) "Message" kifntShadow center multiline
 	BUTTON=kidcOk (44 32 54 12) "OK" kifntButton
 
-[kidfMessageBoxQuery]
-	FORM=(0 0 140 50) kidcOk center
-	LABEL=kidcTitle (61 2 18 0) "Title" kifntTitle center
-	LABEL=kidcMessage (6 15 128 8) "Message" kifntShadow center multiline
-	BUTTON=kidcOk (10 32 54 12) "Yes" kifntButton
-	BUTTON=kidcCancel (74 32 54 12) "No" kifntButton
-
 [kidfLoadGame]
 	FORM=(0 0 160 160) kidcCancel center
 	FORMBACKCOLOR=kiclrFormBackground
@@ -511,16 +496,6 @@
 [kidfGobCount]
 	FORM=(0 0 160 160) kidcOk center
 	FORMBACKCOLOR=kiclrFormBackground
-
-[kidfInputPanel]
-	FORM=(0 0 160 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (42 6 77 0) "INPUT PANEL" kifntTitle center
-	LABEL=kidcInputLabel (2 18 52 0) "???" kifntShadow
-	EDIT=kidcInputEdit (48 18 110 0) "???" kifntShadow
-	BUTTON=kidcBackspace (121 118 34 14) "<--" kifntTitle
-	BUTTON=kidcOk (32 139 40 12) "OK" kifntButton
-	BUTTON=kidcCancel (88 139 40 12) "CANCEL" kifntButton
 
 [kidfLoading]
 	FORM=(0 0 80 25) kidcCancel center

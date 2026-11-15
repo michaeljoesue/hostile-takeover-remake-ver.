@@ -109,12 +109,6 @@ namespace m
 			return new Size(ptView.X, ptView.Y);
 		}
 
-		Size ViewToWorldSize(Size sizView) {
-			Point ptView = new Point(sizView.Width, sizView.Height);
-			Point ptWorld = ViewToWorld(ptView);
-			return new Size(ptWorld.X, ptWorld.Y);
-		}
-
 		void InitPosition() {
 			int txWorld = m_lvld.Bounds.X - 1;
 			if (txWorld < 0)

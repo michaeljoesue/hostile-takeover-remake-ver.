@@ -40,8 +40,6 @@
 #define kidfDisplayOptions 1052
 #define kidfPerformanceOptions 1053
 #define kidfGobCount 1054
-#define kidfMessageBoxQuery 1058
-#define kidfInputPanel 1059
 #define kidfLoading 1061
 #define kidfSelectMissionWide 1069
 #define kidfHelpWide 1072
@@ -128,11 +126,6 @@
 // InputUIForm constants
 
 #define kidcMenuButton 1002
-#define kidcGraffitiScroll 1012
-#define kidcAppsSilkButton 1013
-#define kidcMenuSilkButton 1014
-#define kidcCalcSilkButton 1015
-#define kidcFindSilkButton 1016
 #define kidcCreditsLabel 1018
 #define kidcPower 1019
 
@@ -158,7 +151,6 @@
 #define kidcMaxRepaint 1009
 #define kidcAutosave 1010
 #define kidcMemoryUse 1011
-#define kidcDrawUpdateRects 1013
 //#define kidcGraphStats 1014
 #define kidcGodMode 1015
 //#define kidcFlashEnemyTargets 1016
@@ -169,7 +161,6 @@
 #define kidcBack 1021
 #define kidcGobCount 1022
 #define kidcBreak 1023
-#define kidcStylusUI 1024
 #define kidcMoveIndicator 1025
 #define kidcHoldSelect 1026
 
@@ -309,7 +300,6 @@
 
 #define kidcGameSpeed 1201
 #define kidcGameSpeedLabel 1202
-#define kidcLassoSelection 1003
 #define kidcEasy 1004
 #define kidcNormal 1005
 #define kidcHard 1006
@@ -354,15 +344,6 @@
 #define kidcEnemyDamageIndicator 1008
 #define kidcScorchMarks 1009
 #define kidcSymbolFlashing 1010
-
-// Input Panel / Key entry
-
-#define kidcBackspace 1026
-
-// Input Panel
-
-#define kidcInputLabel 1010
-#define kidcInputEdit 1011
 
 // Colors
 

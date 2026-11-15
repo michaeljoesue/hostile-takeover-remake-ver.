@@ -346,10 +346,6 @@ namespace m
 			}
 		}
 
-		private void mniDelete_Click(object sender, System.EventArgs e) {
-			MessageBox.Show("Coming soon...");
-		}
-
 		private void mniFind_Click(object sender, System.EventArgs e) {
 			FindLevelTextForm frm = new FindLevelTextForm(richTextBox1);
 			frm.Owner = this;

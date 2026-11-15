@@ -133,28 +133,6 @@ bool FogMap::SaveState(Stream *pstm)
 	return pstm->IsSuccess();
 }
 
-bool FogMap::IsCovered(TRect *ptrc)
-{
-    TRect trcMap;
-    trcMap.left = 0;
-    trcMap.top = 0;
-    trcMap.right = m_ctxMap;
-    trcMap.bottom = m_ctyMap;
-    TRect trcT = *ptrc;
-    if (!trcT.Intersect(&trcT, &trcMap)) {
-        return false;
-    }
-
-    for (int ty = trcT.top; ty < trcT.bottom; ty++) {
-        for (int tx = trcT.left; tx < trcT.right; tx++) {
-            byte bFog = m_pbMap[ty * m_ctxMap + tx] & kbfFogMask;
-            if (bFog != 0) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
         
 void FogMap::RevealAll(UpdateMap *pupd)
 {
@@ -537,21 +515,6 @@ int FogMap::GetGalaxite(TCoord tx, TCoord ty)
 
 
 	return nGx;
-}
-
-void FogMap::IncGalaxite(TCoord tx, TCoord ty)
-{
-	Assert(tx >= 0 && ty >= 0 && tx < m_ctxMap && ty < m_ctyMap);
-
-	byte *pb = &m_pbMap[(ty * m_ctxMap) + tx];
-	*pb = (*pb & ~kbfGalaxiteMask) | (s_abGxInc[(*pb & kbfGalaxiteMask) >> kcGalaxiteShift] << kcGalaxiteShift);
-
-	// Cause this tile to redraw
-
-	if (gptrcMapOpaque == NULL || !gptrcMapOpaque->PtIn(tx, ty))
-		gpupdSim->InvalidateTile(tx, ty);
-	if (gpmm != NULL)
-		gpmm->RedrawTile(tx, ty);
 }
 
 bool FogMap::DecGalaxite(TCoord tx, TCoord ty)

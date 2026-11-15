@@ -8,9 +8,6 @@ const int kcUpdateCost = 3; //TUNE: - credits of upgrade per update
 class UpgradeForm : public Form
 {
 public:
-	ResearchGob *GetOwner() {
-		return m_pgobOwner;
-	}
 	void SetOwner(ResearchGob *pgobOwner);
 	void UpdateUpgradeInfo(ListItem *pli);
 

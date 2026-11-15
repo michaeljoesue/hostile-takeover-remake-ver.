@@ -4,10 +4,7 @@
 namespace wi {
 
 enum {
-    kidmAnimationTimer = 1,
-    kidmDestroyAfterAnimation,
-    kidmSdlEvent,
-    kidmUser = 0x400
+    kidmSdlEvent = 1
 };
 
 } // namespace wi

@@ -38,7 +38,6 @@ void DoAssertRip(int fAssert) secRip;
 void DoAssertRip(char *psz, ...) secRip;
 void DoAssertRip() secRip;
 void Break() secRip;
-void dprintf(const char *psz, ...);
 
 #define Assert   wi::gpszRipFile = __XYZFILE, wi::giRipLine = __XYZLINE, ::wi::DoAssertRip
 
@@ -51,7 +50,6 @@ inline void DoConditionalRip(int, ...) { }
 inline void DoConditionalRip(char *psz, ...) { }
 inline void DoConditionalRip() { }
 inline void Break() { }
-inline void dprintf(const char *psz, ...) { }
 
 #define Assert 1 ? (void)0 : ::wi::DoConditionalRip
 

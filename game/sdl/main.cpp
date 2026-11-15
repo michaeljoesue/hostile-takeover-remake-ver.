@@ -11,9 +11,6 @@ int main(int argc, char *argv[])
     // The game runs on this thread. SDL events wake up its message queue.
     base::Thread *main_thread = new base::Thread(new wi::SdlEventServer());
 
-    // Let the host have a pointer to the thread
-    wi::HostSetGameThread(main_thread);
-
     // -pdb <mission pack> and -l <level>, e.g. from the map editor's Run
     wi::HostSetCommandLine(argc, argv);
 

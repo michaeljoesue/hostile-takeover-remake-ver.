@@ -944,15 +944,6 @@ void MultiFormMgr::DrawFrame(bool fForceBackBufferValid, bool fPaint)
 	// Save avi frame
 
 
-	// Draw update rects
-
-#ifdef DRAW_UPDATERECTS
-	if (gfDrawUpdateRects) {
-		for (int n = 0; n < m_cfrmm; n++)
-			DrawUpdateRects(m_apfrmm[n]->GetUpdateMap(), m_arcFormMgr[n].top);
-	}
-#endif
-
 	// Validate updatemaps
 
 	m_pupd->Validate();
@@ -966,25 +957,6 @@ void MultiFormMgr::DrawFrame(bool fForceBackBufferValid, bool fPaint)
 		m_apfrmm[n]->FrameComplete();
     }
 }
-
-#ifdef DRAW_UPDATERECTS
-void MultiFormMgr::DrawUpdateRects(UpdateMap *pupd, int yTop)
-{
-	// Draw update rects
-
-	if (gfDrawUpdateRects) {
-		for (int n = 0; n < m_cfrmm; n++) {
-			bool fFirst = true;
-			Rect rc;
-			while (pupd->EnumUpdateRects(fFirst, NULL, &rc)) {
-				fFirst = false;
-				rc.Offset(0, yTop);
-				gpdisp->DrawFrameInclusive(&rc);
-			}
-		}
-	}
-}
-#endif
 
 void MultiFormMgr::InvalidateRect(Rect *prc)
 {
@@ -1017,16 +989,6 @@ void MultiFormMgr::CheckSetRedrawDirty()
 			return;
 		}
 	}
-}
-
-bool MultiFormMgr::IsInvalid()
-{
-	for (int n = 0; n < m_cfrmm; n++) {
-		if (m_apfrmm[n]->GetUpdateMap()->IsInvalid()) {
-            return true;
-		}
-	}
-    return false;
 }
 
 #ifdef STATS_DISPLAY

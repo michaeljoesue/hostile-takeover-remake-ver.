@@ -13,7 +13,6 @@ namespace m
 	{
 		private static string s_strLastFind = "";
 		private RichTextBox m_rtb;
-		private int m_ichLastFind;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Button btnFind;
 		private System.Windows.Forms.Button btnCancel;
@@ -35,7 +34,6 @@ namespace m
 			m_rtb = rtb;
 			tbcFind.Text = s_strLastFind;
 			btnFind.Enabled = tbcFind.Text != "";
-			m_ichLastFind = m_rtb.SelectionStart + m_rtb.SelectionLength;
 		}
 
 		/// <summary>

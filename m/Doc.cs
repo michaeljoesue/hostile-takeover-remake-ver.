@@ -40,10 +40,6 @@ namespace m
 			s_alsTemplates.Add(doct);
 		}
 
-		public static void RemoveTemplate(DocTemplate doct) {
-			s_alsTemplates.Remove(doct);
-		}
-
 		public static DocTemplate FindDocTemplate(Type type) {
 			foreach (DocTemplate doct in s_alsTemplates) {
 				if (doct.GetDocumentType() == type)
@@ -335,10 +331,6 @@ namespace m
 			m_fModified = false;
 			m_fIniting = true;
 			m_cOpen = 0;
-		}
-
-		public DocTemplate GetDocTemplate() {
-			return m_doct;
 		}
 
 		public virtual void InitDone() {

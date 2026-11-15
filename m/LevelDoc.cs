@@ -260,10 +260,6 @@ namespace m {
 				ImageChanged();
 		}
 
-		public void Refresh() {
-			m_fUpdateDirty = true;
-		}
-
 		void TemplateDocTemplate_DocActiveHandler(Document doc) {
 			// TemplateDocs get loaded and activated during LevelDoc
 			// deserialization. We don't want to change the template doc
@@ -752,48 +748,6 @@ namespace m {
 				}
 			}
 			return aterMap;
-		}
-
-		public TerrainColors[,] GetTerrainColorsMap(Size sizTile, TemplateDoc tmpd) {
-			TerrainColors[,] atclrMap = new TerrainColors[Bounds.Height * 2, Bounds.Width * 2];
-			foreach (IMapItem mi in m_alsmi) {
-				Tile tile = mi as Tile;
-				if (tile == null)
-					continue;
-				int x = (int)mi.tx * sizTile.Width;
-				int y = (int)mi.ty * sizTile.Height;
-				Rectangle rc = tile.GetBoundingRectAt(x, y, sizTile, m_tmpd);
-				rc.Width /= sizTile.Width;
-				rc.Height /= sizTile.Height;
-				rc.X /= sizTile.Width;
-				rc.Y /= sizTile.Height;
-				rc.Intersect(Bounds);
-
-				for (int ty = rc.Y - (int)tile.ty; ty < rc.Bottom - (int)tile.ty; ty++) {
-					for (int tx = rc.X - (int)tile.tx; tx < rc.Right - (int)tile.tx; tx++) {
-						if (tile.Visibility == null || tile.Visibility[ty, tx]) {
-							Template tmpl = tile.GetTemplate(m_tmpd);
-
-							// Maybe this template doesn't exist in document's current tile collection
-
-							if (tmpl == null)
-								continue;
-
-							// TerrainColors are a 2x2 subgrid inside each tile
-
-							for (int tyT = 0; tyT < 2; tyT++) {
-								for (int txT = 0; txT < 2; txT++) {
-									TerrainColors tclr = TerrainColors.Grass;
-									if (tmpl.TerrainColors != null)
-										tclr = tmpl.TerrainColors[ty * 2 + tyT, tx * 2 + txT];
-									atclrMap[(ty + (int)tile.ty - Bounds.Y) * 2 + tyT, (tx + (int)tile.tx - Bounds.X) * 2 + txT] = tclr;
-								}
-							}
-						}
-					}
-				}
-			}
-			return atclrMap;
 		}
 
 		//

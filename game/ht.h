@@ -41,9 +41,6 @@ namespace wi {
 // <broken>
 //#define STATS_DISPLAY
 
-// Draw rects around invalid tiles
-#define DRAW_UPDATERECTS
-
 // Maintain and check a ring buffer of old allocs
 #endif // defined(DEV_BULD)
 
@@ -65,12 +62,10 @@ namespace wi {
 #include "mpshared/ini.h"
 #include "mpshared/decompress.h"
 #include "game/missionlist.h"
-#include "game/dragrect.h"
 #include "base/thread.h"
 
 namespace wi {
 
-class RefMap;
 
 typedef void *FileHandle;	// hf
 typedef word CacheHandle; // hc
@@ -169,13 +164,11 @@ public:
 	void AddTimer(Timer *ptmr, long ct);
 	void RemoveTimer(Timer *ptmr);
 	void SetTimerRate(Timer *ptmr, long ct);
-    void BoostTimer(Timer *ptmr, long ct);
 	long ScanDispatch(long tCurrent);
 	virtual long GetTickCount();
 	void Enable(bool fEnable) {
 		m_fEnabled = fEnable;
 	}
-	void TriggerTimer(Timer *ptmr);
     bool IsAdded(Timer *ptmr);
 
 private:
@@ -206,59 +199,6 @@ private:
 	friend class TimerMgr;
 };
 
-// CONSIDER: add id to Timer instead
-
-class ITimeout {
-public:
-	virtual void OnTimeout(int id) = 0;
-};
-
-class TimeoutTimer : public Timer {
-public:
-	TimeoutTimer();
-
-	~TimeoutTimer() {
-		if (m_ptimo != NULL) {
-			Stop();
-        }
-	}
-
-	void Start(ITimeout *ptimo, int cms, int id = 0, bool fOneShot = true) {
-		if (m_ptimo != NULL) {
-			Stop();
-        }
-        m_id = id;
-		m_fOneShot = fOneShot;
-		m_ptimo = ptimo;
-		gtimm.AddTimer(this, cms / 10);
-	}
-
-	void Stop() {
-		if (m_ptimo == NULL) {
-			return;
-        }
-		gtimm.RemoveTimer(this);
-		m_ptimo = NULL;
-	}
-
-    bool IsStarted() {
-        return m_ptimo != NULL;
-    }
-
-	virtual void OnTimer(long tCurrent) {
-		ITimeout *ptimo = m_ptimo;
-		if (m_fOneShot) {
-			Stop();
-        }
-		ptimo->OnTimeout(m_id);
-	}
-
-private:
-	ITimeout *m_ptimo;
-	bool m_fOneShot;
-    int m_id;
-};
-
 // Point
 
 struct Point // pt
@@ -280,7 +220,6 @@ public:
 	int bottom;
 
 	bool Intersect(Rect *prcSrc1, Rect *prcSrc2);
-	void Set(Point pt1, Point pt2);
 	bool Subtract(Rect *prcSrc1, Rect *prcSrc2);
 	void Add(Rect *prcSrc1, Rect *prcSrc2);
 	void FromWorldRect(WRect *pwrc);
@@ -359,7 +298,6 @@ struct Palette // pal
 } // namespace wi
     
 #include <htplatform.h>
-#include "game/sprite.h"
 #include "soundeffects.h"
 #include "mpshared/packfile.h"
 #include <rip.h>
@@ -517,10 +455,6 @@ inline WCoord WcTrunc(WCoord wc) {
 	return wc & 0xff00;
 }
 
-inline WCoord WcFrac(WCoord wc) {
-	return wc & 0x00ff;
-}
-
 inline int PcFromTc(TCoord tc) {
 	return PcFromWc(WcFromTc(tc));
 }
@@ -571,12 +505,6 @@ struct TRectSmall
 			tyBottom = ptrc->tyBottom;
 	}
 
-	void Offset(char tx, char ty) {
-		txLeft += tx;
-		tyTop += ty;
-		txRight += tx;
-		tyBottom += ty;
-	}
 };
 
 
@@ -768,11 +696,6 @@ public:
 		return (int)m_atbe[0].yBaseline;
 	}
 
-	int GetBaseline(int itbm) {
-		Assert(itbm >= 0 && itbm < m_ctbm);
-		return (int)m_atbe[itbm].yBaseline;
-	}
-
 	void SetShared() {
 		m_wf |= kfTbShared;
 	}
@@ -863,10 +786,6 @@ public:
 
 	void SetLineOverlap(int nLineOverlap) {
 		m_nLineOverlap = nLineOverlap;
-	}
-
-	int GetGlyphOverlap() {
-		return m_nGlyphOverlap;
 	}
 
 	int GetLineOverlap() {
@@ -998,7 +917,6 @@ public:
 	bool Init(Size *psizTile, Size *psizMap);
 	bool LoadState(Stream *pstm);
 	bool SaveState(Stream *pstm);
-    bool IsCovered(TRect *ptrc);
 	void RevealAll(UpdateMap *pupd);
 	void Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap *pupd, WCoord wxView, WCoord wyView);
 	void Reveal(TRect *ptrc, UpdateMap *pupd, WCoord wxView, WCoord wyView);
@@ -1014,7 +932,6 @@ public:
 	int GetGalaxite(TCoord tx, TCoord ty);
 	void SetGalaxite(int nGx, TCoord tx, TCoord ty);
 	bool DecGalaxite(TCoord tx, TCoord ty);
-	void IncGalaxite(TCoord tx, TCoord ty);
 	bool FindNearestGalaxite(TCoord tx, TCoord ty, TPoint *ptpt, bool fIgnoreFog);
 
 	// Wall methods
@@ -1079,7 +996,6 @@ public:
 	bool Init(Path *ppath, TCoord txFrom, TCoord tyFrom, int itptStart, int ctptFurtherStop);
 	void InitFrom(TrackPoint *ptrkp);
 	bool IsProgress(TrackPoint *ptrkpA);
-	bool IsCloser(TrackPoint *ptrkpA);
 	bool IsBetterSort(TrackPoint *ptrkpA);
 	void GetClosestPoint(TPoint *ptpt) {
 		*ptpt = m_tptClosest;
@@ -1119,10 +1035,6 @@ public:
 	int FindClosestPoint(TCoord txFrom, TCoord tyFrom, int itptStart, int ctptFurtherStop, TPoint *ptptClosest);
 	bool LoadState(TerrainMap *ptrmap, Stream *pstm);
 	bool SaveState(Stream *pstm);
-	bool Append(Path *ppath);
-	bool TrimEnd(int itptStart);
-	Path *Clone();
-	void GetStartPoint(TPoint *ptpt);
 #ifdef DRAW_PATHS
 	void Draw(DibBitmap *pbm, int xView, int yView, Side side);
 #endif
@@ -1246,10 +1158,6 @@ public:
 		return cDelay;
 	}
 
-	byte GetFlags() {
-		return bfFlags;
-	}
-
 	word GetFrameCount() {
 		return BigWord(cfrmd);
 	}
@@ -1278,7 +1186,6 @@ public:
 	int GetStripCount();
 	int GetFrameCount(int nStrip);
 	int GetStripIndex(const char *pszStripName);
-	void GetFrameOrigin(int nStrip, int nFrame, Point *pptOrigin);
 	void GetSpecialPoint(int nStrip, int nFrame, Point *pptSpecial);
 	void GetBounds(int nStrip, int nFrame, Rect *prc);
 	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL);
@@ -1320,20 +1227,11 @@ public:
 	bool LoadState(Stream *pstm);
 	bool SaveState(Stream *pstm);
 
-	void Stop() {
-		m_wf |= kfAniDone;
-	}
-
-	bool IsDone() {
-		return (m_wf & kfAniDone) != 0;
-	}
-
 	void SetStrip(int nStrip) {
 		Assert(nStrip >= 0 && nStrip < m_panid->GetStripCount());
 		m_nStrip = nStrip;
 	}
 
-	void SetStrip(const char *pszStripName);
 
 	int GetStrip() {
 		return m_nStrip;
@@ -1346,10 +1244,6 @@ public:
 
 	int GetFrame() {
 		return m_nFrame;
-	}
-
-	void SetDelay(int cDelay) {
-		m_cDelay = cDelay;
 	}
 
 	void GetSpecialPoint(Point *pptSpecial, int nFrame = -1) {
@@ -1404,7 +1298,6 @@ struct Event { // evt
     dword ff;
     long ms;
 };
-#define kfEvtFinger 0x00000001
 #define kfEvtCoalesce 0x00000002
 
 // Custom events
@@ -1459,11 +1352,9 @@ public:
 	bool PeekEvent(Event *pevt, long cWait = 0);
 	bool GetEvent(Event *pevt, long cWait = -1, bool fCheckPaints = true);
 	void PostEvent(Event *pevt, bool fCoalesce = true);
-	void PostEvent(int eType, bool fCoalesce = true);
 	bool DispatchEvent(Event *pevt);
 	void Init();
 	void SetPenEventInterval(word ctInterval);
-	void ClearAppStopping();
     bool GetFlickVector(int nPen, FlickVector *pfliv);
 
 	void SetAppStopping() {
@@ -1750,7 +1641,6 @@ public:
 	void SendMsg(MessageId mid, StateMachineId smidReceiver);
 	void SendMsg(MessageId mid, StateMachineId smidSender, StateMachineId smidReceiver);
 	void SendMsg(Message *pmsg);
-	void PostMsg(Message *pmsg);
 	void PostMsg(MessageId mid, StateMachineId smidSender, StateMachineId smidReceiver);
 	void SendDelayedMsg(Message *pmsg, long tDelay);
 	void SendDelayedMsg(MessageId mid, long tDelay, StateMachineId smidSender, StateMachineId smidReceiver);
@@ -1827,7 +1717,6 @@ public:
 	void Clear();
 	const char *Get(const char *pszName);
 	bool Set(const char *pszName, const char *pszValue);
-	bool Remove(const char *pszName);
 	bool LoadState(Stream *pstm);
 	bool SaveState(Stream *pstm);
 
@@ -1869,7 +1758,6 @@ public:
 	void RequestModeChange(int imm);
 	SimUIForm *GetSimUIForm();
 	InputUIForm *GetInputUIForm();
-    Form *GetMiniMapForm();
 	void SaveGame(Stream *pstm = NULL);
 	char *GetNextLevel();
 	void SetNextLevel(char *pszLevel);
@@ -1888,7 +1776,6 @@ public:
 	void ParseVersion(char *pszVersion, int *pnShipVersion, int *pnMajorVersion, char *pchMinorVersion);
 	bool CheckDatabaseVersion(const char *pszDir, char *pszPdb,
             bool fUpwardCompatOK);
-    void GamePause(bool fpause);
 
 	// ModeMatch helpers
 
@@ -1906,10 +1793,6 @@ public:
 
 	void GetModeMatch(int imm, ModeMatch *pmm) {
 		*pmm = m_amm[imm];
-	}
-
-	word GetFlags() {
-		return m_wf;
 	}
 
     const MissionIdentifier& GetLastMissionIdentifier() {
@@ -2025,11 +1908,6 @@ public:
 	void StartMergeDamagedInvalid();
 	void EndMergeDamagedInvalid();
 
-	bool IsDamagedInvalid()
-	{
-		return m_fInvalidDamage;
-	}
-
 	bool IsRectInvalid(Rect *prc)
 	{
 		TRectSmall trc;
@@ -2132,10 +2010,6 @@ public:
 	word GetFlags() {
 		return m_wf;
 	}
-	int GetFormCount() {
-		return m_cfrm;
-	}
-
 protected:
     Form *FindPen2Form();
 	bool CookPenEvent(Event *pevt);
@@ -2173,7 +2047,6 @@ public:
 	void RemoveFormMgr(FormMgr *pfrmm);
 	void DrawFrame(bool fForceBackBufferValid, bool fPaint = true);
 	void CheckSetRedrawDirty();
-    bool IsInvalid();
 	bool GetFormMgrRect(FormMgr *pfrmm, Rect *prc);
 
 #ifdef STATS_DISPLAY
@@ -2191,9 +2064,6 @@ public:
 	virtual Form *GetFocus();
 
 private:
-#ifdef DRAW_UPDATERECTS
-	void DrawUpdateRects(UpdateMap *pupd, int yTop);
-#endif
 	virtual bool BltTo(DibBitmap *pbmDst, int yTop, bool fScrolled);
     bool StealCapturePen2(Event *pevt, FormMgr *pfrmmChildCapture);
 
@@ -2274,21 +2144,12 @@ public:
 	void EndForm(int nResult = 0);
 	Control *GetControlPtr(word idc);
 	bool IsControlInside(Control *pctl);
-	bool AddControl(Control *pctl);
 	void SetUserDataPtr(void *pUserData);
 	void *GetUserDataPtr();
     Form *FindPen2Form();
 
-    bool HasCapture() {
-        return m_pfrmm->GetFormCapture() == this;
-    }
-
     Control *GetControlCapture() {
         return m_pctlCapture;
-    }
-
-    int GetResult() {
-        return m_nResult;
     }
 
 protected:
@@ -2406,7 +2267,6 @@ private:
 	void InitResettableControls();
 	void UpdateLabels();
 
-	bool m_fLassoSelection;
 	long m_tGameSpeed;
 	word m_wfHandicap;
     double m_nScrollSpeed;
@@ -2440,7 +2300,6 @@ public:
 	virtual void OnSelect(int nSelect);
     virtual int OnHitTest(Event *pevt);
 	virtual void Invalidate();
-    virtual void GetFingerRect(Rect *prc);
     virtual void OnBreakCapture();
 
 	word GetId();
@@ -2450,7 +2309,6 @@ public:
 	void Show(bool fShow);
 	word GetFlags();
 	void SetFlags(word wf);
-	void SetEventHandler(IControlEventHandler *pceh);
 	void Enable(bool fEnable);
 
 protected:
@@ -2462,10 +2320,6 @@ protected:
 
 	friend class Form;
 };
-
-inline void Control::SetEventHandler(IControlEventHandler *pceh) {
-	m_pceh = pceh;
-}
 
 // Button Control
 
@@ -2530,19 +2384,6 @@ private:
     const char *m_apszLabels[20];
 };
 
-class SilkButtonControl : public Control
-{
-public:
-	~SilkButtonControl();
-
-public:
-	virtual void OnSelect(int nSelect);
-};
-
-inline SilkButtonControl::~SilkButtonControl() {
-}
-
-
 // Checkbox Control
 
 class CheckBoxControl : public Control // cbox
@@ -2597,7 +2438,6 @@ public:
 	virtual int OnHitTest(Event *pevt);
 
 	virtual void SetText(const char *psz);
-	const char *GetText();
 
 protected:
 	virtual void CalcRect();
@@ -2605,10 +2445,6 @@ protected:
 	char *m_szLabel;
 	int m_nfnt;
 };
-
-inline const char *LabelControl::GetText() {
-	return m_szLabel;
-}
 
 class EcomTextControl : public LabelControl // ect
 {
@@ -2744,28 +2580,6 @@ private:
 void Help(const char *pszAnchor = NULL, bool fPauseSimulation = false, const char *pszFile = NULL);
 void CutScene(const char *pszScene, bool fPauseSimulation);
 
-// Edit Control
-
-class EditControl : public Control // edc
-{
-public:
-	EditControl();
-	~EditControl();
-
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
-	virtual void OnPaint(DibBitmap *pbm);
-
-	void SetText(const char *psz);
-	void GetText(char *psz, int cb);
-
-private:
-	char m_szText[100];
-	int m_nfnt;
-};
-
-inline EditControl::~EditControl() {
-}
-
 // List Control
 
 #define kfLstcBorder 0x8000
@@ -2788,7 +2602,6 @@ public:
 	ListControl();
 	virtual ~ListControl();
 
-    Font *GetFont();
 	void Clear();
 	bool Add(ListItem *pli);
 	bool Add(const char *psz, void *pvData = NULL);
@@ -2796,9 +2609,6 @@ public:
 	int GetSelectedItemIndex();
 	ListItem *GetSelectedItem();
 	void *GetSelectedItemData();
-	void SetSelectedItemData(void *pvData);
-	bool GetSelectedItemText(char *psz, int cb);
-	bool SetSelectedItemText(const char *psz);
 	void Select(int iItem, bool fOnly = false, bool fMakeCenter = false);
 	int GetCount();
     void SetTabStops(int x0, int x1 = -1, int x2 = -1, int x3 = -1);
@@ -2946,25 +2756,6 @@ private:
 inline SliderControl::~SliderControl() {
 };
 
-class GraffitiScrollControl : public Control // grfs
-{
-public:
-	GraffitiScrollControl();
-	bool IsPainting();
-
-	virtual void OnPenEvent(Event *pevt);
-	virtual void OnPaint(DibBitmap *pbm);
-	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
-
-private:
-	int m_nScale;
-	int m_xDragStart;
-	int m_yDragStart;
-	WCoord m_wxViewStart;
-	WCoord m_wyViewStart;
-	bool m_fFrame;
-};
-
 // MiniMap Control
 
 #define kfMmVertBorderInside 1
@@ -2978,7 +2769,6 @@ public:
 	MiniMapControl();
 	virtual ~MiniMapControl();
 
-    virtual int OnHitTest(Event *pevt);
 	virtual void OnPaint(DibBitmap *pbm);
 	virtual void OnPenEvent(Event *pevt);
 	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
@@ -3146,11 +2936,6 @@ const int kfMasShowMenu = 8;
 class MobileUnitGob;
 class UnitMenu;
 
-enum UIType { kuitFinger, kuitStylus };
-
-const dword kfPhFinger1Down = 0x8000;
-const dword kfPhFinger2Down = 0x4000;
-
 class SimUIForm : public Form, public Timer
 {
 public:
@@ -3159,17 +2944,13 @@ public:
 	void Update();
 	void CalcLevelSpecificConstants();
 	void InvalidateDragSelection();
-    Gob *HitTestGob(int x, int y, bool fFinger, WCoord *pwx, WCoord *pwy,
-            bool *pfHitSurrounding);
+    Gob *HitTestGob(int x, int y, WCoord *pwx, WCoord *pwy);
 	void MoveOrAttackOrSelect(int x, int y, dword ff);
     void MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget, WCoord wyTarget,
             dword ff);
-    bool HasSelectedUnits();
     void ShowUnitMenu(Gob *pgob);
     void SelectSameUnitTypes(Gob *pgob, bool fSfx);
     bool IsSelectionCommand(Gob *pgobHit);
-	void ClearSelection();
-    void SetUIType(UIType uit);
 
     class PenHandler {
     public:
@@ -3177,8 +2958,6 @@ public:
         virtual bool OnPenEvent(Event *pevt, bool fScrollOnly) = 0;
         virtual void OnPaint(DibBitmap *pbm) = 0;
         virtual void CheckScroll() = 0;
-        virtual dword GetFlags() = 0;
-        virtual void SetFlags(dword ff) = 0;
     };
 
     PenHandler *GetPenHandler() {
@@ -3209,8 +2988,6 @@ private:
         virtual bool OnPenEvent(Event *pevt, bool fScrollOnly);
         virtual void OnPaint(DibBitmap *pbm) {}
         virtual void CheckScroll();
-        virtual dword GetFlags() { return 0; }
-        virtual void SetFlags(dword ff) {}
     private:
         SimUIForm *m_psui;
         bool m_fDragging;
@@ -3220,64 +2997,6 @@ private:
         void OnPenDrag(Event *pevt);
         void OnPenHold(Event *pevt);
         void CancelModes();
-    };
-
-    class FingerHandler : public PenHandler {
-    public:
-        FingerHandler(SimUIForm *psui);
-        ~FingerHandler();
-        virtual bool OnPenEvent(Event *pevt, bool fScrollOnly);
-        virtual void OnPaint(DibBitmap *pbm);
-        virtual void CheckScroll();
-        virtual dword GetFlags() { return m_ff; }
-        virtual void SetFlags(dword ff) { m_ff = ff; }
-    private:
-        void OnPenDown(Event *pevt, bool fScrollOnly);
-        void OnPenDown2(Event *pevt, bool fScrollOnly);
-        void OnPenUp(Event *pevt, bool fScrollOnly);
-        void OnPenUp2(Event *pevt, bool fScrollOnly);
-        void OnPenMove(Event *pevt);
-        void OnPenMove2(Event *pevt);
-        void OnPenHold(Event *pevt);
-        void UnhilightGob();
-        void EnterNone();
-        void EnterHilight(Gob *pgob);
-        bool CheckSelect(Event *pevt);
-        void EnterSelect(Event *pevt);
-        void UpdateSelect(Event *pevt);
-        bool CheckDragged(Event *pevt, int wcDrag);
-        void EnterDrag(Event *pevt);
-        void UpdateDrag(Event *pevt);
-        void ShowUnitMenu(Gob *pgob);
-        void ShowUnitTitle(Gob *pgob);
-        void SetSelection();
-        bool IsQuickUp(Event *pevt);
-
-        SimUIForm *m_psui;
-        int m_xDownLast, m_yDownLast;
-        WCoord m_wxTarget, m_wyTarget;
-        bool m_fHitSurrounding;
-        Gid m_gidHitLast;
-        Gid m_gidHilight;
-        long m_tDoubleTap;
-        int m_xDoubleTapDownLast, m_yDoubleTapDownLast;
-        bool m_fTimerSet;
-        bool m_fShowUnitMenu;
-        UnitMenu *m_pfrmUnitTitle;
-        dword m_ff;
-        SelectionSprite *m_pselspr;
-        dword m_maskA, m_maskB;
-        int m_x1, m_y1;
-        int m_x2, m_y2;
-        Vec2d m_vOffsetA, m_vOffsetB;
-        int m_xDrag, m_yDrag;
-        WCoord m_wxViewDrag, m_wyViewDrag;
-        long m_tDown;
-
-        enum State {
-            FHS_NONE, FHS_HILIGHT, FHS_SELECT, FHS_DRAG
-        };
-        State m_state;
     };
 
 	MobileUnitGob *SetSelectionTargets(Gid gid, WCoord wxTarget,
@@ -4409,7 +4128,6 @@ public:
 	bool SetViewPos(WCoord wx, WCoord wy, bool fInit = false);
 	void GetViewPos(WCoord *pwx, WCoord *pwy);
 	bool HitTest(Enum *penm, WCoord wx, WCoord wy, word wf, Gob **ppgob);
-    Gob *FingerHitTest(WCoord wx, WCoord wy, word wf, bool *pfHitSurrounding);
 	void Pause(bool fPause);
 	bool IsPaused();
 	void FindVisibleGobs(Gob ***pppgobVisible = NULL, int *pcgobVisible = NULL);
@@ -4500,14 +4218,6 @@ public:
 		return m_ptrmap;
 	}
 
-	int GetMinPlayers() {
-		return m_nPlayersMin;
-	}
-
-	int GetMaxPlayers() {
-		return m_nPlayersMax;
-	}
-
 	const char *GetTitle() {
 		return m_szTitle;
 	}
@@ -4535,10 +4245,6 @@ public:
 	}
 
 	// This is the per-save unique revision number
-
-	dword GetRevision() {
-		return m_dwRevision;
-	}
 
 private:
 	bool LoadSideInfo(IniReader *pini, char *pszSideName, SideInfo *psidi);
@@ -4672,11 +4378,8 @@ public:
 	void Init(Pid pid);
 	bool LoadState(Stream *pstm);
 	bool SaveState(Stream *pstm);
-	void SetName(const char *pszName);
 	UnitMask GetUnitMask();
 	void SetCredits(int nCredits, bool fAffectTotals, int nConsumer = knConsumerGeneric);
-	int GetCreditsDirection();
-	int GetCreditsConsumer();
 	void AddPowerSupplyAndDemand(int nPowerSupply, int nPowerDemand);
 	void Repair(bool fOn);
 	void Update(int cUpdates);
@@ -4695,10 +4398,6 @@ public:
 
 	char *GetFormalObjectiveInfo() {
 		return m_szFormalObjectiveInfo;
-	}
-
-	const char *GetName() {
-		return m_szName;
 	}
 
 	word GetFlags() {
@@ -4822,10 +4521,6 @@ public:
 		return m_upgm;
 	}
 
-	void SetUpgradeMask(UpgradeMask upgm) {
-		m_upgm = upgm;
-	}
-
 	UpgradeMask GetAllowedUpgrades() {
 		return m_upgmAllowed;
 	}
@@ -4935,10 +4630,6 @@ public:
 	void Update(int cUpdates);
 	void SetAllies(Player **applr, int cplrs, SideMask sidmAllies);
 
-	void FreePlayer(Player *pplr) {
-		pplr->m_wf = 0;
-	}
-
 	Player *GetPlayer(Side side);
 
 	Player *GetPlayerFromPid(Pid pid) {
@@ -4950,7 +4641,6 @@ public:
 	}
 
 	Player* GetNextPlayer(Player *pplr);
-	Player* GetNextHumanPlayer(Player *pplr);
 
 	int GetPlayerCount();
 	int GetUnitInstanceCountFromMask(UnitMask um, word wfPlr);
@@ -5238,10 +4928,6 @@ public:
 		*pcty = m_cty;
 	}
 
-	int GetGobCount() {
-		return m_cpgobActive;
-	}
-
 	int FindGobs(const Rect *prcBounds, Gob **apgob, int cpgobMax, byte *pbFogMap);
 	bool IsStructurePlacementValid(StructConsts *pstruc, TCoord tx, TCoord ty, Player *pplr);
 	int FindGobs(const TRect *ptrcBounds, Gob **apgob, int cpgobMax);
@@ -5447,7 +5133,6 @@ struct UnitConsts : public GobConsts { // untc
 	char szAniName[kcbFilename];
 	AnimationData *panid;
 	WRect wrcUIBounds;
-	WRect wrcUIBoundsFinger;
 	int wdySortOffset;
 	char szName[kcbStructUnitName];
 	char szLongName[kcbStructUnitName];
@@ -5550,10 +5235,8 @@ class UnitGob : public Gob // unt
 {
 public:
 	UnitGob(UnitConsts *puntc);
-    ~UnitGob();
 
 	static bool InitClass(UnitConsts *psubc, IniReader *pini);
-    static void InitFingerUIBounds(UnitConsts *psubc);
 	static void ExitClass(UnitConsts *psubc);
 	static bool LoadMenu(UnitConsts *psubc, IniReader *pini, char *pszTemplate, int idfDefault);
 	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
@@ -5568,7 +5251,6 @@ public:
     virtual dword GetAnimationHash();
     virtual void GetAnimationBounds(Rect *prc, bool fBase);
     virtual void DrawAnimation(DibBitmap *pbm, int x, int y);
-    virtual AnimSprite *CreateHilightSprite();
 	void NotifyNearbyAlliesOfHit(Gid gidAssailant);
 	void ShowDamageIndicator();
 	void ClearDamageIndicator();
@@ -5597,12 +5279,7 @@ public:
 		return m_fxHealth;
 	}
 
-    AnimSprite *GetAnimSprite() {
-        return m_panispr;
-    }
-
 	void Select(bool fSelect);
-    void Hilight(bool fHilight);
 
 	virtual void SetHealth(fix fxHealth);
 
@@ -5638,7 +5315,6 @@ protected:
 	Gid m_agidEnemyNearby[kcEnemyNearbyRemember];
 	fix m_fxHealth;
 	Animation m_ani;
-    AnimSprite *m_panispr;
 	word m_wfUnit;
 	int m_cupdLastHitNotify;
 	short m_cDamageCountdown;
@@ -5651,7 +5327,6 @@ const word kfUnitRepairing = 0x0008;
 const word kfUnitDrawNeedsPowerSymbol = 0x0010;
 const word kfUnitDrawNeedCreditsSymbol = 0x0020;
 const word kfUnitNeedCredits = 0x0040;
-const word kfUnitHilighted = 0x0080;
 
 class StructGob : public UnitGob // stru
 {
@@ -5960,7 +5635,6 @@ public:
 	BuildQueue();
 	BuildQueue &operator=( BuildQueue &bqRHS);
 	void SetSize(word cutMax);
-	int GetRemainingCapacity();
 	void Enqueue(UnitType ut);
 	void Dequeue();
 	bool RemoveUnit(UnitType ut);
@@ -5989,12 +5663,6 @@ public:
 	void DrawUpgradeEffect(DibBitmap *pbm, int xViewOrigin, int yViewOrigin);
 	void AbortBuild(bool fRefundCreditsSpent = false, UnitType ut = kutNone);
 	static int GetGlobalQueuedCount(Player *pplr, word wfTest);
-	static int GetQueuedCount(Player *pplr, word wfTest);
-
-	void SetRallyPoint(TCoord tx, TCoord ty) {
-		m_tptRally.tx = tx;
-		m_tptRally.ty = ty;
-	}
 
 	// in builder gob so it will be tracked per-instance
 
@@ -6445,7 +6113,6 @@ public:
 	}
 	void UpdatePlacementIndicator(WCoord wxViewStart, WCoord wyViewStart, WCoord wxView, WCoord wyView);
 
-    void SetPassOnInput(bool fPassOn) { m_fPassOnInput = fPassOn; }
     bool IsBusy() { return m_pgobOwner != NULL; }
 	void OnPaintSimUI(DibBitmap *pbm);
 	void OnPaintControlsSimUI(DibBitmap *pbm, UpdateMap *pupd);
@@ -6460,10 +6127,8 @@ public:
 	virtual void OnControlSelected(word idc);
 	virtual bool OnPenEvent(Event *pevt);
 	virtual void OnScroll(int dx, int dy);
-	virtual bool OnHitTest(Event *pevt);
 
 private:
-    bool FingerHitTest(Event *pevt);
     void GetSubRects(WCoord wx, WCoord wy, Rect *prcInside, Rect *prcOutside);
 
 	BuilderGob *m_pgobOwner;
@@ -6473,7 +6138,6 @@ private:
 	int m_wxDragStart, m_wyDragStart;
 	TCoord m_txStart, m_tyStart;
 	bool m_fDragging;
-    bool m_fPassOnInput;
 };
 
 
@@ -6863,7 +6527,6 @@ public:
 	virtual void GetClippingBounds(Rect *prc);
 	virtual bool LoadState(Stream *pstm);
 	virtual bool SaveState(Stream *pstm);
-    virtual AnimSprite *CreateHilightSprite() { return NULL; }
 
 	// StructGob overrides
 
@@ -6996,7 +6659,6 @@ public:
 	dword GetFreeSize(word *pcbLargestFree = NULL);
 	dword GetTotalSize(dword *pcbDyn, dword *pcbDb);
 	static void GetInitSize(dword cbDynReserve, dword *pcbDyn, dword *pcbStorage);
-	static void OnRebootFreeStorageDatabase(); // must remain in .text section
 
 #ifdef INCL_VALIDATEHEAP
 	void Validate();
@@ -7253,7 +6915,7 @@ struct Preferences // prefs
 	word wfPerfOptions;
 	word wfHandicap;				// Difficulty-affecting flags
 	int ctGameSpeed;				// game speed
-	word fLassoSelection;
+	word fReserved1;	// was fLassoSelection; kept for prefs layout
 	short nHueOffset;				// HSL settings
 	short nSatMultiplier;
 	short nLumOffset;
@@ -7317,19 +6979,16 @@ extern TBitmap *gaptbmScorches[4];
 extern BuilderConsts gbldcHq;
 extern byte *gpbScratch;
 extern word gcbScratch;
-extern bool gfLassoSelection;
 extern int g_mpDirToDx[8];
 extern int g_mpDirToDy[8];
 extern int gcxTile;
 extern int gcyTile;
 extern int gcxyBorder;
-extern bool gfDrawUpdateRects;
 extern bool gfAutosave;
 extern DibBitmap *gpbmClip;
 extern FormMgr *gpfrmmSim;
 extern FormMgr *gpfrmmInput;
 extern MultiFormMgr *gpmfrmm;
-extern SpriteManager *gpsprm;
 #ifdef STATS_DISPLAY
 extern long gcPathScoresCalced;
 #endif
@@ -7383,8 +7042,6 @@ extern char gszBuildTime[];
 extern bool gfDragSelecting;
 extern WPoint s_wptSelect1, s_wptSelect2;
 extern WRect gwrcSelection;
-extern WPoint s_awptSelection[];
-extern int s_cwptSelection;
 extern word gwfPerfOptions;
 extern word gwfHandicap;
 extern int gcStructGobsHumanLimitSP;
@@ -7411,16 +7068,11 @@ inline UnitType UnitTypeFromPVoid(void *pv) {
     return *((UnitType *)&pv);
 }
 
-inline int IntFromPVoid(void *pv) {
-    return *((int *)&pv);
-}
-
 // Out-of-band data for gameOverEvent (knGoLoadSavedGame case)
 extern Stream *gpstmSavedGame;
 extern int gimodeReinitialize;
 extern bool gfLoadReinitializeSave;
 
-char *_fgets(char *psz, int cch, File *pfil);
 void HtStrupr(char *psz);
 
 #ifdef DEBUG
@@ -7431,7 +7083,6 @@ int _GetRandom();
 #define GetRandom() _GetRandom()
 #endif
 void SetRandomSeed(unsigned long nSeed);
-unsigned long GetRandomSeed();
 int GetAsyncRandom();
 void DrawBuildProgressIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator);
 void DrawSelectionIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator);
@@ -7457,7 +7108,6 @@ void SetHslAdjustedPalette(Palette *ppal, short nHueOffset, short nSatMultiplier
 UnitConsts *GetUnitConsts(GobType gt);
 Sfx SfxFromCategory(SfxCategory sfxc);
 bool ParseNumber(char **ppsz, int *pn);
-bool ParseLong(char **ppsz, long *pn);
 bool ParseArea(char **ppsz, int *pn);
 bool ParseUnitMask(char **ppsz, UnitMask *pum);
 bool ParseUpgradeMask(char **ppsz, UpgradeMask *pupgm);
@@ -7477,22 +7127,14 @@ void BringInBounds(WCoord *pwx, WCoord *pwy);
 Direction DirectionFromLocations(TCoord txOld, TCoord tyOld, TCoord txNew, TCoord tyNew);
 int RadiusFromUnitCount(int cUnits);
 void MoveUnitsToArea(MobileUnitGob **apmunt, int cpmunt, TRect *ptrc);
-void AddPointToLassoSelection(WPoint wpt);
 void ExpandVars(char *pszSrc, char *pszBuff, int cbBuff);
 void GetRankTitle(char *psz, int cb);
 void FormatButtons(Form *pfrm, word *aidc, int cidc, int idcRef, int idcRefNext);
-bool DoInputPanelForm(char **ppszChars, int cRows, const char *pszLabel,
-        const char *pszEdit, char *pszOut, int cbOut,
-        bool (*pfnValidateInput)(const char *psz) = NULL);
-void DoInputPanelForm(Form *pfrm, word idcLabel, word idcEdit);
 void GetSpeedMultiplierString(char *psz, long tGameSpeed);
-bool PtInPolygon(WPoint *awpt, int cwpt, WCoord wx, WCoord wy);
-void AddPointToLassoSelection(WPoint wpt);
 
 
 // Misc runtime stuff
 
-int strnicmp(const char *psz1, const char *psz2, int cch);
 char *itoa (int val, char *buf, int radix);
 
 #ifdef DRAW_PATHS
@@ -7557,8 +7199,6 @@ const char *HostGetMainDataDir();
 void HostNotEnoughMemory(bool fStorage, dword cbFree, dword cbNeed);
 SoundDevice *HostOpenSoundDevice();
 void HostSleep(dword ct);
-void HostSetGameThread(base::Thread *thread);
-base::Thread& HostGetGameThread();
 
 // Mission packs (custom missions). HostMountMissionPacks pushes the packs
 // in the Missions folders, and any given with -pdb on the command line, onto
@@ -7578,27 +7218,13 @@ struct Date
 };
 int CompareDates(Date *pdate1, Date *pdate2);
 
-void HostGetCurrentDate(Date *pdate);
 
-// Silk rects
-
-#define kircSilkGraffiti 0
-#define kircSilkApps 1
-#define kircSilkMenu 2
-#define kircSilkCalc 3
-#define kircSilkFind 4
-
-void HostGetSilkRect(int irc, Rect *prc);
 
 // Host file IO
 
 const word kfOfRead = 0x0001;		// same as "rb"
 const word kfOfWrite = 0x0002;		// same as "wb"
 
-FileHandle HostOpenFile(const char *pszFilename, word wf);
-void HostCloseFile(FileHandle hf);
-dword HostWriteFile(FileHandle hf, void *pv, dword cb);
-dword HostReadFile(FileHandle hf, void *pv, dword cb);
 
 // Save game
 
@@ -7658,7 +7284,6 @@ const int knGameReinitializeSave = -3;
 const int knGameAutosave = 10;
 
 #define kszTempName "htsavetemp"
-int HostGetSaveGameCount();
 bool HostGetSaveGameName(int nGame, char *psz, int cb, Date *pdate, int *pnHours24, int *pnMinutes, int *pnSeconds);
 Stream *HostNewSaveGameStream(int nGame, char *pszName);
 Stream *HostOpenSaveGameStream(int nGame, bool fDelete = false);

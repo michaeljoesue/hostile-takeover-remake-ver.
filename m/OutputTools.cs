@@ -12,43 +12,6 @@ namespace m
 {
     public class OutputTools
     {
-		public static void ImportExportPdbs(string[] astr) {
-			// Expand filespecs
-			ArrayList alsFiles = new ArrayList();
-			for (int n = 1; n < astr.Length; n++) {
-				string strFileT = Path.GetFileName(astr[n]);
-				string strDirT = Path.GetDirectoryName(astr[n]);
-				if (strDirT == "")
-					strDirT = ".";
-				string[] astrFiles = Directory.GetFiles(strDirT, strFileT);
-				foreach (string filename in astrFiles) {
-					if (filename.EndsWith(".pdb")) {
-						alsFiles.Add(filename);
-					}
-				}
-			}
-
-			// Import, then save each pdb
-			foreach (string filename in alsFiles) {
-				try {
-					if (File.Exists(filename + "_new")) {
-						Console.WriteLine("Exists: " + filename + "_new");
-						continue;
-					}
-					ImportExpansionPdb(filename);
-					LevelDocTemplate doctLevel = (LevelDocTemplate)DocManager.FindDocTemplate(typeof(LevelDoc));
-					Document[] adoc = doctLevel.GetDocuments();
-					SaveExpansionPdb(filename + "_new", adoc, "1.1");
-					foreach (Document doc in adoc) {
-						doc.SetModified(false);
-					}
-					doctLevel.CloseAllDocuments();
-				} catch {
-					Console.WriteLine("Error loading " + filename + ", skipping");
-				}
-			}
-		}
-
 		public static void ImportExpansionPdb(string strFile) {
 			PdbPacker pdbp = new PdbPacker(strFile);
 
@@ -359,24 +322,6 @@ namespace m
             pdbp.Save(strFile, "WARI", "ADD2");
         }
 
-        public static void MixMapImportSpecial(Theater theater, TemplateDoc tmpdCopyTerrain, string strFileSave) {
-            TemplateDoc tmpd24 = (TemplateDoc)DocManager.NewDocument(typeof(TemplateDoc), new Object[] { new Size(24, 24) });
-            MixTemplate[] amixt = MixSuck.LoadTemplates(theater);
-            MixSuck.ImportTemplates(amixt, tmpd24);
-            
-            Template[] atmpl24 = tmpd24.GetTemplates();
-            Template[] atmpl16 = tmpdCopyTerrain.GetTemplates();
-
-            for (int n = 0; n < atmpl24.Length; n++) {
-                Template tmpl24 = atmpl24[n];
-                Template tmpl16 = atmpl16[n];
-                tmpl24.TerrainMap = tmpl16.TerrainMap;
-            }
-            
-            tmpd24.SetBackgroundTemplate(atmpl24[0]);
-            tmpd24.SaveAs(strFileSave);
-        }
-
         public static void MakePalette(string[] astr) {
             // -makepal 16 templates.tc palsize fixpalsize backgroundpalsize fixed.pal out.pal
 
@@ -429,31 +374,6 @@ namespace m
 
             Palette palNew = tmpd.GetPalette();
             palNew.SaveJasc(strFilePalOut);
-        }
-
-        public static void ExportMixMaps(string[] astr) {
-            // Expand filespecs
-            ArrayList alsFiles = new ArrayList();
-            for (int n = 1; n < astr.Length; n++) {
-                string strFileT = Path.GetFileName(astr[n]);
-                string strDirT = Path.GetDirectoryName(astr[n]);
-                if (strDirT == "")
-                    strDirT = ".";
-                string[] astrFiles = Directory.GetFiles(strDirT, strFileT);
-                alsFiles.AddRange(astrFiles);
-            }
-
-            foreach (string strFile in alsFiles) {
-                LevelDoc lvld = (LevelDoc)DocManager.NewDocument(typeof(LevelDoc), null);
-                Console.Write("Exporting " + strFile + " as ");
-                string strFileExport = MixSuck.ImportExportMixMap(strFile, lvld);
-                if (strFileExport == null) {
-                    Console.Write("Error exporting!\n");
-                } else {
-                    Console.Write(strFileExport + "\n");
-                }
-                lvld.Dispose();
-            }
         }
 
         public static void ExportImages(string[] astr) {

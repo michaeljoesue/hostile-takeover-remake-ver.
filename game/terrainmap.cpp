@@ -921,63 +921,6 @@ int Path::FindClosestPoint(TCoord txFrom, TCoord tyFrom, int itptStart, int ctpt
 	return jSmallest + itptStart;
 }
 
-bool Path::Append(Path *ppath)
-{
-	Direction *adirNew = new Direction[m_cdirs + ppath->m_cdirs];
-	if (adirNew == NULL)
-		return false;
-	memcpy(adirNew, m_adir, m_cdirs);
-	memcpy(&adirNew[m_cdirs], ppath->m_adir, ppath->m_cdirs);
-	delete[] m_adir;
-	m_adir = adirNew;
-	m_cdirs += ppath->m_cdirs;
-	return true;
-}
-
-bool Path::TrimEnd(int itptStart)
-{
-	if (itptStart >= m_cdirs)
-		return false;
-	int cdirsNew = itptStart;
-	Direction *adirNew = new Direction[cdirsNew];
-	if (adirNew == NULL)
-		return false;
-	memcpy(adirNew, m_adir, cdirsNew);
-	delete[] m_adir;
-	m_adir = adirNew;
-	m_cdirs = cdirsNew;
-	return true;
-}
-
-Path *Path::Clone()
-{
-	Path *ppathNew = new Path();
-	if (ppathNew == NULL)
-		return NULL;
-
-	ppathNew->m_ptrmap = m_ptrmap;
-	ppathNew->m_cdirs = m_cdirs;
-	ppathNew->m_txStart = m_txStart;
-	ppathNew->m_tyStart = m_tyStart;
-	ppathNew->m_idirCache = -1;
-	ppathNew->m_txCache = m_txStart;
-	ppathNew->m_tyCache = m_tyStart;
-
-	ppathNew->m_adir = new Direction[m_cdirs];
-	if (ppathNew->m_adir == NULL) {
-		delete ppathNew;
-		return NULL;
-	}
-	memcpy(ppathNew->m_adir, m_adir, m_cdirs);
-	return ppathNew;
-}
-
-void Path::GetStartPoint(TPoint *ptpt)
-{
-	ptpt->tx = m_txStart;
-	ptpt->ty = m_tyStart;
-}
-
 #define knVerPathState 4
 bool Path::LoadState(TerrainMap *ptrmap, Stream *pstm)
 {
@@ -1158,19 +1101,6 @@ bool TrackPoint::IsProgress(TrackPoint *ptrkpA)
 			(ptrkpA->m_n2Before < ptrkpB->m_n2Before && ptrkpA->m_n2After < ptrkpB->m_n2After)) {
 		return true;
 	}
-	return false;
-}
-
-bool TrackPoint::IsCloser(TrackPoint *ptrkpA)
-{
-	// Is ptrkpA closer to the unit path than ptrkpB? If so, it is closer. If same distance,
-	// measure progress.
-
-	TrackPoint *ptrkpB = this;
-	if (ptrkpA->m_n2After < ptrkpB->m_n2After)
-		return true;
-	if (ptrkpA->m_n2After == ptrkpB->m_n2After)
-		return IsProgress(ptrkpA);
 	return false;
 }
 
