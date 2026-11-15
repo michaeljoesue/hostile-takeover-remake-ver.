@@ -179,7 +179,6 @@ namespace m
 			this.menuItemText = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItem7 = new System.Windows.Forms.ToolStripSeparator();
 			this.menuItemLevelDocProperties = new System.Windows.Forms.ToolStripMenuItem();
-			this.menuItemGalaxiteRegrowth = CreateGalaxiteRegrowthMenu();
 			this.menuItem3 = new System.Windows.Forms.ToolStripSeparator();
 			this.menuItemSide1Properties = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSide2Properties = new System.Windows.Forms.ToolStripMenuItem();
@@ -338,7 +337,6 @@ namespace m
 																					  this.menuItemText,
 																					  this.menuItem7,
 																					  this.menuItemLevelDocProperties,
-																					  this.menuItemGalaxiteRegrowth,
 																					  this.menuItem3,
 																					  this.menuItemSide1Properties,
 																					  this.menuItemSide2Properties,
@@ -348,7 +346,6 @@ namespace m
 																					  this.menuItem9,
 																					  this.menuItemComments});
 			this.menuItem4.Text = "&Settings";
-			this.menuItem4.DropDownOpening += new System.EventHandler(this.menuItemSettings_DropDownOpening);
 			// 
 			// menuItemTriggers
 			// 
@@ -822,39 +819,6 @@ namespace m
 			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
 			if (lvld != null)
 				Globals.PropertyGrid.SelectedObject = lvld.GetSideInfo(Side.side4);
-		}
-
-		// Settings > Galaxite Regrowth: Off / Slow / Normal (also in Settings > Level)
-
-		System.Windows.Forms.ToolStripMenuItem menuItemGalaxiteRegrowth;
-
-		System.Windows.Forms.ToolStripMenuItem CreateGalaxiteRegrowthMenu() {
-			System.Windows.Forms.ToolStripMenuItem mi = new System.Windows.Forms.ToolStripMenuItem("&Galaxite Regrowth");
-			string[] astrText = { "&Off", "&Slow (a size step every 200 s)", "&Normal (every 100 s)" };
-			GalaxiteRegrowth[] agxr = { GalaxiteRegrowth.Off, GalaxiteRegrowth.Slow, GalaxiteRegrowth.Normal };
-			for (int i = 0; i < agxr.Length; i++) {
-				System.Windows.Forms.ToolStripMenuItem miT = new System.Windows.Forms.ToolStripMenuItem(astrText[i]);
-				miT.Tag = agxr[i];
-				miT.Click += new System.EventHandler(this.menuItemGalaxiteRegrowthValue_Click);
-				mi.DropDownItems.Add(miT);
-			}
-			return mi;
-		}
-
-		private void menuItemSettings_DropDownOpening(object sender, System.EventArgs e) {
-			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
-			menuItemGalaxiteRegrowth.Enabled = lvld != null;
-			foreach (System.Windows.Forms.ToolStripMenuItem miT in menuItemGalaxiteRegrowth.DropDownItems)
-				miT.Checked = lvld != null && (GalaxiteRegrowth)miT.Tag == lvld.GalaxiteRegrowth;
-		}
-
-		private void menuItemGalaxiteRegrowthValue_Click(object sender, System.EventArgs e) {
-			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
-			if (lvld == null)
-				return;
-			lvld.GalaxiteRegrowth = (GalaxiteRegrowth)((System.Windows.Forms.ToolStripMenuItem)sender).Tag;
-			if (Globals.PropertyGrid.SelectedObject == lvld)
-				Globals.PropertyGrid.Refresh();
 		}
 
 		private void menuItemSide5Properties_Click(object sender, System.EventArgs e) {

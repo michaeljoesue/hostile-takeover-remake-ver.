@@ -273,9 +273,9 @@ Maps, sides and limits:
 - **Sides.** Side 1 (ACME), side 2 (OMNI), sides 3 and 4, and side 5
   (Crimson). Settings > Side 5 (Crimson) sets up side 5; triggers and units
   can use it like the others.
-- **Galaxite regrowth.** Settings > Galaxite Regrowth (also under
-  Settings > Level, in the Galaxite group): Off, Slow (a size step every
-  200 seconds) or Normal (every 100 seconds).
+- **Galaxite regrowth.** Settings > Level > Galaxite Regrowth (in the
+  Galaxite group): Off, Slow (a size step every 200 seconds) or Normal
+  (every 100 seconds).
   Mined Galaxite grows back only where the mission put it, spreading from
   Galaxite that's left, and only to 60% of its starting size.
 - **Limits.** M no longer stops a mission for exceeding the old limits. It
