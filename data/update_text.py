@@ -2,9 +2,9 @@
 """Updates the text data inside game/htdata832.pdb without rebuilding the art.
 
 Recompiles the .ini files (forms.ini, game.ini, GobTemplates.ini) from their
-.ini.pp sources and replaces them, help.txt and version.txt in the existing
-game/htdata832.pdb. Use this after editing menus, unit stats or help text;
-it doesn't need the .NET content tools, only inicrunch.exe.
+.ini.pp sources and replaces them, help.txt, version.txt and the fonts in
+data/fonts in the existing game/htdata832.pdb. Use this after editing menus,
+unit stats, help text or fonts; it doesn't need the .NET content tools, only inicrunch.exe.
 
 Usage (from any directory):
 
@@ -117,18 +117,18 @@ def main():
                 replacements[name] = f.read()
     with open('help.txt', 'rb') as f:
         replacements['help.txt'] = f.read()
+    for src in build.files('fonts/*.ttf'):
+        with open(src, 'rb') as f:
+            replacements[os.path.basename(src)] = f.read()
     replacements['version.txt'] = (build.DATA_VERSION + '\n').encode()
 
+    # The game looks files up by lower case name
     hdr, recs = read_pdb(pdb)
     files = {}
-    lower = {}
     for name, crec, irec in parse_dir(recs[0]):
-        files[name] = recs[irec:irec + crec]
-        lower[name.lower()] = name
+        files[name.lower()] = recs[irec:irec + crec]
     for name, data in replacements.items():
-        # Keep the existing name's case
-        key = lower.get(name.lower(), name)
-        files[key] = pack_uncompressed(data)
+        files[name.lower()] = pack_uncompressed(data)
     write_pdb(pdb, hdr, files)
     build.log('Updated %s (%s)' % (pdb, ', '.join(sorted(replacements))))
 

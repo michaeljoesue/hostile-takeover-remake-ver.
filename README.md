@@ -129,6 +129,17 @@ This recompiles those files and replaces them in `game\htdata832.pdb`,
 keeping everything else. It only needs Python and the CMake build (for
 `inicrunch.exe`), not the .NET tools.
 
+### Fonts
+
+Text is drawn with anti-aliased TrueType fonts from `data\fonts` (Saira and
+Orbitron, both under the SIL Open Font License), rendered by
+[stb_truetype](https://github.com/nothings/stb) (`game\vendor`). The
+`[VectorFonts]` section of `data\game.ini.pp` picks the font, size and
+letter spacing for each of the game's fonts; the original bitmap fonts still
+set the line height, colors and shadow, so every layout stays the same. To
+change a font, put the `.ttf` in `data\fonts`, edit `[VectorFonts]` and run
+`update_text.py`; delete a line to go back to the bitmap font.
+
 ### Rebuilding htdata832.pdb
 
 Requirements: [Python 3](https://www.python.org/downloads/) and the CMake

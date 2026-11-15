@@ -380,6 +380,11 @@ def build(args):
     # Help and strings
 
     shutil.copyfile('help.txt', OUTDIR + '/help.txt')
+
+    # TrueType fonts for the text (see [VectorFonts] in game.ini.pp)
+
+    for src in files('fonts/*.ttf'):
+        shutil.copyfile(src, OUTDIR + '/' + os.path.basename(src))
     run(['stringtable.exe', '../game/wistrings.h', OUTDIR + '/strings.bin'])
 
     # Pack it all up
@@ -391,7 +396,7 @@ def build(args):
     if os.path.exists(pdb_tmp):
         os.remove(pdb_tmp)
     run(['packpdb2.exe', '-p', CREATORID, pdb_tmp, OUTDIR + '/*.*',
-            '-nocompress', '*.snd', '*.tset*', '*.tbm', 'version.txt',
+            '-nocompress', '*.snd', '*.tset*', '*.tbm', '*.ttf', 'version.txt',
             'forms.ini'])
     shutil.move(pdb_tmp, os.path.join(GAME_DIR, PDB))
     log('Wrote game/%s' % PDB)

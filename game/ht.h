@@ -776,6 +776,13 @@ public:
 
 	bool Load(char *pszFont);
 
+	// Draw with a TrueType font (a file in the pack) instead of the bitmap
+	// glyphs. The bitmap font still provides the line height, baseline and
+	// colors, so layouts are unchanged. nScale multiplies the glyph size,
+	// nTracking adds pixels between letters.
+	bool LoadVector(const char *pszTtf, float nScale = 1.0f,
+			int nTracking = 0);
+
 	int GetHeight() {
 		return BigWord(m_pfnth->cy);
 	}
@@ -805,7 +812,16 @@ public:
 
 private:
 	char *FindNextNonBreakingChar(char *psz);
+	int CharWidth(byte ch) {
+		return m_pvf != NULL ? VectorCharWidth(ch) : m_pfnth->acxChar[ch];
+	}
+	int VectorCharWidth(byte ch);
+	bool InitVector();
+	int DrawVectorText(DibBitmap *pbm, const char *psz, int x, int y, int cch);
+	int DrawBitmapText(DibBitmap *pbm, char *psz, int x, int y, int cch,
+			dword *mpscaiclr);
 
+	struct VectorFont *m_pvf;
 	FileMap m_fmap;
 	FontHeader *m_pfnth;
 	byte **m_mpchpbCodeEven;

@@ -58,6 +58,8 @@ Display::Display()
     m_texture = NULL;
     m_ppal = NULL;
     m_fPaletteTexture = false;
+    memset(m_palette, 0, sizeof(m_palette));
+    m_nPaletteSerial = 0;
     m_gamePixels = NULL;
     m_gamePixels32 = NULL;
     memset(m_palette, 0, sizeof(m_palette));
@@ -208,6 +210,7 @@ void Display::SetPalette(Palette *ppal)
         m_palette[i] = 0xff000000 | (aclr[i].r << 16) | (aclr[i].g << 8) |
                 aclr[i].b;
 	}
+    m_nPaletteSerial++;
     if (m_ppal != NULL)
         SDL_SetPaletteColors(m_ppal, aclr, 0, cEntries);
 }

@@ -329,6 +329,22 @@ bool Game::Init(int imm)
 				gapfnt[ifnt]->SetGlyphOverlap(1);
 				gapfnt[ifnt]->SetLineOverlap(2);
 			}
+
+			// [VectorFonts] ifnt=font.ttf [scale [tracking]]: draw this
+			// font with a TrueType font from the pack
+
+			char szVector[64];
+			if (gpiniGame->GetPropertyValue("VectorFonts", szProp, szVector,
+					sizeof(szVector))) {
+				char szTtf[kcbFilename];
+				float nScale = 1.0f;
+				int nTracking = 0;
+				if (sscanf(szVector, "%s %f %d", szTtf, &nScale,
+						&nTracking) >= 1) {
+					if (!gapfnt[ifnt]->LoadVector(szTtf, nScale, nTracking))
+						Trace("Couldn't load vector font %s", szTtf);
+				}
+			}
 		}
 	}
 	m_wf |= kfGameInitFonts;

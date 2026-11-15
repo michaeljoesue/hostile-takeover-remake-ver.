@@ -99,6 +99,10 @@ public:
     int GetModeCount();
     void GetModeInfo(int imode, ModeInfo *pmode);
     int GetMode(ModeInfo *pmode);
+
+    // Current palette as 0xffRRGGBB, and a count bumped on every change
+    const dword *GetPaletteColors() { return m_palette; }
+    int GetPaletteSerial() { return m_nPaletteSerial; }
     bool SetMode(int imode);
     DibBitmap *GetBackDib();
     DibBitmap *GetFrontDib();
@@ -129,6 +133,7 @@ private:
     byte *m_gamePixels;
     dword *m_gamePixels32;
     dword m_palette[256];
+    int m_nPaletteSerial;
 };
 
 extern Display *gpdisp;
