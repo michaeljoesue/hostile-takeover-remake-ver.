@@ -150,7 +150,9 @@ change a font, put the `.ttf` in `data\fonts`, edit `[VectorFonts]` and run
 Requirements: [Python 3](https://www.python.org/downloads/) and the CMake
 build above (it builds `inicrunch.exe`, which the data build uses). The
 content tools in `bin` run on the .NET Framework 4.8 that is part of
-Windows 11; .NET Framework 3.5 isn't needed.
+Windows 11 (.NET Framework 3.5 isn't needed), except `mcl.exe`, which needs
+the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+like M (see below).
 
 ```bat
 python data\build.py --clean
@@ -165,7 +167,8 @@ missions are named `S_*` and challenge missions `C_*`.
 
 The `bin` directory contains the content tools used to build the data file,
 and the GUI editors for maps and missions (**M**, `bin\m.exe`) and animations
-(**AniMax**, `bin\AniMax.exe`). They are .NET Framework 4.8 programs; the
+(**AniMax**, `bin\AniMax.exe`). M and its command-line version `mcl` are
+.NET 8 programs, the others .NET Framework 4.8 programs; the
 source of each is in the folder of the same name (and `inicrunch`, which is
 C++, is built by CMake with the game). `legacy\docs` has the original design
 documents and the mission authoring guide, `AuthorKit.chm`.
@@ -173,11 +176,14 @@ documents and the mission authoring guide, `AuthorKit.chm`.
 ### Building the tools
 
 All the C# tools are in one solution, `HostileTakeoverTools.sln`, with
-SDK-style projects targeting .NET Framework 4.8. Building it puts the tools
-straight into `bin`, where the data build and M expect them.
+SDK-style projects. M (`m`, `mgui`, `mcl`) and `TemplateExtractor`, which
+uses M's code, target .NET 8 (`m\MFramework.props`); the others target .NET
+Framework 4.8. Building it puts the tools straight into `bin`, where the data
+build and M expect them.
 
 Requirements: Visual Studio 2022 with the **.NET desktop development**
-workload (it includes the .NET Framework 4.8 targeting pack).
+workload (it includes the .NET 8 SDK and the .NET Framework 4.8 targeting
+pack).
 
 - **In Visual Studio:** open `HostileTakeoverTools.sln` and build (Release).
 - **From a Developer Command Prompt:**
@@ -189,15 +195,18 @@ workload (it includes the .NET Framework 4.8 targeting pack).
 - **With the game:** configure CMake with `-DHT_BUILD_TOOLS=ON` and the
   `tools` target builds the solution as part of the game build.
 
-Use Visual Studio's MSBuild rather than `dotnet build`: the forms of M,
-AniMax and Schemer embed images and other non-text resources, which the
-.NET SDK's own resource compiler can't embed for .NET Framework programs
-(the other tools build either way). The shared settings are in
-`Directory.Build.props`.
+Use Visual Studio's MSBuild rather than `dotnet build` for the whole
+solution: the forms of AniMax and Schemer embed images and other non-text
+resources, which the .NET SDK's own resource compiler can't embed for .NET
+Framework programs (M and the other tools build either way). The shared
+settings are in `Directory.Build.props`.
 
 ### Making missions with M
 
-M needs the .NET Framework 4.8, which is part of Windows 11. Start
+M needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+(x64); Windows offers to download it the first time M starts if it's
+missing, or install it with `winget install Microsoft.DotNet.DesktopRuntime.8`.
+Start
 `bin\m.exe`, and open a mission (`.ld`) from the `data` folder or make a new
 one with File > New.
 

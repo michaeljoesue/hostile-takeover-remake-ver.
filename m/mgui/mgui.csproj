@@ -7,8 +7,9 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <Import Project="..\MFramework.props" />
+
   <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
     <ProjectReference Include="..\m.csproj" />
   </ItemGroup>
 
@@ -26,6 +27,10 @@
   <Target Name="RenameToM" AfterTargets="Build">
     <Move SourceFiles="$(OutDir)mgui.exe" DestinationFiles="$(OutDir)m.exe" />
     <Move SourceFiles="$(OutDir)mgui.exe.config" DestinationFiles="$(OutDir)m.exe.config" Condition="Exists('$(OutDir)mgui.exe.config')" />
+  </Target>
+
+  <Target Name="RenameToMPublish" AfterTargets="Publish">
+    <Move SourceFiles="$(PublishDir)mgui.exe" DestinationFiles="$(PublishDir)m.exe" Condition="Exists('$(PublishDir)mgui.exe')" />
   </Target>
 
 </Project>

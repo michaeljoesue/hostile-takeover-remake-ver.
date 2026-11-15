@@ -7,9 +7,15 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Runtime.Serialization.Formatters.Soap" />
+  <Import Project="MFramework.props" />
+
+  <!-- The forms' .resx files hold image lists and icons -->
+  <PropertyGroup Condition="'$(MFramework)' != 'net48'">
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(MFramework)' != 'net48'">
+    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

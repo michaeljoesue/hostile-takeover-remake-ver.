@@ -8,8 +8,9 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <Import Project="..\m\MFramework.props" />
+
   <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
     <ProjectReference Include="..\m\m.csproj" />
   </ItemGroup>
 

@@ -1,0 +1,34 @@
+<Project>
+
+  <!--
+    M (m, mgui, mcl) and the tools built on its code run on .NET 8
+    (Windows). Building with -p:MFramework=net48 makes the old .NET
+    Framework versions instead, which can be run under Mono for testing.
+  -->
+
+  <PropertyGroup>
+    <MFramework Condition="'$(MFramework)' == ''">net8.0-windows</MFramework>
+    <TargetFramework>$(MFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MFramework)' != 'net48'">
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Levels saved by M before 2.0 use BinaryFormatter; M still opens them -->
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <NoWarn>$(NoWarn);SYSLIB0011;SYSLIB0050;SYSLIB0051;WFO1000;CA1416</NoWarn>
+  </PropertyGroup>
+
+  <!-- Programs: 64-bit Windows, using the installed .NET 8 Desktop Runtime -->
+  <PropertyGroup Condition="'$(MFramework)' != 'net48' and '$(OutputType)' != 'Library'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(MFramework)' == 'net48'">
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+</Project>
