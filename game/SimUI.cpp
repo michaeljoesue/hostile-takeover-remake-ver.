@@ -32,6 +32,20 @@ static long s_tLastFPSUpdate = 0;
 
 bool gfDragSelecting;
 WPoint s_wptSelect1, s_wptSelect2;
+
+// Double-click and double key press interval
+const long kctDoubleClick = 50; // TUNE: half a second
+
+// Where the last "under attack" alert happened (Space centres on it)
+
+WPoint gwptLastAlert;
+bool gfLastAlertValid = false;
+
+void NoteAlertLocation(Gob *pgob)
+{
+    pgob->GetCenter(&gwptLastAlert);
+    gfLastAlertValid = true;
+}
 WRect gwrcSelection;
 #ifdef STATS_DISPLAY
 long gcPathScoresCalced = 0;
@@ -53,6 +67,13 @@ SimUIForm::SimUIForm()
 	m_nStateMoveTarget = 0;
 
     m_ppenh = new StylusHandler(this);
+    m_fPanning = false;
+    m_xPanLast = 0;
+    m_yPanLast = 0;
+    m_fAttackMoveArmed = false;
+    memset(m_acgidGroup, 0, sizeof(m_acgidGroup));
+    m_nGroupLast = -1;
+    m_tGroupLast = 0;
 }
 
 SimUIForm::~SimUIForm()
@@ -531,6 +552,267 @@ void SimUIForm::FrameComplete()
 //   appropriate Gobs. For example, passing selected Gobs SetTarget and
 //   invoking Gob::PopupMenu.
 //
+
+// Right/middle buttons and the wheel (see MultiFormMgr::CookBattlefieldEvent)
+
+bool SimUIForm::EventProc(Event *pevt)
+{
+    switch (pevt->eType) {
+    case rightDownEvent:
+        OnRightClick(pevt->x, pevt->y);
+        return true;
+
+    case middleDownEvent:
+        m_fPanning = true;
+        m_xPanLast = pevt->x;
+        m_yPanLast = pevt->y;
+        return true;
+
+    case middleMoveEvent:
+        if (m_fPanning) {
+            // Drag the map: it follows the mouse
+            ScrollViewBy(WcFromPc(m_xPanLast - pevt->x),
+                    WcFromPc(m_yPanLast - pevt->y));
+            m_xPanLast = pevt->x;
+            m_yPanLast = pevt->y;
+        }
+        return true;
+
+    case middleUpEvent:
+        m_fPanning = false;
+        return true;
+
+    case wheelEvent:
+        {
+            // The wheel scrolls the map, three tiles a notch; Shift+wheel
+            // scrolls sideways
+            WCoord dwc = -(int)pevt->dw * WcFromTile16ths(16 * 3);
+            if (pevt->ffMods & kfModShift) {
+                ScrollViewBy(dwc, 0);
+            } else {
+                ScrollViewBy(0, dwc);
+            }
+        }
+        return true;
+    }
+    return Form::EventProc(pevt);
+}
+
+// Hotkeys on the battlefield:
+//   1-9          select control group (twice quickly: also centre on it)
+//   Ctrl+1-9     make the selection control group 1-9
+//   Shift+1-9    add the selection to control group 1-9
+//   A            attack-move: the next left-click is the destination
+//   S            stop
+//   Space        centre on the last "under attack" alert
+//   Esc          cancel attack-move / building placement, else deselect
+
+bool SimUIForm::OnBattlefieldKey(Event *pevt)
+{
+    dword ffMods = pevt->ffMods;
+    int chr = pevt->chr;
+    if (chr >= 'A' && chr <= 'Z')
+        chr += 'a' - 'A';
+
+    if (chr >= '1' && chr <= '9') {
+        int nGroup = chr - '0';
+        if (ffMods & kfModCtrl) {
+            SetGroup(nGroup, false);
+        } else if (ffMods & kfModShift) {
+            SetGroup(nGroup, true);
+        } else {
+            SelectGroup(nGroup);
+        }
+        return true;
+    }
+
+    if (ffMods & (kfModCtrl | kfModAlt))
+        return false;
+
+    switch (chr) {
+    case 'a':
+        {
+            Gid agid[1];
+            if (GetOwnSelection(agid, 1, true) != 0)
+                SetAttackMoveArmed(true);
+        }
+        return true;
+
+    case 's':
+        {
+            Gid *pgid = new Gid[kcpgobMax];
+            int cgid = GetOwnSelection(pgid, kcpgobMax, true);
+            for (int i = 0; i < cgid; i++)
+                gcmdq.Enqueue(kmidStopCommand, pgid[i]);
+            delete[] pgid;
+        }
+        return true;
+
+    case ' ':
+        if (gfLastAlertValid)
+            CenterViewOn(gwptLastAlert.wx, gwptLastAlert.wy);
+        return true;
+
+    case 0x1b: // Esc
+        if (m_fAttackMoveArmed) {
+            SetAttackMoveArmed(false);
+        } else if (gpfrmPlace != NULL && gpfrmPlace->IsBusy()) {
+            gpfrmPlace->OnControlSelected(kidcCancel);
+        } else {
+            gsim.ClearGobSelection();
+        }
+        return true;
+    }
+    return false;
+}
+
+void SimUIForm::SetAttackMoveArmed(bool fArmed)
+{
+    m_fAttackMoveArmed = fArmed;
+    HostSetTargetCursor(fArmed);
+}
+
+// A + left-click: the selected units move there, attacking enemies they meet
+// on the way. Clicking an enemy attacks it.
+
+void SimUIForm::AttackMoveTo(int x, int y)
+{
+    SetAttackMoveArmed(false);
+    WCoord wxTarget, wyTarget;
+    Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
+    if (pgobHit != NULL && pgobHit->GetSide() != gpplrLocal->GetSide()) {
+        MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, kfMasAttack);
+        return;
+    }
+    gfAttackMoveOrder = true;
+    MoveOrAttackOrSelect(NULL, wxTarget, wyTarget, kfMasMove);
+    gfAttackMoveOrder = false;
+}
+
+// The player's selected units (and towers), optionally mobile units only
+
+int SimUIForm::GetOwnSelection(Gid *agid, int cgidMax, bool fMobileOnly)
+{
+    int cgid = 0;
+    for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL && cgid < cgidMax;
+            pgobT = ggobm.GetNextGob(pgobT)) {
+        dword ff = pgobT->GetFlags();
+        if ((ff & (kfGobUnit | kfGobSelected | kfGobActive)) !=
+                (kfGobUnit | kfGobSelected | kfGobActive))
+            continue;
+        if (fMobileOnly && (ff & kfGobMobileUnit) == 0)
+            continue;
+        if (((UnitGob *)pgobT)->GetOwner() != gpplrLocal)
+            continue;
+        agid[cgid++] = pgobT->GetId();
+    }
+    return cgid;
+}
+
+void SimUIForm::SetGroup(int nGroup, bool fAdd)
+{
+    Gid *pgid = new Gid[kcgidGroupMax];
+    int cgid = GetOwnSelection(pgid, kcgidGroupMax, false);
+    if (cgid == 0) {
+        delete[] pgid;
+        return;
+    }
+    if (!fAdd)
+        m_acgidGroup[nGroup] = 0;
+    for (int i = 0; i < cgid; i++) {
+        bool fHave = false;
+        for (int j = 0; j < m_acgidGroup[nGroup]; j++) {
+            if (m_aagidGroup[nGroup][j] == pgid[i])
+                fHave = true;
+        }
+        if (!fHave && m_acgidGroup[nGroup] < kcgidGroupMax)
+            m_aagidGroup[nGroup][m_acgidGroup[nGroup]++] = pgid[i];
+    }
+    delete[] pgid;
+}
+
+void SimUIForm::SelectGroup(int nGroup)
+{
+    // Select the members still alive
+
+    bool fAny = false;
+    long tNow = HostGetTickCount();
+    WCoord wxSum = 0, wySum = 0;
+    int cSum = 0;
+    int cgidLive = 0;
+    for (int i = 0; i < m_acgidGroup[nGroup]; i++) {
+        Gob *pgob = ggobm.GetGob(m_aagidGroup[nGroup][i]);
+        if (pgob == NULL || (pgob->GetFlags() & kfGobUnit) == 0 ||
+                ((UnitGob *)pgob)->GetOwner() != gpplrLocal)
+            continue;
+        m_aagidGroup[nGroup][cgidLive++] = m_aagidGroup[nGroup][i];
+        if (!fAny) {
+            gsim.ClearGobSelection();
+            fAny = true;
+        }
+        ((UnitGob *)pgob)->Select(true);
+        WPoint wpt;
+        pgob->GetCenter(&wpt);
+        wxSum += wpt.wx;
+        wySum += wpt.wy;
+        cSum++;
+    }
+    m_acgidGroup[nGroup] = cgidLive;
+    if (!fAny)
+        return;
+
+    // Pressed twice quickly: centre on the group
+
+    if (m_nGroupLast == nGroup && tNow - m_tGroupLast < kctDoubleClick)
+        CenterViewOn(wxSum / cSum, wySum / cSum);
+    m_nGroupLast = nGroup;
+    m_tGroupLast = tNow;
+}
+
+void SimUIForm::CenterViewOn(WCoord wx, WCoord wy)
+{
+    Size sizPlayfield;
+    ggame.GetPlayfieldSize(&sizPlayfield);
+    gsim.SetViewPos(wx - WcFromPc(sizPlayfield.cx) / 2,
+            wy - WcFromPc(sizPlayfield.cy) / 2);
+    gevm.SetRedrawFlags(kfRedrawDirty | kfRedrawBeforeTimer);
+}
+
+void SimUIForm::ScrollViewBy(WCoord dwx, WCoord dwy)
+{
+    if (dwx == 0 && dwy == 0)
+        return;
+    WCoord wxView, wyView;
+    gsim.GetViewPos(&wxView, &wyView);
+    gsim.SetViewPos(wxView + dwx, wyView + dwy);
+    gevm.SetRedrawFlags(kfRedrawDirty | kfRedrawBeforeTimer);
+}
+
+// Right-click: on the ground, move the selected units there; on an enemy,
+// attack it; on one of the player's own units or buildings, open its menu.
+
+void SimUIForm::OnRightClick(int x, int y)
+{
+    if (gpfrmPlace != NULL && gpfrmPlace->IsBusy())
+        return;
+
+    // Right-click cancels a pending attack-move
+
+    if (m_fAttackMoveArmed) {
+        SetAttackMoveArmed(false);
+        return;
+    }
+
+    WCoord wxTarget, wyTarget;
+    Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
+    if (pgobHit != NULL && pgobHit->GetType() != kgtReplicator &&
+            (pgobHit->GetFlags() & kfGobUnit) != 0 &&
+            (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())) {
+        pgobHit->PopupMenu();
+        return;
+    }
+    MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, kfMasMove | kfMasAttack);
+}
 
 bool SimUIForm::OnPenEvent(Event *pevt)
 {
@@ -1139,6 +1421,61 @@ void SimUIForm::ShowUnitMenu(Gob *pgob) {
             return;
         }
         pgob->PopupMenu();
+    }
+}
+
+// A left-click on a unit or building. Plain click selects it (a double-click
+// selects all of the player's units of that type on screen, as does
+// Ctrl+click); Shift+click adds the player's own unit to the selection or
+// takes it out.
+
+void SimUIForm::ClickSelect(Gob *pgob, dword ffMods)
+{
+    static long s_tLast = 0;
+    static Gid s_gidLast = kgidNull;
+
+    if ((pgob->GetFlags() & kfGobUnit) == 0)
+        return;
+    bool fOwn = gfGodMode || pgob->GetSide() == gpplrLocal->GetSide();
+    long tNow = HostGetTickCount();
+    bool fDouble = s_gidLast == pgob->GetId() && tNow - s_tLast < kctDoubleClick;
+    s_tLast = tNow;
+    s_gidLast = pgob->GetId();
+
+    if ((ffMods & kfModShift) && fOwn) {
+        // Can't mix in an enemy unit selected for a look
+        for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
+            if ((pgobT->GetFlags() & (kfGobUnit | kfGobSelected)) == (kfGobUnit | kfGobSelected) &&
+                    pgobT->GetSide() != pgob->GetSide()) {
+                ((UnitGob *)pgobT)->Select(false);
+            }
+        }
+        bool fSelected = (pgob->GetFlags() & kfGobSelected) != 0;
+        ((UnitGob *)pgob)->Select(!fSelected);
+        if (!fSelected)
+            PlaySelectSfx(pgob);
+        return;
+    }
+
+    if ((fDouble || (ffMods & kfModCtrl)) && fOwn &&
+            (pgob->GetFlags() & kfGobStructure) == 0) {
+        gsim.SetGobSelected(pgob);
+        SelectSameUnitTypes(pgob, false);
+        return;
+    }
+
+    gsim.SetGobSelected(pgob);
+    PlaySelectSfx(pgob);
+}
+
+void SimUIForm::PlaySelectSfx(Gob *pgob)
+{
+    if (gfGodMode)
+        return;
+    if (pgob->GetFlags() & kfGobStructure) {
+        gsndm.PlaySfx(((StructConsts *)gapuntc[((StructGob *)pgob)->GetUnitType()])->sfxSelect);
+    } else if (pgob->GetSide() == gpplrLocal->GetSide()) {
+        gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pgob)->GetUnitType()])->sfxcSelect));
     }
 }
 

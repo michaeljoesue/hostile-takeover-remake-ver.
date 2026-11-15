@@ -159,6 +159,12 @@ void InputUIForm::OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd)
 bool InputUIForm::EventProc(Event *pevt)
 {
 	if (pevt->eType == keyDownEvent) {
+		// Battlefield hotkeys first
+
+		SimUIForm *psui = (SimUIForm *)gpfrmmSim->GetFormPtr(kidfSimUI);
+		if (psui != NULL && psui->OnBattlefieldKey(pevt))
+			return true;
+
 		switch (pevt->chr) {
 		case vchrMenu:
         case vchrBack:

@@ -478,13 +478,32 @@ void MobileUnitGob::Idle()
 {
 }
 
+// A player's unit only attacks while moving during an attack-move
+
+void MobileUnitGob::EndAttackMove()
+{
+	if (IsHumanOrGodControlled() && m_msgAction.mid == kmidAttackMoveCommand)
+		m_wfMunt &= ~kfMuntAttackEnemiesWhenMoving;
+}
+
+// Set while SimUIForm gives an attack-move order (A + click)
+
+bool gfAttackMoveOrder = false;
+
 void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord wyCenter, TCoord tcRadius, WCoord wcMoveDistPerUpdate)
 {
+	// This is a new order from the player: it replaces an attack-move in
+	// progress
+
+	gcmdq.Enqueue(kmidClearActionCommand, m_gid);
+
 	if (gid == kgidNull) {
 		// Send formed command
 
 		Message msgT;
 		msgT.mid = kmidMoveCommand;
+		if (gfAttackMoveOrder && m_pmuntc->tcFiringRange > 0)
+			msgT.mid = kmidAttackMoveCommand;
 		msgT.smidSender = kgidNull;
 		msgT.smidReceiver = m_gid;
 		msgT.MoveCommand.wptTarget.wx = wx;
@@ -727,6 +746,26 @@ BeginStateMachine
 		PendOrProcessAction(pmsg, kstHuntEnemies, kmuaHuntEnemies);
 
 	// Commands are the result of player interactions with the SimUI
+
+	OnMsg(kmidClearActionCommand)
+		m_mua = kmuaNone;
+		if (IsHumanOrGodControlled())
+			m_wfMunt &= ~kfMuntAttackEnemiesWhenMoving;
+
+	OnMsg(kmidStopCommand)
+		m_mua = kmuaNone;
+		if (IsHumanOrGodControlled())
+			m_wfMunt &= ~kfMuntAttackEnemiesWhenMoving;
+		PendOrProcessCommand(pmsg, kstGuard);
+
+	// Attack-move is a move action: after fighting an enemy on the way, the
+	// unit carries on to its destination
+
+	OnMsg(kmidAttackMoveCommand)
+		if (PendOrProcessAction(pmsg, kstMove, kmuaMove)) {
+			m_wfMunt |= kfMuntAttackEnemiesWhenMoving;
+			goto lbMoveCommand;
+		}
 
 	OnMsg(kmidMoveCommand)
 		if (PendOrProcessCommand(pmsg, kstMove)) {
@@ -974,6 +1013,7 @@ lbHitNoDamage:
 			case knMoveTargetReached:
 				if (m_mua == kmuaMove)
 					m_mua = kmuaNone;	// Move action complete
+				EndAttackMove();
 
 				SetState(kstGuard);
 				break;
@@ -986,6 +1026,7 @@ lbHitNoDamage:
 
 				if (m_mua == kmuaMove)
 					m_mua = kmuaNone;	// Move action complete
+				EndAttackMove();
 
 				SetState(kstGuard);
 				break;

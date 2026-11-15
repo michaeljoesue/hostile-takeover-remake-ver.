@@ -573,6 +573,29 @@ void UnitGob::SetHealth(fix fxHealth)
 		m_fxHealth = fxHealth;
 		if ((m_ff & (kfGobBeingBuilt | kfGobSelected)) || (m_wfUnit & kfUnitDrawHealthIndicator))
 			MarkRedraw();
+		UpdateDamagedIndicator();
+	}
+}
+
+// Damaged units, the player's and the enemy's, always show a health bar
+// until they're repaired or destroyed
+
+bool UnitGob::IsDamaged()
+{
+	return (m_ff & (kfGobActive | kfGobBeingBuilt)) == kfGobActive &&
+			m_fxHealth > 0 && m_fxHealth < m_puntc->GetArmorStrength();
+}
+
+void UnitGob::UpdateDamagedIndicator()
+{
+	if (IsDamaged()) {
+		if (!(m_wfUnit & kfUnitDrawHealthIndicator)) {
+			m_wfUnit |= kfUnitDrawHealthIndicator;
+			m_ff |= kfGobLayerSelection;
+			MarkRedraw();
+		}
+	} else if ((m_wfUnit & kfUnitDrawHealthIndicator) && m_cDamageCountdown == 0) {
+		ClearDamageIndicator();
 	}
 }
 
@@ -970,6 +993,11 @@ void UnitGob::ShowDamageIndicator()
 
 void UnitGob::ClearDamageIndicator()
 {
+	// Damaged units keep theirs (see UpdateDamagedIndicator)
+
+	if (IsDamaged())
+		return;
+
 	if ((m_ff & kfGobSelected) == 0)
 		m_ff &= ~kfGobLayerSelection;
 	m_wfUnit &= ~kfUnitDrawHealthIndicator;

@@ -418,6 +418,7 @@ BeginStateMachine
 			if (!m_fMinerUnderAttack) {
 				m_fMinerUnderAttack = true;
 				gsndm.PlaySfx(ksfxGalaxMinerUnderAttack);
+				NoteAlertLocation(this);
 				
 				// update status
 				ShowAlert(kidsMinerUnderAttack);

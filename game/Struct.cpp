@@ -923,6 +923,8 @@ BeginStateMachine
 		// Remember that a structure has been attacked
 
 		m_pplr->SetFlags(m_pplr->GetFlags() | kfPlrStructureAttacked);
+		if (m_pplr == gpplrLocal)
+			NoteAlertLocation(this);
 
 		// Notify nearby allies that we've been hit! CONSIDER: pass in an expanded range?
 

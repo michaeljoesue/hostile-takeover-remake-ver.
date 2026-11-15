@@ -100,26 +100,77 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         return false;
     }
 
+    pevt->ffMods = HostGetModifiers();
+
 	switch (event.type) {
 
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        if (event.button.button != SDL_BUTTON_LEFT)
+        switch (event.button.button) {
+        case SDL_BUTTON_LEFT:
+            pevt->eType = penDownEvent;
+            break;
+        case SDL_BUTTON_RIGHT:
+            pevt->eType = rightDownEvent;
+            break;
+        case SDL_BUTTON_MIDDLE:
+            pevt->eType = middleDownEvent;
+            break;
+        default:
             return false;
-        pevt->eType = penDownEvent;
+        }
         MapMousePosition(&event, pevt, event.button.x, event.button.y);
 		break;
 
 	case SDL_EVENT_MOUSE_BUTTON_UP:
-        if (event.button.button != SDL_BUTTON_LEFT)
+        switch (event.button.button) {
+        case SDL_BUTTON_LEFT:
+            pevt->eType = penUpEvent;
+            break;
+        case SDL_BUTTON_MIDDLE:
+            pevt->eType = middleUpEvent;
+            break;
+        default:
             return false;
-        pevt->eType = penUpEvent;
+        }
         MapMousePosition(&event, pevt, event.button.x, event.button.y);
 		break;
 
 	case SDL_EVENT_MOUSE_MOTION:
-        pevt->eType = penMoveEvent;
+        // Middle-button drags pan the battlefield; they're sent separately
+        // so they don't select or press anything
+
+        if ((event.motion.state & SDL_BUTTON_MMASK) != 0 &&
+                (event.motion.state & SDL_BUTTON_LMASK) == 0) {
+            pevt->eType = middleMoveEvent;
+        } else {
+            pevt->eType = penMoveEvent;
+        }
         MapMousePosition(&event, pevt, event.motion.x, event.motion.y);
 		break;
+
+    case SDL_EVENT_MOUSE_WHEEL:
+        {
+            // Whole notches; touchpads send fractions
+
+            static float s_flWheel;
+            s_flWheel += event.wheel.y;
+            int cNotches = (int)s_flWheel;
+            if (cNotches == 0)
+                return false;
+            s_flWheel -= cNotches;
+            pevt->eType = wheelEvent;
+            pevt->dw = (dword)cNotches;
+            float x = event.wheel.mouse_x;
+            float y = event.wheel.mouse_y;
+            SDL_Event evtT;
+            memset(&evtT, 0, sizeof(evtT));
+            evtT.type = SDL_EVENT_MOUSE_MOTION;
+            evtT.motion.windowID = event.wheel.windowID;
+            evtT.motion.x = x;
+            evtT.motion.y = y;
+            MapMousePosition(&evtT, pevt, x, y);
+        }
+        break;
 
 	case SDL_EVENT_KEY_DOWN:
         // Alt+Enter and F11 toggle fullscreen
@@ -134,6 +185,13 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         }
 
         pevt->eType = keyDownEvent;
+        pevt->ffMods = 0;
+        if (event.key.mod & SDL_KMOD_SHIFT)
+            pevt->ffMods |= kfModShift;
+        if (event.key.mod & SDL_KMOD_CTRL)
+            pevt->ffMods |= kfModCtrl;
+        if (event.key.mod & SDL_KMOD_ALT)
+            pevt->ffMods |= kfModAlt;
         switch (event.key.key) {
 		case SDLK_UP:
 			pevt->chr = chrPageUp;
@@ -234,6 +292,34 @@ void HostOutputDebugString(char *pszFormat, ...)
 #endif
 }
 
+dword HostGetModifiers()
+{
+    SDL_Keymod mod = SDL_GetModState();
+    dword ff = 0;
+    if (mod & SDL_KMOD_SHIFT)
+        ff |= kfModShift;
+    if (mod & SDL_KMOD_CTRL)
+        ff |= kfModCtrl;
+    if (mod & SDL_KMOD_ALT)
+        ff |= kfModAlt;
+    return ff;
+}
+
+// Crosshair while the player picks a target (attack-move)
+
+void HostSetTargetCursor(bool fTarget)
+{
+    static SDL_Cursor *s_pcurTarget;
+    if (fTarget) {
+        if (s_pcurTarget == NULL)
+            s_pcurTarget = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
+        if (s_pcurTarget != NULL)
+            SDL_SetCursor(s_pcurTarget);
+    } else {
+        SDL_SetCursor(SDL_GetDefaultCursor());
+    }
+}
+
 long HostGetTickCount()
 {
     return (long)base::GetTickCount();
@@ -259,10 +345,11 @@ dword HostGetCurrentKeyState(dword keyBit)
     if (pbKeys[SDL_SCANCODE_RIGHT])
         dw |= keyBitRockerRight;
 
-    // In fullscreen, holding the mouse at a screen edge scrolls too
+    // Holding the mouse at the edge of the screen (or of the window, when
+    // the game is in a window and has focus) scrolls too
 
     SDL_Window *pwnd = SDL_GetMouseFocus();
-    if (gfFullscreen && pwnd != NULL &&
+    if (pwnd != NULL &&
             (SDL_GetWindowFlags(pwnd) & SDL_WINDOW_INPUT_FOCUS)) {
         float x, y;
         SDL_GetMouseState(&x, &y);

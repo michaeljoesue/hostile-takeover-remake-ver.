@@ -197,6 +197,12 @@ enum MessageId { // mid
 	kmidFire,
 	kmidHeal,
 	kmidPlaySfx,
+
+	// Added in 2.0 (at the end, so saved games keep their message numbers)
+
+	kmidAttackMoveCommand,		// Move, attacking enemies on the way (MoveCommand)
+	kmidStopCommand,			// Stop and guard
+	kmidClearActionCommand,		// A new player order replaces the current one
 };
 
 STARTLABEL(MessageNames)
@@ -237,6 +243,9 @@ STARTLABEL(MessageNames)
 	LABEL(kmidFire)
 	LABEL(kmidHeal)
 	LABEL(kmidPlaySfx)
+	LABEL(kmidAttackMoveCommand)
+	LABEL(kmidStopCommand)
+	LABEL(kmidClearActionCommand)
 ENDLABEL(MessageNames)
 
 #pragma pack(pop)

@@ -1351,6 +1351,7 @@ struct Event { // evt
 	dword dw;
     dword ff;
     long ms;
+    dword ffMods; // kfMod* keys held when the event happened
 };
 #define kfEvtCoalesce 0x00000002
 
@@ -1365,6 +1366,23 @@ struct Event { // evt
 #define hidePinEvent 0x6008
 #define cancelModeEvent 0x6009
 #define nullEvent 0x600a
+
+// Mouse buttons other than the left one, and the wheel. These go only to the
+// battlefield (SimUIForm), never to buttons or menus. x, y are as for pen
+// events; wheelEvent's dw is the number of notches (+ is away from the user).
+// middleMoveEvent is mouse motion while the middle button is held.
+
+#define rightDownEvent 0x600b
+#define middleDownEvent 0x600c
+#define middleUpEvent 0x600d
+#define middleMoveEvent 0x600e
+#define wheelEvent 0x600f
+
+// HostGetModifiers() flags
+
+#define kfModShift 1
+#define kfModCtrl 2
+#define kfModAlt 4
 
 // gameOverEvent constants (placed in Event::dw)
 
@@ -2050,6 +2068,7 @@ public:
 	virtual bool HasCapture();
     virtual Form *GetFormCapture();
 	virtual Form *GetModalForm();
+    Form *HitTestForms(Event *pevt);
 	virtual void InvalidateRect(Rect *prc);
 	virtual DibBitmap *GetDib();
 	virtual void CalcOpaqueRect(Form *pfrmStop, Rect *prcOpaqueStart, Rect *prcResult);
@@ -2118,6 +2137,7 @@ public:
 	virtual Form *GetFocus();
 
 private:
+    bool CookBattlefieldEvent(Event *pevt);
 	virtual bool BltTo(DibBitmap *pbmDst, int yTop, bool fScrolled);
     bool StealCapturePen2(Event *pevt, FormMgr *pfrmmChildCapture);
 
@@ -2999,6 +3019,15 @@ public:
     void ShowUnitMenu(Gob *pgob);
     void SelectSameUnitTypes(Gob *pgob, bool fSfx);
     bool IsSelectionCommand(Gob *pgobHit);
+    void ClickSelect(Gob *pgob, dword ffMods);
+    void PlaySelectSfx(Gob *pgob);
+
+    // Keyboard commands (InputUIForm passes keys on)
+    bool OnBattlefieldKey(Event *pevt);
+    bool IsAttackMoveArmed() { return m_fAttackMoveArmed; }
+    void SetAttackMoveArmed(bool fArmed);
+    void AttackMoveTo(int x, int y);
+    void CenterViewOn(WCoord wx, WCoord wy);
 
     class PenHandler {
     public:
@@ -3015,6 +3044,7 @@ public:
 	// Form methods
 
 	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf);
+	virtual bool EventProc(Event *pevt);
 	virtual bool OnPenEvent(Event *pevt);
 	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque);
 	virtual void OnPaint(DibBitmap *pbm);
@@ -3033,6 +3063,7 @@ private:
     class StylusHandler : public PenHandler {
     public:
         StylusHandler(SimUIForm *psui);
+        virtual ~StylusHandler();
         virtual bool OnPenEvent(Event *pevt, bool fScrollOnly);
         virtual void OnPaint(DibBitmap *pbm) {}
         virtual void CheckScroll();
@@ -3040,15 +3071,42 @@ private:
         SimUIForm *m_psui;
         bool m_fDragging;
 
+        // The click that started this drag
+        dword m_ffMods;
+        Gid m_gidDown;
+
+        // Shift+drag adds to the units that were selected before it
+        Gid *m_agidKeep;
+        int m_cgidKeep;
+
         void OnPenDown(Event *pevt);
         void OnPenUp(Event *pevt);
         void OnPenDrag(Event *pevt);
-        void OnPenHold(Event *pevt);
         void CancelModes();
+        void UpdateDragSelection();
     };
 
 	MobileUnitGob *SetSelectionTargets(Gid gid, WCoord wxTarget,
             WCoord wyTarget);
+    void OnRightClick(int x, int y);
+    void ScrollViewBy(WCoord dwx, WCoord dwy);
+
+    // Control groups: Ctrl+1..9 sets, 1..9 selects
+    enum { kcGroups = 10, kcgidGroupMax = 128 };
+    Gid m_aagidGroup[kcGroups][kcgidGroupMax];
+    int m_acgidGroup[kcGroups];
+    int m_nGroupLast;
+    long m_tGroupLast;
+    void SetGroup(int nGroup, bool fAdd);
+    void SelectGroup(int nGroup);
+    int GetOwnSelection(Gid *agid, int cgidMax, bool fMobileOnly);
+
+    bool m_fAttackMoveArmed;
+
+    // Middle-button panning
+    bool m_fPanning;
+    int m_xPanLast;
+    int m_yPanLast;
 
 	static bool s_fReadyForPaint;
     
@@ -5302,6 +5360,8 @@ public:
 	void NotifyNearbyAlliesOfHit(Gid gidAssailant);
 	void ShowDamageIndicator();
 	void ClearDamageIndicator();
+	bool IsDamaged();
+	void UpdateDamagedIndicator();
 	int GetDamageTo(UnitGob *puntTarget);
 	void RecalcEnemyNearby(bool fClearOnly);
 
@@ -5587,6 +5647,7 @@ protected:
 	virtual void Idle();
 	virtual void PerformAction(char *szAction);
 	bool InTransition();
+	void EndAttackMove();
 
 private:
 	bool IsAttackPointWithinFiringRangeOfTarget(UnitGob *puntTarget);
@@ -7035,6 +7096,12 @@ extern int gcxyBorder;
 extern bool gfAutosave;
 extern DibBitmap *gpbmClip;
 extern FormMgr *gpfrmmSim;
+extern bool gfAttackMoveOrder;
+
+// Where the last "under attack" alert happened, for the Space key
+extern WPoint gwptLastAlert;
+extern bool gfLastAlertValid;
+void NoteAlertLocation(Gob *pgob);
 extern FormMgr *gpfrmmInput;
 extern MultiFormMgr *gpmfrmm;
 #ifdef STATS_DISPLAY
@@ -7239,6 +7306,8 @@ void HostExit();
 bool HostGetEvent(Event *pevt, long ctWait = -1);
 void HostOutputDebugString(char *pszFormat, ...);
 long HostGetTickCount();
+dword HostGetModifiers();
+void HostSetTargetCursor(bool fTarget);
 long HostGetMillisecondCount();
 dword HostGetCurrentKeyState(dword keyBit);
 void HostMessageBox(TCHAR *pszFormat, ...);

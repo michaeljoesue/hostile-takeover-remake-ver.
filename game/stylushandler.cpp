@@ -2,10 +2,30 @@
 
 namespace wi {
 
+// Left mouse button on the battlefield:
+//
+// - Click a unit or building to select it; double-click (or Ctrl+click) a
+//   unit to select all of yours of that type on screen; Shift+click adds or
+//   removes one of yours. Clicking one of your buildings also opens its
+//   menu.
+// - Click the ground to deselect.
+// - Drag a box to select your units in it; Shift+drag adds them.
+//
+// Orders are given with the right button (SimUIForm::OnRightClick).
+
 SimUIForm::StylusHandler::StylusHandler(SimUIForm *psui)
 {
     m_psui = psui;
     m_fDragging = false;
+    m_ffMods = 0;
+    m_gidDown = kgidNull;
+    m_agidKeep = new Gid[kcpgobMax];
+    m_cgidKeep = 0;
+}
+
+SimUIForm::StylusHandler::~StylusHandler()
+{
+    delete[] m_agidKeep;
 }
 
 bool SimUIForm::StylusHandler::OnPenEvent(Event *pevt, bool fScrollOnly)
@@ -16,8 +36,7 @@ bool SimUIForm::StylusHandler::OnPenEvent(Event *pevt, bool fScrollOnly)
         return true;
     }
 
-	// Dragging mode captures all pen events except pen-hold for the duration of
-	// the drag to perform drag-scrolling, etc (shift-drag or graffiti-scroll)
+	// Dragging mode captures all pen events for the duration of the drag
 
 	if (m_fDragging && pevt->eType != penHoldEvent) {
 		OnPenDrag(pevt);
@@ -30,22 +49,11 @@ bool SimUIForm::StylusHandler::OnPenEvent(Event *pevt, bool fScrollOnly)
 	}
 
 	switch (pevt->eType) {
-	case penHoldEvent:
-		// Popup Gob menu if pen held on one of them
-
-		OnPenHold(pevt);
-		break;
-
 	case penDownEvent:
-        // Handle the beginning of a drag selection operation or a tap on a
-        // unit/structure
-
 		OnPenDown(pevt);
 		break;
 
 	case penUpEvent:
-		// Handle the canceling of any in progress modes
-
 		OnPenUp(pevt);
 		break;
 	}
@@ -57,33 +65,50 @@ void SimUIForm::StylusHandler::OnPenDown(Event *pevt)
 {
     // Enter dragging mode; this'll cause OnPenDrag to be called until
     // that mode exits.
-    
+
+    // A, then click: attack-move
+
+    if (m_psui->IsAttackMoveArmed()) {
+        m_psui->AttackMoveTo(pevt->x, pevt->y);
+        m_fDragging = false;
+        return;
+    }
+
 	m_fDragging = true;
+    m_ffMods = pevt->ffMods;
 
     // Calc a hit target in world coords
-    
-	WCoord wxPen = WcFromPc(pevt->x);
-	WCoord wyPen = WcFromPc(pevt->y);
+
 	WCoord wxTarget, wyTarget;
-	gsim.GetViewPos(&wxTarget, &wyTarget);
-	wxTarget += wxPen;
-	wyTarget += wyPen;
+    Gob *pgobHit = m_psui->HitTestGob(pevt->x, pevt->y, &wxTarget, &wyTarget);
+    m_gidDown = pgobHit != NULL ? pgobHit->GetId() : kgidNull;
 
 	// s_wptSelect1 & 2 are used to determine the transition from a
 	// tentative selection to a real one and must contain the beginning
 	// and current pen positions, respectively.
 
-	s_wptSelect1.wx = wxTarget;
-	s_wptSelect1.wy = wyTarget;
+	gsim.GetViewPos(&s_wptSelect1.wx, &s_wptSelect1.wy);
+	s_wptSelect1.wx += WcFromPc(pevt->x);
+	s_wptSelect1.wy += WcFromPc(pevt->y);
 	s_wptSelect2 = s_wptSelect1;
-
 	gwrcSelection.Set(s_wptSelect1, s_wptSelect2);
-	gsim.SetSelection(&gwrcSelection);
-	
 
-	// Only Select. Leave moving and attacking to the pen up handler.
+    // Shift+drag keeps what's selected
 
-	m_psui->MoveOrAttackOrSelect(pevt->x, pevt->y, kfMasSelect);
+    m_cgidKeep = 0;
+    if (m_ffMods & kfModShift) {
+        for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
+            if ((pgobT->GetFlags() & (kfGobUnit | kfGobSelected)) == (kfGobUnit | kfGobSelected) &&
+                    m_cgidKeep < kcpgobMax) {
+                m_agidKeep[m_cgidKeep++] = pgobT->GetId();
+            }
+        }
+    }
+
+    // Select what was clicked right away, for a responsive feel
+
+    if (pgobHit != NULL)
+        m_psui->ClickSelect(pgobHit, m_ffMods);
 }
 
 void SimUIForm::StylusHandler::OnPenUp(Event *pevt)
@@ -98,11 +123,9 @@ void SimUIForm::StylusHandler::OnPenUp(Event *pevt)
 
 void SimUIForm::StylusHandler::OnPenDrag(Event *pevt)
 {
-    WCoord wxPen = WcFromPc(pevt->x);
-    WCoord wyPen = WcFromPc(pevt->y);
     WCoord wxView, wyView;
     gsim.GetViewPos(&wxView, &wyView);
-    
+
 	switch (pevt->eType) {
 	case penUpEvent:
 		// If this is a forced up event, cancel our modes
@@ -112,29 +135,34 @@ void SimUIForm::StylusHandler::OnPenDrag(Event *pevt)
 			break;
 		}
 
-		// Real pen event. Leaving drag mode.
-
 		m_fDragging = false;
-
-		// If we're drag selecting complete the process. Otherwise handle this
-		// event as a tap on an enemy (attack it) or location (move to it)
 
 		if (gfDragSelecting) {
 			// Invalidate this area first so we get it to redraw
 
 			m_psui->InvalidateDragSelection();
-
-			// Turn off selection
-
 			gfDragSelecting = false;
-
-		} else {
-			m_psui->MoveOrAttackOrSelect(pevt->x, pevt->y, kfMasMove | kfMasAttack | kfMasShowMenu);
+            break;
 		}
+
+        // A click. On the ground: deselect. On one of the player's buildings:
+        // open its menu.
+
+        if (m_gidDown == kgidNull) {
+            if ((m_ffMods & kfModShift) == 0)
+                gsim.ClearGobSelection();
+        } else {
+            Gob *pgob = ggobm.GetGob(m_gidDown);
+            if (pgob != NULL && (pgob->GetFlags() & kfGobStructure) &&
+                    (m_ffMods & (kfModShift | kfModCtrl)) == 0 &&
+                    (gfGodMode || pgob->GetSide() == gpplrLocal->GetSide())) {
+                m_psui->ShowUnitMenu(pgob);
+            }
+        }
 		break;
-            
+
 	case penMoveEvent:
-		{            
+		{
 			if (gfDragSelecting) {
 				// Inval old pos of selection rect
 
@@ -159,38 +187,25 @@ void SimUIForm::StylusHandler::OnPenDrag(Event *pevt)
 				// Inval new size of selection rect
 
 				m_psui->InvalidateDragSelection();
-
-
-				gsim.SetSelection(&gwrcSelection);
+                UpdateDragSelection();
 			}
 		}
 		break;
 	}
 }
 
-void SimUIForm::StylusHandler::OnPenHold(Event *pevt)
+// Select the player's units in the box, plus the ones kept by Shift
+
+void SimUIForm::StylusHandler::UpdateDragSelection()
 {
-	WCoord wxTarget, wyTarget;
-	gsim.GetViewPos(&wxTarget, &wyTarget);
-	wxTarget += WcFromPc(pevt->x);
-	wyTarget += WcFromPc(pevt->y);
-
-	Gob *pgobHit = NULL;
-	Enum enm;
-	if (!gsim.HitTest(&enm, wxTarget, wyTarget, kfGobActive | kfGobUnit,
-            &pgobHit)) {
-		return;
+    gsim.SetSelection(&gwrcSelection);
+    for (int i = 0; i < m_cgidKeep; i++) {
+        Gob *pgob = ggobm.GetGob(m_agidKeep[i]);
+        if (pgob != NULL && (pgob->GetFlags() & kfGobUnit) &&
+                (gfGodMode || pgob->GetSide() == gpplrLocal->GetSide())) {
+            ((UnitGob *)pgob)->Select(true);
+        }
     }
-
-	// Don't popup menu if the player doesn't own the Gob (unless in God mode)
-
-	if (!gfGodMode && 
-			pgobHit->GetSide() != gpplrLocal->GetSide()) {
-		return;
-    }
-
-	m_fDragging = false;
-	pgobHit->PopupMenu();
 }
 
 void SimUIForm::StylusHandler::CancelModes()
@@ -221,7 +236,7 @@ void SimUIForm::StylusHandler::CheckScroll()
 
     WCoord wxView, wyView;
     gsim.GetViewPos(&wxView, &wyView);
-    
+
     WCoord wxViewNew = wxView;
     WCoord wyViewNew = wyView;
 
@@ -244,9 +259,7 @@ void SimUIForm::StylusHandler::CheckScroll()
         s_wptSelect2.wx += wxViewActual - wxView;
         s_wptSelect2.wy += wyViewActual - wyView;
         gwrcSelection.Set(s_wptSelect1, s_wptSelect2);
-
-
-        gsim.SetSelection(&gwrcSelection);
+        UpdateDragSelection();
     }
 }
 

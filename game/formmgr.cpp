@@ -193,6 +193,21 @@ bool FormMgr::CookPenEvent(Event *pevt)
 	}
 }
 
+// The topmost form under the event's point, or NULL if none, or if a modal
+// form is in the way
+
+Form *FormMgr::HitTestForms(Event *pevt)
+{
+	for (int n = m_cfrm - 1; n >= 0; n--) {
+		Form *pfrm = m_apfrm[n];
+		if (pfrm->OnHitTest(pevt))
+			return pfrm;
+		if (pfrm->GetFlags() & kfFrmDoModal)
+			return NULL;
+	}
+	return NULL;
+}
+
 Form *FormMgr::GetFocus()
 {
 	// Hack for now: assume the topmost form wants key input
@@ -738,6 +753,13 @@ bool MultiFormMgr::CookEvent(Event *pevt)
 	// Try to handle intelligently
 
 	switch (pevt->eType) {
+    case rightDownEvent:
+    case middleDownEvent:
+    case middleUpEvent:
+    case middleMoveEvent:
+    case wheelEvent:
+        return CookBattlefieldEvent(pevt);
+
 	case penHoverEvent:
 	case penDownEvent:
 	case penUpEvent:
@@ -795,6 +817,49 @@ bool MultiFormMgr::CookEvent(Event *pevt)
 	}
 
 	return false;
+}
+
+// Right/middle buttons and the wheel only act on the battlefield: they go to
+// the SimUIForm when it's the form under the mouse and nothing modal is up.
+// Middle up and middle drags go to it wherever the mouse is, so a pan always
+// ends.
+
+bool MultiFormMgr::CookBattlefieldEvent(Event *pevt)
+{
+    pevt->idf = 0;
+    if (GetModalForm() != NULL)
+        return false;
+    for (int n = 0; n < m_cfrmm; n++) {
+        if (m_apfrmm[n]->GetModalForm() != NULL || m_apfrmm[n]->HasCapture())
+            return false;
+    }
+    for (int n = 0; n < m_cfrmm; n++) {
+        if (m_apfrmm[n] != gpfrmmSim)
+            continue;
+        pevt->x -= m_arcFormMgr[n].left;
+        pevt->y -= m_arcFormMgr[n].top;
+        if (pevt->eType == middleUpEvent || pevt->eType == middleMoveEvent) {
+            pevt->idf = kidfSimUI;
+            return true;
+        }
+        if (!m_arcFormMgr[n].PtIn(pevt->x + m_arcFormMgr[n].left,
+                pevt->y + m_arcFormMgr[n].top))
+            return false;
+        Form *pfrm = gpfrmmSim->HitTestForms(pevt);
+
+        // Right-click while placing a structure cancels the placement
+
+        if (pfrm != NULL && pfrm == gpfrmPlace && gpfrmPlace->IsBusy() &&
+                pevt->eType == rightDownEvent) {
+            gpfrmPlace->OnControlSelected(kidcCancel);
+            return false;
+        }
+        if (pfrm == NULL || pfrm->GetId() != kidfSimUI)
+            return false;
+        pevt->idf = kidfSimUI;
+        return true;
+    }
+    return false;
 }
 
 Form *MultiFormMgr::GetFormPtr(word idf)
