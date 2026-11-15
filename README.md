@@ -52,6 +52,14 @@ The engine has been updated from its 2007 handheld roots:
   4 channels, averaged so effects got quieter as more played) with soft
   clipping, and resampled by SDL3 to the output device's rate (typically
   48 kHz stereo). The volume slider works.
+- **Positional sound.** Fights, shots, explosions and buildings being hit
+  are panned left or right by where they happen relative to the middle of
+  the view, and are quieter off screen, so you can hear where a fight is.
+- **Five sides.** Side 1 is ACME and side 2 is OMNI (now bright red,
+  #FF3333). There is a new side 5, Crimson (#DC143C), for missions to use.
+  Allied sides share what they can see.
+- **Bigger maps.** Missions can be up to 256x256 tiles (was 64x64).
+- **All missions are unlocked** from the start.
 - The full Options menu (Game, Sound, Performance, Color, Display) is back.
 
 ## About
@@ -130,7 +138,8 @@ Modern RTS controls:
 
 Saved games, settings and mission progress are stored in
 `%APPDATA%\Spiffcode\HostileTakeover`. If you quit during a mission, it is
-saved and restored the next time the game starts.
+saved and restored the next time the game starts. Games saved by versions
+before side 5 and the bigger maps can't be loaded.
 
 ## Game data
 
@@ -241,6 +250,20 @@ one with File > New.
   shared with other players this way.
 - From the command line, `bin\mcl.exe -pack out.pdb mission.ld [...]` makes a
   mission pack too.
+
+Maps, sides and limits:
+
+- **Map size.** In the level's properties (Settings > Level),
+  Map Width and Map Height under Map Size set the editing area, from 16 to
+  258 tiles. Bounds, the part the game gets, can be up to 256x256 tiles.
+  Maps wider or taller than 64 tiles get a mini map with 1 pixel per tile.
+- **Sides.** Side 1 (ACME), side 2 (OMNI), sides 3 and 4, and side 5
+  (Crimson). Settings > Side 5 (Crimson) sets up side 5; triggers and units
+  can use it like the others.
+- **Limits.** M no longer stops a mission for exceeding the old limits. It
+  only reports what the game itself can't handle: more than 1024 triggers per
+  side, 64 switches, 64 areas, 600 scenery objects, or 3000 units and
+  buildings placed on the map.
 
 Missions (`.ld`) and tile sets (`.tc`) are saved in M's own file format
 (`m\DocFormat.cs`). Files from older versions of M, which used .NET's
