@@ -81,10 +81,13 @@ FIXED_MAP_BMP_NAMES = '''
     sell_btn_up sell_btn_down sell_btn_disabled
 '''.split()
 
-# Single player missions, by terrain
-GRASSY_LEVELS = '''S_00 S_01 S_02 S_03 S_04 S_05 S_06 C_02 C_03'''.split()
+# Missions and multiplayer maps, by terrain
+GRASSY_LEVELS = '''S_00 S_01 S_02 S_03 S_04 S_05 S_06 C_02 C_03
+    M_05 M_11 M_13 M_14 M_16 M_17 M_19 M_22'''.split()
 DESERT_LEVELS = '''S_07 S_08 S_09 S_10 S_11 S_12 S_13 S_14
-    C_01 C_04 C_05'''.split()
+    C_01 C_04 C_05
+    M_02 M_03 M_04 M_06 M_07 M_08 M_09 M_10 M_12 M_15 M_18 M_20
+    M_21'''.split()
 
 
 def log(msg):

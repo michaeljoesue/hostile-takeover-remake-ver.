@@ -12,8 +12,8 @@ only**. Compared to the original repository:
 - Multiplayer, the multiplayer server (`server`, `stats`, `syncerror`), chat,
   accounts and login, the leaderboard, the forums link, add-on mission pack
   downloads, copy protection (DRM), the demo/purchase screens and the related
-  code have been removed. The multiplayer maps (`M_*`) are no longer in the
-  game data.
+  code have been removed. The multiplayer maps (`M_*`) are still built into
+  the game data, but the single-player menus don't list them.
 - Story and challenge missions, saved games, options and help are unchanged.
 
 ## About
