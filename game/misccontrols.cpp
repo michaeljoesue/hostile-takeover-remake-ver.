@@ -935,6 +935,14 @@ void ListControl::OnControlSelected(word idc)
 	} else {
 		m_iliTop += iliVisible;
 	}
+
+	// Page by a screenful, but stop with the last item at the bottom so the
+	// list never shows empty rows
+
+	if (m_iliTop > m_cli - iliVisible)
+		m_iliTop = m_cli - iliVisible;
+	if (m_iliTop < 0)
+		m_iliTop = 0;
 	Invalidate();
 }
 
@@ -1208,7 +1216,12 @@ void ListControl::OnPenEvent2(Event *pevt)
         }
     }
 
-	if (pevt->eType != penDownEvent) {
+	// Items are selected when the mouse button is released without having
+	// dragged (a drag scrolls the list), not when it is pressed: pressing
+	// to start a drag must not select (or, in the unit build menus, order)
+	// the item under the pointer
+
+	if (pevt->eType != penUpEvent) {
 		return;
     }
 
@@ -1224,8 +1237,8 @@ void ListControl::OnPenEvent2(Event *pevt)
         iliSel = m_iliTop + iClosest;
         fOnItem = true;
     } else {
-        iliSel = -1;
-        fOnItem = false;
+        // Clicking the empty space below the items keeps the selection
+        return;
     }
 
 	int ili = 0;
@@ -1242,7 +1255,7 @@ void ListControl::OnPenEvent2(Event *pevt)
 		gsndm.PlaySfx(ksfxGuiScrollingListSelectItem);
 		Invalidate();
 	} else {
-		if (fOnItem && pevt->eType == penDownEvent)
+		if (fOnItem)
 			m_pceh->OnControlNotify(m_idc, knNotifySelectionTap);
 	}
 }
