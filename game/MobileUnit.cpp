@@ -274,16 +274,16 @@ bool MobileUnitGob::LoadState(Stream *pstm)
 	pstm->Read(&m_msgAction, sizeof(m_msgAction));
 	m_cCountdown = pstm->ReadWord();
 	m_cMoveStepsRemaining = pstm->ReadWord();
-	m_tptChaseInitial.tx = pstm->ReadWord();
-	m_tptChaseInitial.ty = pstm->ReadWord();
+	m_tptChaseInitial.tx = pstm->ReadCoord();
+	m_tptChaseInitial.ty = pstm->ReadCoord();
 #ifdef DRAW_PATHS
-	m_wxDst = pstm->ReadWord();
-	m_wyDst = pstm->ReadWord();
+	m_wxDst = pstm->ReadCoord();
+	m_wyDst = pstm->ReadCoord();
 #endif
-	m_txDst = pstm->ReadWord();
-	m_tyDst = pstm->ReadWord();
-	m_wptTarget.wx = pstm->ReadWord();
-	m_wptTarget.wy = pstm->ReadWord();
+	m_txDst = pstm->ReadCoord();
+	m_tyDst = pstm->ReadCoord();
+	m_wptTarget.wx = pstm->ReadCoord();
+	m_wptTarget.wy = pstm->ReadCoord();
 	if (pstm->ReadByte() != 0) {
 		m_ppathUnit = new Path;
 		if (m_ppathUnit == NULL)
@@ -303,8 +303,8 @@ bool MobileUnitGob::LoadState(Stream *pstm)
 	m_muaPending = (MobileUnitAction)pstm->ReadByte();
 	m_wfMunt = pstm->ReadWord();
 	m_stPending = (State)pstm->ReadByte();
-	m_wptTargetCenter.wx = pstm->ReadWord();
-	m_wptTargetCenter.wy = pstm->ReadWord();
+	m_wptTargetCenter.wx = pstm->ReadCoord();
+	m_wptTargetCenter.wy = pstm->ReadCoord();
 	m_tcTargetRadius = pstm->ReadWord();
 	m_wcMoveDistPerUpdate = pstm->ReadWord();
 	m_cupdLastHitOrNearbyAllyHit = pstm->ReadDword();
@@ -322,16 +322,16 @@ bool MobileUnitGob::SaveState(Stream *pstm)
 	pstm->Write(&m_msgAction, sizeof(m_msgAction));
 	pstm->WriteWord(m_cCountdown);
 	pstm->WriteWord(m_cMoveStepsRemaining);
-	pstm->WriteWord(m_tptChaseInitial.tx);
-	pstm->WriteWord(m_tptChaseInitial.ty);
+	pstm->WriteCoord(m_tptChaseInitial.tx);
+	pstm->WriteCoord(m_tptChaseInitial.ty);
 #ifdef DRAW_PATHS
-	pstm->WriteWord(m_wxDst);
-	pstm->WriteWord(m_wyDst);
+	pstm->WriteCoord(m_wxDst);
+	pstm->WriteCoord(m_wyDst);
 #endif
-	pstm->WriteWord(m_txDst);
-	pstm->WriteWord(m_tyDst);
-	pstm->WriteWord(m_wptTarget.wx);
-	pstm->WriteWord(m_wptTarget.wy);
+	pstm->WriteCoord(m_txDst);
+	pstm->WriteCoord(m_tyDst);
+	pstm->WriteCoord(m_wptTarget.wx);
+	pstm->WriteCoord(m_wptTarget.wy);
 	if (m_ppathUnit == NULL) {
 		pstm->WriteByte(0);
 	} else {
@@ -349,8 +349,8 @@ bool MobileUnitGob::SaveState(Stream *pstm)
 	pstm->WriteByte(m_muaPending);
 	pstm->WriteWord(m_wfMunt);
 	pstm->WriteByte(m_stPending);
-	pstm->WriteWord(m_wptTargetCenter.wx);
-	pstm->WriteWord(m_wptTargetCenter.wy);
+	pstm->WriteCoord(m_wptTargetCenter.wx);
+	pstm->WriteCoord(m_wptTargetCenter.wy);
 	pstm->WriteWord(m_tcTargetRadius);
 	pstm->WriteWord(m_wcMoveDistPerUpdate);
 	pstm->WriteDword(m_cupdLastHitOrNearbyAllyHit);

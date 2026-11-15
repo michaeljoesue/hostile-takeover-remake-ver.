@@ -197,7 +197,7 @@ void TileMap::Draw(DibBitmap *pbm, int x, int y, int cx, int cy, int xMap, int y
 	// Get running pointers into various maps
 	// Note: Fog will be accounted for in updatemap in the near future
 
-	word iCell = ty * ctxMap + tx;
+	int iCell = ty * ctxMap + tx;
 	word *pwMapT = &m_pwMapData[iCell];
 	byte *pbFogT = &pbFogMap[iCell];
 	bool *pfInvalid = pupd->GetInvalidMap();

@@ -52,8 +52,8 @@ bool TowerGob::LoadState(Stream *pstm)
 	m_gidTargetPrimary = pstm->ReadWord();
 	m_gidTargetSecondary = pstm->ReadWord();
 	m_tLastFire = gsim.GetTickCount() - pstm->ReadDword();
-	m_wptTarget.wx = pstm->ReadWord();
-	m_wptTarget.wy = pstm->ReadWord();
+	m_wptTarget.wx = pstm->ReadCoord();
+	m_wptTarget.wy = pstm->ReadCoord();
 	return StructGob::LoadState(pstm);
 }
 
@@ -64,8 +64,8 @@ bool TowerGob::SaveState(Stream *pstm)
 	pstm->WriteWord(m_gidTargetPrimary);
 	pstm->WriteWord(m_gidTargetSecondary);
 	pstm->WriteDword((dword)(gsim.GetTickCount() - m_tLastFire));
-	pstm->WriteWord(m_wptTarget.wx);
-	pstm->WriteWord(m_wptTarget.wy);
+	pstm->WriteCoord(m_wptTarget.wx);
+	pstm->WriteCoord(m_wptTarget.wy);
 	return StructGob::SaveState(pstm);
 }
 

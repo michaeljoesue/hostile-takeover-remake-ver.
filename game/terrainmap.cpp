@@ -11,7 +11,7 @@ for (j = 0; j < 64; j += 8) {
 }
 */
 
-int ganSquared[64] = {
+int ganSquared[256] = {
 	0, 1, 4, 9, 16, 25, 36, 49,
 	64, 81, 100, 121, 144, 169, 196, 225,
 	256, 289, 324, 361, 400, 441, 484, 529,
@@ -20,6 +20,30 @@ int ganSquared[64] = {
 	1600, 1681, 1764, 1849, 1936, 2025, 2116, 2209,
 	2304, 2401, 2500, 2601, 2704, 2809, 2916, 3025,
 	3136, 3249, 3364, 3481, 3600, 3721, 3844, 3969,
+	4096, 4225, 4356, 4489, 4624, 4761, 4900, 5041,
+	5184, 5329, 5476, 5625, 5776, 5929, 6084, 6241,
+	6400, 6561, 6724, 6889, 7056, 7225, 7396, 7569,
+	7744, 7921, 8100, 8281, 8464, 8649, 8836, 9025,
+	9216, 9409, 9604, 9801, 10000, 10201, 10404, 10609,
+	10816, 11025, 11236, 11449, 11664, 11881, 12100, 12321,
+	12544, 12769, 12996, 13225, 13456, 13689, 13924, 14161,
+	14400, 14641, 14884, 15129, 15376, 15625, 15876, 16129,
+	16384, 16641, 16900, 17161, 17424, 17689, 17956, 18225,
+	18496, 18769, 19044, 19321, 19600, 19881, 20164, 20449,
+	20736, 21025, 21316, 21609, 21904, 22201, 22500, 22801,
+	23104, 23409, 23716, 24025, 24336, 24649, 24964, 25281,
+	25600, 25921, 26244, 26569, 26896, 27225, 27556, 27889,
+	28224, 28561, 28900, 29241, 29584, 29929, 30276, 30625,
+	30976, 31329, 31684, 32041, 32400, 32761, 33124, 33489,
+	33856, 34225, 34596, 34969, 35344, 35721, 36100, 36481,
+	36864, 37249, 37636, 38025, 38416, 38809, 39204, 39601,
+	40000, 40401, 40804, 41209, 41616, 42025, 42436, 42849,
+	43264, 43681, 44100, 44521, 44944, 45369, 45796, 46225,
+	46656, 47089, 47524, 47961, 48400, 48841, 49284, 49729,
+	50176, 50625, 51076, 51529, 51984, 52441, 52900, 53361,
+	53824, 54289, 54756, 55225, 55696, 56169, 56644, 57121,
+	57600, 58081, 58564, 59049, 59536, 60025, 60516, 61009,
+	61504, 62001, 62500, 63001, 63504, 64009, 64516, 65025,
 };
 
 byte gmpdirdirOpposite[8] = { 4, 5, 6, 7, 0, 1, 2, 3 };
@@ -538,8 +562,8 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 
 	m_abBuffer[pathh.offHead] |= kbfLinked;
 
-	word offClosest;
-	word nDistClosest = (word)-1;
+	int offClosest;
+	int nDistClosest = 0x7fffffff;
 	while (ppathhLast != NULL) {
 		for (int n = 0; n < 8; n++) {
 			// Get next pos
@@ -573,8 +597,8 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 
 			// Calc score of terrain
 
-			word offHead = pbNew - m_abBuffer;
-			word wScoreTerrain;
+			int offHead = pbNew - m_abBuffer;
+			int wScoreTerrain;
 			if (*pbNew & bfTerrainAvoid) {
 				wScoreTerrain = knScoreStructure;
 			} else {
@@ -587,9 +611,9 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 			// Link in this square, add it to the list. It is a path head.
 
 			*pbNew = (*pbNew & (kbfMobileUnit | kbfStructure | kbfReserved)) | kbfHead | kbfLinked | n;
-			word wScoreKnown = ppathhLast->wScoreKnown + s_anScoreVector[n] + wScoreTerrain;
-			word nDist = ganSquared[abs(txNew - txTo)] + ganSquared[abs(tyNew - tyTo)];
-			word wScore = wScoreKnown + nDist;
+			int wScoreKnown = ppathhLast->wScoreKnown + s_anScoreVector[n] + wScoreTerrain;
+			int nDist = ganSquared[abs(txNew - txTo)] + ganSquared[abs(tyNew - tyTo)];
+			int wScore = wScoreKnown + nDist;
 			PathHead *ppathhNew = AddPathHead(wScoreKnown, wScore, ppathhLast->cSteps + 1, offHead, txNew, tyNew);
 
 			// Remember "closest" point
@@ -623,7 +647,7 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 	return NULL;
 }
 
-PathHead *TerrainMap::AddPathHead(word wScoreKnown, word wScore, int cSteps, word offHead, int txNew, int tyNew)
+PathHead *TerrainMap::AddPathHead(int wScoreKnown, int wScore, int cSteps, int offHead, int txNew, int tyNew)
 {
 	// Alloc
 
@@ -686,7 +710,7 @@ void TerrainMap::RemovePathHead(PathHead *ppathh)
 
 bool TerrainMap::IsBlocked(TCoord tx, TCoord ty, byte bf)
 {
-	word offMap = ty * m_ctx + tx;
+	int offMap = ty * m_ctx + tx;
 
 	// We path through structures and blocked terrain (at very high cost) so that structures or
 	// terrain that are "blocking" can at least be approached (albeit at high pathing cost)
@@ -704,7 +728,7 @@ bool TerrainMap::IsBlocked(TCoord tx, TCoord ty, byte bf)
 int TerrainMap::GetTerrainType(TCoord tx, TCoord ty)
 {
 	Assert(tx >= 0 && tx < m_ctx && ty >= 0 && ty < m_cty);
-	word offMap = ty * m_ctx + tx;
+	int offMap = ty * m_ctx + tx;
 	return ((byte *)(m_ptrmaph + 1))[offMap];
 }
 
@@ -713,14 +737,14 @@ bool TerrainMap::GetFlags(int tx, int ty, byte *pbf)
 	Assert(tx >= 0 && ty >= 0);
 	Assert(tx < m_ctx && ty < m_cty);
 
-	word offMap = ty * m_ctx + tx;
+	int offMap = ty * m_ctx + tx;
 	if (((byte *)(m_ptrmaph + 1))[offMap] > kttOpen)
 		return false;
 	*pbf = m_abBuffer[offMap];
 	return true;
 }
 
-Path *TerrainMap::MakePath(TCoord txStart, TCoord tyStart, word off)
+Path *TerrainMap::MakePath(TCoord txStart, TCoord tyStart, int off)
 {
 	Direction adir[kcNodesMax];
 
@@ -877,8 +901,8 @@ int Path::FindClosestPoint(TCoord txFrom, TCoord tyFrom, int itptStart, int ctpt
 {
 	int ctptRemaining = m_cdirs - itptStart;
 
-	word n2Last = (word)-1;
-	word nSmallest = (word)-1;
+	int n2Last = 0x7fffffff;
+	int nSmallest = 0x7fffffff;
 	int jSmallest = -1;
 	int ctptFurtherStopT = ctptFurtherStop;
 	for (int j = 0; j < ctptRemaining; j++) {
@@ -897,7 +921,7 @@ int Path::FindClosestPoint(TCoord txFrom, TCoord tyFrom, int itptStart, int ctpt
 
 		// Calc smallest distance, always advance if we get smaller
 
-		word n2 = ganSquared[abs(tpt.tx - txFrom)] + ganSquared[abs(tpt.ty - tyFrom)];
+		int n2 = ganSquared[abs(tpt.tx - txFrom)] + ganSquared[abs(tpt.ty - tyFrom)];
 		if (n2 <= nSmallest) {
 			nSmallest = n2;
 			jSmallest = j;
@@ -930,14 +954,14 @@ bool Path::LoadState(TerrainMap *ptrmap, Stream *pstm)
 
 	m_ptrmap = ptrmap;
 	m_cdirs = pstm->ReadWord();
-	m_txStart = pstm->ReadWord();
-	m_tyStart = pstm->ReadWord();
+	m_txStart = pstm->ReadCoord();
+	m_tyStart = pstm->ReadCoord();
 	m_adir = new Direction[m_cdirs];
 	if (m_adir == NULL)
 		return false;
 	m_idirCache = (int)(short)pstm->ReadWord();
-	m_txCache = pstm->ReadWord();
-	m_tyCache = pstm->ReadWord();
+	m_txCache = pstm->ReadCoord();
+	m_tyCache = pstm->ReadCoord();
 
 	byte bT;
 	for (int idir = 0; idir < m_cdirs; idir++) {
@@ -960,11 +984,11 @@ bool Path::SaveState(Stream *pstm)
 {
 	pstm->WriteByte(knVerPathState);
 	pstm->WriteWord(m_cdirs);
-	pstm->WriteWord(m_txStart);
-	pstm->WriteWord(m_tyStart);
+	pstm->WriteCoord(m_txStart);
+	pstm->WriteCoord(m_tyStart);
 	pstm->WriteWord(m_idirCache);
-	pstm->WriteWord(m_txCache);
-	pstm->WriteWord(m_tyCache);
+	pstm->WriteCoord(m_txCache);
+	pstm->WriteCoord(m_tyCache);
 
 	// 2 directions per byte, smaller encoding
 

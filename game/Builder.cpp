@@ -72,8 +72,8 @@ bool BuilderGob::LoadState(Stream *pstm)
 		m_fxHealthBuilding = pstm->ReadWord();
 		m_nCreditsSpentOnBuilding = pstm->ReadWord();
 		m_nCostRemainder = pstm->ReadWord();
-		m_tptRally.tx = pstm->ReadWord();
-		m_tptRally.ty = pstm->ReadWord();
+		m_tptRally.tx = pstm->ReadCoord();
+		m_tptRally.ty = pstm->ReadCoord();
 	}
 	return StructGob::LoadState(pstm);
 }
@@ -87,8 +87,8 @@ bool BuilderGob::SaveState(Stream *pstm)
 		pstm->WriteWord(m_fxHealthBuilding);
 		pstm->WriteWord(m_nCreditsSpentOnBuilding);
 		pstm->WriteWord(m_nCostRemainder);
-		pstm->WriteWord(m_tptRally.tx);
-		pstm->WriteWord(m_tptRally.ty);
+		pstm->WriteCoord(m_tptRally.tx);
+		pstm->WriteCoord(m_tptRally.ty);
 	}
 	return StructGob::SaveState(pstm);
 }

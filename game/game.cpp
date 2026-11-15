@@ -530,53 +530,40 @@ bool Game::LoadGameData()
 
 bool Game::InitCoordMappingTables()
 {
-	// Initialize world -> pixel coord mapping table
+	// Initialize world -> pixel coord mapping table. Plain heap arrays:
+	// with 256 tile maps they are larger than a storage memory chunk.
 
-#define knSplit 32
-//#define knSplit 4
-	gmpPcFromWc = (short *)gmmgr.AllocPtr(2 * kwcMax);
+	gmpPcFromWc = new short[kwcMax];
 	if (gmpPcFromWc == NULL)
 		return false;
 
-	Assert(kwcMax / knSplit <= gcbScratch);
-	Assert((kwcMax / knSplit) * knSplit == kwcMax);
-
 	short s = 0;
 	short nOverflow = 0;
-	for (int j = 0; j < knSplit; j++) {
-		short *psT = (short *)gpbScratch;
-		for (int i = 0; i < kwcMax / knSplit; i++) {
-			// Duplicate the behavior of gmpWcFromPc so that
-			// gmpPcFromWc[gmpWcFromPc[2]] == 2
+	for (int i = 0; i < kwcMax; i++) {
+		// Duplicate the behavior of gmpWcFromPc so that
+		// gmpPcFromWc[gmpWcFromPc[2]] == 2
 
-			*psT++ = s;
-			nOverflow += gcxTile;
-			if (nOverflow == 256) {
-				nOverflow = 0;
-				s++;
-			} else if (nOverflow > 256) {
-				nOverflow -= 256;
-			} else if (nOverflow + gcxTile - 1 >= 256) {
-				s++;
-			}
+		gmpPcFromWc[i] = s;
+		nOverflow += gcxTile;
+		if (nOverflow == 256) {
+			nOverflow = 0;
+			s++;
+		} else if (nOverflow > 256) {
+			nOverflow -= 256;
+		} else if (nOverflow + gcxTile - 1 >= 256) {
+			s++;
 		}
-		gmmgr.WritePtr(gmpPcFromWc, j * 2 * (kwcMax / knSplit), gpbScratch, 2 * (kwcMax / knSplit));
 	}
 
 	// Initialize pixel -> world coord mapping table
-
-	WCoord *pwcT = (WCoord *)gpbScratch;
-	for (int i = 0; i <= 64 * 32; i++) {
-		*pwcT++ = (WCoord)((i * 256L) / gcxTile);
-	}
-
-	// These "+ 1"s are to support the mapping of inclusive/exclusive rects
+	// The "+ 1" supports the mapping of inclusive/exclusive rects
 	// that lay at the extreme of the allowed coordinate range
 
-	gmpWcFromPc = (WCoord *)gmmgr.AllocPtr((2 * 64 * 32) + 1);
+	gmpWcFromPc = new WCoord[kpcMax + 1];
 	if (gmpWcFromPc == NULL)
 		return false;
-	gmmgr.WritePtr(gmpWcFromPc, 0, gpbScratch, (2 * 64 * 32) + 1);
+	for (int i = 0; i <= kpcMax; i++)
+		gmpWcFromPc[i] = (WCoord)((i * 256L) / gcxTile);
 
 	return true;
 }
@@ -1726,14 +1713,10 @@ void Game::Exit()
 	while (gpakr.Pop())
 		;
 
-	if (gmpWcFromPc != NULL) {
-		gmmgr.FreePtr(gmpWcFromPc);
-		gmpWcFromPc = NULL;
-	}
-	if (gmpPcFromWc != NULL) {
-		gmmgr.FreePtr(gmpPcFromWc);
-		gmpPcFromWc = NULL;
-	}
+	delete[] gmpWcFromPc;
+	gmpWcFromPc = NULL;
+	delete[] gmpPcFromWc;
+	gmpPcFromWc = NULL;
 
 	delete gpdisp;
 	gpdisp = NULL;

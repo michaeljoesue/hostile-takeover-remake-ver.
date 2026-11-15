@@ -163,10 +163,10 @@ Gob::Gob()
 	m_wyPrev = kwxInvalidPrev;
 	m_wxDraw = 0;
 	m_wyDraw = 0;
-	m_trcBoundingLast.txLeft = 127;
-	m_trcBoundingLast.tyTop = 127;
-	m_trcBoundingLast.txRight = -128;
-	m_trcBoundingLast.tyBottom = -128;
+	m_trcBoundingLast.txLeft = 32767;
+	m_trcBoundingLast.tyTop = 32767;
+	m_trcBoundingLast.txRight = -32768;
+	m_trcBoundingLast.tyBottom = -32768;
 }
 
 Gob::~Gob()
@@ -185,12 +185,12 @@ bool Gob::Invalidate()
 	// Change into a tile rect
 
 	TRectSmall trcNew;
-	trcNew.txLeft = (char)TcFromPc(rc.left);
-	trcNew.tyTop = (char)TcFromPc(rc.top);
+	trcNew.txLeft = (short)TcFromPc(rc.left);
+	trcNew.tyTop = (short)TcFromPc(rc.top);
 	int xT = _min(rc.right + gcxTile - 1, (int)kpcMax);
-	trcNew.txRight = (char)TcFromPc(xT);
+	trcNew.txRight = (short)TcFromPc(xT);
 	int yT = _min(rc.bottom + gcyTile - 1, (int)kpcMax);
-	trcNew.tyBottom = (char)TcFromPc(yT);
+	trcNew.tyBottom = (short)TcFromPc(yT);
 
     // If the gob was transitioning from off screen to on screen, use the
     // current invalidation rect. Otherwise Union with the old rect so that the
@@ -433,8 +433,8 @@ bool Gob::LoadState(Stream *pstm)
 		return false;
 	m_st = (State)pstm->ReadWord();
 	m_ff |= pstm->ReadDword();
-	m_wx = pstm->ReadWord();
-	m_wy = pstm->ReadWord();
+	m_wx = pstm->ReadCoord();
+	m_wy = pstm->ReadCoord();
 	Pid pid = pstm->ReadWord();
 	m_pplr = gplrm.GetPlayerFromPid(pid);
 	Gid gid = pstm->ReadWord();
@@ -449,8 +449,8 @@ bool Gob::SaveState(Stream *pstm)
 	pstm->WriteByte(knVerGobState);
 	pstm->WriteWord(m_st);
 	pstm->WriteDword(m_ff);
-	pstm->WriteWord(m_wx);
-	pstm->WriteWord(m_wy);
+	pstm->WriteCoord(m_wx);
+	pstm->WriteCoord(m_wy);
 	if (m_pplr != NULL) {
 		pstm->WriteWord(m_pplr->GetId());
 	} else {
@@ -1226,17 +1226,10 @@ bool GobMgr::Init(TCoord ctx, TCoord cty, int cpgobMax)
 	for (int i = 0; i < cgid; i++)
 		*pgidT++ = kgidNull;
 
-	// Alloc from storage ram
-	// Free dyn ram version
+	// Kept on the heap: 256x256 tile maps need more than a storage
+	// memory chunk (which is limited to 64K)
 
-	cbT = m_ctx * m_cty * sizeof(Gid);
-	m_pgidMap = (Gid *)gmmgr.AllocPtr(cbT);
-	if (m_pgidMap == NULL) {
-		delete[] pgidMap;
-		return false;
-	}
-	gmmgr.WritePtr(m_pgidMap, 0, pgidMap, cbT);
-	delete[] pgidMap;
+	m_pgidMap = pgidMap;
 
 #ifdef INCL_VALIDATEHEAP
 	gmmgr.Validate();
@@ -1308,7 +1301,7 @@ void GobMgr::Reset()
 	// Free gidMap
 
 	if (m_pgidMap != NULL) {
-		gmmgr.FreePtr(m_pgidMap);
+		delete[] m_pgidMap;
 		m_pgidMap = NULL;
 	}
 
@@ -1581,7 +1574,7 @@ bool GobMgr::MoveGob(Gob *pgob, WCoord wxOld, WCoord wyOld, WCoord wxNew, WCoord
 		Assert((*pgidT & kwfGidEndMarker) == 0);
 		if (*pgidT == pgob->m_gid) {
 			Gid gidT = pgob->m_gidNext;
-			gmmgr.WritePtr(m_pgidMap, (byte *)pgidT - (byte *)m_pgidMap, &gidT, sizeof(gidT));
+			*pgidT = gidT;
 		} else {
 			while (((*pgidT) & kwfGidEndMarker) == 0) {
 				if (*pgidT == pgob->m_gid) {
@@ -1602,7 +1595,7 @@ bool GobMgr::MoveGob(Gob *pgob, WCoord wxOld, WCoord wyOld, WCoord wxNew, WCoord
 		pgob->m_gidNext = *pgidT;
 		Assert(pgob->m_gidNext != pgob->m_gid);
 		Gid gidT = pgob->m_gid;
-		gmmgr.WritePtr(m_pgidMap, (byte *)pgidT - (byte *)m_pgidMap, &gidT, sizeof(gidT));
+		*pgidT = gidT;
 		//*pgidT = pgob->m_gid;
 	}
 
@@ -1659,7 +1652,7 @@ void GobMgr::ShadowGob(Gob *pgob, TCoord tx, TCoord ty, int ctx, int cty)
 			Gid *pgid = &m_pgidMap[tyT * m_ctx + txT];
 			if ((*pgid & kwfGidEndMarker) != 0) {
 				Gid gidT = pgob->m_gid | kwfGidEndMarker;
-				gmmgr.WritePtr(m_pgidMap, (byte *)pgid - (byte *)m_pgidMap, &gidT, sizeof(gidT));
+				*pgid = gidT;
 			} else {
 				while ((*pgid & kwfGidEndMarker) == 0) {
 					Gob *pgob = *PpgobFromGid(*pgid);
@@ -1681,7 +1674,7 @@ void GobMgr::UnshadowGob(Gob *pgob, TCoord tx, TCoord ty, int ctx, int cty)
 			Gid *pgid = &m_pgidMap[tyT * m_ctx + txT];
 			if ((*pgid & kwfGidEndMarker) != 0) {
 				Gid gidT = kgidNull;
-				gmmgr.WritePtr(m_pgidMap, (byte *)pgid - (byte *)m_pgidMap, &gidT, sizeof(gidT));
+				*pgid = gidT;
 			} else {
 				while ((*pgid & kwfGidEndMarker) == 0) {
 					Gob *pgob = *PpgobFromGid(*pgid);

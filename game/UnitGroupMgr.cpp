@@ -1110,7 +1110,7 @@ bool AttackUnitGroupAction::Perform(UnitGroup *pug)
 	txGroupCenter /= cpunt;
 	tyGroupCenter /= cpunt;
 
-	word nDist = 0x7fff;
+	int nDist = 0x7fffffff;
 	puntTarget = (UnitGob *)ggobm.GetFirstGob();
 	for (; puntTarget != NULL; puntTarget = (UnitGob *)ggobm.GetNextGob(puntTarget)) {
 		dword ff = puntTarget->GetFlags();
@@ -1129,8 +1129,8 @@ bool AttackUnitGroupAction::Perform(UnitGroup *pug)
 		puntTarget->GetTilePosition(&tpt);
 		TCoord dtx = tpt.tx - txGroupCenter;
 		TCoord dty = tpt.ty - tyGroupCenter;
-		word nDistT = dtx * dtx + dty * dty;	// should not exceed 8192 for 64x64 maps
-		Assert(nDistT < 8192);
+		int nDistT = dtx * dtx + dty * dty;
+
 
 		// Keep track of the nearest target.
 

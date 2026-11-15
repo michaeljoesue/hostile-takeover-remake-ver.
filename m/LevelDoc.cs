@@ -1680,28 +1680,64 @@ namespace m {
 			}
 		}
 
-		[BrowsableAttribute(false)]
+		// The map in the game is the Bounds rectangle, up to 256x256 tiles
+		// (ktcMax in game/ht.h). The editor's map has room for a border
+		// of 1 tile around that.
+
+		public const int ktcMapMin = 16;
+		public const int ktcBoundsMax = 256;
+		public const int ktcMapMax = ktcBoundsMax + 2;
+
+		[System.ComponentModel.Category("Map Size")]
+		[System.ComponentModel.DisplayName("Map Width")]
+		[System.ComponentModel.Description("Width of the editing area in tiles (16 to 258). The playable map is Bounds, which can be up to 256 tiles wide.")]
 		public int Width {
 			get {
 				return m_ctx;
 			}
 			set {
-				m_ctx = value;
-				if (ImageChanged != null)
-					ImageChanged();
+				SetMapSize(value, m_cty);
 			}
 		}
 
-		[BrowsableAttribute(false)]
+		[System.ComponentModel.Category("Map Size")]
+		[System.ComponentModel.DisplayName("Map Height")]
+		[System.ComponentModel.Description("Height of the editing area in tiles (16 to 258). The playable map is Bounds, which can be up to 256 tiles tall.")]
 		public int Height {
 			get {
 				return m_cty;
 			}
 			set {
-				m_cty = value;
-				if (ImageChanged != null)
-					ImageChanged();
+				SetMapSize(m_ctx, value);
 			}
+		}
+
+		void SetMapSize(int ctx, int cty) {
+			ctx = Math.Max(ktcMapMin, Math.Min(ktcMapMax, ctx));
+			cty = Math.Max(ktcMapMin, Math.Min(ktcMapMax, cty));
+			if (ctx == m_ctx && cty == m_cty)
+				return;
+
+			// Bounds that filled the old map fill the new one; otherwise
+			// they are kept, clipped to the new map
+
+			Rectangle rc = m_trcBounds;
+			bool fFull = rc.Left <= 1 && rc.Top <= 1 && rc.Right >= m_ctx - 1 && rc.Bottom >= m_cty - 1;
+			if (fFull) {
+				rc = new Rectangle(1, 1, ctx - 2, cty - 2);
+			} else {
+				rc.Intersect(new Rectangle(0, 0, ctx - 1, cty - 1));
+			}
+			rc.Width = Math.Min(rc.Width, ktcBoundsMax);
+			rc.Height = Math.Min(rc.Height, ktcBoundsMax);
+
+			m_ctx = ctx;
+			m_cty = cty;
+			m_trcBounds = rc;
+			m_fUpdateDirty = true;
+			SetModified(true);
+			if (ImageChanged != null)
+				ImageChanged();
 		}
 
 		public Rectangle Bounds {
@@ -1713,6 +1749,8 @@ namespace m {
 						value.Top < 0 || value.Top >= m_cty || value.Bottom < 0 || value.Bottom >= m_cty) {
 					return;
 				}
+				if (value.Width > ktcBoundsMax || value.Height > ktcBoundsMax)
+					return;
 				m_trcBounds = value;
 				m_fUpdateDirty = true;
 				SetModified(true);

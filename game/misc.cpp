@@ -560,45 +560,29 @@ Direction TurnToward(Direction dirTo, Direction dirFrom)
 
 int isqrt(int val1, int val2)
 {
-    return (int)isqrt((dword)val1 * (dword)val1 + (dword)val2 * (dword)val2);
+    return (int)isqrt((unsigned long long)((long long)val1 * val1) +
+            (unsigned long long)((long long)val2 * val2));
 }
 
-unsigned int isqrt(unsigned long val) 
+// 64 bit so distances across 256 tile maps (world coords up to 65535)
+// don't overflow. Integer only: floor(sqrt(val))
+
+unsigned int isqrt(unsigned long long val)
 {
-  unsigned long temp, g=0;
-
-  if (val >= 0x40000000) {
-    g = 0x8000; 
-    val -= 0x40000000;
-  }
-
-#define INNER_MBGSQRT(s)                      \
-  temp = (g << (s)) + (1L << ((s) * 2L - 2L));   \
-  if (val >= temp) {                          \
-    g += 1L << ((s)-1L);                        \
-    val -= temp;                              \
-  }
-
-  INNER_MBGSQRT (15)
-  INNER_MBGSQRT (14)
-  INNER_MBGSQRT (13)
-  INNER_MBGSQRT (12)
-  INNER_MBGSQRT (11)
-  INNER_MBGSQRT (10)
-  INNER_MBGSQRT ( 9)
-  INNER_MBGSQRT ( 8)
-  INNER_MBGSQRT ( 7)
-  INNER_MBGSQRT ( 6)
-  INNER_MBGSQRT ( 5)
-  INNER_MBGSQRT ( 4)
-  INNER_MBGSQRT ( 3)
-  INNER_MBGSQRT ( 2)
-
-#undef INNER_MBGSQRT
-
-  temp = g+g+1;
-  if (val >= temp) g++;
-  return (unsigned int)g;
+    unsigned long long res = 0;
+    unsigned long long bit = 1ULL << 62;
+    while (bit > val)
+        bit >>= 2;
+    while (bit != 0) {
+        if (val >= res + bit) {
+            val -= res + bit;
+            res = (res >> 1) + bit;
+        } else {
+            res >>= 1;
+        }
+        bit >>= 2;
+    }
+    return (unsigned int)res;
 }
 
 // LineIterator implementation
@@ -616,7 +600,7 @@ void WLineIterator::Init(WCoord wx1, WCoord wy1, WCoord wx2, WCoord wy2, int nIn
 
 	WCoord wdx = wx2 - wx1;
 	WCoord wdy = wy2 - wy1;
-	int nLen = isqrt(((long)wdx * (long)wdx) + ((long)wdy * (long)wdy));
+	int nLen = isqrt(wdx, wdy);
 
 	// Handle case where destination is less than one step away from the start.
 

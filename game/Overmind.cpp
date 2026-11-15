@@ -251,8 +251,8 @@ BeginStateMachine
 						TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
 
 						while (true) {
-							TCoord tx = GetRandom() % 64;
-							TCoord ty = GetRandom() % 64;
+							TCoord tx = GetRandom() % ptrmap->GetWidth();
+							TCoord ty = GetRandom() % ptrmap->GetHeight();
 
 							if (ptrmap->IsOccupied(tx, ty, 1, 1, (kbfStructure | kbfMobileUnit)))
 								continue;

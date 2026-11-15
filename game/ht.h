@@ -382,8 +382,8 @@ public:
 // World coordinates are high-byte = tile coord, low-byte = sub-tile coord
 // Coordinate types and macros
 
-const short ktcMax = 64;
-const short kpcMax = ktcMax * 32;	// + 1 to allow for conversion of inclusive/exclusive rects
+const int ktcMax = 256;
+const int kpcMax = ktcMax * 32;	// + 1 to allow for conversion of inclusive/exclusive rects
 const WCoord kwcMax = ktcMax * 256;
 const WCoord kwcTile = 0x0100;
 const WCoord kwcTileHalf = kwcTile / 2;
@@ -452,7 +452,7 @@ inline WCoord WcFromTile16ths(int n) {
 }
 
 inline WCoord WcTrunc(WCoord wc) {
-	return wc & 0xff00;
+	return wc & ~0xff;
 }
 
 inline int PcFromTc(TCoord tc) {
@@ -483,14 +483,15 @@ public:
 	void FromWorldRect(WRect *wrc);
 };
 
-// Specialized TRect. Its specialty is being 1/2 the size
+// Specialized TRect. Its specialty is being 1/2 the size (shorts since
+// maps grew past 127 tiles)
 
 struct TRectSmall
 {
-	char txLeft;
-	char tyTop;
-	char txRight;
-	char tyBottom;
+	short txLeft;
+	short tyTop;
+	short txRight;
+	short tyBottom;
 
 	void Union(TRectSmall *ptrc) {
 		if (ptrc->txLeft >= ptrc->txRight || ptrc->tyTop >= ptrc->tyBottom)
@@ -541,7 +542,7 @@ typedef short fix;	// INTBITS integer bits, FRACBITS fractional bits
 #define subfx(x, y) ((x) - (y))
 #define fracfx(x) ((x) & ((1 << FRACBITS) - 1)) // Fraction of a fixed point
 fix32 sqrtfx(fix32 x);
-unsigned int isqrt(unsigned long val);
+unsigned int isqrt(unsigned long long val);
 int isqrt(int val1, int val2);
 
 #ifdef OLD_LINE_ITERATOR
@@ -1032,9 +1033,9 @@ struct PathHead // pathh
 	int txLast;
 	int tyLast;
 	int cSteps;
-	word offHead;
-	word wScoreKnown;
-	word wScore;
+	int offHead;
+	int wScoreKnown;
+	int wScore;
 };
 
 #define kbfMobileUnit 0x80
@@ -1158,9 +1159,9 @@ public:
 
 
 private:
-	PathHead *AddPathHead(word wScoreKnown, word wScore, int cSteps, word offHead, int txNew, int tyNew);
+	PathHead *AddPathHead(int wScoreKnown, int wScore, int cSteps, int offHead, int txNew, int tyNew);
 	void RemovePathHead(PathHead *ppathh);
-	Path *MakePath(TCoord txStart, TCoord tyStart, word off);
+	Path *MakePath(TCoord txStart, TCoord tyStart, int off);
 
 	FileMap m_fmap;
 	TerrainMapHeader *m_ptrmaph;
@@ -4281,7 +4282,7 @@ extern Simulation gsim;
 // Minimap coord from World coord
 
 inline int MmcFromWc(WCoord wc) {
-	return ((wc + 0x007f) & 0xff80) >> (9 - gsim.GetMiniMapScale());	// == 7 for hires, 8 for lores
+	return ((wc + 0x007f) & ~0x007f) >> (9 - gsim.GetMiniMapScale());	// == 7 for hires, 8 for lores
 }
 
 // Level
@@ -7140,7 +7141,7 @@ extern bool gfStress;
 extern long gtStressTimeout;
 #endif
 extern byte gmpdirdirOpposite[8];
-extern int ganSquared[64];
+extern int ganSquared[256];
 extern bool gfClearFog;
 extern int gnUnitCostMin;
 extern int gnUnitCostMax;
@@ -7389,6 +7390,10 @@ public:
 		Read(&dw, sizeof(dw));
 		return dw;
 	}
+	inline int ReadCoord()	// TCoord / WCoord (32 bit since maps grew to 256 tiles)
+	{
+		return (int)ReadDword();
+	}
 
 	void WriteString(char *psz);
 	void WriteBytesRLE(byte *pb, int cb);
@@ -7403,6 +7408,10 @@ public:
 	inline void WriteDword(dword dw)
 	{
 		Write(&dw, sizeof(dw));
+	}
+	inline void WriteCoord(int n)
+	{
+		WriteDword((dword)n);
 	}
 
 private:

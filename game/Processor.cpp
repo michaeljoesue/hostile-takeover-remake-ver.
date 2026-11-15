@@ -53,8 +53,8 @@ bool ProcessorGob::LoadState(Stream *pstm)
 	if (nVer != knVerProcessorGobState)
 		return false;
 	m_gidMiner = pstm->ReadWord();
-	m_wptFakeMiner.wx = pstm->ReadWord();
-	m_wptFakeMiner.wy = pstm->ReadWord();
+	m_wptFakeMiner.wx = pstm->ReadCoord();
+	m_wptFakeMiner.wy = pstm->ReadCoord();
 	m_fProcessingAnimationInProgress = pstm->ReadByte() != 0 ? true : false;
 	m_fDoorMoving = pstm->ReadByte() != 0 ? true : false;
 	m_aniOverlay.LoadState(pstm);
@@ -65,8 +65,8 @@ bool ProcessorGob::SaveState(Stream *pstm)
 {
 	pstm->WriteByte(knVerProcessorGobState);
 	pstm->WriteWord(m_gidMiner);
-	pstm->WriteWord(m_wptFakeMiner.wx);
-	pstm->WriteWord(m_wptFakeMiner.wy);
+	pstm->WriteCoord(m_wptFakeMiner.wx);
+	pstm->WriteCoord(m_wptFakeMiner.wy);
 	pstm->WriteByte(m_fProcessingAnimationInProgress);
 	pstm->WriteByte(m_fDoorMoving);
 	m_aniOverlay.SaveState(pstm);

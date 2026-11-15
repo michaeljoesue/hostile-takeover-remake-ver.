@@ -330,8 +330,8 @@ bool Simulation::LoadState(Stream *pstm)
 
     // Load view
 
-    WCoord wxView = pstm->ReadWord();
-    WCoord wyView = pstm->ReadWord();
+    WCoord wxView = pstm->ReadCoord();
+    WCoord wyView = pstm->ReadCoord();
 
     // Load Simulation tick count
 
@@ -379,8 +379,8 @@ bool Simulation::SaveState(Stream *pstm)
 
     // Save view x,y
 
-    pstm->WriteWord(m_wxView);
-    pstm->WriteWord(m_wyView);
+    pstm->WriteCoord(m_wxView);
+    pstm->WriteCoord(m_wyView);
 
     // Save Simulation tick count
 

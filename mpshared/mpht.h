@@ -18,8 +18,8 @@ typedef word StateMachineId; // smid
 typedef word Side; // side
 typedef short UnitType;	// ut
 typedef unsigned int UnitMask;	// um
-typedef signed short TCoord;
-typedef signed short WCoord;	
+typedef int TCoord;
+typedef int WCoord;
 typedef word Pid; // pid
 
 const int kcPlayersMax = 5 + 1;	// + 1 computer controlled neutral player

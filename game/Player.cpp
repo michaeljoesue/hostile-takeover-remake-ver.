@@ -284,8 +284,8 @@ bool Player::LoadState(Stream *pstm)
 	m_side = pstm->ReadWord();
 	m_sidmAllies = pstm->ReadWord();
 	m_sidmDiscovered = pstm->ReadWord();
-	m_tptDiscover.tx = pstm->ReadWord();
-	m_tptDiscover.ty = pstm->ReadWord();
+	m_tptDiscover.tx = pstm->ReadCoord();
+	m_tptDiscover.ty = pstm->ReadCoord();
 	pstm->ReadString(m_szName, sizeof(m_szName));
 	m_wf = pstm->ReadWord();
 	m_pid = pstm->ReadWord();
@@ -366,8 +366,8 @@ bool Player::SaveState(Stream *pstm)
 	pstm->WriteWord(m_side);
 	pstm->WriteWord(m_sidmAllies);
 	pstm->WriteWord(m_sidmDiscovered);
-	pstm->WriteWord(m_tptDiscover.tx);
-	pstm->WriteWord(m_tptDiscover.ty);
+	pstm->WriteCoord(m_tptDiscover.tx);
+	pstm->WriteCoord(m_tptDiscover.ty);
 	pstm->WriteString(m_szName);
 	pstm->WriteWord(m_wf);
 	pstm->WriteWord(m_pid);

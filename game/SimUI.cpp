@@ -1531,6 +1531,8 @@ MiniMapControl::~MiniMapControl()
 	delete m_pbm;
 }
 
+#define kcxyMiniMapLargeTiles 64
+
 int MiniMapControl::CalcWidth()
 {
 	// Figure out scale based on playfield size
@@ -1545,6 +1547,8 @@ int MiniMapControl::CalcWidth()
 
 	Size sizMap;
 	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
+	if (sizMap.cx > kcxyMiniMapLargeTiles * gcxTile || sizMap.cy > kcxyMiniMapLargeTiles * gcyTile)
+		nScale = 1;
 	return sizMap.cx / (gcxTile / nScale) + 1;
 }
 
@@ -1581,12 +1585,18 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	}
 	if (siz.cx >= 320)
 		m_nScale = 2;
+
+	// Maps bigger than the original 64x64 get 1 pixel per tile so the
+	// mini map stays at most 256 pixels square
+
+	Size sizMap;
+	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
+	if (sizMap.cx > kcxyMiniMapLargeTiles * gcxTile || sizMap.cy > kcxyMiniMapLargeTiles * gcyTile)
+		m_nScale = 1;
 	gsim.SetMiniMapScale(m_nScale);
 
 	// Size
 
-	Size sizMap;
-	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
 	m_rc.left = m_rc.right - ((sizMap.cx / (gcxTile / m_nScale)) + m_cxyBorder);
 	m_rc.bottom = m_rc.top + (sizMap.cy / (gcyTile / m_nScale)) + m_cxyBorder;
 

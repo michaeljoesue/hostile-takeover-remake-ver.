@@ -71,8 +71,8 @@ bool MinerGob::LoadState(Stream *pstm)
 	m_nGalaxiteAmount = pstm->ReadWord();
 	m_cDelay = (char)pstm->ReadByte();
 	m_gidFavoriteProcessor = pstm->ReadWord();
-	m_tptGalaxite.tx = pstm->ReadWord();
-	m_tptGalaxite.ty = pstm->ReadWord();
+	m_tptGalaxite.tx = pstm->ReadCoord();
+	m_tptGalaxite.ty = pstm->ReadCoord();
 	m_fMinerUnderAttack = pstm->ReadByte() != 0 ? true : false;
 	m_fHidden = pstm->ReadByte() != 0 ? true : false;
 	m_fAttemptingToDeliver = pstm->ReadByte() != 0 ? true : false;
@@ -85,8 +85,8 @@ bool MinerGob::SaveState(Stream *pstm)
 	pstm->WriteWord(m_nGalaxiteAmount);
 	pstm->WriteByte(m_cDelay);
 	pstm->WriteWord(m_gidFavoriteProcessor);
-	pstm->WriteWord(m_tptGalaxite.tx);
-	pstm->WriteWord(m_tptGalaxite.ty);
+	pstm->WriteCoord(m_tptGalaxite.tx);
+	pstm->WriteCoord(m_tptGalaxite.ty);
 	pstm->WriteByte(m_fMinerUnderAttack);
 	pstm->WriteByte(m_fHidden);
 	pstm->WriteByte(m_fAttemptingToDeliver);
