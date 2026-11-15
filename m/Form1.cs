@@ -842,10 +842,13 @@ namespace m
 			Ini ini = new Ini();			
 			Ini.Section secGeneral = new Ini.Section("General");
 			secGeneral.Add(new Ini.Property("WindowState", WindowState.ToString()));
-			secGeneral.Add(new Ini.Property("X", Bounds.X.ToString()));
-			secGeneral.Add(new Ini.Property("Y", Bounds.Y.ToString()));
-			secGeneral.Add(new Ini.Property("Width", Bounds.Width.ToString()));
-			secGeneral.Add(new Ini.Property("Height", Bounds.Height.ToString()));
+			// The normal (not maximized) position, which also says which
+			// monitor M is on
+			Rectangle rcNormal = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+			secGeneral.Add(new Ini.Property("X", rcNormal.X.ToString()));
+			secGeneral.Add(new Ini.Property("Y", rcNormal.Y.ToString()));
+			secGeneral.Add(new Ini.Property("Width", rcNormal.Width.ToString()));
+			secGeneral.Add(new Ini.Property("Height", rcNormal.Height.ToString()));
 			if (GamePath != null)
 				secGeneral.Add(new Ini.Property("GamePath", GamePath));
 			secGeneral.Add(new Ini.Property("Kit", Globals.IsKit().ToString()));
@@ -882,27 +885,36 @@ namespace m
 				return;
 			Ini.Property prop = sec["WindowState"];
 			if (prop != null) {
-				switch(prop.Value) {
-				case "Maximized":
-					WindowState = FormWindowState.Maximized;
-					break;
+				// Restore the normal position first, so a maximized M
+				// maximizes on the monitor it was on. Skip it if that
+				// monitor is gone.
 
-				case "Minimized":
-					WindowState = FormWindowState.Minimized;
-					break;
-
-				case "Normal":
-					WindowState = FormWindowState.Normal;
-					break;
-				}
-				
-				if (WindowState == FormWindowState.Normal) {
+				try {
 					Rectangle rc = new Rectangle();
 					rc.X = int.Parse(sec["X"].Value);
 					rc.Y = int.Parse(sec["Y"].Value);
 					rc.Width = int.Parse(sec["Width"].Value);
 					rc.Height = int.Parse(sec["Height"].Value);
-					Bounds = rc;
+					bool fOnScreen = false;
+					foreach (Screen scr in Screen.AllScreens) {
+						if (scr.WorkingArea.IntersectsWith(rc))
+							fOnScreen = true;
+					}
+					if (fOnScreen && rc.Width > 0 && rc.Height > 0) {
+						StartPosition = FormStartPosition.Manual;
+						Bounds = rc;
+					}
+				} catch (Exception) {
+				}
+
+				switch(prop.Value) {
+				case "Maximized":
+					WindowState = FormWindowState.Maximized;
+					break;
+
+				case "Normal":
+					WindowState = FormWindowState.Normal;
+					break;
 				}
 			}
 
