@@ -1991,9 +1991,13 @@ void Game::LoadPreferences()
 
 	// Older preferences: keep them and default the newer settings
 
-	const int cbPrefs201 = (int)offsetof(Preferences, nVolumeBattle);
-	if (cbRead == cbPrefs201 && prefs.dwVersion == knVersionPreferences201 &&
-			prefs.cbSize == (dword)cbPrefs201) {
+	// 0x201 ended with fSmoothMotion; with the struct's padding its size
+	// can be the same as now
+
+	const int cbPrefs201 = (int)((offsetof(Preferences, nVolumeBattle) + 7) & ~7);
+	if ((cbRead == cbPrefs201 || cbRead == (int)sizeof(prefs)) &&
+			prefs.dwVersion == knVersionPreferences201 &&
+			prefs.cbSize == (dword)cbRead) {
 		gprefsInit = prefs;
 		gprefsInit.dwVersion = knVersionPreferences;
 		gprefsInit.cbSize = sizeof(gprefsInit);
