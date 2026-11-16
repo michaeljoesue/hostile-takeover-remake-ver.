@@ -72,6 +72,22 @@ The engine has been updated from its 2007 handheld roots:
 - **Five sides.** Side 1 is ACME and side 2 is OMNI (now bright red,
   #FF3333). There is a new side 5, Crimson (#DC143C), for missions to use.
   Allied sides share what they can see.
+- **Smarter units.** Pathfinding is a real A* search: units go around a
+  lake instead of following its shore into dead ends, and paths are about
+  15% shorter for about the same work. Long trips first plan a rough route
+  through 16x16-tile rooms, then the detailed path only along it; a big
+  search that doesn't fit in one update carries on in the next instead of
+  stalling the game; and a destination that can't be reached at all (an
+  island, an enclosed spot) is recognised up front, so units head for the
+  nearest place they can get to. A group sent somewhere (yours, or the
+  computer's unit groups) follows one shared path at the speed of its
+  slowest unit and spreads out into formation at the end. Units blocked in
+  a crowd wait for blockers that are moving, wait longer after each failed
+  try, and after a few give up (or stop if they're nearly there) instead
+  of jiggling and re-planning every update. Units pick targets by how fast
+  they can destroy them (rockets go for vehicles, machine guns for
+  infantry, badly damaged enemies get finished off), how dangerous they
+  are and how far away, instead of just the nearest.
 - **Bigger maps.** Missions can be up to 256x256 tiles (was 64x64).
 - **All missions are unlocked** from the start.
 - The full Options menu (Game, Sound, Performance, Color, Display) is back.

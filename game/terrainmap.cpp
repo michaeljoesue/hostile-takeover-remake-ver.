@@ -1,4 +1,6 @@
 #include "ht.h"
+#include <vector>
+#include <algorithm>
 
 namespace wi {
 
@@ -53,10 +55,15 @@ byte gmpdirdirOpposite[8] = { 4, 5, 6, 7, 0, 1, 2, 3 };
 // Wall
 // Blocked
 
-#define knScoreBlocked 10000
+// Extra cost of a tile with something the search avoids (a structure): it
+// can still be pathed through, so blocked destinations can be approached
+// (path following then stops at the blockage)
+
 #define knScoreStructure 9000
 
-word TerrainMap::s_anScoreTerrain[] = { 0, 0, knScoreBlocked, knScoreBlocked };
+// Through blocked terrain: only when a unit stands on it (no other way out)
+
+#define knScoreBlocked 10000
 
 // Cost of moving by one tile in a certain direction
 
@@ -67,13 +74,123 @@ word TerrainMap::s_anScoreVector[] = { 5, 7, 5, 7, 5, 7, 5, 7 };
 
 #define kcNodesMax (ktcMax * ktcMax)
 
+// Rooms are kctRoom x kctRoom tiles
+
+#define kctRoom 16
+#define kshRoom 4
+
+// Search work per update (tiles expanded), shared by all searches. A big
+// search that doesn't fit carries on in the next update.
+
+#define kcNodesPerUpdate 24000
+
+// A* over the tile grid. Per tile state is valid when its stamp is the
+// search's, so starting a search costs nothing however big the map.
+
+struct PathHeapEntry {
+	int nF;
+	int nG;
+	int off;
+};
+
+struct PathSearch {
+	int *anG;
+	dword *adwStamp;
+	byte *abDir;		// direction it was reached by; kbDirStart; | kbClosed
+	dword dwStamp;
+	std::vector<PathHeapEntry> heap;
+
+	int txFrom, tyFrom, txTo, tyTo;
+	byte bfAvoid;
+	bool fCorridor;
+	bool fThroughBlocked;
+	bool fActive;
+	int cupdLast;
+	int offBest;
+	int nHBest;
+};
+
+#define kbDirStart 0x08
+#define kbClosed 0x80
+
+struct RoomNode {
+	TCoord tx, ty;		// a tile of this part near its middle
+	int iedgeFirst;
+	int cedges;
+};
+
+static inline bool HeapLess(const PathHeapEntry &a, const PathHeapEntry &b)
+{
+	// Min-heap on f; ties prefer the deeper node (larger g)
+
+	if (a.nF != b.nF)
+		return a.nF > b.nF;
+	return a.nG < b.nG;
+}
+
+static PathSearch *NewPathSearch(int cTiles)
+{
+	PathSearch *psrch = new PathSearch;
+	psrch->anG = new int[cTiles];
+	psrch->adwStamp = new dword[cTiles];
+	psrch->abDir = new byte[cTiles];
+	memset(psrch->adwStamp, 0, cTiles * sizeof(dword));
+	psrch->dwStamp = 0;
+	psrch->fActive = false;
+	psrch->cupdLast = 0;
+	return psrch;
+}
+
+static void DeletePathSearch(PathSearch *psrch)
+{
+	if (psrch == NULL)
+		return;
+	delete[] psrch->anG;
+	delete[] psrch->adwStamp;
+	delete[] psrch->abDir;
+	delete psrch;
+}
+
+// Octile distance in path cost units: the straight-line estimate on a grid
+// with diagonal moves
+
+static inline int Octile(int dx, int dy)
+{
+	dx = dx < 0 ? -dx : dx;
+	dy = dy < 0 ? -dy : dy;
+	return dx > dy ? 5 * dx + 2 * dy : 5 * dy + 2 * dx;
+}
+
+// The tile search's estimate: the straight-line distance, weighted so the
+// search heads for the goal instead of fanning out over every equally good
+// tile. Paths come out about 10% longer than the very shortest (still well
+// shorter than the original search's), for about a quarter of the work.
+
+#define HEURISTIC_NUM 2
+#define HEURISTIC_DEN 1
+
+static inline int Estimate(int dx, int dy)
+{
+	return Octile(dx, dy) * HEURISTIC_NUM / HEURISTIC_DEN;
+}
+
 TerrainMap::TerrainMap()
 {
 	m_ptrmaph = NULL;
 	m_abBuffer = NULL;
-	m_ppathhList = NULL;
-	m_ppathhFreeList = NULL;
-	m_cNodes = 0;
+	m_awArea = NULL;
+	m_abRoomPart = NULL;
+	m_aiRoomNodeFirst = NULL;
+	m_cRoomNodes = 0;
+	m_arnod = NULL;
+	m_aiRoomEdge = NULL;
+	m_adwRoomMark = NULL;
+	m_dwRoomMark = 0;
+	m_psrchNow = NULL;
+	m_psrchBig = NULL;
+	m_cupdBudget = -1;
+	m_cNodesBudget = kcNodesPerUpdate;
+	m_fSearchPending = false;
 }
 
 TerrainMap::~TerrainMap()
@@ -81,13 +198,14 @@ TerrainMap::~TerrainMap()
 	if (m_ptrmaph != NULL)
 		gpakr.UnmapFile(&m_fmap);
 	delete[] m_abBuffer;
-	while (m_ppathhList != NULL)
-		RemovePathHead(m_ppathhList);
-	for (PathHead *ppathh = m_ppathhFreeList; ppathh != NULL; ) {
-		PathHead *ppathhT = ppathh;
-		ppathh = ppathh->ppathhNext;
-		delete ppathhT;
-	}
+	delete[] m_awArea;
+	delete[] m_abRoomPart;
+	delete[] m_aiRoomNodeFirst;
+	delete[] m_arnod;
+	delete[] m_aiRoomEdge;
+	delete[] m_adwRoomMark;
+	DeletePathSearch(m_psrchNow);
+	DeletePathSearch(m_psrchBig);
 }
 
 bool TerrainMap::Init(char *pszFn)
@@ -114,9 +232,333 @@ bool TerrainMap::Init(char *pszFn)
 	for (int n = 0; n < 8; n++)
 		m_mpDirDelta[n] = g_mpDirToDy[n] * m_ctx + g_mpDirToDx[n];
 
+	m_psrchNow = NewPathSearch(m_cbBuffer);
+	m_psrchBig = NewPathSearch(m_cbBuffer);
+	InitAreas();
+	InitRooms();
 	return true;
 }
 
+// Areas: flood fill of open terrain, 8-connected (units move diagonally
+// between any two tiles)
+
+void TerrainMap::InitAreas()
+{
+	m_awArea = new word[m_cbBuffer];
+	memset(m_awArea, 0, m_cbBuffer * sizeof(word));
+	std::vector<int> stack;
+	int nArea = 0;
+	for (int off = 0; off < m_cbBuffer; off++) {
+		if (m_awArea[off] != 0 || !IsTerrainOpen(off))
+			continue;
+		if (nArea < 0xffff)
+			nArea++;
+		m_awArea[off] = (word)nArea;
+		stack.push_back(off);
+		while (!stack.empty()) {
+			int offT = stack.back();
+			stack.pop_back();
+			int tx = offT % m_ctx, ty = offT / m_ctx;
+			for (int n = 0; n < 8; n++) {
+				int txN = tx + g_mpDirToDx[n], tyN = ty + g_mpDirToDy[n];
+				if (txN < 0 || tyN < 0 || txN >= m_ctx || tyN >= m_cty)
+					continue;
+				int offN = tyN * m_ctx + txN;
+				if (m_awArea[offN] != 0 || !IsTerrainOpen(offN))
+					continue;
+				m_awArea[offN] = (word)nArea;
+				stack.push_back(offN);
+			}
+		}
+	}
+}
+
+int TerrainMap::GetArea(TCoord tx, TCoord ty)
+{
+	if (tx < 0 || ty < 0 || tx >= m_ctx || ty >= m_cty)
+		return 0;
+	return m_awArea[ty * m_ctx + tx];
+}
+
+// Area of a tile, or for a blocked tile (a unit can stand at the edge of
+// blocked terrain) the area of an open neighbour
+
+int TerrainMap::AreaAround(int tx, int ty)
+{
+	int nArea = GetArea(tx, ty);
+	if (nArea != 0)
+		return nArea;
+	for (int n = 0; n < 8; n++) {
+		nArea = GetArea(tx + g_mpDirToDx[n], ty + g_mpDirToDy[n]);
+		if (nArea != 0)
+			return nArea;
+	}
+	return 0;
+}
+
+// The tile of an area nearest to a point, searching outward ring by ring
+
+bool TerrainMap::FindNearestInArea(int txTo, int tyTo, int nArea, int *ptx, int *pty)
+{
+	int nMax = m_ctx > m_cty ? m_ctx : m_cty;
+	for (int r = 1; r < nMax; r++) {
+		int nBest = 0x7fffffff;
+		for (int ty = tyTo - r; ty <= tyTo + r; ty++) {
+			if (ty < 0 || ty >= m_cty)
+				continue;
+			bool fEdgeRow = (ty == tyTo - r || ty == tyTo + r);
+			for (int tx = txTo - r; tx <= txTo + r; tx += fEdgeRow ? 1 : 2 * r) {
+				if (tx < 0 || tx >= m_ctx)
+					continue;
+				if (m_awArea[ty * m_ctx + tx] != nArea)
+					continue;
+				int n = (tx - txTo) * (tx - txTo) + (ty - tyTo) * (ty - tyTo);
+				if (n < nBest) {
+					nBest = n;
+					*ptx = tx;
+					*pty = ty;
+				}
+			}
+		}
+		if (nBest != 0x7fffffff)
+			return true;
+	}
+	return false;
+}
+
+// Rooms: split each room's open tiles into connected parts (within the
+// room), then link parts that touch across room edges
+
+void TerrainMap::InitRooms()
+{
+	m_ctxRoom = (m_ctx + kctRoom - 1) / kctRoom;
+	m_ctyRoom = (m_cty + kctRoom - 1) / kctRoom;
+	int cRooms = m_ctxRoom * m_ctyRoom;
+	m_abRoomPart = new byte[m_cbBuffer];
+	memset(m_abRoomPart, 0, m_cbBuffer);
+	m_aiRoomNodeFirst = new int[cRooms + 1];
+	m_adwRoomMark = new dword[cRooms];
+	memset(m_adwRoomMark, 0, cRooms * sizeof(dword));
+
+	std::vector<RoomNode> vnod;
+	std::vector<int> stack;
+	std::vector<long> vsum;
+	for (int ry = 0; ry < m_ctyRoom; ry++) {
+		for (int rx = 0; rx < m_ctxRoom; rx++) {
+			int iroom = ry * m_ctxRoom + rx;
+			m_aiRoomNodeFirst[iroom] = (int)vnod.size();
+			int txL = rx * kctRoom, tyT = ry * kctRoom;
+			int txR = _min(txL + kctRoom, m_ctx), tyB = _min(tyT + kctRoom, m_cty);
+			int cParts = 0;
+			for (int ty = tyT; ty < tyB; ty++) {
+				for (int tx = txL; tx < txR; tx++) {
+					int off = ty * m_ctx + tx;
+					if (m_abRoomPart[off] != 0 || !IsTerrainOpen(off) || cParts >= 255)
+						continue;
+					cParts++;
+					m_abRoomPart[off] = (byte)cParts;
+					long sx = 0, sy = 0, c = 0;
+					std::vector<int> vtiles;
+					stack.push_back(off);
+					while (!stack.empty()) {
+						int offT = stack.back();
+						stack.pop_back();
+						vtiles.push_back(offT);
+						int txT = offT % m_ctx, tyT2 = offT / m_ctx;
+						sx += txT;
+						sy += tyT2;
+						c++;
+						for (int n = 0; n < 8; n++) {
+							int txN = txT + g_mpDirToDx[n], tyN = tyT2 + g_mpDirToDy[n];
+							if (txN < txL || tyN < tyT || txN >= txR || tyN >= tyB)
+								continue;
+							int offN = tyN * m_ctx + txN;
+							if (m_abRoomPart[offN] != 0 || !IsTerrainOpen(offN))
+								continue;
+							m_abRoomPart[offN] = (byte)cParts;
+							stack.push_back(offN);
+						}
+					}
+
+					// Representative tile: the part's tile nearest its middle
+
+					int txM = (int)(sx / c), tyM = (int)(sy / c);
+					int nBest = 0x7fffffff;
+					RoomNode rnod;
+					rnod.tx = (TCoord)txM;
+					rnod.ty = (TCoord)tyM;
+					for (size_t i = 0; i < vtiles.size(); i++) {
+						int txT = vtiles[i] % m_ctx, tyT2 = vtiles[i] / m_ctx;
+						int n = (txT - txM) * (txT - txM) + (tyT2 - tyM) * (tyT2 - tyM);
+						if (n < nBest) {
+							nBest = n;
+							rnod.tx = (TCoord)txT;
+							rnod.ty = (TCoord)tyT2;
+						}
+					}
+					rnod.iedgeFirst = 0;
+					rnod.cedges = 0;
+					vnod.push_back(rnod);
+				}
+			}
+		}
+	}
+	m_aiRoomNodeFirst[cRooms] = (int)vnod.size();
+	m_cRoomNodes = (int)vnod.size();
+
+	// Links between parts of neighbouring rooms
+
+	std::vector<std::vector<int> > vadj(m_cRoomNodes);
+	for (int ty = 0; ty < m_cty; ty++) {
+		for (int tx = 0; tx < m_ctx; tx++) {
+			int off = ty * m_ctx + tx;
+			if (m_abRoomPart[off] == 0)
+				continue;
+			int nodeA = RoomNodeOf(tx, ty);
+			for (int n = 0; n < 8; n++) {
+				int txN = tx + g_mpDirToDx[n], tyN = ty + g_mpDirToDy[n];
+				if (txN < 0 || tyN < 0 || txN >= m_ctx || tyN >= m_cty)
+					continue;
+				if (txN / kctRoom == tx / kctRoom && tyN / kctRoom == ty / kctRoom)
+					continue;
+				if (m_abRoomPart[tyN * m_ctx + txN] == 0)
+					continue;
+				int nodeB = RoomNodeOf(txN, tyN);
+				std::vector<int> &v = vadj[nodeA];
+				if (std::find(v.begin(), v.end(), nodeB) == v.end())
+					v.push_back(nodeB);
+			}
+		}
+	}
+	int cedges = 0;
+	for (int i = 0; i < m_cRoomNodes; i++)
+		cedges += (int)vadj[i].size();
+	m_arnod = new RoomNode[m_cRoomNodes > 0 ? m_cRoomNodes : 1];
+	m_aiRoomEdge = new int[cedges > 0 ? cedges : 1];
+	int iedge = 0;
+	for (int i = 0; i < m_cRoomNodes; i++) {
+		m_arnod[i] = vnod[i];
+		m_arnod[i].iedgeFirst = iedge;
+		m_arnod[i].cedges = (int)vadj[i].size();
+		for (size_t j = 0; j < vadj[i].size(); j++)
+			m_aiRoomEdge[iedge++] = vadj[i][j];
+	}
+}
+
+int TerrainMap::RoomNodeOf(int tx, int ty)
+{
+	int nPart = m_abRoomPart[ty * m_ctx + tx];
+	if (nPart == 0)
+		return -1;
+	return m_aiRoomNodeFirst[(ty / kctRoom) * m_ctxRoom + tx / kctRoom] + nPart - 1;
+}
+
+// Plans a rough route between room parts and marks the rooms along it, and
+// the rooms around those, as the corridor the detailed search may use
+
+bool TerrainMap::MarkCorridor(int txFrom, int tyFrom, int txTo, int tyTo)
+{
+	m_dwRoomMark++;
+	if (m_dwRoomMark == 0) {
+		memset(m_adwRoomMark, 0, m_ctxRoom * m_ctyRoom * sizeof(dword));
+		m_dwRoomMark = 1;
+	}
+
+	std::vector<int> vroute;
+	int nodeFrom = RoomNodeOf(txFrom, tyFrom);
+	int nodeTo = RoomNodeOf(txTo, tyTo);
+	if (nodeFrom < 0 || nodeTo < 0)
+		return false;
+	if (nodeFrom == nodeTo) {
+		vroute.push_back(nodeFrom);
+	} else {
+		// A* over room parts
+
+		static std::vector<int> s_anG, s_aiParent;
+		static std::vector<dword> s_adwStamp;
+		static dword s_dwStamp;
+		if ((int)s_anG.size() < m_cRoomNodes) {
+			s_anG.assign(m_cRoomNodes, 0);
+			s_aiParent.assign(m_cRoomNodes, -1);
+			s_adwStamp.assign(m_cRoomNodes, 0);
+		}
+		s_dwStamp++;
+		std::vector<PathHeapEntry> heap;
+		RoomNode *prnodTo = &m_arnod[nodeTo];
+		s_anG[nodeFrom] = 0;
+		s_aiParent[nodeFrom] = -1;
+		s_adwStamp[nodeFrom] = s_dwStamp;
+		PathHeapEntry e;
+		e.nG = 0;
+		e.nF = Octile(m_arnod[nodeFrom].tx - prnodTo->tx, m_arnod[nodeFrom].ty - prnodTo->ty);
+		e.off = nodeFrom;
+		heap.push_back(e);
+		bool fFound = false;
+		while (!heap.empty()) {
+			std::pop_heap(heap.begin(), heap.end(), HeapLess);
+			e = heap.back();
+			heap.pop_back();
+			if (e.nG > s_anG[e.off])
+				continue;
+			if (e.off == nodeTo) {
+				fFound = true;
+				break;
+			}
+			RoomNode *prnod = &m_arnod[e.off];
+			for (int i = 0; i < prnod->cedges; i++) {
+				int nodeN = m_aiRoomEdge[prnod->iedgeFirst + i];
+				RoomNode *prnodN = &m_arnod[nodeN];
+				int nG = e.nG + Octile(prnodN->tx - prnod->tx, prnodN->ty - prnod->ty);
+				if (s_adwStamp[nodeN] == s_dwStamp && nG >= s_anG[nodeN])
+					continue;
+				s_adwStamp[nodeN] = s_dwStamp;
+				s_anG[nodeN] = nG;
+				s_aiParent[nodeN] = e.off;
+				PathHeapEntry eN;
+				eN.nG = nG;
+				eN.nF = nG + Octile(prnodN->tx - prnodTo->tx, prnodN->ty - prnodTo->ty);
+				eN.off = nodeN;
+				heap.push_back(eN);
+				std::push_heap(heap.begin(), heap.end(), HeapLess);
+			}
+		}
+		if (!fFound)
+			return false;
+		for (int node = nodeTo; node >= 0; node = s_aiParent[node])
+			vroute.push_back(node);
+	}
+
+	// Mark the route's rooms and their neighbours
+
+	for (size_t i = 0; i < vroute.size(); i++) {
+		RoomNode *prnod = &m_arnod[vroute[i]];
+		int rx = prnod->tx / kctRoom, ry = prnod->ty / kctRoom;
+		for (int dy = -1; dy <= 1; dy++) {
+			for (int dx = -1; dx <= 1; dx++) {
+				int rxT = rx + dx, ryT = ry + dy;
+				if (rxT < 0 || ryT < 0 || rxT >= m_ctxRoom || ryT >= m_ctyRoom)
+					continue;
+				m_adwRoomMark[ryT * m_ctxRoom + rxT] = m_dwRoomMark;
+			}
+		}
+	}
+
+	// The rooms of the ends themselves (a blocked start isn't in a part)
+
+	m_adwRoomMark[(tyFrom / kctRoom) * m_ctxRoom + txFrom / kctRoom] = m_dwRoomMark;
+	m_adwRoomMark[(tyTo / kctRoom) * m_ctxRoom + txTo / kctRoom] = m_dwRoomMark;
+	return true;
+}
+
+
+void TerrainMap::RefreshBudget()
+{
+	int cupd = gsim.GetUpdateCount();
+	if (cupd != m_cupdBudget) {
+		m_cupdBudget = cupd;
+		m_cNodesBudget = kcNodesPerUpdate;
+	}
+}
 
 #define knVerTerrainMapState 1
 bool TerrainMap::LoadState(Stream *pstm)
@@ -466,8 +908,129 @@ Path *TerrainMap::FindLinePath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord
 	return CreatePath(this, txFrom, tyFrom, atpt, nStep);
 }
 
+void TerrainMap::StartSearch(PathSearch *psrch, int txFrom, int tyFrom, int txTo, int tyTo, byte bfAvoid, bool fCorridor, bool fThroughBlocked)
+{
+	psrch->dwStamp++;
+	if (psrch->dwStamp == 0) {
+		memset(psrch->adwStamp, 0, m_cbBuffer * sizeof(dword));
+		psrch->dwStamp = 1;
+	}
+	psrch->heap.clear();
+	psrch->txFrom = txFrom;
+	psrch->tyFrom = tyFrom;
+	psrch->txTo = txTo;
+	psrch->tyTo = tyTo;
+	psrch->bfAvoid = bfAvoid;
+	psrch->fCorridor = fCorridor;
+	psrch->fThroughBlocked = fThroughBlocked;
+	psrch->fActive = true;
+	psrch->cupdLast = gsim.GetUpdateCount();
+
+	int off = tyFrom * m_ctx + txFrom;
+	psrch->adwStamp[off] = psrch->dwStamp;
+	psrch->anG[off] = 0;
+	psrch->abDir[off] = kbDirStart;
+	PathHeapEntry e;
+	e.nG = 0;
+	e.nF = Estimate(txTo - txFrom, tyTo - tyFrom);
+	e.off = off;
+	psrch->heap.push_back(e);
+	psrch->offBest = off;
+	psrch->nHBest = e.nF;
+}
+
+// Runs a search for at most cNodesMax tiles. Returns 1 found (the
+// destination is closed), 0 not found (nothing left to try), -1 out of
+// budget (call again to carry on).
+
+#define knSearchFound 1
+#define knSearchNotFound 0
+#define knSearchBudget -1
+
+int TerrainMap::RunSearch(PathSearch *psrch, int cNodesMax)
+{
+	byte *pbTerrain = (byte *)(m_ptrmaph + 1);
+	int offTo = psrch->tyTo * m_ctx + psrch->txTo;
+	int cNodes = 0;
+	std::vector<PathHeapEntry> &heap = psrch->heap;
+	while (!heap.empty()) {
+		if (cNodes >= cNodesMax) {
+			m_cNodesBudget -= cNodes;
+			return knSearchBudget;
+		}
+		std::pop_heap(heap.begin(), heap.end(), HeapLess);
+		PathHeapEntry e = heap.back();
+		heap.pop_back();
+		int off = e.off;
+		if (psrch->abDir[off] & kbClosed)
+			continue;
+		if (e.nG > psrch->anG[off])
+			continue;
+		psrch->abDir[off] |= kbClosed;
+		cNodes++;
+		if (off == offTo) {
+			m_cNodesBudget -= cNodes;
+			return knSearchFound;
+		}
+
+		int tx = off % m_ctx;
+		int ty = off / m_ctx;
+		int nH = e.nF - e.nG;
+		if (nH < psrch->nHBest) {
+			psrch->nHBest = nH;
+			psrch->offBest = off;
+		}
+
+		for (int n = 0; n < 8; n++) {
+			int txN = tx + g_mpDirToDx[n];
+			int tyN = ty + g_mpDirToDy[n];
+			if (txN < 0 || txN >= m_ctx || tyN < 0 || tyN >= m_cty)
+				continue;
+			int offN = off + m_mpDirDelta[n];
+
+			int nCost = s_anScoreVector[n];
+			if (pbTerrain[offN] > kttOpen && offN != offTo) {
+				if (!psrch->fThroughBlocked)
+					continue;
+				nCost += knScoreBlocked;
+			}
+			if (psrch->fCorridor && m_adwRoomMark[(tyN >> kshRoom) * m_ctxRoom + (txN >> kshRoom)] != m_dwRoomMark)
+				continue;
+			if (m_abBuffer[offN] & psrch->bfAvoid)
+				nCost += knScoreStructure;
+
+			int nG = e.nG + nCost;
+			if (psrch->adwStamp[offN] == psrch->dwStamp) {
+				// Reached before: an open tile takes the shorter route. A
+				// closed one is done (with the weighted estimate it may not
+				// be the very shortest, but reopening tiles costs more than
+				// it gains).
+
+				if (psrch->abDir[offN] & kbClosed)
+					continue;
+				if (nG >= psrch->anG[offN])
+					continue;
+			} else {
+				psrch->adwStamp[offN] = psrch->dwStamp;
+			}
+			psrch->anG[offN] = nG;
+			psrch->abDir[offN] = (byte)n;
+			PathHeapEntry eN;
+			eN.nG = nG;
+			eN.nF = nG + Estimate(psrch->txTo - txN, psrch->tyTo - tyN);
+			eN.off = offN;
+			heap.push_back(eN);
+			std::push_heap(heap.begin(), heap.end(), HeapLess);
+		}
+	}
+	m_cNodesBudget -= cNodes;
+	return knSearchNotFound;
+}
+
 Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTerrainAvoid)
 {
+	m_fSearchPending = false;
+
 	// Arbitrary pathing
 
 	if (txFrom == txTo && tyFrom == tyTo)
@@ -483,237 +1046,80 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 		return CreatePath(this, txFrom, tyFrom, &tptT, 1);
 	}
 
-	// Initialize.
+	RefreshBudget();
 
-#define kbClear (kbfMobileUnit | kbfStructure | kbfReserved)
-#define kdwClear MakeDword(kbClear, kbClear, kbClear, kbClear)
+	// Can the destination be reached at all? If it's in another area (an
+	// island, an enclosed spot, blocked terrain), head for the nearest tile
+	// that can be reached instead of searching the whole map to find out.
 
-	// Try to speed up initial buffer clearning 
-	// If not dword aligned, adjust
-
-	byte *pbT = m_abBuffer;
-  if (*((byte *)&pbT) & 2) {
-		*pbT++ &= kbClear;
-		*pbT++ &= kbClear;
-	}
-
-	// 32 byte aligned count of dwords
-
-	dword *pdwT = (dword *)pbT;
-	int cdw = (((dword *)&m_abBuffer[m_cbBuffer]) - pdwT) & ~7;
-	dword *pdwMax = &((dword *)m_abBuffer)[cdw];
-	dword dwClear = kdwClear;
-	while (pdwT < pdwMax) {
-		*pdwT++ &= dwClear;
-		*pdwT++ &= dwClear;
-		*pdwT++ &= dwClear;
-		*pdwT++ &= dwClear;
-		*pdwT++ &= dwClear;
-		*pdwT++ &= dwClear;
-		*pdwT++ &= dwClear;
-		*pdwT++ &= dwClear;
-	}
-
-	// Clear dwords (up to 7 dwords)
-
-	pdwT = pdwMax;
-	int cdwT = (int)(((dword *)&m_abBuffer[m_cbBuffer]) - pdwT);
-	pdwMax = &pdwT[cdwT];
-	while (pdwT < pdwMax)
-		*pdwT++ &= dwClear;
-
-	// Clear remaining bytes (up to 3 bytes)
-
-	switch (&m_abBuffer[m_cbBuffer] - (byte *)pdwMax) {
-	case 0:
-		break;
-	case 1:
-		((byte *)pdwMax)[0] &= kbClear;
-		break;
-
-	case 2:
-		((byte *)pdwMax)[0] &= kbClear;
-		((byte *)pdwMax)[1] &= kbClear;
-		break;
-
-	case 3:
-		((byte *)pdwMax)[0] &= kbClear;
-		((byte *)pdwMax)[1] &= kbClear;
-		((byte *)pdwMax)[2] &= kbClear;
-		break;
-
-	default:
-		Assert();
-		break;
-	}
-
-	while (m_ppathhList != NULL)
-		RemovePathHead(m_ppathhList);
-	Assert(m_ppathhList == NULL);
-
-	byte *pbTo = &m_abBuffer[tyTo * m_ctx + txTo];
-
-	PathHead pathh;
-	memset(&pathh, 0, sizeof(pathh));
-	pathh.offHead = tyFrom * m_ctx + txFrom;
-	pathh.txLast = txFrom;
-	pathh.tyLast = tyFrom;
-	PathHead *ppathhLast = &pathh;
-
-	m_abBuffer[pathh.offHead] |= kbfLinked;
-
-	int offClosest;
-	int nDistClosest = 0x7fffffff;
-	while (ppathhLast != NULL) {
-		for (int n = 0; n < 8; n++) {
-			// Get next pos
-
-			int txNew = ppathhLast->txLast + g_mpDirToDx[n];
-			int tyNew = ppathhLast->tyLast + g_mpDirToDy[n];
-
-			// Check out of bounds. If we use 64*64 maps, we can use an AND mask
-			// of 0x2040 to determine out of bounds conditions.
-
-			if (txNew < 0 || txNew >= m_ctx || tyNew < 0 || tyNew >= m_cty)
-				continue;
-
-			// If this tile is linked already, abandon this path since
-			// it is longer
-
-			byte *pbNew = &m_abBuffer[ppathhLast->offHead] + m_mpDirDelta[n];
-			if (*pbNew & kbfLinked)
-				continue;
-
-			// The tile it came from is no longer a head
-
-			if (m_abBuffer[ppathhLast->offHead] & kbfHead) {
-				m_abBuffer[ppathhLast->offHead] &= ~kbfHead;
-				if (ppathhLast != &pathh) {
-					pathh = *ppathhLast;
-					RemovePathHead(ppathhLast);
-					ppathhLast = &pathh;
-				}
-			}
-
-			// Calc score of terrain
-
-			int offHead = pbNew - m_abBuffer;
-			int wScoreTerrain;
-			if (*pbNew & bfTerrainAvoid) {
-				wScoreTerrain = knScoreStructure;
-			} else {
-				wScoreTerrain = s_anScoreTerrain[((byte *)(m_ptrmaph + 1))[offHead]];
-			}
-#ifdef STATS_DISPLAY
-			gcPathScoresCalced++;
-#endif
-
-			// Link in this square, add it to the list. It is a path head.
-
-			*pbNew = (*pbNew & (kbfMobileUnit | kbfStructure | kbfReserved)) | kbfHead | kbfLinked | n;
-			int wScoreKnown = ppathhLast->wScoreKnown + s_anScoreVector[n] + wScoreTerrain;
-			int nDist = ganSquared[abs(txNew - txTo)] + ganSquared[abs(tyNew - tyTo)];
-			int wScore = wScoreKnown + nDist;
-			PathHead *ppathhNew = AddPathHead(wScoreKnown, wScore, ppathhLast->cSteps + 1, offHead, txNew, tyNew);
-
-			// Remember "closest" point
-
-			if (nDist < nDistClosest) {
-				nDistClosest = nDist;
-				offClosest = pbNew - m_abBuffer;
-			}
-
-			// Either out of memory or max # nodes reached. Return best path so far
-
-			if (ppathhNew == NULL)
-				return MakePath(txFrom, tyFrom, offClosest);
-
-			// Are we at the destination? Then we're done!
-
-			if (pbNew == pbTo)
-				return MakePath(txFrom, tyFrom, ppathhNew->offHead);
-		}
-
-		// Perhaps this was a dead end?
-
-		if (ppathhLast == m_ppathhList)
-			RemovePathHead(ppathhLast);
-
-		// Grab the best path and do again
-
-		ppathhLast = m_ppathhList;
-	}
-
-	return NULL;
-}
-
-PathHead *TerrainMap::AddPathHead(int wScoreKnown, int wScore, int cSteps, int offHead, int txNew, int tyNew)
-{
-	// Alloc
-
-	PathHead *ppathh;
-	if (m_ppathhFreeList != NULL) {
-		ppathh = m_ppathhFreeList;
-		m_ppathhFreeList = ppathh->ppathhNext;
-	} else {
-		// Futility cutoff: one node per map tile. The original cutoff (a
-		// few times the map's width) could run out on twisty maps, and the
-		// search then returned a path to the closest point it had found, so
-		// units stopped short of where they were sent.
-
-		int cNodesMax = m_ctx * m_cty;
-		if (cNodesMax < 64 * 3 * 3)
-			cNodesMax = 64 * 3 * 3;
-		if (m_cNodes >= cNodesMax)
+	int nArea = AreaAround(txFrom, tyFrom);
+	if (nArea != 0 && GetArea(txTo, tyTo) != nArea) {
+		int txT, tyT;
+		if (!FindNearestInArea(txTo, tyTo, nArea, &txT, &tyT))
 			return NULL;
-		ppathh = new PathHead;
-		if (ppathh == NULL)
+		txTo = txT;
+		tyTo = tyT;
+		if (txFrom == txTo && tyFrom == tyTo)
 			return NULL;
-		m_cNodes++;
-	}
-
-	// Initialize
-
-	ppathh->txLast = txNew;
-	ppathh->tyLast = tyNew;
-	ppathh->cSteps = cSteps;
-	ppathh->offHead = offHead;
-	ppathh->wScoreKnown = wScoreKnown;
-	ppathh->wScore = wScore;
-
-	// Sorted insertion
-	// OPT: The fast approach here will be to use a binary tree of some variety
-	//      (AVL / Right Handed / Splay etc, TBD). For the time being, using
-	//      a simple linear list w/scanning for simplicity to get searching
-	//      working.
-
-	for (PathHead **pppathhT = &m_ppathhList; true; pppathhT = &(*pppathhT)->ppathhNext) {
-		if (*pppathhT == NULL) {
-			*pppathhT = ppathh;
-			ppathh->ppathhNext = NULL;
-			break;
-		}
-		if (ppathh->wScore <= (*pppathhT)->wScore) {
-			ppathh->ppathhNext = *pppathhT;
-			*pppathhT = ppathh;
-			break;
+		if (abs(txFrom - txTo) <= 1 && abs(tyFrom - tyTo) <= 1) {
+			TPoint tptT;
+			tptT.tx = txTo;
+			tptT.ty = tyTo;
+			return CreatePath(this, txFrom, tyFrom, &tptT, 1);
 		}
 	}
 
-	return ppathh;
-}
+	// A big search for this already under way? Carry on with it.
 
-void TerrainMap::RemovePathHead(PathHead *ppathh)
-{
-	for (PathHead **pppathhT = &m_ppathhList; (*pppathhT) != NULL; pppathhT = &(*pppathhT)->ppathhNext) {
-		if (*pppathhT == ppathh) {
-			*pppathhT = ppathh->ppathhNext;
-			ppathh->ppathhNext = m_ppathhFreeList;
-			m_ppathhFreeList = ppathh;
-			return;
+	PathSearch *psrch = m_psrchBig;
+	if (psrch->fActive && psrch->txFrom == txFrom && psrch->tyFrom == tyFrom &&
+			psrch->txTo == txTo && psrch->tyTo == tyTo && psrch->bfAvoid == bfTerrainAvoid) {
+		if (m_cNodesBudget <= 0) {
+			m_fSearchPending = true;
+			return NULL;
 		}
+		psrch->cupdLast = gsim.GetUpdateCount();
+		int nResult = RunSearch(psrch, m_cNodesBudget);
+		if (nResult == knSearchBudget) {
+			m_fSearchPending = true;
+			return NULL;
+		}
+		psrch->fActive = false;
+		return MakePath(psrch, nResult == knSearchFound ? psrch->tyTo * m_ctx + psrch->txTo : psrch->offBest);
 	}
-	Assert();
+
+	// This update's search work used up? Ask again next update.
+
+	if (m_cNodesBudget <= 0) {
+		m_fSearchPending = true;
+		return NULL;
+	}
+
+	// Detailed search within a corridor of rooms along a rough route
+
+	if (nArea != 0 && MarkCorridor(txFrom, tyFrom, txTo, tyTo)) {
+		StartSearch(m_psrchNow, txFrom, tyFrom, txTo, tyTo, bfTerrainAvoid, true, false);
+		int nResult = RunSearch(m_psrchNow, 0x7fffffff);
+		m_psrchNow->fActive = false;
+		if (nResult == knSearchFound)
+			return MakePath(m_psrchNow, tyTo * m_ctx + txTo);
+	}
+
+	// The whole map, over as many updates as it takes. One at a time: if
+	// another is under way (and its unit still asks for it), wait.
+
+	if (psrch->fActive && gsim.GetUpdateCount() - psrch->cupdLast <= 2) {
+		m_fSearchPending = true;
+		return NULL;
+	}
+	StartSearch(psrch, txFrom, tyFrom, txTo, tyTo, bfTerrainAvoid, false, nArea == 0);
+	int nResult = RunSearch(psrch, m_cNodesBudget > 0 ? m_cNodesBudget : 1);
+	if (nResult == knSearchBudget) {
+		m_fSearchPending = true;
+		return NULL;
+	}
+	psrch->fActive = false;
+	return MakePath(psrch, nResult == knSearchFound ? tyTo * m_ctx + txTo : psrch->offBest);
 }
 
 bool TerrainMap::IsBlocked(TCoord tx, TCoord ty, byte bf)
@@ -752,26 +1158,23 @@ bool TerrainMap::GetFlags(int tx, int ty, byte *pbf)
 	return true;
 }
 
-Path *TerrainMap::MakePath(TCoord txStart, TCoord tyStart, int off)
+Path *TerrainMap::MakePath(PathSearch *psrch, int off)
 {
 	static Direction adir[kcNodesMax];
 
-	TCoord ty = off / m_ctx;
-	TCoord tx = off % m_ctx;
-	byte *pbPathWalk = &m_abBuffer[off];
+	int offStart = psrch->tyFrom * m_ctx + psrch->txFrom;
+	if (off == offStart)
+		return NULL;
 	Direction *pdirT = &adir[ARRAYSIZE(adir)];
-	while (tx != txStart || ty != tyStart) {
-		Assert(*pbPathWalk & kbfLinked);
-		Direction dir = (*pbPathWalk) & kbfDirMask;
+	while (off != offStart) {
+		Assert(psrch->adwStamp[off] == psrch->dwStamp);
+		Direction dir = psrch->abDir[off] & kbfDirMask;
 		pdirT--;
 		*pdirT = dir;
-		Direction dirOpposite = gmpdirdirOpposite[dir];
-		pbPathWalk += m_mpDirDelta[dirOpposite];
-		tx += g_mpDirToDx[dirOpposite];
-		ty += g_mpDirToDy[dirOpposite];
+		off -= m_mpDirDelta[dir];
 	}
 
-	return CreatePath(this, txStart, tyStart, pdirT, (int)(&adir[ARRAYSIZE(adir)] - pdirT));
+	return CreatePath(this, psrch->txFrom, psrch->tyFrom, pdirT, (int)(&adir[ARRAYSIZE(adir)] - pdirT));
 }
 
 //

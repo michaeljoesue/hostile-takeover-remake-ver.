@@ -1077,16 +1077,7 @@ const Direction16 kdir16Invalid = -1;
 
 // TerrainMap
 
-struct PathHead // pathh
-{
-	PathHead *ppathhNext;
-	int txLast;
-	int tyLast;
-	int cSteps;
-	int offHead;
-	int wScoreKnown;
-	int wScore;
-};
+struct PathSearch;	// terrainmap.cpp
 
 #define kbfMobileUnit 0x80
 #define kbfStructure 0x40
@@ -1200,6 +1191,18 @@ public:
 		return (byte *)(m_ptrmaph + 1);
 	}
 
+	// True if the last FindPath returned no path only because the search
+	// didn't fit in this update's budget: ask again next update
+
+	bool IsSearchPending() {
+		return m_fSearchPending;
+	}
+
+	// Terrain-connected area of a tile (0: blocked terrain). Tiles in
+	// different areas can't reach each other.
+
+	int GetArea(TCoord tx, TCoord ty);
+
 	TCoord GetWidth() {
 		return m_ctx;
 	}
@@ -1209,9 +1212,19 @@ public:
 
 
 private:
-	PathHead *AddPathHead(int wScoreKnown, int wScore, int cSteps, int offHead, int txNew, int tyNew);
-	void RemovePathHead(PathHead *ppathh);
-	Path *MakePath(TCoord txStart, TCoord tyStart, int off);
+	void InitAreas();
+	void InitRooms();
+	bool IsTerrainOpen(int off) {
+		return ((byte *)(m_ptrmaph + 1))[off] <= kttOpen;
+	}
+	int AreaAround(int tx, int ty);
+	bool FindNearestInArea(int txTo, int tyTo, int nArea, int *ptx, int *pty);
+	int RoomNodeOf(int tx, int ty);
+	bool MarkCorridor(int txFrom, int tyFrom, int txTo, int tyTo);
+	void StartSearch(PathSearch *psrch, int txFrom, int tyFrom, int txTo, int tyTo, byte bfAvoid, bool fCorridor, bool fThroughBlocked);
+	int RunSearch(PathSearch *psrch, int cNodesMax);
+	Path *MakePath(PathSearch *psrch, int off);
+	void RefreshBudget();
 
 	FileMap m_fmap;
 	TerrainMapHeader *m_ptrmaph;
@@ -1219,13 +1232,34 @@ private:
 	int m_cbBuffer;
 	int m_ctx;
 	int m_cty;
-	word *m_pwSquared;
-	PathHead *m_ppathhList;
-	PathHead *m_ppathhFreeList;
 	int m_mpDirDelta[8];
-	static word s_anScoreTerrain[4];
 	static word s_anScoreVector[8];
-	int m_cNodes;
+
+	// Areas: terrain-connected regions
+
+	word *m_awArea;
+
+	// Rooms: the map in kctRoom x kctRoom blocks. A room node is one
+	// connected part of a room; a rough route between room nodes limits
+	// the detailed search to a corridor of rooms.
+
+	int m_ctxRoom, m_ctyRoom;
+	byte *m_abRoomPart;			// per tile: part of its room (1..), 0 blocked
+	int *m_aiRoomNodeFirst;		// per room: index of its first node
+	int m_cRoomNodes;
+	struct RoomNode *m_arnod;
+	int *m_aiRoomEdge;
+	dword *m_adwRoomMark;		// per room: == m_dwRoomMark if in the corridor
+	dword m_dwRoomMark;
+
+	// Searches: one run to completion now, one big one that may continue
+	// over several updates
+
+	PathSearch *m_psrchNow;
+	PathSearch *m_psrchBig;
+	int m_cupdBudget;
+	int m_cNodesBudget;
+	bool m_fSearchPending;
 
 	friend class Path;
 };
@@ -5514,6 +5548,7 @@ public:
 	void ShowDamageIndicator();
 	void ClearDamageIndicator();
 	int GetDamageTo(UnitGob *puntTarget);
+	int ScoreTarget(UnitGob *puntTarget, TCoord tc);
 	void RecalcEnemyNearby(bool fClearOnly);
 
 	UnitConsts *GetConsts() {
@@ -5835,8 +5870,12 @@ private:
 	int GetNextLocations(TPoint *atpt);
 	int GetNextLocations2(Path *ppath, int *pitptStart, int cStepsFurtherStop, TPoint *atpt);
 	int FindClosestPoint(TPoint *ptptClosest, int ctptFurtherStop);
-	bool PrepPath(WCoord wxDst, WCoord wyDst);
+	bool PrepPath(WCoord wxDst, WCoord wyDst, bool *pfPending = NULL);
 	Path *FindPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo);
+	Path *FindGroupPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo);
+	void AddGroupPath(TCoord txFrom, TCoord tyFrom, Path *ppath);
+	int TileDistToTarget(TCoord tx, TCoord ty);
+	bool GiveUpBlocked(int *pnMoveResult);
 	bool PrepareNextTransition(TPoint *ptptNext, int *pnMoveResult);
 	void EnterTransition(TPoint *ptptNext);
 	void ContinueTransition();
@@ -5896,6 +5935,19 @@ public:
 	WPoint m_wptTargetCenter;
 	TCoord m_tcTargetRadius;
 	WCoord m_wcMoveDistPerUpdate;
+
+	// Blocked movement (not saved): tries since the last progress toward
+	// the target, transitions that made none, the best distance so far
+	byte m_cBlocked;
+	byte m_cNoProgress;
+	bool m_fRepathedAroundUnits;
+	int m_nDistBest;
+	int m_itptBest;
+
+	// A chase that got stuck (not saved): don't chase that target again
+	// for a while
+	Gid m_gidChaseFailed;
+	int m_cupdChaseFailed;
 
 	static Path *s_apathCached[kcPathsCache];
 	static int s_cpathCached;

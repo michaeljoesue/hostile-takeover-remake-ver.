@@ -739,6 +739,40 @@ void UnitGob::RememberEnemyNearby(Gid gidEnemy)
     // list, the issue being we don't want that bit set most of the time.
 }
 
+// Damage a unit deals another per second (relative): damage per shot over
+// the time between shots
+
+static int DamageRate(UnitGob *puntFrom, UnitGob *puntTo)
+{
+	int ct = puntFrom->GetConsts()->ctFiringRate;
+	if (ct <= 0)
+		return 0;
+	return puntFrom->GetDamageTo(puntTo) * 100 / ct;
+}
+
+// How good a target an enemy is: how fast this unit can destroy it (its
+// damage against that kind of unit over the health it has left, so badly
+// damaged enemies get finished off), how much damage it does to this unit
+// (more if it's in range to fire now), less the distance. Enemies this
+// unit can't hurt come last.
+
+int UnitGob::ScoreTarget(UnitGob *puntTarget, TCoord tc)
+{
+	int nRate = DamageRate(this, puntTarget);
+	if (nRate == 0)
+		return -10000 - tc;
+	int nHealth = fxtoi(puntTarget->GetHealth());
+	if (nHealth < 1)
+		nHealth = 1;
+	int nScore = nRate * 256 / nHealth;
+	int nThreat = DamageRate(puntTarget, this);
+	if (tc <= puntTarget->GetConsts()->tcFiringRange + 1)
+		nThreat *= 2;
+	nScore += nThreat;
+	nScore -= tc * 4;
+	return nScore;
+}
+
 UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 {
 	if (m_ff & kfGobNoEnemiesNearby)
@@ -749,8 +783,8 @@ UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 	Side sideThis = GetSide();
 
 	int cEmpty = 0;
-	TCoord tcClosest = tcRange;
 	UnitGob *puntEnemyClosest = NULL;
+	int nScoreBest = 0;
 
 	for (int n = 0; n < ARRAYSIZE(m_agidEnemyNearby); n++) {
 		Gid gidEnemyNearby = m_agidEnemyNearby[n];
@@ -765,8 +799,11 @@ UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 			continue;
 		}
 		TCoord tc = CalcRange(txThis, tyThis, puntEnemyNearby);
-		if (tc <= tcClosest) {
-			tcClosest = tc;
+		if (tc > tcRange)
+			continue;
+		int nScore = ScoreTarget(puntEnemyNearby, tc);
+		if (puntEnemyClosest == NULL || nScore > nScoreBest) {
+			nScoreBest = nScore;
 			puntEnemyClosest = puntEnemyNearby;
 		}
 	}

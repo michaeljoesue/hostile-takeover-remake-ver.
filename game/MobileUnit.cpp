@@ -1,4 +1,5 @@
 #include "ht.h"
+#include <vector>
 
 namespace wi {
 
@@ -125,6 +126,8 @@ void MobileUnitGob::ExitClass(MobileUnitConsts *pmuntc)
 	UnitGob::ExitClass(pmuntc);
 }
 
+#define kcupdChaseRetry 40		// a stuck chase isn't retried for this long (about 3 seconds)
+
 MobileUnitGob::MobileUnitGob(MobileUnitConsts *pmuntc) : UnitGob(pmuntc)
 {
 	m_ff |= kfGobMobileUnit;
@@ -145,6 +148,13 @@ MobileUnitGob::MobileUnitGob(MobileUnitConsts *pmuntc) : UnitGob(pmuntc)
 	m_ppathAvoid = NULL;
 	m_nSeqMoveAside = 0;
 	m_fMovingAside = false;
+	m_cBlocked = 0;
+	m_cNoProgress = 0;
+	m_fRepathedAroundUnits = false;
+	m_nDistBest = 0x7fffffff;
+	m_itptBest = 0;
+	m_gidChaseFailed = kgidNull;
+	m_cupdChaseFailed = 0;
 
 	// Just to be clear this Unit or its nearby allies hasn't been hit for awhile
 
@@ -1371,7 +1381,8 @@ lbHitNoDamage:
 							(m_mua == kmuaAttack && m_gidTarget == m_msgAction.AttackCommand.gidTarget) ||
 							(m_mua == kmuaGuardArea && ggobm.IsGobWithinArea(puntTarget, m_msgAction.GuardAreaCommand.nArea)) ||
 							(m_mua == kmuaGuardVicinity || m_mua == kmuaHuntEnemies) ||
-							IsHumanOrGodControlled()) && IsAttackPointWithinFiringRangeOfTarget(puntTarget)) {
+							IsHumanOrGodControlled()) && IsAttackPointWithinFiringRangeOfTarget(puntTarget) &&
+							!(m_gidTarget == m_gidChaseFailed && gsim.GetUpdateCount() - m_cupdChaseFailed < kcupdChaseRetry)) {
 							
 						SetStatePendingFireComplete(kstChase);
 
@@ -1549,9 +1560,11 @@ lbHitNoDamage:
 					}
 				}
 
-				// UNDONE: Put in waiting code so a new path doesn't get searched
-				// every update
+				// Don't chase this target again for a while (it would be
+				// the same search, failing every update)
 
+				m_gidChaseFailed = m_gidTarget;
+				m_cupdChaseFailed = gsim.GetUpdateCount();
 				m_gidTarget = kgidNull;
 
 
@@ -1893,6 +1906,14 @@ void MobileUnitGob::MoveEnter(bool fReset)
 
 	m_wfMunt |= kfMuntPathPending;
 	m_wfMunt &= ~kfMuntStuck;
+
+	// Fresh start for the blocked-movement handling
+
+	m_cBlocked = 0;
+	m_cNoProgress = 0;
+	m_fRepathedAroundUnits = false;
+	m_nDistBest = 0x7fffffff;
+	m_itptBest = 0;
 }
 
 void MobileUnitGob::MoveExit()
@@ -1909,22 +1930,148 @@ void MobileUnitGob::MoveExit()
 		NotifyMoveWaitingNearby(m_wx, m_wy);
 }
 
+// Group moves share one path. The first unit of a group to need a path (the
+// leader) searches for it; the others nearby join it, follow it, and leave
+// it near the end for their own place in the formation. Fewer searches, and
+// the group keeps together on one route.
+
+struct GroupPath {
+	int cupd;
+	Side side;
+	TCoord txCenter, tyCenter;
+	TCoord txFrom, tyFrom;
+	std::vector<TPoint> vtpt;
+};
+
+#define kcGroupPaths 8
+#define kcupdGroupPathLife 80
+#define ktcGroupJoinMax 6
+#define kctptGroupTail 12
+
+static GroupPath s_agp[kcGroupPaths];
+static int s_igpNext;
+
+static void AppendPathPoints(Path *ppath, std::vector<TPoint> *pvtpt)
+{
+	for (int i = 0; i < ppath->GetCount(); i++) {
+		TPoint tpt;
+		ppath->GetPointRaw(i, &tpt);
+		pvtpt->push_back(tpt);
+	}
+}
+
+void MobileUnitGob::AddGroupPath(TCoord txFrom, TCoord tyFrom, Path *ppath)
+{
+	GroupPath *pgp = &s_agp[s_igpNext];
+	s_igpNext = (s_igpNext + 1) % kcGroupPaths;
+	pgp->cupd = gsim.GetUpdateCount();
+	pgp->side = GetSide();
+	pgp->txCenter = TcFromWc(m_wptTargetCenter.wx);
+	pgp->tyCenter = TcFromWc(m_wptTargetCenter.wy);
+	pgp->txFrom = txFrom;
+	pgp->tyFrom = tyFrom;
+	pgp->vtpt.clear();
+	AppendPathPoints(ppath, &pgp->vtpt);
+}
+
+Path *MobileUnitGob::FindGroupPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo)
+{
+	TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
+	TCoord txCenter = TcFromWc(m_wptTargetCenter.wx);
+	TCoord tyCenter = TcFromWc(m_wptTargetCenter.wy);
+	int cupd = gsim.GetUpdateCount();
+	for (int igp = 0; igp < kcGroupPaths; igp++) {
+		GroupPath *pgp = &s_agp[igp];
+		int ctpt = (int)pgp->vtpt.size();
+		if (ctpt < 2 || cupd - pgp->cupd > kcupdGroupPathLife)
+			continue;
+		if (pgp->side != GetSide() || pgp->txCenter != txCenter || pgp->tyCenter != tyCenter)
+			continue;
+		if (abs(pgp->txFrom - txFrom) > ktcGroupJoinMax || abs(pgp->tyFrom - tyFrom) > ktcGroupJoinMax)
+			continue;
+
+		// Where to join: the nearest point of the leader's path (in its
+		// first part, so the unit doesn't skip ahead of the group)
+
+		int itptJoin = 0;
+		int nJoin = 0x7fffffff;
+		int ctptSearch = _min(ctpt - 1, ktcGroupJoinMax * 2);
+		for (int i = 0; i <= ctptSearch; i++) {
+			int n = _max(abs(pgp->vtpt[i].tx - txFrom), abs(pgp->vtpt[i].ty - tyFrom));
+			if (n < nJoin) {
+				nJoin = n;
+				itptJoin = i;
+			}
+		}
+		if (nJoin > ktcGroupJoinMax)
+			continue;
+
+		// Where to leave: the point near the end nearest this unit's own
+		// destination
+
+		int itptLeave = ctpt - 1;
+		int nLeave = 0x7fffffff;
+		for (int i = _max(itptJoin, ctpt - kctptGroupTail); i < ctpt; i++) {
+			int dx = pgp->vtpt[i].tx - txTo, dy = pgp->vtpt[i].ty - tyTo;
+			int n = dx * dx + dy * dy;
+			if (n < nLeave) {
+				nLeave = n;
+				itptLeave = i;
+			}
+		}
+
+		std::vector<TPoint> vtpt;
+		TPoint tptJoin = pgp->vtpt[itptJoin];
+		if (tptJoin.tx != txFrom || tptJoin.ty != tyFrom) {
+			Path *ppathJoin = ptrmap->FindLinePath(txFrom, tyFrom, tptJoin.tx, tptJoin.ty, kbfStructure);
+			if (ppathJoin == NULL)
+				continue;
+			AppendPathPoints(ppathJoin, &vtpt);
+			delete ppathJoin;
+		}
+		for (int i = itptJoin + 1; i <= itptLeave; i++)
+			vtpt.push_back(pgp->vtpt[i]);
+		TPoint tptLeave = pgp->vtpt[itptLeave];
+		if (tptLeave.tx != txTo || tptLeave.ty != tyTo) {
+			Path *ppathTail = ptrmap->FindLinePath(tptLeave.tx, tptLeave.ty, txTo, tyTo, kbfStructure);
+			if (ppathTail == NULL)
+				continue;
+			AppendPathPoints(ppathTail, &vtpt);
+			delete ppathTail;
+		}
+		if (vtpt.empty())
+			continue;
+		return CreatePath(ptrmap, txFrom, tyFrom, &vtpt[0], (int)vtpt.size());
+	}
+	return NULL;
+}
+
 Path *MobileUnitGob::FindPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo)
 {
 	TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
 
-
-	// No cached paths that satisfy our needs. Make a new one.
 	// If it's close first try an easy path
 
 #define ktcFastPathRangeMax 20
 	Path *ppathT = NULL;
 	if (ganSquared[abs(txFrom - txTo)] + ganSquared[abs(tyFrom - tyTo)] < ganSquared[ktcFastPathRangeMax] * 2)
 		ppathT = ptrmap->FindLinePath(txFrom, tyFrom, txTo, tyTo, kbfStructure);
-	if (ppathT == NULL)
-		ppathT = ptrmap->FindPath(txFrom, tyFrom, txTo, tyTo, kbfStructure);
+	if (ppathT != NULL)
+		return ppathT;
 
+	// Part of a group move? Follow the group's path.
 
+	bool fGroup = m_tcTargetRadius > 0;
+	if (fGroup) {
+		ppathT = FindGroupPath(txFrom, tyFrom, txTo, tyTo);
+		if (ppathT != NULL) {
+			return ppathT;
+		}
+	}
+
+	ppathT = ptrmap->FindPath(txFrom, tyFrom, txTo, tyTo, kbfStructure);
+	if (ppathT != NULL && fGroup)
+		AddGroupPath(txFrom, tyFrom, ppathT);
 	return ppathT;
 }
 
@@ -1935,7 +2082,7 @@ void MobileUnitGob::FreeCachedPaths()
 	s_cpathCached = NULL;
 }
 
-bool MobileUnitGob::PrepPath(WCoord wxDst, WCoord wyDst)
+bool MobileUnitGob::PrepPath(WCoord wxDst, WCoord wyDst, bool *pfPending)
 {
 	// Get a path.
 
@@ -1945,6 +2092,15 @@ bool MobileUnitGob::PrepPath(WCoord wxDst, WCoord wyDst)
 	TCoord tyTo = TcFromWc(wyDst);
 	Path *ppathT = FindPath(txFrom, tyFrom, txTo, tyTo);
 
+	// The search didn't fit in this update; keep the old path (if any)
+	// and ask again next update
+
+	if (ppathT == NULL && gsim.GetLevel()->GetTerrainMap()->IsSearchPending()) {
+		if (pfPending != NULL)
+			*pfPending = true;
+		return false;
+	}
+
 	// Prep unit path
 
 	delete m_ppathAvoid;
@@ -1952,6 +2108,7 @@ bool MobileUnitGob::PrepPath(WCoord wxDst, WCoord wyDst)
 	delete m_ppathUnit;
 	m_ppathUnit = ppathT;
 	m_itptPath = 0;
+	m_itptBest = 0;
 	m_wfMunt &= ~kfMuntPathPending;
 
 #ifdef DRAW_PATHS
@@ -1983,9 +2140,14 @@ int MobileUnitGob::MoveUpdate()
 		if (CheckDestinationReached())
 			return knMoveTargetReached;
 
-		// No, so calc a path
+		// No, so calc a path. A big search may take a few updates: wait.
 
-		if (!PrepPath(m_wptTarget.wx, m_wptTarget.wy)) {
+		bool fPending = false;
+		if (!PrepPath(m_wptTarget.wx, m_wptTarget.wy, &fPending)) {
+			if (fPending) {
+				m_unvl.MinSkip();
+				return knMoveWaiting;
+			}
 //			Trace("0x%08lx: 0x%08lx @ %d,%d calc path failed", HostGetTickCount(), this, TcFromWc(m_wx), TcFromWc(m_wy));
 			m_wfMunt |= kfMuntStuck;
 			return knMoveStuck;
@@ -2028,6 +2190,21 @@ void MobileUnitGob::EnterTransition(TPoint *ptptNext)
 	// Clear the replicator input spot. This gob isn't a viable replication candidate in transition.
 
 	m_wfMunt &= ~kfMuntAtReplicatorInput;
+
+	// Progress? Further along the path or closer to the target. (Stepping
+	// aside and back isn't.)
+
+	int nDist = TileDistToTarget(ptptNext->tx, ptptNext->ty);
+	if (nDist < m_nDistBest || m_itptPath > m_itptBest) {
+		if (nDist < m_nDistBest)
+			m_nDistBest = nDist;
+		if (m_itptPath > m_itptBest)
+			m_itptBest = m_itptPath;
+		m_cBlocked = 0;
+		m_cNoProgress = 0;
+	} else if (m_cNoProgress < 255) {
+		m_cNoProgress++;
+	}
 
 	// Remember where this unit is going
 
@@ -2254,6 +2431,60 @@ bool MobileUnitGob::CheckDestinationReached()
 	return true;
 }
 
+// Squared distance in tiles from a tile to this unit's target
+
+int MobileUnitGob::TileDistToTarget(TCoord tx, TCoord ty)
+{
+	int dx = tx - TcFromWc(m_wptTarget.wx);
+	int dy = ty - TcFromWc(m_wptTarget.wy);
+	return dx * dx + dy * dy;
+}
+
+// Blocked too long without getting closer. Near the target: that's as close
+// as it gets, stop here. Otherwise, once: plan a new path around the units
+// in the way. Then give up.
+
+#define kcBlockedMax 8			// blocked tries (each waits longer) before giving up
+#define kcNoProgressMax 24		// steps without getting closer before giving up
+#define ktcGiveUpNear 3			// this close to the target (beyond its radius) counts as there
+
+bool MobileUnitGob::GiveUpBlocked(int *pnMoveResult)
+{
+	TCoord tx = TcFromWc(m_wx);
+	TCoord ty = TcFromWc(m_wy);
+	int tcNear = m_tcTargetRadius + ktcGiveUpNear;
+	int dx = abs(tx - TcFromWc(m_wptTargetCenter.wx));
+	int dy = abs(ty - TcFromWc(m_wptTargetCenter.wy));
+	if (m_st == kstMove && dx <= tcNear && dy <= tcNear) {
+		*pnMoveResult = knMoveTargetReached;
+		return false;
+	}
+
+	if (!m_fRepathedAroundUnits) {
+		m_fRepathedAroundUnits = true;
+		TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
+		Path *ppath = ptrmap->FindPath(tx, ty, TcFromWc(m_wptTarget.wx), TcFromWc(m_wptTarget.wy), kbfStructure | kbfMobileUnit);
+		if (ppath != NULL) {
+			delete m_ppathAvoid;
+			m_ppathAvoid = NULL;
+			delete m_ppathUnit;
+			m_ppathUnit = ppath;
+			m_itptPath = 0;
+			m_itptBest = 0;
+			m_cBlocked = 0;
+			m_cNoProgress = 0;
+			m_nDistBest = TileDistToTarget(tx, ty);
+			m_unvl.MinSkip();
+			*pnMoveResult = knMoveMoving;
+			return false;
+		}
+	}
+
+	m_wfMunt |= kfMuntStuck;
+	*pnMoveResult = knMoveStuck;
+	return false;
+}
+
 bool MobileUnitGob::PrepareNextTransition(TPoint *ptptNext, int *pnMoveResult)
 {
 	Assert(!InTransition());	
@@ -2261,6 +2492,12 @@ bool MobileUnitGob::PrepareNextTransition(TPoint *ptptNext, int *pnMoveResult)
 	// First clear move wait since we'll be making a fresh decision
 
 	m_wfMunt &= ~kfMuntMoveWait;
+
+	// Going round in circles (stepping aside and back) without getting any
+	// closer?
+
+	if (m_cNoProgress >= kcNoProgressMax)
+		return GiveUpBlocked(pnMoveResult);
 
 	// Get the viable transition locations
 
@@ -2342,28 +2579,53 @@ bool MobileUnitGob::PrepareNextTransition(TPoint *ptptNext, int *pnMoveResult)
 		return false;
 	}
 
-	// Need to deal with blockers.
+	// Blocked. Each try waits a little longer before the next (1, 2, 4, 8
+	// updates) instead of re-planning every update.
 
-	if (HandleCollision(apmunt, abf, atpt, ctpt)) {
-		// If move waiting, go into wait mode
+	if (m_cBlocked < 255)
+		m_cBlocked++;
+	if (m_cBlocked > kcBlockedMax)
+		return GiveUpBlocked(pnMoveResult);
+	int cupdWait = 1 << _min(m_cBlocked - 1, 3);
 
-		if (IsMoveWaiting()) {
+	// A blocker that is on its way somewhere will be gone soon: wait in
+	// place for it
+
+	for (int itpt = 0; itpt < ctpt; itpt++) {
+		MobileUnitGob *pmunt = apmunt[itpt];
+		if (pmunt != NULL && pmunt != this && pmunt->m_st == kstMove &&
+				pmunt->m_ppathUnit != NULL && !(pmunt->m_wfMunt & kfMuntMoveWait)) {
+			m_unvl.MinSkip(cupdWait);
 			*pnMoveResult = knMoveWaiting;
 			return false;
 		}
-
-        // Otherwise wait an update so that the new path options get
-        // re-evaluated
-
-		m_unvl.MinSkip();
-		*pnMoveResult = knMoveMoving;
-		return false;
 	}
 
-	// Nothing!
+	// Ask blockers to step aside, or plan a short way around them. Only on
+	// some tries: these moves are what makes a crowd jiggle.
 
-	m_wfMunt |= kfMuntStuck;
-	*pnMoveResult = knMoveStuck;
+	if (m_cBlocked == 1 || m_cBlocked == 3 || m_cBlocked == 6) {
+		if (HandleCollision(apmunt, abf, atpt, ctpt)) {
+			// If move waiting, go into wait mode
+
+			if (IsMoveWaiting()) {
+				*pnMoveResult = knMoveWaiting;
+				return false;
+			}
+
+			// Otherwise wait an update so that the new path options get
+			// re-evaluated
+
+			m_unvl.MinSkip();
+			*pnMoveResult = knMoveMoving;
+			return false;
+		}
+	}
+
+	// Wait, then try again
+
+	m_unvl.MinSkip(cupdWait);
+	*pnMoveResult = knMoveWaiting;
 	return false;
 }
 
