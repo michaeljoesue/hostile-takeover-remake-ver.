@@ -163,7 +163,10 @@ def preview(name, anir, strip, frame, rgba, gx, gy, S):
 # right). The game draws all three at the same spot, so each is moved to
 # stand where the healthy building stands: damaged by its whole outline
 # (the same shape), destroyed by its lower part, the foundation (the top
-# may have fallen in). A wreck too different to match stays put.
+# may have fallen in: the Surveillance Center's dish, the Rocket Tower's
+# launcher, which match less well but still by their pedestals; checked
+# against the classic wrecks too). A wreck matching worse than that stays
+# put.
 
 def _iou_shift(A,B,dx,dy,cut):
     H,W=A.shape
@@ -192,7 +195,7 @@ def align(healthy,other,base=False,r=40):
 def moved(gx,gy,S,healthy,other,base=False,name=''):
     """placement of `other` standing where `healthy` stands"""
     dx,dy,iou=align(healthy,other,base)
-    if base and iou<0.8:
+    if base and iou<0.55:
         print('  %s: too different to align (%.2f), left in place'%(name,iou)); return gx,gy
     if dx or dy: print('  %s moved %d,%d sheet px (match %.2f)'%(name,dx,dy,iou))
     return gx+dx/S, gy+dy/S
