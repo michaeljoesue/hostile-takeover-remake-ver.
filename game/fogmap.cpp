@@ -437,7 +437,9 @@ void FogMap::Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap 
 // soft tiles (coverage 0..255 per pixel) are cached by neighbourhood.
 
 const int kcSoftCacheMax = 4096;
-const int kcSoftLevels = 8;	// 0: clear, 1..7: shadow map applied that many times, 8: black
+const int kcSoftLevels = 8;
+const int kctEdgeFade = 2;		// tiles at the map's edge that get the edge fade
+const int kbEdgeFadeMax = 215;	// its darkness at the edge (255: black)	// 0: clear, 1..7: shadow map applied that many times, 8: black
 
 static const byte s_abBayer4[16] = {
 	0, 8, 2, 10,
@@ -768,6 +770,87 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 		yTile += gcxTile;
 		xTile = xTileStart;
 	}
+
+	// The map's edge fades out like fog (redrawn with the tiles it covers)
+
+	pfInvalid = pupd->GetInvalidMap();
+	yTile = ty * gcyTile - yMap;
+	for (int tyT = ty; tyT < ty + cty; tyT++, yTile += gcyTile) {
+		bool *pfRow = pfInvalid + (tyT - ty) * sizMap.cx;
+		bool fEdgeRow = tyT < kctEdgeFade || tyT >= m_ctyMap - kctEdgeFade;
+		xTile = xTileStart;
+		for (int txT = tx; txT < tx + ctx; txT++, xTile += gcxTile) {
+			if (!pfRow[txT - tx])
+				continue;
+			if (fEdgeRow || txT < kctEdgeFade || txT >= m_ctxMap - kctEdgeFade)
+				DrawEdgeFade(pbm, txT, tyT, xTile, yTile);
+		}
+	}
+}
+
+// Fade at the map's edge: dark like fog right at the edge (never solid
+// black), clearing over a tile and a half, the same all along the edge.
+
+void FogMap::DrawEdgeFade(DibBitmap *pbm, int txT, int tyT, int x, int y)
+{
+	Size siz;
+	pbm->GetSize(&siz);
+	int xL = x < 0 ? -x : 0;
+	int yT = y < 0 ? -y : 0;
+	int xR = x + m_cxTile > siz.cx ? siz.cx - x : m_cxTile;
+	int yB = y + m_cyTile > siz.cy ? siz.cy - y : m_cyTile;
+	if (xL >= xR || yT >= yB)
+		return;
+
+	int cpBand = m_cxTile * 3 / 2;
+	int cxMap = m_ctxMap * m_cxTile;
+	int cyMap = m_ctyMap * m_cyTile;
+	int cbRow = pbm->GetRowBytes();
+	byte *pbBits = pbm->GetBits();
+	dword *pdwTC = pbm->GetTrueColor();
+	byte *mpShadow = gmpiclriclrShadow;
+	for (int yy = yT; yy < yB; yy++) {
+		int my = tyT * m_cyTile + yy;
+		int dy = my < cyMap - 1 - my ? my : cyMap - 1 - my;
+		int nY = dy >= cpBand ? 0 : EdgeFadeAlpha(dy, cpBand);
+		for (int xx = xL; xx < xR; xx++) {
+			int mx = txT * m_cxTile + xx;
+			int dx = mx < cxMap - 1 - mx ? mx : cxMap - 1 - mx;
+			int nX = dx >= cpBand ? 0 : EdgeFadeAlpha(dx, cpBand);
+			if (nX == 0 && nY == 0)
+				continue;
+
+			// Both edges near a corner: combine as two layers of shade
+
+			int nA = 255 - (255 - nX) * (255 - nY) / 255;
+			long i = (long)(y + yy) * cbRow + x + xx;
+			if (pdwTC != NULL) {
+				// Over fog already laid here: the darker of the two
+
+				int nAOld = pdwTC[i] >> 24;
+				if (nAOld != 0 && pbm->GetTrueColorUnder()[i] == pbBits[i]) {
+					if (nAOld >= nA)
+						continue;
+				}
+				pbm->SetTrueColor(x + xx, y + yy, (dword)nA << 24);
+			} else if (mpShadow != NULL) {
+				int nLevel = (nA * kcSoftLevels * 16 + s_abBayer4[(yy & 3) * 4 + (xx & 3)] * 255) / (255 * 16);
+				byte b = pbBits[i];
+				while (nLevel-- > 0)
+					b = mpShadow[b];
+				pbBits[i] = b;
+			}
+		}
+	}
+}
+
+// Shade at a distance from the map's edge (0 at the edge pixel)
+
+int FogMap::EdgeFadeAlpha(int d, int cpBand)
+{
+	int n = 256 - d * 256 / cpBand;		// 256 at the edge .. 0
+	n = (n * n * (3 * 256 - 2 * n)) / (256 * 256);	// smoothstep
+	return n * kbEdgeFadeMax / 256;
 }
 
 byte s_abGxTranslate[] = { 0, 2, 1, 1, 0, 0, 5, 4, 4, 3, 3, 8, 7, 7, 6, 6 };

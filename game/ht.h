@@ -1046,6 +1046,8 @@ private:
 	void InitSoftEdges();
 	byte *GetSoftTile(byte *abNeighbours, int ffEdges);
 	void DrawSoftEdge(DibBitmap *pbm, byte *pbSoft, int x, int y);
+	void DrawEdgeFade(DibBitmap *pbm, int tx, int ty, int x, int y);
+	int EdgeFadeAlpha(int d, int cpBand);
 	byte GetFogAt(int tx, int ty);
 	TBitmap *m_aptbmGalax[9];
 	AnimationData *m_panidWalls;
