@@ -25,6 +25,9 @@ DibBitmap::DibBitmap()
 	m_siz.cx = 0;
 	m_siz.cy = 0;
 	m_wf = 0;
+	m_pdwTC = NULL;
+	m_pbTCUnder = NULL;
+	m_fFreeTC = false;
 }
 
 DibBitmap::~DibBitmap()
@@ -32,6 +35,73 @@ DibBitmap::~DibBitmap()
 	if (m_wf & kfDibFreeMem)
 		delete[] m_pb;
 	m_pb = NULL;
+	if (m_fFreeTC) {
+		delete[] m_pdwTC;
+		delete[] m_pbTCUnder;
+	}
+	m_pdwTC = NULL;
+	m_pbTCUnder = NULL;
+}
+
+bool DibBitmap::InitTrueColor(dword *pdw, byte *pbUnder)
+{
+	if (m_fFreeTC) {
+		delete[] m_pdwTC;
+		delete[] m_pbTCUnder;
+	}
+	m_fFreeTC = false;
+	if (pdw == NULL) {
+		pdw = new dword[m_cb];
+		pbUnder = new byte[m_cb];
+		memset(pdw, 0, m_cb * sizeof(dword));
+		memset(pbUnder, 0, m_cb);
+		m_fFreeTC = true;
+	}
+	m_pdwTC = pdw;
+	m_pbTCUnder = pbUnder;
+	return true;
+}
+
+void DibBitmap::ClearTrueColor(Rect *prc)
+{
+	if (m_pdwTC == NULL)
+		return;
+	Rect rc;
+	Rect rcDib;
+	rcDib.Set(0, 0, m_siz.cx, m_siz.cy);
+	if (prc == NULL)
+		prc = &rcDib;
+	if (!rc.Intersect(prc, &rcDib))
+		return;
+	for (int y = rc.top; y < rc.bottom; y++)
+		memset(&m_pdwTC[(long)y * m_cbRow + rc.left], 0, rc.Width() * sizeof(dword));
+}
+
+// Copies the true colour layer along with a blt (prcSrc already clipped)
+
+void DibBitmap::BltTrueColor(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst)
+{
+	if (m_pdwTC == NULL || prcSrc->IsEmpty())
+		return;
+	int cx = prcSrc->Width();
+	if (pbmSrc->m_pdwTC == NULL) {
+		Rect rcDst;
+		rcDst.Set(xDst, yDst, xDst + cx, yDst + prcSrc->Height());
+		ClearTrueColor(&rcDst);
+		return;
+	}
+
+	// Row order matters when scrolling within one buffer
+
+	int cy = prcSrc->Height();
+	bool fUp = !(pbmSrc->m_pdwTC == m_pdwTC && yDst > prcSrc->top);
+	for (int i = 0; i < cy; i++) {
+		int dy = fUp ? i : cy - 1 - i;
+		long iSrc = (long)(prcSrc->top + dy) * pbmSrc->m_cbRow + prcSrc->left;
+		long iDst = (long)(yDst + dy) * m_cbRow + xDst;
+		memmove(&m_pdwTC[iDst], &pbmSrc->m_pdwTC[iSrc], cx * sizeof(dword));
+		memmove(&m_pbTCUnder[iDst], &pbmSrc->m_pbTCUnder[iSrc], cx);
+	}
 }
 
 bool DibBitmap::Init(byte *pb, int cx, int cy)
@@ -65,6 +135,40 @@ int DibBitmap::GetRowBytes()
 #define BottomToTopBltThunk RightToLeftBltThunk
 
 void DibBitmap::Blt(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst)
+{
+	// Clip as BltBits does, so the true colour layer gets the same rect
+
+	Size sizSrc;
+	pbmSrc->GetSize(&sizSrc);
+	Rect rc = *prcSrc;
+	if (rc.left < 0)
+		rc.left = 0;
+	if (rc.top < 0)
+		rc.top = 0;
+	if (rc.right > sizSrc.cx)
+		rc.right = sizSrc.cx;
+	if (rc.bottom > sizSrc.cy)
+		rc.bottom = sizSrc.cy;
+	int x = xDst, y = yDst;
+	if (x < 0) {
+		rc.left -= x;
+		x = 0;
+	}
+	if (y < 0) {
+		rc.top -= y;
+		y = 0;
+	}
+	if (x + rc.Width() > m_siz.cx)
+		rc.right -= x + rc.Width() - m_siz.cx;
+	if (y + rc.Height() > m_siz.cy)
+		rc.bottom -= y + rc.Height() - m_siz.cy;
+
+	BltBits(pbmSrc, prcSrc, xDst, yDst);
+	if (m_pdwTC != NULL && !rc.IsEmpty())
+		BltTrueColor(pbmSrc, &rc, x, y);
+}
+
+void DibBitmap::BltBits(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst)
 {
 	// Get src dib dimensions
 
@@ -188,6 +292,14 @@ void DibBitmap::Fill(int x, int y, int cx, int cy, Color clr)
 
 	byte *pbDst = m_pb + (long)y * m_cbRow + x;
 	FillThunk(pbDst, cx, cy, m_cbRow, (byte)clr);
+
+	// A fill covers the true colour layer
+
+	if (m_pdwTC != NULL) {
+		Rect rc;
+		rc.Set(x, y, x + cx, y + cy);
+		ClearTrueColor(&rc);
+	}
 }
 
 void DibBitmap::Shadow(int x, int y, int cx, int cy)
@@ -212,6 +324,18 @@ void DibBitmap::Shadow(int x, int y, int cx, int cy)
 
 	byte *pbRow = m_pb + (long)y * m_cbRow + x;
 	FillShadowThunk(pbRow, m_cbRow, cx, cy, gmpiclriclrShadow);
+
+	// Keep the true colour layer over shadowed pixels it was laid over
+
+	if (m_pdwTC != NULL && gmpiclriclrShadow != NULL) {
+		for (int yy = y; yy < y + cy; yy++) {
+			long i = (long)yy * m_cbRow + x;
+			for (int xx = 0; xx < cx; xx++, i++) {
+				if ((m_pdwTC[i] >> 24) != 0 && gmpiclriclrShadow[m_pbTCUnder[i]] == m_pb[i])
+					m_pbTCUnder[i] = m_pb[i];
+			}
+		}
+	}
 }
 
 void DibBitmap::GetSize(Size *psiz)
@@ -368,7 +492,10 @@ DibBitmap *DibBitmap::Suballoc(int yTop, int cy)
 {
 	Assert(yTop < m_siz.cy && yTop + cy <= m_siz.cy);
 	byte *pb = m_pb + (long)m_siz.cx * yTop;
-	return CreateDibBitmap(pb, m_siz.cx, cy);
+	DibBitmap *pbm = CreateDibBitmap(pb, m_siz.cx, cy);
+	if (pbm != NULL && m_pdwTC != NULL)
+		pbm->InitTrueColor(m_pdwTC + (long)m_siz.cx * yTop, m_pbTCUnder + (long)m_siz.cx * yTop);
+	return pbm;
 }
 
 void DibBitmap::Scroll(Rect *prcSrc, int xDst, int yDst)

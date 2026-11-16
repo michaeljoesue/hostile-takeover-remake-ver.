@@ -43,7 +43,9 @@ The engine has been updated from its 2007 handheld roots:
   time, and the map scrolls when the mouse is at the edge of the screen or
   window. (Sprite animations still have the frames the artists drew.)
   The edge of the fog of war fades out gradually instead of in tile-sized
-  steps. Options > Display > Show frames per second shows the frame rate.
+  steps. The art is still 8-bit, but the frame is shown in true colour:
+  the fog's fade and the mini map are blended in full colour on top, with
+  no dithering. Options > Display > Show frames per second shows the frame rate.
 - **Higher limits, scaled to the map.** On a 64x64 map: 300 structures and
   500 units for the player, the same for the computer players together
   (originally 55/88 and 72/117), 600 scenery objects, 300 scorch marks and
@@ -155,7 +157,8 @@ type on screen.
 
 The mini map (bottom right) is about a third of the screen's height
 whatever the map's size, and shows units moving smoothly. Its terrain is
-drawn from the full size tiles scaled down, and its fog has soft edges.
+drawn from the full size tiles scaled down and averaged in true colour, and
+its fog fades smoothly.
 
 - The bar at the bottom shows what's selected: one unit's name and health,
   or how many of each type.

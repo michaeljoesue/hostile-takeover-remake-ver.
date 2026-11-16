@@ -211,7 +211,23 @@ void TileMap::Draw(DibBitmap *pbm, int x, int y, int cx, int cy, int xMap, int y
 			Assert(tx + txT < BigWord(m_ptmaph->ctx));
 
 			*ppbDrawMap = NULL;
-			if (!IsFogOpaque(*pbFogT)) {
+
+			// Opaque fog next to clear ground gets a soft edge that
+			// fades over it, so the ground is drawn there too
+
+			bool fDraw = !IsFogOpaque(*pbFogT);
+			if (!fDraw && *pfInvalid) {
+				int txM = tx + txT, tyM = ty + tyT;
+				int ctyMap = BigWord(m_ptmaph->cty);
+				for (int i = 0; i < 9 && !fDraw; i++) {
+					int txN = txM + i % 3 - 1, tyN = tyM + i / 3 - 1;
+					if (txN < 0 || tyN < 0 || txN >= ctxMap || tyN >= ctyMap)
+						continue;
+					if (!IsFogOpaque(pbFogMap[tyN * ctxMap + txN]))
+						fDraw = true;
+				}
+			}
+			if (fDraw) {
 				if (*pfInvalid) {
 					word offset = BigWord(*pwMapT);
 					Assert(offset < 0xff00);

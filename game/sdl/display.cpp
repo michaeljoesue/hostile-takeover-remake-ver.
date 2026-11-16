@@ -271,25 +271,20 @@ bool Display::SetMode(int imode)
 		return false;
 	}
 
-    // Texture. A palettized texture lets the GPU do the color lookup; fall
-    // back to converting to 32 bits per pixel on the CPU.
+    // True colour layer over the 8-bit frame (soft fog, mini map); see
+    // DibBitmap::InitTrueColor
+
+    pbmBack->InitTrueColor();
+    pbmFront->InitTrueColor();
+
+    // Texture: 32 bits per pixel. The palette lookup and the true colour
+    // blend are done on the CPU as the frame is uploaded.
 
     if (m_texture != NULL)
         SDL_DestroyTexture(m_texture);
     m_fPaletteTexture = false;
-    m_texture = SDL_CreateTexture(s_renderer, SDL_PIXELFORMAT_INDEX8,
-            SDL_TEXTUREACCESS_STREAMING, cx, cy);
-    if (m_texture != NULL) {
-        if (m_ppal == NULL)
-            m_ppal = SDL_CreatePalette(256);
-        if (m_ppal != NULL && SDL_SetTexturePalette(m_texture, m_ppal)) {
-            m_fPaletteTexture = true;
-        } else {
-            SDL_DestroyTexture(m_texture);
-            m_texture = NULL;
-        }
-    }
-    if (m_texture == NULL) {
+    m_texture = NULL;
+    {
         m_texture = SDL_CreateTexture(s_renderer, SDL_PIXELFORMAT_XRGB8888,
                 SDL_TEXTUREACCESS_STREAMING, cx, cy);
     }
@@ -367,9 +362,34 @@ void Display::RenderGameSurface() {
     if (m_fPaletteTexture) {
         SDL_UpdateTexture(m_texture, NULL, m_gamePixels, m_cx);
     } else {
+        // Palette lookup, then the true colour layer blended on top where
+        // the 8-bit pixel is still the one it was laid over
+
         int cp = m_cx * m_cy;
-        for (int i = 0; i < cp; i++)
-            m_gamePixels32[i] = m_palette[m_gamePixels[i]];
+        dword *pdwTC = m_pbmFront->GetTrueColor();
+        byte *pbUnder = m_pbmFront->GetTrueColorUnder();
+        if (pdwTC == NULL || m_pbmFront->GetRowBytes() != m_cx) {
+            for (int i = 0; i < cp; i++)
+                m_gamePixels32[i] = m_palette[m_gamePixels[i]];
+        } else {
+            for (int i = 0; i < cp; i++) {
+                byte b = m_gamePixels[i];
+                dword clr = m_palette[b];
+                dword tc = pdwTC[i];
+                dword a = tc >> 24;
+                if (a != 0 && pbUnder[i] == b) {
+                    if (a == 255) {
+                        clr = 0xff000000 | tc;
+                    } else {
+                        dword na = 255 - a;
+                        dword rb = ((tc & 0xff00ff) * a + (clr & 0xff00ff) * na + 0x800080) >> 8;
+                        dword g = ((tc & 0xff00) * a + (clr & 0xff00) * na + 0x8000) >> 8;
+                        clr = 0xff000000 | (rb & 0xff00ff) | (g & 0xff00);
+                    }
+                }
+                m_gamePixels32[i] = clr;
+            }
+        }
         SDL_UpdateTexture(m_texture, NULL, m_gamePixels32, m_cx * 4);
     }
 

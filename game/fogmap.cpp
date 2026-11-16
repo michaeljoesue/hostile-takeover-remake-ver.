@@ -431,9 +431,10 @@ void FogMap::Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap 
 
 // Soft fog edges. The edge tiles are 1 bit masks with hard, stepped
 // outlines. A tile is drawn from the coverage of it and its 8 neighbours,
-// blurred, as steps of darkening (the palette's shadow map applied 1 to 3
-// times, then black) with an ordered dither between the steps. The soft
-// tiles are cached by neighbourhood.
+// blurred. On the true colour layer the coverage is black's alpha, a smooth
+// fade; without it, steps of darkening (the palette's shadow map applied
+// 1 to 7 times, then black) with an ordered dither between the steps. The
+// soft tiles (coverage 0..255 per pixel) are cached by neighbourhood.
 
 const int kcSoftCacheMax = 4096;
 const byte kbOffMap = 16;	// GetFogAt: outside the map
@@ -549,8 +550,7 @@ byte *FogMap::GetSoftTile(byte *abNeighbours)
 		}
 	}
 
-	// Darkness steps 0..4 for the middle tile, dithered (tiles sit on the
-	// tile grid, so the dither lines up across tiles)
+	// Coverage of the middle tile
 
 	byte *pbSoft = new byte[cx * cy];
 	for (int y = 0; y < cy; y++) {
@@ -575,12 +575,17 @@ byte *FogMap::GetSoftTile(byte *abNeighbours)
 				nCov += (256 - nCov) * (cSpan * 2 - nDist) / (cSpan * 2);
 			if (nCov > 256)
 				nCov = 256;
-			int nLevel = (nCov * kcSoftLevels * 16 + s_abBayer4[(y & 3) * 4 + (x & 3)] * 256) / (256 * 16);
-			if (nCov <= 4)
-				nLevel = 0;
-			if (nCov >= 252)
-				nLevel = kcSoftLevels;
-			pbSoft[y * cx + x] = (byte)(nLevel > kcSoftLevels ? kcSoftLevels : nLevel);
+
+			// Ease the ends so the fade meets clear ground and black
+			// without a visible seam (smoothstep)
+
+			int n = nCov;
+			n = (n * n * (3 * 256 - 2 * n)) / (256 * 256);
+			if (nCov <= 2)
+				n = 0;
+			if (nCov >= 254)
+				n = 255;
+			pbSoft[y * cx + x] = (byte)(n > 255 ? 255 : n);
 		}
 	}
 	delete[] pnCov;
@@ -602,11 +607,23 @@ void FogMap::DrawSoftEdge(DibBitmap *pbm, byte *pbSoft, int x, int y)
 	byte *mpShadow = gmpiclriclrShadow;
 	byte bBlack = (byte)GetColor(kiclrBlack);
 	int cbRow = pbm->GetRowBytes();
+	bool fTrueColor = pbm->GetTrueColor() != NULL;
 	for (int yy = yT; yy < yB; yy++) {
 		byte *pbDst = pbm->GetBits() + (long)(y + yy) * cbRow + x;
 		byte *pbSrc = pbSoft + yy * m_cxTile;
 		for (int xx = xL; xx < xR; xx++) {
-			int nLevel = pbSrc[xx];
+			int nCov = pbSrc[xx];
+			if (nCov == 0)
+				continue;
+			if (nCov == 255) {
+				pbDst[xx] = bBlack;
+				continue;
+			}
+			if (fTrueColor) {
+				pbm->SetTrueColor(x + xx, y + yy, (dword)nCov << 24);
+				continue;
+			}
+			int nLevel = (nCov * kcSoftLevels * 16 + s_abBayer4[(yy & 3) * 4 + (xx & 3)] * 255) / (255 * 16);
 			if (nLevel == 0)
 				continue;
 			if (nLevel >= kcSoftLevels) {

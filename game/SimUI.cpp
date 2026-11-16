@@ -1653,6 +1653,7 @@ MiniMapControl::MiniMapControl()
 	m_cxDisp = 0;
 	m_cyDisp = 0;
 	m_pbFogLevel = NULL;
+	m_pdwColor = NULL;
 	m_pbNearest = NULL;
 	m_ppal = NULL;
 }
@@ -1664,6 +1665,7 @@ MiniMapControl::~MiniMapControl()
 	delete[] m_axSrc;
 	delete[] m_aySrc;
 	delete[] m_pbFogLevel;
+	delete[] m_pdwColor;
 	delete[] m_pbNearest;
 }
 
@@ -1743,7 +1745,9 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	if (m_pbm == NULL)
 		return false;
 	m_pbFogLevel = new byte[m_cxDisp * m_cyDisp];
-	memset(m_pbFogLevel, 8, m_cxDisp * m_cyDisp);
+	memset(m_pbFogLevel, 255, m_cxDisp * m_cyDisp);
+	m_pdwColor = new dword[m_cxDisp * m_cyDisp];
+	memset(m_pdwColor, 0, m_cxDisp * m_cyDisp * sizeof(dword));
 	m_pbNearest = new byte[32 * 32 * 32];
 	memset(m_pbNearest, 0, 32 * 32 * 32);
 	m_ppal = gsim.GetLevel()->GetPalette();
@@ -1826,14 +1830,36 @@ void MiniMapControl::OnPaint(DibBitmap *pbm)
 	byte *pbDstBase = pbm->GetBits();
 	int cbRowDst = pbm->GetRowBytes();
 	byte *mpShadow = gmpiclriclrShadow;
+	bool fTrueColor = pbm->GetTrueColor() != NULL;
+	static const byte s_abBayer4[16] = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
 	for (int yD = rcClip.top; yD < rcClip.bottom; yD++) {
 		int yS = yD - yMap;
 		byte *pbSrc = pbSrcBase + (long)yS * m_cbRowBytes + (rcClip.left - xMap);
 		byte *pbFog = m_pbFogLevel + (long)yS * m_cxDisp + (rcClip.left - xMap);
+		dword *pdwClr = m_pdwColor + (long)yS * m_cxDisp + (rcClip.left - xMap);
 		byte *pbDst = pbDstBase + (long)yD * cbRowDst + rcClip.left;
 		for (int xD = rcClip.left; xD < rcClip.right; xD++) {
-			int nLevel = *pbFog++;
+			int nCov = *pbFog++;
 			byte b = *pbSrc++;
+			dword clr = *pdwClr++;
+			if (nCov >= 255) {
+				*pbDst++ = m_clrBlack;
+				continue;
+			}
+			if (fTrueColor) {
+				// True colour: the averaged terrain, darkened smoothly
+
+				*pbDst++ = b;
+				int n = 255 - nCov;
+				dword rb = ((clr & 0xff00ff) * n >> 8) & 0xff00ff;
+				dword g = ((clr & 0xff00) * n >> 8) & 0xff00;
+				pbm->SetTrueColor(xD, yD, 0xff000000 | rb | g);
+				continue;
+			}
+
+			// 8 bits: shadow steps, dithered
+
+			int nLevel = (nCov * 8 * 16 + s_abBayer4[(yD & 3) * 4 + (xD & 3)] * 255) / (255 * 16);
 			if (nLevel >= 8) {
 				b = m_clrBlack;
 			} else if (mpShadow != NULL) {
@@ -2050,10 +2076,9 @@ void MiniMapControl::RedrawTRect(TRect *ptrc)
 	int cyMap = m_cty * gcyTile;
 	int cSamplesX = cxMap / m_cxDisp;
 	int cSamplesY = cyMap / m_cyDisp;
-	cSamplesX = cSamplesX < 1 ? 1 : (cSamplesX > 4 ? 4 : cSamplesX);
-	cSamplesY = cSamplesY < 1 ? 1 : (cSamplesY > 4 ? 4 : cSamplesY);
+	cSamplesX = cSamplesX < 1 ? 1 : (cSamplesX > 6 ? 6 : cSamplesX);
+	cSamplesY = cSamplesY < 1 ? 1 : (cSamplesY > 6 ? 6 : cSamplesY);
 	byte *argbGx = m_ppal->argb[m_clrGalaxite];
-	static const byte s_abBayer4[16] = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
 
 	for (int yD = yD0; yD < yD1; yD++) {
 		for (int xD = xD0; xD < xD1; xD++) {
@@ -2081,7 +2106,11 @@ void MiniMapControl::RedrawTRect(TRect *ptrc)
 					c++;
 				}
 			}
-			m_pbm->GetBits()[(long)yD * m_cbRowBytes + xD] = NearestColor(r / c, g / c, b / c);
+			r /= c;
+			g /= c;
+			b /= c;
+			m_pbm->GetBits()[(long)yD * m_cbRowBytes + xD] = NearestColor(r, g, b);
+			m_pdwColor[(long)yD * m_cxDisp + xD] = ((dword)r << 16) | ((dword)g << 8) | (dword)b;
 
 			// Fog: coverage interpolated between tile centres
 
@@ -2100,12 +2129,12 @@ void MiniMapControl::RedrawTRect(TRect *ptrc)
 			nCov = nCov * 3 / 2;
 			if (nCov > 256)
 				nCov = 256;
-			int nLevel = (nCov * 8 * 16 + s_abBayer4[(yD & 3) * 4 + (xD & 3)] * 256) / (256 * 16);
-			if (nCov <= 4)
-				nLevel = 0;
-			if (nCov >= 252)
-				nLevel = 8;
-			m_pbFogLevel[(long)yD * m_cxDisp + xD] = (byte)(nLevel > 8 ? 8 : nLevel);
+			nCov = (nCov * nCov * (3 * 256 - 2 * nCov)) / (256 * 256);
+			if (nCov <= 2)
+				nCov = 0;
+			if (nCov >= 254)
+				nCov = 255;
+			m_pbFogLevel[(long)yD * m_cxDisp + xD] = (byte)(nCov > 255 ? 255 : nCov);
 		}
 	}
 }

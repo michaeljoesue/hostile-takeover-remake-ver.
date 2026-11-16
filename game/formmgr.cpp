@@ -354,6 +354,19 @@ void FormMgr::Paint(bool fScrolled, Rect *prcOpaqueStart)
 		if (m_pupd->IsRectInvalid(&m_apfrm[j]->m_rc)) {
 			CalcOpaqueRect(m_apfrm[j], prcOpaqueStart, &rcOpaque);
 			if (!rcOpaque.RectIn(&m_apfrm[j]->m_rc)) {
+				// The true colour layer under the form is redrawn along
+				// with it
+
+				if (m_pbm->GetTrueColor() != NULL) {
+					Rect rcT;
+					bool fFirst = true;
+					while (m_pupd->EnumUpdateRects(fFirst, NULL, &rcT)) {
+						fFirst = false;
+						Rect rcClear;
+						if (rcClear.Intersect(&rcT, &m_apfrm[j]->m_rc))
+							m_pbm->ClearTrueColor(&rcClear);
+					}
+				}
 				m_apfrm[j]->OnPaintBackground(m_pbm, m_pupd);
 				m_apfrm[j]->OnPaint(m_pbm);
 				m_apfrm[j]->OnPaintControls(m_pbm, m_pupd);

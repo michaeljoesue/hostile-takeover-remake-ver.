@@ -143,12 +143,40 @@ public:
 		return m_wf;
 	}
 
+	// True colour layer (the screen buffers only). Per pixel: a colour with
+	// alpha (0xAARRGGBB) blended over the 8-bit pixel when the frame is
+	// shown, and the 8-bit pixel it was laid over: if something is drawn
+	// over that pixel afterwards, the layer stands aside there. Used for
+	// soft fog edges and the mini map, which 256 colours can't show
+	// smoothly. Copies and scrolls carry it; copying from a bitmap without
+	// one clears it.
+
+	bool InitTrueColor(dword *pdw = NULL, byte *pbUnder = NULL);
+	dword *GetTrueColor() {
+		return m_pdwTC;
+	}
+	byte *GetTrueColorUnder() {
+		return m_pbTCUnder;
+	}
+	void ClearTrueColor(Rect *prc);
+	void SetTrueColor(int x, int y, dword argb) {
+		long i = (long)y * m_cbRow + x;
+		m_pdwTC[i] = argb;
+		m_pbTCUnder[i] = m_pb[i];
+	}
+
 protected:
+	void BltBits(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst);
+	void BltTrueColor(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst);
+
 	word m_wf;
 	Size m_siz;
 	byte *m_pb;
 	dword m_cb;
 	int m_cbRow;
+	dword *m_pdwTC;
+	byte *m_pbTCUnder;
+	bool m_fFreeTC;
 };
 DibBitmap *CreateDibBitmap(byte *pb, int cx, int cy);
 
@@ -2908,7 +2936,8 @@ private:
 	byte m_clrBlack;
 	byte m_clrGalaxite;
 	byte m_aclrSide[kcSides];
-	byte *m_pbFogLevel;		// per display pixel: 0 clear .. 8 black
+	byte *m_pbFogLevel;		// per display pixel: fog coverage 0 clear .. 255 black
+	dword *m_pdwColor;		// per display pixel: terrain colour, 0xRRGGBB
 	byte *m_pbNearest;		// 15 bit RGB -> nearest palette index (0 = not yet; index + 1)
 	Palette *m_ppal;
 	byte NearestColor(int r, int g, int b);
