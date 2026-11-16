@@ -233,21 +233,17 @@ bool MobileUnitGob::Init(IniReader *pini, FindProp *pfind, const char *pszName)
 	if (cArgs > 0)
 		m_wfMunt = (m_wfMunt & ~kfMuntAggressivenessBits) | AggBitsFromAgg(nAggressiveness);
 
-	// Only computer-controlled units respond to their initial Action. The
-	// exception is Mine: a player's Bullpup placed with it starts mining.
-
-	if (m_pplr->GetFlags() & kfPlrComputer) {
-		if (cArgs > 1)
-			PerformAction(szAction);
-
 	// Human-controlled units don't attack while executing a move command
 
-	} else {
+	if (!(m_pplr->GetFlags() & kfPlrComputer))
 		m_wfMunt &= ~kfMuntAttackEnemiesWhenMoving;
-		int nUnitAction;
-		if (cArgs > 1 && IniScanf(szAction, "%d", &nUnitAction) != 0 && nUnitAction == knMineUnitAction)
-			PerformAction(szAction);
-	}
+
+	// The unit's initial Action, as set in the editor (the player's units
+	// too: Mine, Move, Guard Area, Guard Vicinity, Hunt Enemies). Once the
+	// player gives the unit an order, the order replaces the action.
+
+	if (cArgs > 1)
+		PerformAction(szAction);
 
 	return true;
 }
