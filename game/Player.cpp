@@ -265,8 +265,8 @@ void Player::Init(Pid pid)
 	m_cStructsNeedCredits = 0; 
 	m_wfHandicap = kfHcapDefault;
 
-	memset(m_acut, 0, ARRAYSIZE(m_acut));
-	memset(m_acutBuilt, 0, ARRAYSIZE(m_acutBuilt));
+	memset(m_acut, 0, sizeof(m_acut));
+	memset(m_acutBuilt, 0, sizeof(m_acutBuilt));
 
 	for (int i = 0; i < kcFormalObjectivesMax; i++) {
 		m_aszFormalObjectiveText[i] = NULL;
@@ -274,11 +274,14 @@ void Player::Init(Pid pid)
 	}
 }
 
-#define knVerPlayerState 11
+// 12: one more unit type (walls). 11 has no wall count.
+
+#define knVerPlayerState 12
+#define knVerPlayerStateNoWalls 11
 bool Player::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerPlayerState)
+	if (nVer != knVerPlayerState && nVer != knVerPlayerStateNoWalls)
 		return false;
 	m_wfUpgrades = pstm->ReadWord();
 	m_side = pstm->ReadWord();
@@ -295,7 +298,11 @@ bool Player::LoadState(Stream *pstm)
 	m_nCreditsConsumed = 0;
 	m_nPowerSupply = (short)pstm->ReadWord();
 	m_nPowerDemand = (short)pstm->ReadWord();
-	pstm->Read(m_acut, sizeof(m_acut));
+	memset(m_acut, 0, sizeof(m_acut));
+	if (nVer == knVerPlayerStateNoWalls)
+		pstm->Read(m_acut, sizeof(m_acut[0]) * kutWall);
+	else
+		pstm->Read(m_acut, sizeof(m_acut));
 	m_umAllowed = pstm->ReadDword();
 	pstm->ReadString(m_szObjective, sizeof(m_szObjective));
 	m_upgm = pstm->ReadWord();
@@ -609,6 +616,11 @@ void Player::Repair(bool fOn)
 			continue;
 
 		StructGob *pstru = (StructGob *)pgobT;
+
+		// Walls are repaired only when the player says so
+
+		if (pstru->GetType() == kgtWall)
+			continue;
 
 		if (fOn) {
 			if (!(pstru->GetUnitFlags() & kfUnitRepairing)) {

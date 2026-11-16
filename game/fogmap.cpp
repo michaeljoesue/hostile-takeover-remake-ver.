@@ -13,7 +13,6 @@ FogMap::FogMap()
 	m_pbGxOriginal = NULL;
 	m_nRegrowth = knGalaxiteRegrowthOff;
 	m_tRegrowthLast = 0;
-	m_panidWalls = NULL;
 	memset(m_aptbm, 0, sizeof(m_aptbm));
 	memset(m_apnCoverage, 0, sizeof(m_apnCoverage));
 	m_fSoftInit = false;
@@ -40,7 +39,6 @@ FogMap::FogMap()
 
 FogMap::~FogMap()
 {
-	delete m_panidWalls;
 	delete[] m_pbMap;
 	delete[] m_pbGxOriginal;
 	int n;
@@ -119,14 +117,6 @@ bool FogMap::Init(Size *psizTile, Size *psizMap)
 			Assert("Failed to load one of the Galaxite bitmaps");
 			return false;
 		}
-	}
-
-	// Load the wall bitmaps
-
-	m_panidWalls = LoadAnimationData("walls.anir");
-	if (m_panidWalls == NULL) {
-		Assert("Failed to load wall.anir");
-		return false;
 	}
 
 	return true;
@@ -665,6 +655,15 @@ void FogMap::DrawSoftEdge(DibBitmap *pbm, byte *pbSoft, int x, int y)
 	}
 }
 
+// Opaque fog. HD pictures (hdsprites.cpp) mustn't show through it, even
+// where the ground under them was black already.
+
+static void FillOpaque(DibBitmap *pbm, int x, int y, int cx, int cy, Color clr)
+{
+	pbm->Fill(x, y, cx, cy, clr);
+	HdNoteCovered(pbm, x, y, cx, cy);
+}
+
 void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 {
 	if (!m_fSoftInit)
@@ -720,7 +719,7 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 				}
 				if (!fUniform && gmpiclriclrShadow != NULL) {
 					if (cEmpty != 0) {
-						pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
+						FillOpaque(pbm, xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
 						cEmpty = 0;
 					}
 					int ffEdges = (txT == 0 ? kfSoftEdgeLeft : 0) | (tyT == 0 ? kfSoftEdgeTop : 0) |
@@ -744,7 +743,7 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 			// Not opaque; fill block if there is one
 
 			if (cEmpty != 0) {
-				pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
+				FillOpaque(pbm, xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
 				cEmpty = 0;
 			}
 
@@ -760,7 +759,7 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 			xTile += gcxTile;
 		}
 		if (cEmpty != 0) {
-			pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
+			FillOpaque(pbm, xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
 			cEmpty = 0;
 
 		}
@@ -897,58 +896,19 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 				continue;
 			}
 
-			// Is no Galaxite/Wall present or is this tile completely obscured by fog?
+			// Is no Galaxite present or is this tile completely obscured by fog?
+			// (Walls are objects: WallGob)
 
-			byte *ptt = &pbTrMap[pbMapT - m_pbMap];
-			if (((b & kbfGalaxiteMask) == 0 && *ptt != kttWall) || IsFogOpaque(b)) {
+			if ((b & kbfGalaxiteMask) == 0 || IsFogOpaque(b)) {
 				xTile += gcxTile;
 				continue;
 			}
 
-			// Galaxite?
+			// Galaxite
 
 			if (HasGalaxite(b)) {
-				// Galaxite
-
 				TBitmap *ptbm = m_aptbmGalax[s_abGxTranslate[(b & kbfGalaxiteMask) >> kcGalaxiteShift]];
 				ptbm->BltTo(pbm, xTile, yTile);
-
-
-			} 
-
-			// Wall?
-
-			if (*ptt == kttWall) {
-
-#define HasWall(tt) ((tt) == kttWall)
-
-				// Check neighbor cells for walls to decide what shape this
-				// segment should take.
-
-				int ifrm = 0;
-				if (tyT > 0) {
-					if (HasWall(*(ptt - m_ctxMap)))
-						ifrm |= 1;
-				}
-				if (txT < m_ctxMap - 1) {
-					if (HasWall(*(ptt + 1)))
-						ifrm |= 2;
-				}
-				if (tyT < m_ctyMap - 1) {
-					if (HasWall(*(ptt + m_ctxMap)))
-						ifrm |= 4;
-				}
-				if (txT > 0) {
-					if (HasWall(*(ptt - 1)))
-						ifrm |= 8;
-				}
-			
-				// The kwfWallMask >> 1 test makes walls with less than half their health
-				// draw from the 'damaged' strip.
-
-//				m_panidWalls->DrawFrame(w <= (kwfWallMask >> 1) ? 1 : 0, ifrm, pbm, xTile, yTile, ksideNeutral);
-				m_panidWalls->DrawFrame(0, ifrm, pbm, xTile, yTile, ksideNeutral);
-
 			}
 
 			xTile += gcxTile;
@@ -1140,10 +1100,6 @@ bool FogMap::FindNearestGalaxite(TCoord txOrigin, TCoord tyOrigin, TPoint *ptpt,
 //	MpTrace("  -- found none");
 	return false;
 }
-
-//
-// Wall methods
-//
 
 
 } // namespace wi

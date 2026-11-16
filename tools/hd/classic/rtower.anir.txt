@@ -1,0 +1,76 @@
+strip 0 'base 0' frames 1 delay 0
+  frame 0 bounds 3 1 27 37 hold 0 special 16 7
+strip 1 'base 1' frames 1 delay 0
+  frame 0 bounds -3 1 32 38 hold 0 special 16 7
+strip 2 'base 2' frames 1 delay 0
+  frame 0 bounds -3 3 34 39 hold 0 special 16 7
+strip 3 'turret 00' frames 3 delay 0
+  frame 0 bounds -9 -8 11 5 hold 0 special 0 0
+  frame 1 bounds -12 -20 11 16 hold 0 special -5 -17
+  frame 2 bounds -13 -20 11 17 hold 0 special -13 -5
+strip 4 'turret 01' frames 3 delay 0
+  frame 0 bounds -11 -9 12 10 hold 0 special 0 0
+  frame 1 bounds -11 -15 17 13 hold 0 special 15 -13
+  frame 2 bounds -11 -16 17 16 hold 0 special -13 -5
+strip 5 'turret 02' frames 3 delay 0
+  frame 0 bounds -11 -11 12 10 hold 0 special 0 0
+  frame 1 bounds -12 -17 12 11 hold 0 special 9 -17
+  frame 2 bounds -15 -19 12 10 hold 0 special -13 -5
+strip 6 'turret 03' frames 3 delay 0
+  frame 0 bounds -8 -9 11 11 hold 0 special 0 0
+  frame 1 bounds -9 -9 20 14 hold 0 special 19 -5
+  frame 2 bounds -13 -9 22 15 hold 0 special -13 -5
+strip 7 'turret 04' frames 3 delay 0
+  frame 0 bounds -7 -8 6 9 hold 0 special 0 0
+  frame 1 bounds -15 -11 20 9 hold 0 special 19 -5
+  frame 2 bounds -17 -15 22 9 hold 0 special -13 -5
+strip 8 'turret 05' frames 3 delay 0
+  frame 0 bounds -8 -9 11 12 hold 0 special 0 0
+  frame 1 bounds -15 -9 16 16 hold 0 special 15 13
+  frame 2 bounds -16 -9 20 18 hold 0 special -13 -5
+strip 9 'turret 06' frames 3 delay 0
+  frame 0 bounds -11 -11 12 10 hold 0 special 0 0
+  frame 1 bounds -11 -15 18 10 hold 0 special 17 8
+  frame 2 bounds -11 -17 21 12 hold 0 special -13 -5
+strip 10 'turret 07' frames 3 delay 0
+  frame 0 bounds -11 -9 12 10 hold 0 special 0 0
+  frame 1 bounds -11 -12 12 19 hold 0 special 3 17
+  frame 2 bounds -13 -16 12 21 hold 0 special -13 -5
+strip 11 'turret 08' frames 3 delay 0
+  frame 0 bounds -9 -8 11 7 hold 0 special 0 0
+  frame 1 bounds -9 -16 14 19 hold 0 special 7 17
+  frame 2 bounds -9 -20 18 20 hold 0 special -13 -5
+strip 12 'turret 09' frames 3 delay 0
+  frame 0 bounds -11 -9 12 10 hold 0 special 0 0
+  frame 1 bounds -15 -12 12 15 hold 0 special -15 12
+  frame 2 bounds -16 -16 12 15 hold 0 special -13 -5
+strip 13 'turret 10' frames 3 delay 0
+  frame 0 bounds -11 -11 12 12 hold 0 special 0 0
+  frame 1 bounds -11 -11 16 18 hold 0 special -9 17
+  frame 2 bounds -13 -15 20 21 hold 0 special -13 -5
+strip 14 'turret 11' frames 3 delay 0
+  frame 0 bounds -8 -9 11 11 hold 0 special 0 0
+  frame 1 bounds -15 -9 17 15 hold 0 special -15 12
+  frame 2 bounds -17 -9 20 19 hold 0 special -13 -5
+strip 15 'turret 12' frames 3 delay 0
+  frame 0 bounds -7 -9 8 10 hold 0 special 0 0
+  frame 1 bounds -17 -13 18 10 hold 0 special -17 -5
+  frame 2 bounds -19 -12 18 9 hold 0 special -13 -5
+strip 16 'turret 13' frames 3 delay 0
+  frame 0 bounds -8 -9 11 12 hold 0 special 0 0
+  frame 1 bounds -17 -9 12 14 hold 0 special -17 -5
+  frame 2 bounds -17 -9 20 16 hold 0 special -13 -5
+strip 17 'turret 14' frames 3 delay 0
+  frame 0 bounds -11 -11 12 10 hold 0 special 0 0
+  frame 1 bounds -11 -17 17 11 hold 0 special -9 -17
+  frame 2 bounds -12 -19 20 10 hold 0 special -13 -5
+strip 18 'turret 15' frames 3 delay 0
+  frame 0 bounds -11 -11 12 8 hold 0 special 0 0
+  frame 1 bounds -15 -19 12 13 hold 0 special -13 -19
+  frame 2 bounds -17 -20 12 17 hold 0 special -13 -5
+strip 19 'icon' frames 1 delay 0
+  frame 0 bounds 0 0 18 30 hold 0 special 0 0
+strip 20 'help' frames 1 delay 0
+  frame 0 bounds -13 -24 12 19 hold 0 special 0 0
+strip 21 'highlight' frames 1 delay 0
+  frame 0 bounds -10 -18 9 14 hold 0 special 0 0

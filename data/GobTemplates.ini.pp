@@ -399,6 +399,22 @@ Animation=Warehouse.anir
 TileDimensions=2,2
 Description=Add Warehouses to increase processed Galaxite inventory capacity. Each Warehouse can store up to 5000 credits worth of Galaxite.
 
+[kgtWall]
+Name=Wall
+LongName=Wall
+TimeToBuild=1
+Cost=100
+PowerDemand=0
+ArmorStrength=300
+UIBoundsLeft=0
+UIBoundsTop=0
+UIBoundsRight=16
+UIBoundsBottom=16
+SortOffset=30
+Animation=walls.anir
+TileDimensions=1,1
+Description=A section of wall. Walls block the way until they are destroyed. Units attack walls only when ordered to.
+
 [kgtReplicator]
 Name=Replicator
 LongName=Replicator

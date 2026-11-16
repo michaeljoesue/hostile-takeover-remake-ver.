@@ -1,0 +1,18 @@
+strip 0 'a 0' frames 1 delay 0
+  frame 0 bounds 0 0 96 64 hold 0 special 0 0
+strip 1 'a 1' frames 1 delay 0
+  frame 0 bounds 0 0 96 64 hold 0 special 0 0
+strip 2 'a 2' frames 1 delay 0
+  frame 0 bounds 0 0 96 64 hold 0 special 0 0
+strip 3 'b 0' frames 1 delay 0
+  frame 0 bounds 0 0 96 64 hold 0 special 0 0
+strip 4 'b 1' frames 1 delay 0
+  frame 0 bounds 0 0 96 64 hold 0 special 0 0
+strip 5 'b 2' frames 1 delay 0
+  frame 0 bounds 0 0 96 64 hold 0 special 0 0
+strip 6 'icon' frames 1 delay 0
+  frame 0 bounds 0 0 36 24 hold 0 special 0 0
+strip 7 'help' frames 1 delay 0
+  frame 0 bounds -48 -32 48 32 hold 0 special 0 0
+strip 8 'highlight' frames 1 delay 0
+  frame 0 bounds -36 -24 36 24 hold 0 special 0 0

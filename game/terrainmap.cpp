@@ -177,6 +177,9 @@ static inline int Estimate(int dx, int dy)
 TerrainMap::TerrainMap()
 {
 	m_ptrmaph = NULL;
+	m_pbTerrain = NULL;
+	m_atptWall = NULL;
+	m_cWalls = 0;
 	m_abBuffer = NULL;
 	m_awArea = NULL;
 	m_abRoomPart = NULL;
@@ -197,6 +200,8 @@ TerrainMap::~TerrainMap()
 {
 	if (m_ptrmaph != NULL)
 		gpakr.UnmapFile(&m_fmap);
+	delete[] m_pbTerrain;
+	delete[] m_atptWall;
 	delete[] m_abBuffer;
 	delete[] m_awArea;
 	delete[] m_abRoomPart;
@@ -226,6 +231,29 @@ bool TerrainMap::Init(char *pszFn)
 	if (m_abBuffer == NULL)
 		return false;
 	memset(m_abBuffer, 0, m_cbBuffer);
+
+	// The terrain types, in a copy of our own. Walls are objects (WallGob):
+	// their tiles are open ground here, blocked by the wall standing on them
+	// like any structure, so they open when it is destroyed. The tiles the
+	// level put walls on are kept for the level to place them.
+
+	m_pbTerrain = new byte[m_cbBuffer];
+	memcpy(m_pbTerrain, (byte *)(m_ptrmaph + 1), m_cbBuffer);
+	m_cWalls = 0;
+	for (int off = 0; off < m_cbBuffer; off++) {
+		if (m_pbTerrain[off] == kttWall)
+			m_cWalls++;
+	}
+	m_atptWall = new TPoint[m_cWalls > 0 ? m_cWalls : 1];
+	int iWall = 0;
+	for (int off = 0; off < m_cbBuffer; off++) {
+		if (m_pbTerrain[off] == kttWall) {
+			m_atptWall[iWall].tx = off % m_ctx;
+			m_atptWall[iWall].ty = off / m_ctx;
+			iWall++;
+			m_pbTerrain[off] = kttOpen;
+		}
+	}
 
 	// Init
 
@@ -621,7 +649,7 @@ bool TerrainMap::IsOccupied(int tx, int ty, int ctx, int cty, byte bf)
 			int off = tyT * m_ctx + txT;
 			if (m_abBuffer[off] & bf)
 				return true;
-			if (((byte *)(m_ptrmaph + 1))[off] > kttOpen)
+			if (m_pbTerrain[off] > kttOpen)
 				return true;
 		}
 	}
@@ -949,7 +977,7 @@ void TerrainMap::StartSearch(PathSearch *psrch, int txFrom, int tyFrom, int txTo
 
 int TerrainMap::RunSearch(PathSearch *psrch, int cNodesMax)
 {
-	byte *pbTerrain = (byte *)(m_ptrmaph + 1);
+	byte *pbTerrain = m_pbTerrain;
 	int offTo = psrch->tyTo * m_ctx + psrch->txTo;
 	int cNodes = 0;
 	std::vector<PathHeapEntry> &heap = psrch->heap;
@@ -1133,7 +1161,7 @@ bool TerrainMap::IsBlocked(TCoord tx, TCoord ty, byte bf)
 
 	if (m_abBuffer[offMap] & bf)
 		return true;
-	if (((byte *)(m_ptrmaph + 1))[offMap] > kttOpen)
+	if (m_pbTerrain[offMap] > kttOpen)
 		return true;
 
 	return false;
@@ -1143,7 +1171,7 @@ int TerrainMap::GetTerrainType(TCoord tx, TCoord ty)
 {
 	Assert(tx >= 0 && tx < m_ctx && ty >= 0 && ty < m_cty);
 	int offMap = ty * m_ctx + tx;
-	return ((byte *)(m_ptrmaph + 1))[offMap];
+	return m_pbTerrain[offMap];
 }
 
 bool TerrainMap::GetFlags(int tx, int ty, byte *pbf)
@@ -1152,7 +1180,7 @@ bool TerrainMap::GetFlags(int tx, int ty, byte *pbf)
 	Assert(tx < m_ctx && ty < m_cty);
 
 	int offMap = ty * m_ctx + tx;
-	if (((byte *)(m_ptrmaph + 1))[offMap] > kttOpen)
+	if (m_pbTerrain[offMap] > kttOpen)
 		return false;
 	*pbf = m_abBuffer[offMap];
 	return true;

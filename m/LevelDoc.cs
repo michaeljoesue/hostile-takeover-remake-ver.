@@ -1138,8 +1138,6 @@ namespace m {
 					continue;
 				if (mi is Area)
 					continue;
-				if (mi is Wall)
-					continue;
 				if (mi is Tile)
 					continue;
 
@@ -1338,6 +1336,9 @@ namespace m {
 				case 16: // kgtLightTank
 					return new LightTank(strName, strValue, Bounds.Left, Bounds.Top);
 
+				case 39: // kgtWall
+					return new Wall(strName, strValue, Bounds.Left, Bounds.Top);
+
 				case 17: // kgtMediumTank
 					return new MediumTank(strName, strValue, Bounds.Left, Bounds.Top);
 
@@ -1443,9 +1444,28 @@ namespace m {
 				ArrayList alsMapItems = new ArrayList();
 				foreach (Ini.Property prop in sec) {
 					IMapItem mi = CreateGameObject(secName, prop.Name, prop.Value);
-					if (mi != null) {
-						alsMapItems.Add(mi);
+					if (mi == null)
+						continue;
+
+					// A wall already made from the terrain map takes the side and
+					// health given here
+
+					if (mi is Wall) {
+						Wall wallNew = (Wall)mi;
+						Wall wallOld = null;
+						foreach (IMapItem miT in m_alsmi) {
+							if (miT is Wall && (int)miT.tx == (int)mi.tx && (int)miT.ty == (int)mi.ty) {
+								wallOld = (Wall)miT;
+								break;
+							}
+						}
+						if (wallOld != null) {
+							wallOld.Side = wallNew.Side;
+							wallOld.Health = wallNew.Health;
+							continue;
+						}
 					}
+					alsMapItems.Add(mi);
 				}
 				// Sometimes Areas are given the same name. Then on export the sort order
 				// doesn't match the original, which is a problem since in the game, area

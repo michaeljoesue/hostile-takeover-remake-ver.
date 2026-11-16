@@ -1820,7 +1820,9 @@ bool Game::FilterEvent(Event *pevt)
 
 			gpmfrmm->DrawFrame(false);
 
-			if (fSmooth)
+			// HD in-between pictures (a door opening) keep it drawing too
+
+			if (fSmooth || (m_pfrmSimUI != NULL && HdWantsRedraw()))
 				gevm.SetRedrawFlags(kfRedrawDirty);
 		}
 		return true;

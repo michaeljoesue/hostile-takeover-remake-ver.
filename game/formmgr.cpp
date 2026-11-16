@@ -1025,6 +1025,15 @@ void MultiFormMgr::DrawFrame(bool fForceBackBufferValid, bool fPaint)
 	}
 	TextOverlay::BeginFrame(m_cfrmm, apbmOverlay, ayTopOverlay);
 
+	// HD structures are recorded as the playfield draws: it is drawn whole
+
+	if (fPaint && HdIsActive()) {
+		SimUIForm *pfrmSimUI = ggame.GetSimUIForm();
+		if (pfrmSimUI != NULL)
+			pfrmSimUI->InvalidateRect(NULL);
+		HdPaintStart();
+	}
+
 	// Draw forms
 
 	bool fAnyScroll = fPaint ? Paint(fForceBackBufferValid) : false;

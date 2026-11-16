@@ -414,7 +414,7 @@ int UnitGob::GetDamageTo(UnitGob *puntTarget)
 		nDamage = m_puntc->GetInfantryDamage();
 	} else if (umTarget & kumVehicles) {
 		nDamage = m_puntc->GetVehicleDamage();
-	} else if (umTarget & kumStructures) {
+	} else if (umTarget & (kumStructures | kumWall)) {
 		nDamage = m_puntc->GetStructureDamage();
 	}
 
@@ -862,6 +862,12 @@ void UnitGob::NotifyEnemyNearby()
 					continue;
 				dword ffUnit = punt->GetFlags();
 				if (!(ffUnit & kfGobUnit))
+					continue;
+
+				// Walls don't discover or get discovered, and don't want
+				// to know about enemies
+
+				if (punt->GetType() == kgtWall)
 					continue;
 
 				// Has side A already discovered side B?

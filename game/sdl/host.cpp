@@ -1,5 +1,6 @@
 #include "game/ht.h"
 #include "game/sdl/hosthelpers.h"
+#include "game/sdl/hdsprites.h"
 #include "base/tick.h"
 #include "base/log.h"
 #include "base/thread.h"
@@ -200,6 +201,18 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
             if (!event.key.repeat && gpdisp != NULL) {
                 gpdisp->SetFullscreen(!gpdisp->IsFullscreen());
                 ggame.SavePreferences();
+            }
+            return false;
+        }
+
+        // F9 switches the HD structures on and off
+
+        if (event.key.key == SDLK_F9) {
+            if (!event.key.repeat) {
+                HdToggle();
+                gevm.SetRedrawFlags(kfRedrawDirty);
+                if (ggame.GetSimUIForm() != NULL)
+                    ggame.GetSimUIForm()->InvalidateRect(NULL);
             }
             return false;
         }

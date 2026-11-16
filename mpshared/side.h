@@ -52,6 +52,9 @@
 #define kutReplicator 21
 #define kutFox 22
 
-#define kutMax 23
+// Walls: owned by a side (or neutral), destroyable, not built
+#define kutWall 23
+
+#define kutMax 24
 
 #endif

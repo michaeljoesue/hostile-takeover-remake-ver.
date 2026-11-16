@@ -70,6 +70,26 @@ The engine has been updated from its 2007 handheld roots:
   repairs and miners unloading), Unit Voices (units replying to you) and
   Announcements (buildings' select, build and ready sounds, new build
   options, alerts, win / lose).
+- **HD buildings.** Every building, defence tower and wall is drawn with
+  new high-resolution art over the 8-bit game, at the window's own pixel
+  resolution: each picture is scaled down once to the window's size
+  (averaged, so it doesn't shimmer) and recoloured to its side's colour.
+  The game logic and animations don't change: the classic animation picks
+  the picture, and the artist's in-between pictures play while a classic
+  frame steps (the HQ hatch, generator fan, dishes and panels, the
+  Processor's door opening and closing for a miner). Damaged and destroyed
+  buildings have their own art. Buildings keep their place in the drawing
+  order (units in front, selection boxes, health bars, smoke and the fog
+  of war still cover them, the fog's soft edge included), and their
+  classic shadows. F9 switches between the HD art and the original
+  pictures. The pictures are in `data\hd` (see Game data).
+- **Walls are objects.** Each wall tile belongs to a side or is neutral
+  (no one's), and can be damaged and destroyed: it then opens the way.
+  Its picture joins the walls next to it, in its side's colour. Units
+  never pick walls as targets on their own (nor do the computer players,
+  hunting units or towers): a wall is attacked only when ordered to
+  (right-click, or Ctrl+right-click on your own). Your walls can be
+  selected, repaired and sold. Walls in missions made before are neutral.
 - **Five sides.** Side 1 is ACME and side 2 is OMNI (now bright red,
   #FF3333). There is a new side 5, Crimson (#DC143C), for missions to use.
   Allied sides share what they can see.
@@ -182,7 +202,8 @@ its fog fades smoothly.
   or how many of each type.
 - **Menu** (bottom left, or M) has save, load, options and help.
 - Alt+Enter or F11 switches between fullscreen and a window; numpad + and -
-  change the game speed.
+  change the game speed. F9 switches between the HD buildings and the
+  original pictures.
 
 Saved games, settings and mission progress are stored in
 `%APPDATA%\Spiffcode\HostileTakeover`. If you quit during a mission, it is
@@ -209,6 +230,24 @@ python data\update_text.py
 This recompiles those files and replaces them in `game\htdata832.pdb`,
 keeping everything else. It only needs Python and the CMake build (for
 `inicrunch.exe`), not the .NET tools.
+
+### HD buildings
+
+The HD pictures of the buildings, towers and walls are in `data\hd`
+(`manifest.txt` and one `.hdp` pack per building), copied next to the game
+by the build. They are made from the artist's sheets in `assets\hd` by:
+
+```bat
+pip install numpy pillow qoi
+python tools\hd\build_hd.py
+```
+
+Each sheet's pictures are fitted onto the classic frames (in
+`tools\hd\classic`), so a building covers the same ground and lines up with
+its shadow. The R&D Center uses the panel version of its sheet (the classic
+one turns a panel); the dish version is in `assets\hd` but unused. Build
+menu icons are still the classic ones. Without the `hd` folder the game
+draws the original pictures.
 
 ### Fonts
 
@@ -315,6 +354,11 @@ Maps, sides and limits:
 - **Sides.** Side 1 (ACME), side 2 (OMNI), sides 3 and 4, and side 5
   (Crimson). Settings > Side 5 (Crimson) sets up side 5; triggers and units
   can use it like the others.
+- **Walls.** Place walls from the gob panel. Each wall has a Side (pick it
+  in the panel's side list before placing, or in the wall's properties;
+  a coloured band shows it, none for neutral) and a Health (percent).
+  They are exported as objects (`kgtWall`) and still marked in the
+  terrain map; older missions' walls are neutral at full health.
 - **Galaxite regrowth.** Settings > Level > Galaxite Regrowth (in the
   Galaxite group): Off, Slow (a size step every 200 seconds) or Normal
   (every 100 seconds).

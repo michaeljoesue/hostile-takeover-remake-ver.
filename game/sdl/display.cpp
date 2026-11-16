@@ -1,5 +1,6 @@
 #include "../ht.h"
 #include "game/sdl/hosthelpers.h"
+#include "game/sdl/hdsprites.h"
 #include <algorithm>
 #include <cmath>
 
@@ -397,13 +398,27 @@ void Display::RenderGameSurface() {
     SDL_RenderClear(s_renderer);
     SDL_RenderTexture(s_renderer, m_texture, NULL, NULL);
 
+    SDL_FRect rcFrame;
+    bool fFrame = SDL_GetRenderLogicalPresentationRect(s_renderer, &rcFrame) &&
+            rcFrame.h > 0;
+
+    // HD structures, at the window's resolution, over the 8-bit image
+
+    if (fFrame && HdHasItems() && m_pbmFront->GetRowBytes() == m_cx) {
+        int cxLogical, cyLogical;
+        SDL_RendererLogicalPresentation mode;
+        SDL_GetRenderLogicalPresentation(s_renderer, &cxLogical, &cyLogical, &mode);
+        SDL_SetRenderLogicalPresentation(s_renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+        HdComposite(s_renderer, rcFrame.h / m_cy, rcFrame.x, rcFrame.y, m_gamePixels,
+                m_cx, m_cy, m_palette, m_pbmFront->GetTrueColor(),
+                m_pbmFront->GetTrueColorUnder());
+        SDL_SetRenderLogicalPresentation(s_renderer, cxLogical, cyLogical, mode);
+    }
+
     // Text, at the window's resolution
 
-    SDL_FRect rcFrame;
-    if (SDL_GetRenderLogicalPresentationRect(s_renderer, &rcFrame) &&
-            rcFrame.h > 0) {
+    if (fFrame)
         TextOverlay::Render(rcFrame.h / m_cy, rcFrame.x, rcFrame.y);
-    }
 
     SDL_RenderPresent(s_renderer);
 

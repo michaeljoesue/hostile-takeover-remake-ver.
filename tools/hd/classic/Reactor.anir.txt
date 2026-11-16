@@ -1,0 +1,16 @@
+strip 0 'spin 0' frames 3 delay 0
+  frame 0 bounds 0 8 64 64 hold 0 special 0 0
+  frame 1 bounds 0 8 64 64 hold 0 special 0 0
+  frame 2 bounds 0 8 64 64 hold 0 special 0 0
+strip 1 'spin 1' frames 3 delay 0
+  frame 0 bounds 0 8 64 64 hold 0 special 0 0
+  frame 1 bounds 0 8 64 64 hold 0 special 0 0
+  frame 2 bounds 0 8 64 64 hold 0 special 0 0
+strip 2 'spin 2' frames 1 delay 0
+  frame 0 bounds 0 8 64 64 hold 0 special 0 0
+strip 3 'icon' frames 1 delay 0
+  frame 0 bounds 0 0 24 21 hold 0 special 0 0
+strip 4 'help' frames 1 delay 0
+  frame 0 bounds -32 -28 32 28 hold 0 special 0 0
+strip 5 'highlight' frames 1 delay 0
+  frame 0 bounds -24 -21 24 21 hold 0 special 0 0

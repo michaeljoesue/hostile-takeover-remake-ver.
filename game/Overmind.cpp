@@ -157,7 +157,7 @@ BeginStateMachine
 				int cTargets = 0;
 				Gob *pgobTarget;
 				for (pgobTarget = ggobm.GetFirstGob(); pgobTarget != NULL; pgobTarget = ggobm.GetNextGob(pgobTarget)) {
-					if (pgobTarget->GetOwner() != m_pplr && 
+					if (pgobTarget->GetOwner() != m_pplr && pgobTarget->GetType() != kgtWall &&
 #ifdef STRESS
 							(((pgobTarget->GetFlags() & kfGobStructure) == kfGobStructure) || 
 							(gfStress && (pgobTarget->GetFlags() & kfGobUnit)))
@@ -172,7 +172,7 @@ BeginStateMachine
 				if (cTargets != 0) {
 					cTargets = GetRandom() % cTargets;
 					for (pgobTarget = ggobm.GetFirstGob(); pgobTarget != NULL; pgobTarget = ggobm.GetNextGob(pgobTarget)) {
-						if (pgobTarget->GetOwner() != m_pplr && 
+						if (pgobTarget->GetOwner() != m_pplr && pgobTarget->GetType() != kgtWall &&
 								((pgobTarget->GetFlags() & kfGobStructure) == 
 								kfGobStructure) && pmuntPawn->IsValidTarget(pgobTarget)) {
 							if (cTargets-- == 0)

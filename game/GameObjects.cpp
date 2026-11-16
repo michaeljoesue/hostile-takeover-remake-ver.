@@ -140,6 +140,9 @@ Gob *CreateGob(GobType gt)
 
 	case kgtFox:
 		return new FoxGob();
+
+	case kgtWall:
+		return new WallGob();
 	}
 
 	Assert("Unrecognized GobType %d", gt);

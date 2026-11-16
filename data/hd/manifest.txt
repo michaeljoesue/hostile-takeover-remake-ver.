@@ -1,0 +1,75 @@
+# HD structure pictures (see game/sdl/hdsprites.cpp). Made by tools/hd/build_hd.py from the artist's sheets.
+# strip<TAB>anir<TAB>strip name<TAB>key=value...: pics=<pack>/<prefix> n=<count> var=<0 healthy|1 damaged|2 wreck>
+#   blend=0 (no in-between pictures) map=/bmap= (picture per classic frame going forward/back) none=1 (draw nothing)
+#   {V} in pics = h/d by the variant of the strip drawn just before (2 = draw nothing)
+strip	Warehouse.anir	a 0	pics=warehouse/h	n=4	var=0	blend=0
+strip	Warehouse.anir	a 1	pics=warehouse/d	n=4	var=1	blend=0
+strip	Warehouse.anir	a 2	pics=warehouse/w	n=3	var=2	blend=0
+strip	HRC.anir	base 0	pics=hrc/h	n=1	var=0
+strip	HRC.anir	base 1	pics=hrc/d	n=1	var=1
+strip	HRC.anir	base 2	pics=hrc/w	n=1	var=2
+strip	HRC.anir	base2 0	pics=hrc2/h	n=1	var=0
+strip	HRC.anir	base2 1	pics=hrc2/d	n=1	var=1
+strip	HRC.anir	base2 2	pics=hrc2/w	n=1	var=2
+strip	VTS.anir	a 0	pics=vts/h	n=1	var=0
+strip	VTS.anir	a 1	pics=vts/d	n=1	var=1
+strip	VTS.anir	a 2	pics=vts/w	n=1	var=2
+strip	VTS.anir	b 0	pics=vts2/h	n=1	var=0
+strip	VTS.anir	b 1	pics=vts2/d	n=1	var=1
+strip	VTS.anir	b 2	pics=vts2/w	n=1	var=2
+strip	proc.anir	base 0	pics=proc/h	n=1	var=0
+strip	proc.anir	base 1	pics=proc/d	n=1	var=1
+strip	proc.anir	base 2	pics=proc/w	n=1	var=2
+strip	proc.anir	door 0	pics=proc/{V}door	n=36	map=8,10,12,13,15,17	bmap=35,33,31,30,28,26
+strip	mtower.anir	turret 00	pics=mtower/{V}00_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 01	pics=mtower/{V}01_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 02	pics=mtower/{V}02_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 03	pics=mtower/{V}03_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 04	pics=mtower/{V}04_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 05	pics=mtower/{V}05_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 06	pics=mtower/{V}06_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 07	pics=mtower/{V}07_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 08	pics=mtower/{V}08_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 09	pics=mtower/{V}09_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 10	pics=mtower/{V}10_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 11	pics=mtower/{V}11_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 12	pics=mtower/{V}12_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 13	pics=mtower/{V}13_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 14	pics=mtower/{V}14_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	turret 15	pics=mtower/{V}15_	n=3	map=0,1,2,1,2	blend=0
+strip	mtower.anir	base 0	none=1	var=0
+strip	mtower.anir	base 1	none=1	var=1
+strip	mtower.anir	base 2	pics=mtower/w	n=1	var=2
+strip	rtower.anir	turret 00	pics=rtower/{V}00_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 01	pics=rtower/{V}01_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 02	pics=rtower/{V}02_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 03	pics=rtower/{V}03_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 04	pics=rtower/{V}04_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 05	pics=rtower/{V}05_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 06	pics=rtower/{V}06_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 07	pics=rtower/{V}07_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 08	pics=rtower/{V}08_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 09	pics=rtower/{V}09_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 10	pics=rtower/{V}10_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 11	pics=rtower/{V}11_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 12	pics=rtower/{V}12_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 13	pics=rtower/{V}13_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 14	pics=rtower/{V}14_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	turret 15	pics=rtower/{V}15_	n=3	map=0,1,2,1,2	blend=0
+strip	rtower.anir	base 0	none=1	var=0
+strip	rtower.anir	base 1	none=1	var=1
+strip	rtower.anir	base 2	pics=rtower/w	n=1	var=2
+strip	walls.anir	a	pics=wall/h	n=16	blend=0
+strip	walls.anir	b	pics=wall/d	n=16	blend=0
+strip	HQ.anir	a 0	pics=hq/h	n=32	var=0
+strip	HQ.anir	a 1	pics=hq/d	n=32	var=1
+strip	HQ.anir	a 2	pics=hq/w	n=1	var=2
+strip	Reactor.anir	spin 0	pics=reactor/h	n=36	var=0
+strip	Reactor.anir	spin 1	pics=reactor/d	n=36	var=1
+strip	Reactor.anir	spin 2	pics=reactor/w	n=1	var=2
+strip	Radar.anir	a 0	pics=radar/h	n=36	var=0
+strip	Radar.anir	a 1	pics=radar/d	n=36	var=1
+strip	Radar.anir	a 2	pics=radar/w	n=1	var=2
+strip	Research.anir	a 0	pics=research/h	n=52	var=0
+strip	Research.anir	a 1	pics=research/d	n=52	var=1
+strip	Research.anir	a 2	pics=research/w	n=1	var=2

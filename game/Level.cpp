@@ -401,7 +401,10 @@ bool Level::LoadLevelVariables(IniReader *pini)
 	}
 	m_pfogm->CaptureGalaxiteOriginal(gsim.GetTickCount());
 
-// In terrain for the moment (forever?)
+	// Walls the level didn't list as objects (older levels): neutral, at
+	// full health
+
+	CreateMissingWalls();
 
 	// Instantiate the "CreateAtLevelLoad" UnitGroups
 
@@ -410,13 +413,33 @@ bool Level::LoadLevelVariables(IniReader *pini)
 	return true;
 }
 
-#define knVerLevelState 2
+// Walls on the tiles the level put them on where none stands yet
+
+void Level::CreateMissingWalls()
+{
+	Player *pplrNeutral = gplrm.GetPlayer(ksideNeutral);
+	if (pplrNeutral == NULL)
+		return;
+	int cWalls = m_ptrmap->GetWallTileCount();
+	TPoint *atpt = m_ptrmap->GetWallTiles();
+	for (int i = 0; i < cWalls; i++) {
+		if (m_ptrmap->TestFlags(atpt[i].tx, atpt[i].ty, 1, 1, kbfStructure))
+			continue;
+		WallGob::CreateAt(atpt[i].tx, atpt[i].ty, pplrNeutral, 0);
+	}
+}
+
+// 3: walls are objects (WallGob). A version 2 game gets its walls (neutral,
+// full health) when loaded.
+
+#define knVerLevelState 3
+#define knVerLevelStateNoWallGobs 2
 bool Level::LoadState(Stream *pstm)
 {
 	// Do version handling
 
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerLevelState)
+	if (nVer != knVerLevelState && nVer != knVerLevelStateNoWallGobs)
 		return false;
 
 	// Get level name
@@ -470,6 +493,9 @@ bool Level::LoadState(Stream *pstm)
 			return false;
 		}
 	}
+
+	if (nVer == knVerLevelStateNoWallGobs)
+		CreateMissingWalls();
 
 	// Load triggers
 

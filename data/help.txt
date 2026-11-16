@@ -87,10 +87,12 @@ In Sound options, the Volume slider sets the overall volume. Four more sliders s
 Moving the scroll speed slider to the right will increase the rate the map scrolls.<BR>
 Display options choose the game resolution, whether the frames-per-second counter is shown (a larger resolution shows more of the map; the recommended one fits your screen), and fullscreen or windowed play. The game is drawn as fast as your PC allows, with units, shots and scrolling moving smoothly. Press Alt+Enter or F11 at any time to switch between fullscreen and a window. The window can be resized; the game is scaled to fit.<BR>
 The + and - keys on the number pad change the game speed while playing.<BR>
+Buildings, defence towers and walls are drawn with new high-resolution art, sharp at any window size and in each side's colour. Press F9 while playing to switch between the new art and the original pictures.<BR>
 Clicking the Default button will restore these settings to their default values.</H2>
 <HR>
 <A NAME="howtoplay"><H1>GAME PLAY CONTROLS </H1></A>
 <H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly: left-click a unit to select it, then right-click where it should go. To move several units, <A HREF="#multiselect">select</A> them, then right-click the destination. To attack, select your units, then right-click the enemy. Left-click one of your buildings to open its menu; right-click one of your units to open its menu. Buttons light up while the mouse is over them and act the moment you click them; right-click anywhere to close the menu. The "Are you sure?" box for selling a building works the same way, and right-clicking it answers No.<BR>
+Walls belong to a side (grey walls belong to no one). They block the way until they are destroyed. Units never attack walls on their own: to break through, select your units and right-click the wall (Ctrl+right-click for your own walls). Your walls can be repaired and sold like your buildings.<BR>
 <BR>
 MORE ORDERS<BR>
 Shift+right-click: queue the order after the ones being carried out.<BR>

@@ -134,6 +134,9 @@ bool Simulation::OneTimeInit()
     Status("Init WarehouseGob...");
     fSuccess = fSuccess && WarehouseGob::InitClass(piniGobTemplates);
     Assert(fSuccess);
+    Status("Init WallGob...");
+    fSuccess = fSuccess && WallGob::InitClass(piniGobTemplates);
+    Assert(fSuccess);
     Status("Init GunTowerGob...");
     fSuccess = fSuccess && GunTowerGob::InitClass(piniGobTemplates);
     Assert(fSuccess);
@@ -196,6 +199,7 @@ void Simulation::OneTimeExit()
     BulletGob::ExitClass();
     AndyShotGob::ExitClass();
     WarehouseGob::ExitClass();
+    WallGob::ExitClass();
     GunTowerGob::ExitClass();
     RocketTowerGob::ExitClass();
     MobileHqGob::ExitClass();
@@ -695,6 +699,10 @@ void Simulation::FindVisibleGobs(Gob ***pppgobVisible, int *pcgobVisible)
 
 void Simulation::DrawBackground(UpdateMap *pupd, DibBitmap *pbm)
 {
+    // HD structures: a new set of pictures for this frame
+
+    HdBeginFrame();
+
     // Draw tiles where the updatemap is invalid
 
     short xView = PcFromUwc(m_wxView) & 0xfffe;

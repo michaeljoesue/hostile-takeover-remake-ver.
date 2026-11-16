@@ -105,6 +105,7 @@
 #define kgtActivator 36
 #define kgtFox 37
 #define kgtAndyShot 38
+#define kgtWall 39
 
 #include "../mpshared/side.h"
 

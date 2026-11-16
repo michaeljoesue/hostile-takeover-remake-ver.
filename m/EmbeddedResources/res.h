@@ -104,6 +104,7 @@
 #define kgtActivator 36
 #define kgtFox 37
 #define kgtAndyShot 38
+#define kgtWall 39
 
 //#include "../mpshared/side.h"
 
@@ -156,8 +157,9 @@
 #define kutArtillery 20
 #define kutReplicator 21
 #define kutFox 22
+#define kutWall 23
 
-#define kutMax 23
+#define kutMax 24
 
 
 // Startup form constants

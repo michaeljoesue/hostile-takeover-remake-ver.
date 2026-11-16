@@ -101,6 +101,12 @@ namespace m
 				return;
 
 			PictureBox picb = (PictureBox)ctl;
+			Wall wall = picb.Tag as Wall;
+			if (wall != null) {
+				wall.Side = side;
+				picb.Image = wall.GetBitmap(new Size(16, 16), null);
+				return;
+			}
 			Unit unit = picb.Tag as Unit;
 			if (unit == null)
 				return;
@@ -148,7 +154,7 @@ namespace m
 				flowPanel.Controls.Add(CreatePictureBox(new Galaxite(7, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Galaxite(8, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Area(2, 2)));
-				flowPanel.Controls.Add(CreatePictureBox(new Wall(15)));
+				flowPanel.Controls.Add(CreatePictureBox(new Wall(100)));
 				flowPanel.Controls.Add(CreatePictureBox(new Scenery("RocketArtifact", 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Scenery("Tree", 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Scenery("Tree1", 0, 0)));

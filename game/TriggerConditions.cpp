@@ -205,7 +205,7 @@ bool OwnsUnitsCondition::IsTrue(Side side)
 
 	int cunt = 0;
 	for (int n = 0; n < cplrs; n++)
-		cunt += applr[n]->GetUnitActiveCountFromMask(m_um);
+		cunt += applr[n]->GetUnitActiveCountFromMask(m_um & ~kumWall);
 
 	// Does the total Unit count meet our threshold?
 

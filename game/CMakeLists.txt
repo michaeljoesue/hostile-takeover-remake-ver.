@@ -70,6 +70,9 @@ add_custom_command(TARGET HostileTakeover POST_BUILD
         ${HTROOT}/game/htsfx.pdb
         $<TARGET_RUNTIME_DLLS:HostileTakeover>
         $<TARGET_FILE_DIR:HostileTakeover>
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${HTROOT}/data/hd
+        $<TARGET_FILE_DIR:HostileTakeover>/hd
     COMMAND_EXPAND_LISTS)
 
 # cmake --install produces a folder with everything needed to play
@@ -77,3 +80,6 @@ install(TARGETS HostileTakeover RUNTIME DESTINATION .)
 install(FILES ${HTROOT}/game/htdata832.pdb ${HTROOT}/game/htsfx.pdb
     DESTINATION .)
 install(FILES $<TARGET_RUNTIME_DLLS:HostileTakeover> DESTINATION .)
+
+# The HD structure pictures (data/hd, made by tools/hd/build_hd.py)
+install(DIRECTORY ${HTROOT}/data/hd DESTINATION .)

@@ -1608,8 +1608,9 @@ lbHitNoDamage:
 					UnitGob *punt = (UnitGob *)pgob;
 
 					// Is it one of the type of units we're supposed to hunt?
+					// (Never walls: they're attacked only when ordered)
 
-					if (!(punt->GetConsts()->um & m_msgAction.HuntEnemiesCommand.um))
+					if (!(punt->GetConsts()->um & m_msgAction.HuntEnemiesCommand.um & ~kumWall))
 						continue;
 
 					apuntFound[cpuntFound++] = punt;

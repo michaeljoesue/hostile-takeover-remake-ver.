@@ -1026,11 +1026,6 @@ public:
 	void CaptureGalaxiteOriginal(long tCurrent);
 	void UpdateGalaxiteRegrowth(long tCurrent);
 
-	// Wall methods
-
-	int GetWallHealth(TCoord tx, TCoord ty);
-	void SetWallHealth(int nHealth, TCoord tx, TCoord ty);
-
 
 private:
 	int m_ctxMap;
@@ -1050,7 +1045,6 @@ private:
 	int EdgeFadeAlpha(int d, int cpBand);
 	byte GetFogAt(int tx, int ty);
 	TBitmap *m_aptbmGalax[9];
-	AnimationData *m_panidWalls;
 	byte *m_pbGxOriginal;	// the Galaxite each tile started with
 	int m_nRegrowth;
 	long m_tRegrowthLast;
@@ -1190,7 +1184,16 @@ public:
 	int GetTerrainType(TCoord tx, TCoord ty);
 
 	byte *GetMapPtr() {
-		return (byte *)(m_ptrmaph + 1);
+		return m_pbTerrain;
+	}
+
+	// The tiles the level put walls on (see Init)
+
+	int GetWallTileCount() {
+		return m_cWalls;
+	}
+	TPoint *GetWallTiles() {
+		return m_atptWall;
 	}
 
 	// True if the last FindPath returned no path only because the search
@@ -1230,6 +1233,9 @@ private:
 
 	FileMap m_fmap;
 	TerrainMapHeader *m_ptrmaph;
+	byte *m_pbTerrain;
+	TPoint *m_atptWall;
+	int m_cWalls;
 	byte *m_abBuffer;
 	int m_cbBuffer;
 	int m_ctx;
@@ -1328,18 +1334,34 @@ public:
 	int GetStripCount();
 	int GetFrameCount(int nStrip);
 	int GetStripIndex(const char *pszStripName);
+	const char *GetStripName(int nStrip);
 	void GetSpecialPoint(int nStrip, int nFrame, Point *pptSpecial);
 	void GetBounds(int nStrip, int nFrame, Rect *prc);
-	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL);
+	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL,
+			class Animation *pani = NULL);
 	int GetStripDelay(int nStrip);
 	int GetFrameDelay(int nStrip, int nFrame);
 
 private:
+	struct HdBinding *m_phdb;	// HD pictures for this animation (hdsprites.cpp)
 	TBitmap *m_ptbm;
 	FileMap m_fmap;
 	AnimationFileHeader *m_panih;
 };
 AnimationData *LoadAnimationData(const char *pszAniName);
+
+// HD structures (game/sdl/hdsprites.cpp)
+
+struct HdBinding;
+HdBinding *HdBindAnimation(const char *pszAniName, AnimationData *panid);
+bool HdIsActive();
+bool HdWantsStrip(HdBinding *phdb, int nStrip, DibBitmap *pbm);
+bool HdWantsRedraw();
+void HdBeginFrame();
+void HdPaintStart();
+void HdNoteCovered(DibBitmap *pbm, int x, int y, int cx, int cy);
+void HdRecord(HdBinding *phdb, AnimationData *panid, int nStrip, int nFrame, DibBitmap *pbm,
+		int x, int y, Side side, class Animation *pani, const Rect *prcShadow);
 
 const word kfAniLoop = 0x0001;
 const word kfAniDone = 0x0002;
@@ -1399,7 +1421,7 @@ public:
 	}
 
 	void Draw(DibBitmap *pbm, int x, int y, Side side = ksideNeutral, Rect *prcSrc = NULL) {
-		m_panid->DrawFrame(m_nStrip, m_nFrame, pbm, x, y, side, prcSrc);
+		m_panid->DrawFrame(m_nStrip, m_nFrame, pbm, x, y, side, prcSrc, this);
 	}
 
 	word GetFlags() {
@@ -1669,6 +1691,7 @@ STARTLABEL(GobTypes)
     LABEL(kgtActivator)
     LABEL(kgtFox)
     LABEL(kgtAndyShot)
+    LABEL(kgtWall)
 ENDLABEL(GobTypes)
 
 // Helper macros for sending messages
@@ -4531,6 +4554,7 @@ private:
 	bool LoadSideInfo(IniReader *pini, char *pszSideName, SideInfo *psidi);
 	bool LoadLevelConstants(const char *pszLevelName, IniReader *pini);
 	bool LoadLevelVariables(IniReader *pini);
+	void CreateMissingWalls();
 
 private:
 	char m_szTitle[kcbLevelTitle];
@@ -4593,6 +4617,11 @@ const UnitMask kumReplicator = 1L << kutReplicator;
 const UnitMask kumMachineGunTower = 1L << kutMachineGunTower;
 const UnitMask kumRocketTower = 1L << kutRocketTower;
 const UnitMask kumTowers = kumMachineGunTower | kumRocketTower;
+
+// Walls aren't in kumStructures (or kumAll): they aren't built, counted
+// against limits or hunted
+
+const UnitMask kumWall = 1L << kutWall;
 
 const UnitMask kumStructures = kumHumanResourceCenter | kumReactor | kumProcessor | kumHeadquarters |
 		kumResearchCenter | kumVehicleTransportStation | kumRadar | kumWarehouse | kumMachineGunTower |
@@ -6713,6 +6742,35 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
+};
+
+// WallGob: one tile of wall, owned by a side (or neutral). Its picture joins
+// the walls next to it. Units attack walls only when ordered to.
+
+class WallGob : public StructGob
+{
+public:
+	WallGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+	static WallGob *CreateAt(TCoord tx, TCoord ty, Player *pplr, fix fxHealth);
+	static bool IsWallAt(TCoord tx, TCoord ty);
+
+	// StructGob overrides
+
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName);
+	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
+	virtual void SetHealth(fix fxHealth);
+	virtual bool IsTakeoverable(Player *pplr);
+	virtual void InitMenu(Form *pfrm);
+
+	// StateMachine methods
+
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
+
+private:
+	int CalcNeighbourMask();
+	void RedrawNeighbours();
 };
 
 // TowerGob

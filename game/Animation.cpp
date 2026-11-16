@@ -21,6 +21,7 @@ AnimationData::AnimationData()
 {
 	m_panih = NULL;
 	m_ptbm = NULL;
+	m_phdb = NULL;
 }
 
 AnimationData::~AnimationData()
@@ -56,6 +57,7 @@ bool AnimationData::Init(const char *pszAniName)
 		return false;
 	}
 
+	m_phdb = HdBindAnimation(pszAniName, this);
 	return true;
 }
 
@@ -136,12 +138,75 @@ void AnimationData::GetBounds(int nStrip, int nFrame, Rect *prc)
 	}
 }
 
-void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc)
+void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc,
+		Animation *pani)
 {
 	Assert(nStrip >= 0 && nStrip < GetStripCount());
 	Assert(nFrame >= 0 && nFrame < GetStripDataPtr(nStrip)->GetFrameCount());
 
 	FrameData *pfrmd = GetFrameDataPtr(nStrip, nFrame);
+
+	// HD picture: the classic frame leaves only its shadow (the ground
+	// darkened through the shadow table); the picture is drawn over it when
+	// the frame is shown
+
+	if (m_phdb != NULL && prcSrc == NULL && HdWantsStrip(m_phdb, nStrip, pbm)) {
+		Rect rc;
+		GetBounds(nStrip, nFrame, &rc);
+		rc.Offset(x, y);
+		Size siz;
+		pbm->GetSize(&siz);
+		Rect rcDib;
+		rcDib.Set(0, 0, siz.cx, siz.cy);
+		rc.Intersect(&rc, &rcDib);
+		Rect rcShadow;
+		rcShadow.SetEmpty();
+		if (!rc.IsEmpty()) {
+			extern byte *gmpiclriclrShadow;
+			int cx = rc.Width();
+			int cbRow = pbm->GetRowBytes();
+			byte *pbBits = pbm->GetBits();
+			static byte *s_pbSave;
+			static int s_cbSave;
+			int cb = cx * rc.Height();
+			if (cb > s_cbSave) {
+				delete[] s_pbSave;
+				s_pbSave = new byte[cb];
+				s_cbSave = cb;
+			}
+			for (int yT = rc.top; yT < rc.bottom; yT++)
+				memcpy(s_pbSave + (yT - rc.top) * cx, pbBits + yT * cbRow + rc.left, cx);
+			if (pfrmd->ibm2 != 255)
+				m_ptbm->BltTo(pfrmd->ibm2, pbm, x - pfrmd->xOrigin2, y - pfrmd->yOrigin2, side, NULL);
+			if (pfrmd->ibm != 255)
+				m_ptbm->BltTo(pfrmd->ibm, pbm, x - pfrmd->xOrigin, y - pfrmd->yOrigin, side, NULL);
+			rcShadow.Set(rc.right, rc.bottom, rc.left, rc.top);
+			for (int yT = rc.top; yT < rc.bottom; yT++) {
+				byte *pbOld = s_pbSave + (yT - rc.top) * cx;
+				byte *pbNew = pbBits + yT * cbRow + rc.left;
+				for (int xT = 0; xT < cx; xT++) {
+					byte bOld = pbOld[xT];
+					byte bNew = pbNew[xT];
+					if (bNew == bOld)
+						continue;
+					if (gmpiclriclrShadow != NULL && bNew == gmpiclriclrShadow[bOld]) {
+						int xP = rc.left + xT;
+						if (xP < rcShadow.left) rcShadow.left = xP;
+						if (xP + 1 > rcShadow.right) rcShadow.right = xP + 1;
+						if (yT < rcShadow.top) rcShadow.top = yT;
+						if (yT + 1 > rcShadow.bottom) rcShadow.bottom = yT + 1;
+						continue;
+					}
+					pbNew[xT] = bOld;
+				}
+			}
+			if (rcShadow.left >= rcShadow.right)
+				rcShadow.SetEmpty();
+		}
+		HdRecord(m_phdb, this, nStrip, nFrame, pbm, x, y, side, pani, rcShadow.IsEmpty() ? NULL : &rcShadow);
+		return;
+	}
+
 	if (pfrmd->ibm2 != 255)
 		m_ptbm->BltTo(pfrmd->ibm2, pbm, x - pfrmd->xOrigin2, y - pfrmd->yOrigin2, side, prcSrc);
 	if (pfrmd->ibm != 255)
@@ -306,4 +371,11 @@ long Animation::GetRemainingStripTime()
 }
 
 
+} // namespace wi
+
+namespace wi {
+const char *AnimationData::GetStripName(int nStrip)
+{
+	return GetStripDataPtr(nStrip)->GetName();
+}
 } // namespace wi
