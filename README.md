@@ -88,7 +88,12 @@ The engine has been updated from its 2007 handheld roots:
   of jiggling and re-planning every update. Units pick targets by how fast
   they can destroy them (rockets go for vehicles, machine guns for
   infantry, badly damaged enemies get finished off), how dangerous they
-  are and how far away, instead of just the nearest.
+  are and how far away, instead of just the nearest. Defence towers pick
+  targets the same way, and since they can't move they keep checking: a
+  tower switches to a better target that comes in range (or to one that
+  shoots it) instead of staying on the first enemy it saw. (As before, a
+  tower only aims on its own while its side has a Surveillance Center and
+  enough power.)
 - **Bigger maps.** Missions can be up to 256x256 tiles (was 64x64).
 - **All missions are unlocked** from the start.
 - The full Options menu (Game, Sound, Performance, Color, Display) is back.

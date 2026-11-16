@@ -217,6 +217,18 @@ void TowerGob::DefUpdate()
 	StructGob::DefUpdate();
 }
 
+// Is the new target enough better than the current one to switch?
+// (A margin so the turret doesn't flip between two similar targets.)
+
+bool TowerGob::IsBetterTarget(UnitGob *puntNew, UnitGob *puntCurrent)
+{
+	TCoord tx = TcFromWc(m_wx);
+	TCoord ty = TcFromWc(m_wy);
+	int nNew = ScoreTarget(puntNew, CalcRange(tx, ty, puntNew));
+	int nCurrent = ScoreTarget(puntCurrent, CalcRange(tx, ty, puntCurrent));
+	return nNew > nCurrent + abs(nCurrent) / 8 + 2;
+}
+
 UnitGob *TowerGob::FindEnemyNearby(TCoord tcRange)
 {
 	// smart targeting requires a surveillance center and power
@@ -272,9 +284,22 @@ BeginStateMachine
 		// due to the short m_agidEnemyNearby. In any case, if we aren't already
 		// busy with something else attack the assailant.
 
-		if (m_gidTargetSecondary == kgidNull && !m_pplr->IsPowerLow() && m_pplr->GetUnitCount(kutRadar) > 0) {
-			m_gidTargetSecondary = pmsg->Hit.gidAssailant;
-			SetState(kstAttack);
+		if (!m_pplr->IsPowerLow() && m_pplr->GetUnitCount(kutRadar) > 0) {
+			if (m_gidTargetSecondary == kgidNull) {
+				m_gidTargetSecondary = pmsg->Hit.gidAssailant;
+				SetState(kstAttack);
+			} else {
+				// Already shooting at something: switch to the attacker if
+				// it's in range and a better target
+
+				UnitGob *puntAssailant = (UnitGob *)ggobm.GetGob(pmsg->Hit.gidAssailant);
+				UnitGob *puntCurrent = (UnitGob *)ggobm.GetGob(m_gidTargetSecondary);
+				if (puntAssailant != NULL && puntAssailant != puntCurrent &&
+						(puntAssailant->GetFlags() & kfGobUnit) && IsValidTarget(puntAssailant) &&
+						IsGobWithinRange(puntAssailant, m_ptwrc->tcFiringRange) &&
+						(puntCurrent == NULL || IsBetterTarget(puntAssailant, puntCurrent)))
+					m_gidTargetSecondary = puntAssailant->GetId();
+			}
 		}
 
 		return StructGob::ProcessStateMachineMessage(st, pmsg);
@@ -351,6 +376,16 @@ BeginStateMachine
 							m_gidTargetSecondary = puntTarget->GetId();
 						else
 							m_gidTargetSecondary = kgidNull;
+					} else {
+						// See if a better target is in range (scored like units
+						// do: what this tower destroys fastest, what hurts it
+						// most, closest). A tower can't move, so switching is free.
+
+						UnitGob *puntBest = FindEnemyNearby(m_ptwrc->tcFiringRange);
+						if (puntBest != NULL && puntBest != puntTarget && IsBetterTarget(puntBest, puntTarget)) {
+							puntTarget = puntBest;
+							m_gidTargetSecondary = puntTarget->GetId();
+						}
 					}
 				}
 			}

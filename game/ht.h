@@ -6757,6 +6757,7 @@ protected:
 
 	// UnitGob protected override
 
+	bool IsBetterTarget(UnitGob *puntNew, UnitGob *puntCurrent);
 	virtual UnitGob *FindEnemyNearby(TCoord tcRange);
 
 	// members
