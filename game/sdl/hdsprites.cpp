@@ -756,42 +756,70 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
 // --------------------------------------------------------------------------
 // Display side
 
-// Team colour: where the mask is set, the painted blue becomes the side's
-// colour at the painted brightness; white for a hit flash
+// Team colour, as the classic art does it: the classic sprites paint team
+// areas with 5 shades (brightest to darkest), drawn from each side's own
+// 5-shade ramp in the palette. The artist painted those areas steel blue
+// (the mask marks them); each painted pixel's brightness is placed on the
+// classic blue ramp's brightnesses and given the side's colour there, so
+// every side, blue included, gets exactly its classic colours, with the
+// painted shading. Brighter than the brightest shade (highlights) or darker
+// than the darkest, the end shade is scaled. White for a hit flash.
+
+static const int s_aiclrRampFirst[kcSides] = {
+    kiclrNeutralSideFirst, kiclrBlueSideFirst, kiclrRedSideFirst,
+    kiclrYellowSideFirst, kiclrCyanSideFirst, kiclrCrimsonSideFirst
+};
+
+static float Luma(float r, float g, float b) {
+    return 0.299f * r + 0.587f * g + 0.114f * b;
+}
 
 static void TeamColor(byte *pbRgba, const byte *pbTeam, int cp, int side, const dword *palette) {
-    if (side == kside1 || pbTeam == NULL)
+    if (pbTeam == NULL)
         return;
-    float rT = 255, gT = 255, bT = 255;
-    if (side != kiHdFlash) {
-        dword clr = palette[GetSideColor((Side)side)];
-        rT = (float)((clr >> 16) & 255);
-        gT = (float)((clr >> 8) & 255);
-        bT = (float)(clr & 255);
+
+    // The side's ramp, and the brightness of each shade of the blue one
+
+    float aclr[5][3];
+    float al[5];
+    for (int i = 0; i < 5; i++) {
+        dword clrBlue = palette[GetColor(kiclrBlueSideFirst + i)];
+        al[i] = Luma((float)((clrBlue >> 16) & 255), (float)((clrBlue >> 8) & 255), (float)(clrBlue & 255));
+        dword clr = side == kiHdFlash ? 0xffffff : palette[GetColor(s_aiclrRampFirst[side] + i)];
+        aclr[i][0] = (float)((clr >> 16) & 255);
+        aclr[i][1] = (float)((clr >> 8) & 255);
+        aclr[i][2] = (float)(clr & 255);
     }
 
-    // The blue paint is darker than the side colours' middle shade: its
-    // brightness relative to the blue side's middle shade
-
-    dword clrBlue = palette[GetSideColor(kside1)];
-    float lBlue = 0.299f * ((clrBlue >> 16) & 255) + 0.587f * ((clrBlue >> 8) & 255) + 0.114f * (clrBlue & 255);
-    if (lBlue < 1)
-        lBlue = 1;
     for (int i = 0; i < cp; i++) {
         int m = pbTeam[i * 4];
         if (m == 0)
             continue;
         byte *pb = &pbRgba[i * 4];
-        float l = 0.299f * pb[0] + 0.587f * pb[1] + 0.114f * pb[2];
-        float k = side == kiHdFlash ? 1.0f : l / lBlue * 1.15f;
-        float r = rT * k, g = gT * k, b = bT * k;
-        if (r > 255) r = 255;
-        if (g > 255) g = 255;
-        if (b > 255) b = 255;
+        float l = Luma(pb[0], pb[1], pb[2]);
+        float rgb[3];
+        if (l >= al[0]) {
+            float k = al[0] > 0 ? l / al[0] : 1;
+            for (int c = 0; c < 3; c++)
+                rgb[c] = aclr[0][c] * k;
+        } else if (l <= al[4]) {
+            float k = al[4] > 0 ? l / al[4] : 0;
+            for (int c = 0; c < 3; c++)
+                rgb[c] = aclr[4][c] * k;
+        } else {
+            int s = 0;
+            while (s < 3 && l < al[s + 1])
+                s++;
+            float d = al[s] - al[s + 1];
+            float f = d > 0 ? (l - al[s + 1]) / d : 0;
+            for (int c = 0; c < 3; c++)
+                rgb[c] = aclr[s + 1][c] + (aclr[s][c] - aclr[s + 1][c]) * f;
+        }
         float w = m / 255.0f;
-        pb[0] = (byte)(pb[0] + (r - pb[0]) * w + 0.5f);
-        pb[1] = (byte)(pb[1] + (g - pb[1]) * w + 0.5f);
-        pb[2] = (byte)(pb[2] + (b - pb[2]) * w + 0.5f);
+        for (int c = 0; c < 3; c++) {
+            float v = rgb[c] > 255 ? 255 : rgb[c];
+            pb[c] = (byte)(pb[c] + (v - pb[c]) * w + 0.5f);
+        }
     }
 }
 

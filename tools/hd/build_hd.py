@@ -158,6 +158,45 @@ def preview(name, anir, strip, frame, rgba, gx, gy, S):
     canvas=Image.blend(canvas,ov,0.5)
     previews.append((name,canvas))
 
+# The damaged and destroyed pictures aren't always in the same place in their
+# cells as the healthy one (a few pixels; the HRC and VTS columns drift
+# right). The game draws all three at the same spot, so each is moved to
+# stand where the healthy building stands: damaged by its whole outline
+# (the same shape), destroyed by its lower part, the foundation (the top
+# may have fallen in). A wreck too different to match stays put.
+
+def _iou_shift(A,B,dx,dy,cut):
+    H,W=A.shape
+    sh=np.zeros_like(B)
+    sh[max(0,dy):min(H,H+dy),max(0,dx):min(W,W+dx)]=B[max(0,-dy):min(H,H-dy),max(0,-dx):min(W,W-dx)]
+    a=A[cut:]; s=sh[cut:]
+    return (a&s).sum()/max(1,(a|s).sum())
+
+def align(healthy,other,base=False,r=40):
+    """(dx,dy) in sheet pixels moving `other` onto `healthy`, and how well"""
+    A=healthy[:,:,3]>0; B=other[:,:,3]>0
+    ys=np.nonzero(A)[0]; cut=int(ys.max()-(ys.max()-ys.min())*0.4) if base else 0
+    k=4
+    As=A[::k,::k]; Bs=B[::k,::k]; best=(0,0,-1.0)
+    for dy in range(-r//k,r//k+1):
+        for dx in range(-r//k,r//k+1):
+            v=_iou_shift(As,Bs,dx,dy,cut//k)
+            if v>best[2]: best=(dx*k,dy*k,v)
+    x0,y0,_=best; best=(0,0,-1.0)
+    for dy in range(y0-k,y0+k+1):
+        for dx in range(x0-k,x0+k+1):
+            v=_iou_shift(A,B,dx,dy,cut)
+            if v>best[2]: best=(dx,dy,v)
+    return best
+
+def moved(gx,gy,S,healthy,other,base=False,name=''):
+    """placement of `other` standing where `healthy` stands"""
+    dx,dy,iou=align(healthy,other,base)
+    if base and iou<0.8:
+        print('  %s: too different to align (%.2f), left in place'%(name,iou)); return gx,gy
+    if dx or dy: print('  %s moved %d,%d sheet px (match %.2f)'%(name,dx,dy,iou))
+    return gx+dx/S, gy+dy/S
+
 def seq(a,cw,ch,cols,start,count):
     return [cell(a,cw,ch,(start+i)%cols,(start+i)//cols) for i in range(count)]
 
@@ -177,9 +216,11 @@ def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows
     last=last_row_wreck_icon(a,cw,ch,nrows_last,cols)
     W=last[0] if wreck_cell is None else cell(a,cw,ch,*wreck_cell)
     gx,gy,S=placement(classic_mask(anir,*fitframe),anir,H[0])
+    dgx,dgy=moved(gx,gy,S,H[0],D[0],name=bld+' damaged')
+    wgx,wgy=moved(gx,gy,S,H[0],W,base=True,name=bld+' wreck')
     for i,c in enumerate(H): save_pic('%s/h%03d'%(bld,i),c,gx,gy,S)
-    for i,c in enumerate(D): save_pic('%s/d%03d'%(bld,i),c,gx,gy,S)
-    save_pic('%s/w000'%bld,W,gx,gy,S)
+    for i,c in enumerate(D): save_pic('%s/d%03d'%(bld,i),c,dgx,dgy,S)
+    save_pic('%s/w000'%bld,W,wgx,wgy,S)
     preview(bld,anir,fitframe[0],fitframe[1],H[0],gx,gy,S)
     preview(bld+'_d',anir,1,0,D[0],gx,gy,S)
     preview(bld+'_w',anir,2,0,W,gx,gy,S)
@@ -209,9 +250,11 @@ def warehouse():
     print('warehouse'); a=sheet('warehouse.png'); cw=ch=362
     H=[cell(a,cw,ch,c,0) for c in range(4)]; D=[cell(a,cw,ch,c,1) for c in range(4)]; W=[cell(a,cw,ch,c,2) for c in range(3)]
     gx,gy,S=placement(classic_mask('Warehouse.anir',0,0),'Warehouse.anir',H[0])
+    dgx,dgy=moved(gx,gy,S,H[0],D[0],name='warehouse damaged')
+    wgx,wgy=moved(gx,gy,S,H[0],W[0],base=True,name='warehouse wreck')
     for i,c in enumerate(H): save_pic('warehouse/h%03d'%i,c,gx,gy,S)
-    for i,c in enumerate(D): save_pic('warehouse/d%03d'%i,c,gx,gy,S)
-    for i,c in enumerate(W): save_pic('warehouse/w%03d'%i,c,gx,gy,S)
+    for i,c in enumerate(D): save_pic('warehouse/d%03d'%i,c,dgx,dgy,S)
+    for i,c in enumerate(W): save_pic('warehouse/w%03d'%i,c,wgx,wgy,S)
     preview('warehouse','Warehouse.anir',0,3,H[3],gx,gy,S); preview('warehouse_w','Warehouse.anir',2,0,W[0],gx,gy,S)
     strip('Warehouse.anir','a 0',pics='warehouse/h',n=4,var=0,blend=0)
     strip('Warehouse.anir','a 1',pics='warehouse/d',n=4,var=1,blend=0)
@@ -227,8 +270,9 @@ def hrcvts():
         # classic strip indexes
         idx={'base 0':0,'base 1':1,'base 2':2,'base2 0':3,'base2 1':4,'base2 2':5,'a 0':0,'a 1':1,'a 2':2,'b 0':3,'b 1':4,'b 2':5}
         gx,gy,S=placement(classic_mask(anir,idx[names[0]],0),anir,cs[0])
+        pos=[(gx,gy),moved(gx,gy,S,cs[0],cs[1],name=bld+' damaged'),moved(gx,gy,S,cs[0],cs[2],base=True,name=bld+' wreck')]
         for k,(c,nm) in enumerate(zip(cs,names)):
-            save_pic('%s/%s000'%(bld,'hdw'[k]),c,gx,gy,S)
+            save_pic('%s/%s000'%(bld,'hdw'[k]),c,pos[k][0],pos[k][1],S)
             strip(anir,nm,pics='%s/%s'%(bld,'hdw'[k]),n=1,var=k)
         preview(bld,anir,idx[names[0]],0,cs[0],gx,gy,S)
 
@@ -238,9 +282,12 @@ def proc():
     W=last_row_wreck_icon(a,cw,ch,12,6)[0]
     OPEN=20
     gx,gy,S=placement(classic_mask('proc.anir',0,0),'proc.anir',H[OPEN])
+    pos={'h':(gx,gy),'d':moved(gx,gy,S,H[OPEN],D[OPEN],name='proc damaged')}
+    wgx,wgy=moved(gx,gy,S,H[OPEN],W,base=True,name='proc wreck')
     for nm,L in (('h',H),('d',D)):
         base=L[OPEN]
-        save_pic('proc/%s000'%nm,base,gx,gy,S)
+        px,py=pos[nm]
+        save_pic('proc/%s000'%nm,base,px,py,S)
         bf=base.astype(np.float32)
         for i,c in enumerate(L):
             cf=c.astype(np.float32)
@@ -248,8 +295,8 @@ def proc():
             w=np.clip((diff-12)/28,0,1)
             ov=c.copy(); ov[:,:,3]=(c[:,:,3]*w).astype(np.uint8)
             if ov[:,:,3].max()<16: ov[:,:,3]=0; ov[0,0,3]=1
-            save_pic('proc/%sdoor%03d'%(nm,i),ov,gx,gy,S)
-    save_pic('proc/w000',W,gx,gy,S)
+            save_pic('proc/%sdoor%03d'%(nm,i),ov,px,py,S)
+    save_pic('proc/w000',W,wgx,wgy,S)
     preview('proc','proc.anir',0,0,H[OPEN],gx,gy,S); preview('proc_w','proc.anir',2,0,W,gx,gy,S)
     strip('proc.anir','base 0',pics='proc/h',n=1,var=0)
     strip('proc.anir','base 1',pics='proc/d',n=1,var=1)
@@ -269,11 +316,14 @@ def tower(t, anir):
     m[tt+sy-T:tt+sy-T+tm.shape[0],tl+sx-L:tl+sx-L+tm.shape[1]]|=tm
     gx,gy,S=placement((m,(L,T)),anir,cell(A,cw,ch,0,0))
     for d in range(16):
+        # damaged: matched per direction (the turret's outline differs)
+        dgx,dgy=moved(gx,gy,S,cell(A,cw,ch,0,d),cell(B,cw,ch,0,d),name='%s %02d damaged'%(t,d))
         for k in range(3):
             save_pic('%s/h%02d_%03d'%(t,d,k),cell(A,cw,ch,k,d),gx-sx,gy-sy,S)
-            save_pic('%s/d%02d_%03d'%(t,d,k),cell(B,cw,ch,k,d),gx-sx,gy-sy,S)
+            save_pic('%s/d%02d_%03d'%(t,d,k),cell(B,cw,ch,k,d),dgx-sx,dgy-sy,S)
         strip(anir,'turret %02d'%d,pics='%s/{V}%02d_'%(t,d),n=3,map='0,1,2,1,2',blend=0)
-    save_pic('%s/w000'%t,Wr,gx,gy,S)
+    wgx,wgy=moved(gx,gy,S,cell(A,cw,ch,0,0),Wr,base=True,name=t+' wreck')
+    save_pic('%s/w000'%t,Wr,wgx,wgy,S)
     strip(anir,'base 0',none=1,var=0); strip(anir,'base 1',none=1,var=1)
     strip(anir,'base 2',pics='%s/w'%t,n=1,var=2)
     # preview: composite classic frame vs HD
