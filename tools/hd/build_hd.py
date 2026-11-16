@@ -166,8 +166,11 @@ def strip(anir, name, **kw):
     for k,v in kw.items(): s+='\t%s=%s'%(k,v)
     manifest.append(s)
 
-def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows_last, strips, sheet_obj=None, fitframe=(0,0), wreck_cell=None):
-    """healthy pictures 0..n-1, damaged from damaged_start, last row wreck+icon"""
+def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows_last, strips, sheet_obj=None, fitframe=(0,0), wreck_cell=None, cycle=None):
+    """healthy pictures 0..n-1, damaged from damaged_start, last row wreck+icon.
+    cycle: the pictures loop on their own, once in that many game updates
+    (at normal speed, 1.0: 80 ms an update), instead of following the
+    classic frames (which are too few and too quick for this much art)"""
     print(bld)
     a=sheet(sheetname) if sheet_obj is None else sheet_obj
     H=seq(a,cw,ch,cols,0,healthy_n); D=seq(a,cw,ch,cols,damaged_start,healthy_n)
@@ -180,15 +183,20 @@ def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows
     preview(bld,anir,fitframe[0],fitframe[1],H[0],gx,gy,S)
     preview(bld+'_d',anir,1,0,D[0],gx,gy,S)
     preview(bld+'_w',anir,2,0,W,gx,gy,S)
+    for i,c in enumerate(H+D):
+        if (c[:,:,3]>0).sum()==0: raise SystemExit('%s: picture %d is empty (wrong cell?)'%(bld,i))
     s0,s1,s2=strips
-    strip(anir,s0,pics='%s/h'%bld,n=healthy_n,var=0)
-    # A damaged strip the classic art doesn't animate (one frame) still plays
-    # all its pictures, looping at the healthy animation's speed
-    nfrm_d,_=strip_timing(anir,1); nfrm_h,cycle_h=strip_timing(anir,0)
-    if nfrm_d==1 and nfrm_h>1:
-        strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1,cycle=cycle_h)
+    if cycle:
+        strip(anir,s0,pics='%s/h'%bld,n=healthy_n,var=0,cycle=cycle)
+        strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1,cycle=cycle)
     else:
-        strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1)
+        # A damaged strip the classic art doesn't animate (one frame) still
+        # plays all its pictures, looping at the healthy animation's speed
+        nfrm_d,_=strip_timing(anir,1); nfrm_h,cycle_h=strip_timing(anir,0)
+        if nfrm_d==1 and nfrm_h>1:
+            strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1,cycle=cycle_h)
+        else:
+            strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1)
     strip(anir,s2,pics='%s/w'%bld,n=1,var=2)
 
 # HQ: 8x9 cells 288x216; 32 healthy, 32 damaged, last row wreck+icon
@@ -303,7 +311,7 @@ def finish(out, preview_dir):
     hdr=['# HD structure pictures (see game/sdl/hdsprites.cpp). Made by tools/hd/build_hd.py from the artist\'s sheets.',
          '# strip<TAB>anir<TAB>strip name<TAB>key=value...: pics=<pack>/<prefix> n=<count> var=<0 healthy|1 damaged|2 wreck>',
          '#   blend=0 (no in-between pictures) map=/bmap= (picture per classic frame going forward/back) none=1 (draw nothing)',
-         '#   cycle=<updates>: the classic strip has one frame; the pictures loop on their own, one loop in that many game updates',
+         '#   cycle=<updates>: the pictures loop on their own (not following the classic frames), one loop in that many game updates',
          '#   {V} in pics = h/d by the variant of the strip drawn just before (2 = draw nothing)']
     open(os.path.join(out,'manifest.txt'),'w').write('\n'.join(hdr+manifest)+'\n')
 JOBS=[
@@ -314,11 +322,15 @@ JOBS=[
     ('rtower', lambda: tower('rtower','rtower.anir')),
     ('walls', lambda: walls()),
     ('hq', lambda: standard('hq','hq.png',288,216,8,'HQ.anir',32,32,8,('a 0','a 1','a 2'))),
-    ('reactor', lambda: standard('reactor','reactor.png',192,168,6,'Reactor.anir',36,36,12,('spin 0','spin 1','spin 2'))),
-    ('radar', lambda: standard('radar','radar.png',362,362,6,'Radar.anir',36,36,12,('a 0','a 1','a 2'))),
+    # Power Generator: a turn of the fan in 36 updates (2.9 s at speed 1.0)
+    ('reactor', lambda: standard('reactor','reactor.png',192,168,6,'Reactor.anir',36,36,12,('spin 0','spin 1','spin 2'),cycle=36)),
+    # Surveillance Center: a turn of the dish in 72 updates (5.8 s)
+    ('radar', lambda: standard('radar','radar.png',362,362,6,'Radar.anir',36,36,12,('a 0','a 1','a 2'),cycle=72)),
     # R&D Center: the panel version (the classic one turns its panel; the
     # dish version, research_dish.png, isn't used)
-    ('research', lambda: standard('research','research_panel.png',362,362,8,'Research.anir',52,52,13,('a 0','a 1','a 2'),wreck_cell=(4,13))),
+    # (52 healthy pictures fill 6.5 rows: the damaged ones start on row 7.)
+    # The panel goes out and back in 104 updates (8.3 s)
+    ('research', lambda: standard('research','research_panel.png',362,362,8,'Research.anir',52,56,13,('a 0','a 1','a 2'),wreck_cell=(4,13),cycle=104)),
 ]
 
 def main():

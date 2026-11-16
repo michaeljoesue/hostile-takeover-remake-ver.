@@ -98,6 +98,10 @@ BeginStateMachine
 			if (!m_pplr->IsPowerLow())
 				AdvanceAnimation(&m_ani);
 
+			// HD pictures loop on their own: they stop and go with it
+
+			HdHoldAnimation(&m_ani, m_pplr->IsPowerLow());
+
 			DefUpdate();
 
             return knHandled;

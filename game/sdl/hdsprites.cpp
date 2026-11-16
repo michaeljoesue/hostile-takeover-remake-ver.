@@ -549,8 +549,11 @@ static int MotionUpdates(HdStrip *pstrip, AnimationData *panid, int nStrip) {
 // - An animation the game steps itself (the Processor's door, forward to
 //   open and back to close) plays the pictures between the old frame's and
 //   the new one's after each step, at the same speed.
-// - A strip whose classic art has one frame but the artist drew more
-//   (the damaged R&D Center) loops on its own (cycle=).
+// - Strips whose art has far more pictures than the classic frames (the
+//   generator's fan, the Surveillance Center's dish, the R&D Center's
+//   panel, also when damaged, where the classic art doesn't move) loop on
+//   their own at a natural pace in game time (cycle=), stopping when the
+//   game holds the animation (HdHoldAnimation: no power).
 
 static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame, Animation *pani) {
     int cFrames = panid->GetFrameCount(nStrip);
@@ -580,18 +583,18 @@ static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame
     HdTrack *ptrk = &it->second;
     ptrk->cFrameSeen = s_cFrame;
 
-    // Looping on its own
+    // Looping on its own (cycle=): the art has many more pictures than the
+    // classic frames, at a pace of its own. Each building starts at its own
+    // point of the loop, so neighbours don't turn in step.
 
-    if (cFrames == 1) {
-        if (pstrip->cycle <= 0)
-            return TargetPic(pstrip, nFrame, cFrames, 0) % n;
+    if (pstrip->cycle > 0) {
         double dt = t - ptrk->tLast;
         ptrk->tLast = t;
         if (dt > 0 && dt < 4 && s_setHeld.find(pani) == s_setHeld.end()) {
             ptrk->tCycle += dt;
             s_fMoving = true;
         }
-        double p = ptrk->tCycle / pstrip->cycle;
+        double p = ptrk->tCycle / pstrip->cycle + (((uintptr_t)pani >> 4) % 97) / 97.0;
         p -= floor(p);
         return ((int)(p * n)) % n;
     }

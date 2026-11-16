@@ -74,12 +74,13 @@ The engine has been updated from its 2007 handheld roots:
   new high-resolution art over the 8-bit game, at the window's own pixel
   resolution: each picture is scaled down once to the window's size
   (averaged, so it doesn't shimmer) and recoloured to its side's colour.
-  The game logic doesn't change: the classic animation still drives each
-  building, and every picture the artist drew plays in between its frames
-  as one continuous motion in game time, so it follows the game speed and
-  stops when the game is paused. Pauses in the classic animation (the HQ's
-  hatch staying shut) stay pauses; the motion between them runs at the
-  animation's normal speed. The Processor's door opens and closes through
+  The game logic doesn't change, and every picture the artist drew plays,
+  in game time (it follows the game speed and stops when the game is
+  paused). The HQ's hatch follows the classic animation, its pauses
+  included; the generator's fan, the Surveillance Center's dish and the
+  R&D Center's panel, which have far more pictures than the classic
+  frames, turn at a calmer pace of their own (a turn of the fan in 2.9 s,
+  the dish in 5.8 s, the panel out and back in 8.3 s at speed 1.0). The Processor's door opens and closes through
   all its pictures for each miner, the damaged R&D Center's panel turns
   like the healthy one (the classic damaged one is still), and buildings
   without power stand still as before. Damaged and destroyed
