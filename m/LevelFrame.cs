@@ -44,8 +44,6 @@ namespace m
 				if (frmParent.ActiveMdiChild.WindowState != FormWindowState.Maximized)
 					fMaximize = false;
 			}
-			if (fMaximize)
-				WindowState = FormWindowState.Maximized;
 
 			// Set Title
 
@@ -57,9 +55,14 @@ namespace m
 			if (m_doc == DocManager.GetActiveDocument(typeof(LevelDoc)))
 				DocManager.SetCommandTarget(this);
 
-			// Show
+			// Show. Maximize after showing: an MDI child maximized before it's
+			// shown keeps its pre-maximize layout, so the map view ends up
+			// bigger than the window and its scroll bars can't be seen until
+			// the window is restored and maximized again.
 
 			Show();
+			if (fMaximize)
+				WindowState = FormWindowState.Maximized;
 		}
 
 		public void DispatchCommand(Command cmd) {
