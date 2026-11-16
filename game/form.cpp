@@ -367,6 +367,17 @@ bool Form::EventProc(Event *pevt)
 		switch (pevt->chr) {
 		case vchrBack:
             OnControlSelected(kidcCancel);
+            return true;
+
+        case 0x1b:
+            // Esc closes a dialog or menu as its default button does
+            // (Close, Back, Cancel, OK)
+
+            if (m_wf & kfFrmDoModal) {
+                OnControlSelected(m_idcDefault);
+                return true;
+            }
+            break;
         }
     }
 	return false;

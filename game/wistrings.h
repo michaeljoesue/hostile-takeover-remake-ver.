@@ -40,8 +40,6 @@ enum Strings {
 	kidsRank22, // Executive VP of Operations
 	kidsRank23, // Senior Exec. VP of Operations
 	kidsRank24, // ACME Chief Operations Officer
-	kidsExitHost, // You are hosting the multiplayer game in progress. Are you sure you want to stop?
-	kidsExitClient, // You cannot return to a multiplayer game in progress. Are you sure you want to leave?
 };
 
 } // namespace wi

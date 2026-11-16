@@ -95,7 +95,7 @@ MissionType MissionList::GetMissionType(const char *pszLvl) {
         case 'C':
             return kmtChallenge;
 
-        case 'm':   // multiplayer maps
+        case 'm':   // the original multiplayer maps (not offered in single player)
         case 'M':
         case 'd':   // demo
         case 'D':

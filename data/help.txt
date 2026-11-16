@@ -77,32 +77,41 @@ Six weeks ago an ACME owned, unmanned probe en route to the star Tau Ceti report
 <H2>To start the story missions from the beginning, select <A HREF="#playsolo">Play</A>, then select the first mission in the list, Story Mission "M0: Introduction". This is a training mission which is an excellent place to start. You'll learn how to create buildings, build units and move your forces around. However, there are some features that are not covered in the training mission and are helpful to know ahead of time. Refer to <A HREF="#Tips">Tips</A> for more information. As you finish each mission you will be taken to the next mission in the adventures of Andy, Jana, Olstrom and Fox. Watch your rank increase with each successfully completed mission.</H2>
 <HR>
 <A NAME="playsolo"><H1>PLAY </H1></A>
-<H2>To play a mission, choose "Play". This will show you the list of story and challenge missions, and allow you to play any one of them. New players are encouraged to <A HREF="#newgame">begin the story</A> missions by playing Story Mission "M0: Introduction". The story missions start out LOCKED. Missions unlock as you play through the game. Challenge missions are fun, challenging single missions, that come with the game. If you exit the game while a mission is in progress, your current game will be saved and restored the next time you start the game. If a mission ends in failure you will have an option to retry that mission. If you wish to preserve incremental progress within a mission, you can <A HREF="#savegame">save</A> the game at any time. Choosing Abort at the end of a mission will abort your game.<BR>
+<H2>To play a mission, choose "Play". This will show you the list of story and challenge missions, and allow you to play any one of them. New players are encouraged to <A HREF="#newgame">begin the story</A> missions by playing Story Mission "M0: Introduction". All story missions are unlocked from the start. Challenge missions are fun, challenging single missions, that come with the game. If you exit the game while a mission is in progress, your current game will be saved and restored the next time you start the game. If a mission ends in failure you will have an option to retry that mission. If you wish to preserve incremental progress within a mission, you can <A HREF="#savegame">save</A> the game at any time. Choosing Abort at the end of a mission will abort your game.<BR>
 The Custom tab lists missions from mission packs (.pdb files made with the M mission editor). To add one, copy it into the Missions folder next to HostileTakeover.exe, or into %APPDATA%\Spiffcode\HostileTakeover\Missions.</H2>
 <HR>
 <A NAME="gameoptions"><H1>OPTIONS</H1></A>
 <H2>Adjust the game speed by adjusting the slider to the right for faster game play and to the left for a slower game play. Once the game is playing as fast as your computer allows, increasing the game speed will not have an effect.<BR>
 There are three difficulty settings for the game. This setting can be changed at any time and will take effect immediately. <BR>
-Moving the volume slider to the right will increase the audio volume, moving it to the left will decrease the audio volume. You can mute all game sound by selecting the Mute checkbox.<BR>
+In Sound options, the Volume slider sets the overall volume. Four more sliders set each kind of sound relative to it: Effects (interface clicks), Battlefield (shots, explosions, hits), Unit Responses (units replying to you) and Menus & Alerts (build menus, alerts, credits). You can mute all game sound by selecting the Mute checkbox.<BR>
 Moving the scroll speed slider to the right will increase the rate the map scrolls.<BR>
-Display options choose the game resolution (a larger resolution shows more of the map; the recommended one fits your screen), and fullscreen or windowed play. The game is drawn as fast as your PC allows, with units, shots and scrolling moving smoothly. Press Alt+Enter or F11 at any time to switch between fullscreen and a window. The window can be resized; the game is scaled to fit.<BR>
+Display options choose the game resolution, whether the frames-per-second counter is shown (a larger resolution shows more of the map; the recommended one fits your screen), and fullscreen or windowed play. The game is drawn as fast as your PC allows, with units, shots and scrolling moving smoothly. Press Alt+Enter or F11 at any time to switch between fullscreen and a window. The window can be resized; the game is scaled to fit.<BR>
 The + and - keys on the number pad change the game speed while playing.<BR>
 Clicking the Default button will restore these settings to their default values.</H2>
 <HR>
 <A NAME="howtoplay"><H1>GAME PLAY CONTROLS </H1></A>
-<H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly, to move a unit, click on the unit, then click on the destination. To move multiple units, <A HREF="#multiselect">select</A> the units then click on the destination. To attack, select your desired units, then click on the enemy unit you wish to attack. To see the menu of one of your units or buildings, click on it and hold the mouse button down until the menu appears.</H2>
+<H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly: left-click a unit to select it, then right-click where it should go. To move several units, <A HREF="#multiselect">select</A> them, then right-click the destination. To attack, select your units, then right-click the enemy. Left-click one of your buildings to open its menu; right-click one of your units to open its menu.<BR>
+<BR>
+MORE ORDERS<BR>
+Shift+right-click: queue the order after the ones being carried out.<BR>
+A, then left-click: attack-move. Units fight what they meet on the way, then carry on.<BR>
+Ctrl+right-click: force attack, even your own or an ally's units.<BR>
+Ctrl+Alt+right-click on one of your units: the selected units guard it, following it and fighting enemies near it. On an enemy it attacks; on the ground it attack-moves.<BR>
+S: stop. Esc: cancel attack-move or building placement, otherwise clear the selection.<BR>
+Ctrl+1 to 9: make the selection a group. 1 to 9: select the group; press twice to go to it.<BR>
+Space: go to the last "under attack" alert.</H2>
 <HR>
 <A NAME="scrollmap"><H1>SCROLLING THE MAP </H1></A>
-<H2>To scroll the map, use the arrow keys, click on the <A HREF="#minimap">Mini Map</A> in the lower right-hand corner of the window, or drag a selection rectangle to the edge of the map. In fullscreen, moving the mouse to the edge of the screen scrolls the map too. From <A HREF="#gameoptions">Options</A> you can adjust how fast the map scrolls.</H2>
+<H2>To scroll the map, use the arrow keys, move the mouse to the edge of the screen, drag with the middle mouse button, turn the mouse wheel (Shift+wheel scrolls sideways), or click the <A HREF="#minimap">Mini Map</A> in the lower right-hand corner of the window. From <A HREF="#gameoptions">Options</A> you can adjust how fast the map scrolls.</H2>
 <HR>
 <A NAME="multiselect"><H1>SELECTING MULTIPLE UNITS </H1></A>
-<H2>You can select multiple units at once. Press the mouse button on the map and drag diagonally across a group of units. A box will be drawn. When you release the mouse button all the units in the box will be selected. If Lasso Selection is turned on in <A HREF="#gameoptions">Options</A>, draw a loop around the units instead.</H2>
+<H2>You can select multiple units at once. Press the mouse button on the map and drag diagonally across a group of units. A box will be drawn. When you release the mouse button all the units in the box will be selected. Miners and defence towers are left out unless the box holds nothing else. Hold Shift while dragging to add to the selection, or Shift+click a unit to add it or take it out.</H2>
 <HR>
 <A NAME="powerselect"><H1>POWER SELECT </H1></A>
-<H2>Often in battle you will need to quickly select units. Double click on a unit to select all units of that same type that are on-screen!</H2>
+<H2>Often in battle you will need to quickly select units. Double-click a unit (or Ctrl+click it) to select all units of that same type that are on-screen!</H2>
 <HR>
 <A NAME="clearselection"><H1>CLEARING SELECTION </H1></A>
-<H2>To clear the unit selection, drag a selection box over an empty part of the map.</H2>
+<H2>To clear the unit selection, click an empty part of the map or press Esc.</H2>
 <HR>
 <A NAME="menu"><H1>MENU </H1></A>
 <H2>While playing Hostile Takeover you can access the <A HREF="#gameMenu">In Game Menu</A> by clicking the "Menu" button in the bottom-left corner of the display. The game will pause while you are looking at the In Game Menu. Selecting Back will return you to gameplay.</H2>
@@ -124,9 +133,7 @@ Grey Wrench: Indicates that the selected resource is not damaged.<BR>
 White Dollar Sign: Can be used to sell a resource. Your entire investment will not be returned. However, sometimes it is necessary to sell one resource to create a more critical one. Be aware that selling a Galaxite Warehouse will lose any credits it contains.<BR>
 <BR>
 PLACE BUILDING ICONS<BR>
-When you click the HQ and select build, the Order Building screen is displayed. Once you select something to build you then get a hashed square which represents the footprint of the building. There are two icons associated with the hashed square:<BR>
-White Check Mark: When you have no dark hash marks, you can select the white check mark to confirm building placement.<BR>
-White X: Select the white x to cancel construction of the building.<BR>
+When you click the HQ and select build, the Order Building screen is displayed. Once you choose something to build, its footprint follows the mouse. White markings mean it can be built there; red markings mean it can't. Left-click to place it. Right-click or press Esc to cancel.<BR>
 <BR>
 </H2>
 <HR>
@@ -325,7 +332,7 @@ Power Supply: 0<BR>
 <BR>
 <IMG SRC="hrc.anir">
 <BR>
-<H2>The HRC is used to recruit personnel. You can use the Research & Development Center to upgrade the HRC and enable production of more advanced units. You can build up to ten units at a time by selecting the unit type and repeatedly clicking on the order button.<BR>
+<H2>The HRC is used to recruit personnel. You can use the Research & Development Center to upgrade the HRC and enable production of more advanced units. You can build up to ten units at a time: each click on a unit type orders one, and right-clicking it cancels one.<BR>
 <BR>
 Cost: 1000<BR>
 Armor: Medium<BR>
@@ -337,7 +344,7 @@ Power Supply: 0<BR>
 <BR>
 <IMG SRC="vts.anir">
 <BR>
-<H2>Use the VTS to order vehicles. Upgrading the VTS gives you the ability to create more advanced vehicles. You can build up to ten units at a time by selecting the unit type and repeatedly clicking on the order button.<BR>
+<H2>Use the VTS to order vehicles. Upgrading the VTS gives you the ability to create more advanced vehicles. You can build up to ten units at a time: each click on a unit type orders one, and right-clicking it cancels one.<BR>
 <BR>
 Cost: 1250<BR>
 Armor: Heavy<BR>
@@ -400,7 +407,7 @@ Power Supply: 0<BR>
 <H2>To display the options associated with a particular building click on the building and select the Build Icon (the white hammer). The units associated with that building are displayed. Note that not all units are available on all missions. As you advance through more difficult missions, additional options are added to the build menus. Some units are only available after upgrading via the <A HREF="#randd">Research & Development Center</A>.</H2>
 <HR>
 <A NAME="Transform"><H1>TRANSFORMING YOUR HEADQUARTERS </H1></A>
-<H2>To change your Dominion into a Headquarters you need to bring up the Transform Menu. Click on the Dominion and hold the mouse button down until the Transform Menu appears.</H2>
+<H2>To change your Dominion into a Headquarters you need to bring up the Transform Menu. Right-click the Dominion and choose Transform from its menu.</H2>
 <HR>
 <A NAME="difficulty"><H1>CHANGING THE DIFFICULTY </H1></A>
 <H2>You can change the difficulty level of the game in the <A HREF="#gameoptions">Options</A>.</H2>
