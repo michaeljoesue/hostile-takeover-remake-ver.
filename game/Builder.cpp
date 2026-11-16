@@ -835,44 +835,17 @@ bool MobileUnitBuildForm::OnPenEvent(Event *pevt)
     return Form::OnPenEvent(pevt);
 }
 
-// The menu closes on any key (auto takedown) except 1-9, its hotkeys
+// The menu closes on any key (auto takedown), so a key like 1-9 (control
+// groups) goes on to the battlefield. Shift / Ctrl / Alt pressed on their
+// own don't close it (SDL key codes of keys without a character have bit
+// 30 set).
 
 bool MobileUnitBuildForm::OnKeyTest(Event *pevt)
 {
-    if (pevt != NULL && pevt->eType == keyDownEvent) {
-        // 1-9, and Shift / Ctrl / Alt pressed on their own (SDL key codes
-        // of keys without a character have bit 30 set)
-
-        if ((pevt->chr >= '1' && pevt->chr <= '9') || (pevt->chr & 0x40000000) != 0)
-            return true;
-    }
-    return Form::OnKeyTest(pevt);
-}
-
-// Keys 1-9 order the 1st-9th unit in the list, Shift+1-9 cancel one
-
-bool MobileUnitBuildForm::EventProc(Event *pevt)
-{
-    if (pevt->eType == keyDownEvent && pevt->chr >= '1' && pevt->chr <= '9') {
-        ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
-        int ili = pevt->chr - '1';
-        ListItem *pli = plstc->GetItem(ili);
-        if (pli == NULL)
-            return true;
-        if (plstc->GetSelectedItemIndex() != ili)
-            plstc->Select(ili, true);
-        UnitType ut = UnitTypeFromPVoid(plstc->GetSelectedItemData());
-        if (pevt->ffMods & kfModShift) {
-            if (m_bqPrivate.GetUnitCount(ut) > 0)
-                OnControlSelected(kidcCancelOrder);
-        } else if (!pli->fDisabled && m_fOrderValid && !m_fLimitReached) {
-            OnControlSelected(kidcOrder);
-        } else {
-            gsndm.PlaySfx(ksfxGuiFormHide);
-        }
+    if (pevt != NULL && pevt->eType == keyDownEvent &&
+            (pevt->chr & 0x40000000) != 0)
         return true;
-    }
-    return Form::EventProc(pevt);
+    return Form::OnKeyTest(pevt);
 }
 
 // Right click on an item cancels one of it from the queue

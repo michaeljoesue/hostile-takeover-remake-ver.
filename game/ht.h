@@ -6024,7 +6024,6 @@ public:
 	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
 	virtual bool OnRightDown(Event *pevt);
 	virtual bool OnPenEvent(Event *pevt);
-	virtual bool EventProc(Event *pevt);
 	virtual bool OnKeyTest(Event *pevt);
 
 private:
