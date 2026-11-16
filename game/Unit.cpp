@@ -1053,7 +1053,6 @@ UnitGob *UnitMenu::GetOwner()
 bool UnitMenu::DoModal(int *pnResult, Sfx sfxShow, Sfx sfxHide)
 {
 	gtimm.AddTimer(this, 25);
-	SetHoverControl(NULL);
 	bool f = Form::DoModal(pnResult, sfxShow, sfxHide);
 	gtimm.RemoveTimer(this);
 	return f;
@@ -1270,7 +1269,7 @@ void UnitMenu::OnPaint(DibBitmap *pbm)
 	Form::OnPaint(pbm);
 }
 
-// The button under the mouse is highlighted and a click acts on it
+// A click on a button acts on it at once
 
 bool UnitMenu::OnPenEvent(Event *pevt)
 {
@@ -1282,7 +1281,6 @@ bool UnitMenu::OnPenEvent(Event *pevt)
 
 bool UnitMenu::OnRightDown(Event *pevt)
 {
-	SetHoverControl(NULL);
 	EndForm(kidcCancel);
 	return true;
 }

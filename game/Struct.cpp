@@ -234,8 +234,8 @@ bool StructGob::SaveState(Stream *pstm)
 	return UnitGob::SaveState(pstm);
 }
 
-// are you sure dialog used to confirm structure recycling. Mouse-style: the
-// button under the mouse is highlighted, a click acts on it, it can't be
+// are you sure dialog used to confirm structure recycling. Mouse-style: a
+// click on a button acts on it at once, it can't be
 // dragged, and a right-click anywhere answers No.
 
 class ConfirmForm : public DialogForm
@@ -246,13 +246,8 @@ public:
 		return true;
 	}
 	virtual bool OnRightDown(Event *pevt) {
-		SetHoverControl(NULL);
 		EndForm(kidcCancel);
 		return true;
-	}
-	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide) {
-		SetHoverControl(NULL);
-		return DialogForm::DoModal(pnResult, sfxShow, sfxHide);
 	}
 };
 

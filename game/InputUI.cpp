@@ -304,18 +304,14 @@ void InputUIForm::OnControlSelected(word idc)
 		InGameMenu();
 		break;
 
-
 #if defined(DEV_BUILD)
 	case kidcPower:
 		TestOptions();
 		break;
 #endif
 
-	case kidcCreditsLabel:
-		gsim.Pause(true);
-		gpplrLocal->ShowObjectives(ksoObjectives);
-		gsim.Pause(false);
-		break;
+	// Clicking the credits no longer opens the Objectives screen (it's in
+	// the Menu): only the Menu button opens a screen from the bar.
 	}
 }
 

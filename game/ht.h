@@ -2308,7 +2308,6 @@ public:
 	Control *GetControlPtr(word idc);
 	bool IsControlInside(Control *pctl);
 	bool MouseButtonPenEvent(Event *pevt);
-	void SetHoverControl(Control *pctl);
 	void SetUserDataPtr(void *pUserData);
 	void *GetUserDataPtr();
     Form *FindPen2Form();
@@ -2323,7 +2322,6 @@ protected:
 	FormMgr *m_pfrmm;
 	TBitmap *m_ptbm;
 	Control *m_pctlCapture;
-	Control *m_pctlHover;
 	Rect m_rc;
 	int m_nResult;
 	word m_wf;

@@ -147,7 +147,7 @@ Modern RTS controls:
 | | |
 |---|---|
 | Left-click | Select a unit or building (enemies too, to look at them). Clicking one of your buildings also opens its menu. Clicking the ground deselects. |
-| Unit and building menus | The button under the mouse lights up; left-click it to choose it. Right-click anywhere closes the menu. The Sell / Abort "Are you sure?" box works the same way (right-click answers No) and can't be dragged |
+| Unit and building menus | Left-click a button to choose it. Right-click anywhere closes the menu. The Sell / Abort "Are you sure?" box works the same way (right-click answers No) and can't be dragged |
 | Build menus | The selection box and the info follow the mouse. Buildings: left-click starts placing it. Units: left-click orders one, right-click on it cancels one from the queue. Right-click anywhere else closes the menu |
 | Placing a building | After you click a building in the menu, it follows the mouse: left-click puts it down (white tiles: it fits; red: it doesn't), right-click or Esc cancels |
 | Drag a box | Select your fighting units in it; miners and defence towers are left out unless the box holds nothing else (Shift+drag adds to the selection) |
