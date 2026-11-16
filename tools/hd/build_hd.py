@@ -323,18 +323,18 @@ JOBS=[
     ('rtower', lambda: tower('rtower','rtower.anir')),
     ('walls', lambda: walls()),
     ('hq', lambda: standard('hq','hq.png',288,216,8,'HQ.anir',32,32,8,('a 0','a 1','a 2'))),
-    # Looping pictures play at 60 a second at the default game speed (2.0:
-    # 40 ms an update, so 2.4 pictures an update), one new picture each
-    # frame on a 60 Hz screen; at speed 1.0 half as fast.
-    # Power Generator: a turn of the fan in 15 updates (0.6 s at speed 2.0)
+    # Times at the default game speed (2.0: 40 ms an update); at speed 1.0
+    # twice as long.
+    # Power Generator: a turn of the fan in 15 updates (0.6 s at speed 2.0,
+    # 60 pictures a second: a new one each frame on a 60 Hz screen)
     ('reactor', lambda: standard('reactor','reactor.png',192,168,6,'Reactor.anir',36,36,12,('spin 0','spin 1','spin 2'),cycle=15)),
-    # Surveillance Center: a turn of the dish in 15 updates (0.6 s)
-    ('radar', lambda: standard('radar','radar.png',362,362,6,'Radar.anir',36,36,12,('a 0','a 1','a 2'),cycle=15)),
+    # Surveillance Center: a slow sweep, a turn of the dish in 48 updates (1.9 s)
+    ('radar', lambda: standard('radar','radar.png',362,362,6,'Radar.anir',36,36,12,('a 0','a 1','a 2'),cycle=48)),
     # R&D Center: the panel version (the classic one turns its panel; the
     # dish version, research_dish.png, isn't used)
     # (52 healthy pictures fill 6.5 rows: the damaged ones start on row 7.)
-    # The panel goes out and back in 22 updates (0.9 s)
-    ('research', lambda: standard('research','research_panel.png',362,362,8,'Research.anir',52,56,13,('a 0','a 1','a 2'),wreck_cell=(4,13),cycle=22)),
+    # The panel goes out and back in 66 updates (2.6 s)
+    ('research', lambda: standard('research','research_panel.png',362,362,8,'Research.anir',52,56,13,('a 0','a 1','a 2'),wreck_cell=(4,13),cycle=66)),
 ]
 
 # Every classic strip that must have HD pictures (a missing one draws the
