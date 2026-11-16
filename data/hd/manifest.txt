@@ -62,14 +62,15 @@ strip	rtower.anir	base 1	none=1	var=1
 strip	rtower.anir	base 2	pics=rtower/w	n=1	var=2
 strip	walls.anir	a	pics=wall/h	n=16	blend=0
 strip	walls.anir	b	pics=wall/d	n=16	blend=0
+strip	HQ.anir	a 0	pics=hq/h	n=32	var=0
 strip	HQ.anir	a 1	pics=hq/d	n=32	var=1
 strip	HQ.anir	a 2	pics=hq/w	n=1	var=2
-strip	Reactor.anir	spin 0	pics=reactor/h	n=36	var=0	cycle=36
-strip	Reactor.anir	spin 1	pics=reactor/d	n=36	var=1	cycle=36
+strip	Reactor.anir	spin 0	pics=reactor/h	n=36	var=0	cycle=15
+strip	Reactor.anir	spin 1	pics=reactor/d	n=36	var=1	cycle=15
 strip	Reactor.anir	spin 2	pics=reactor/w	n=1	var=2
-strip	Radar.anir	a 0	pics=radar/h	n=36	var=0	cycle=72
-strip	Radar.anir	a 1	pics=radar/d	n=36	var=1	cycle=72
+strip	Radar.anir	a 0	pics=radar/h	n=36	var=0	cycle=15
+strip	Radar.anir	a 1	pics=radar/d	n=36	var=1	cycle=15
 strip	Radar.anir	a 2	pics=radar/w	n=1	var=2
-strip	Research.anir	a 0	pics=research/h	n=52	var=0	cycle=104
-strip	Research.anir	a 1	pics=research/d	n=52	var=1	cycle=104
+strip	Research.anir	a 0	pics=research/h	n=52	var=0	cycle=22
+strip	Research.anir	a 1	pics=research/d	n=52	var=1	cycle=22
 strip	Research.anir	a 2	pics=research/w	n=1	var=2

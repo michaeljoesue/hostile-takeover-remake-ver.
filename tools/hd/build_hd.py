@@ -168,9 +168,9 @@ def strip(anir, name, **kw):
 
 def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows_last, strips, sheet_obj=None, fitframe=(0,0), wreck_cell=None, cycle=None):
     """healthy pictures 0..n-1, damaged from damaged_start, last row wreck+icon.
-    cycle: the pictures loop on their own, once in that many game updates
-    (at normal speed, 1.0: 80 ms an update), instead of following the
-    classic frames (which are too few and too quick for this much art)"""
+    cycle: the pictures loop on their own, once in that many game updates,
+    instead of following the classic frames (which are too few and too
+    quick for this much art)"""
     print(bld)
     a=sheet(sheetname) if sheet_obj is None else sheet_obj
     H=seq(a,cw,ch,cols,0,healthy_n); D=seq(a,cw,ch,cols,damaged_start,healthy_n)
@@ -190,6 +190,7 @@ def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows
         strip(anir,s0,pics='%s/h'%bld,n=healthy_n,var=0,cycle=cycle)
         strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1,cycle=cycle)
     else:
+        strip(anir,s0,pics='%s/h'%bld,n=healthy_n,var=0)
         # A damaged strip the classic art doesn't animate (one frame) still
         # plays all its pictures, looping at the healthy animation's speed
         nfrm_d,_=strip_timing(anir,1); nfrm_h,cycle_h=strip_timing(anir,0)
@@ -322,16 +323,36 @@ JOBS=[
     ('rtower', lambda: tower('rtower','rtower.anir')),
     ('walls', lambda: walls()),
     ('hq', lambda: standard('hq','hq.png',288,216,8,'HQ.anir',32,32,8,('a 0','a 1','a 2'))),
-    # Power Generator: a turn of the fan in 36 updates (2.9 s at speed 1.0)
-    ('reactor', lambda: standard('reactor','reactor.png',192,168,6,'Reactor.anir',36,36,12,('spin 0','spin 1','spin 2'),cycle=36)),
-    # Surveillance Center: a turn of the dish in 72 updates (5.8 s)
-    ('radar', lambda: standard('radar','radar.png',362,362,6,'Radar.anir',36,36,12,('a 0','a 1','a 2'),cycle=72)),
+    # Looping pictures play at 60 a second at the default game speed (2.0:
+    # 40 ms an update, so 2.4 pictures an update), one new picture each
+    # frame on a 60 Hz screen; at speed 1.0 half as fast.
+    # Power Generator: a turn of the fan in 15 updates (0.6 s at speed 2.0)
+    ('reactor', lambda: standard('reactor','reactor.png',192,168,6,'Reactor.anir',36,36,12,('spin 0','spin 1','spin 2'),cycle=15)),
+    # Surveillance Center: a turn of the dish in 15 updates (0.6 s)
+    ('radar', lambda: standard('radar','radar.png',362,362,6,'Radar.anir',36,36,12,('a 0','a 1','a 2'),cycle=15)),
     # R&D Center: the panel version (the classic one turns its panel; the
     # dish version, research_dish.png, isn't used)
     # (52 healthy pictures fill 6.5 rows: the damaged ones start on row 7.)
-    # The panel goes out and back in 104 updates (8.3 s)
-    ('research', lambda: standard('research','research_panel.png',362,362,8,'Research.anir',52,56,13,('a 0','a 1','a 2'),wreck_cell=(4,13),cycle=104)),
+    # The panel goes out and back in 22 updates (0.9 s)
+    ('research', lambda: standard('research','research_panel.png',362,362,8,'Research.anir',52,56,13,('a 0','a 1','a 2'),wreck_cell=(4,13),cycle=22)),
 ]
+
+# Every classic strip that must have HD pictures (a missing one draws the
+# classic art; checked after a full build)
+REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
+    [('Reactor.anir',s) for s in ('spin 0','spin 1','spin 2')]+\
+    [(a,s) for a in ('Radar.anir','Research.anir','Warehouse.anir','VTS.anir') for s in ('a 0','a 1','a 2')]+\
+    [('VTS.anir',s) for s in ('b 0','b 1','b 2')]+\
+    [('HRC.anir',s) for s in ('base 0','base 1','base 2','base2 0','base2 1','base2 2')]+\
+    [('proc.anir',s) for s in ('base 0','base 1','base 2','door 0')]+\
+    [(t,s) for t in ('mtower.anir','rtower.anir') for s in ['base 0','base 1','base 2']+['turret %02d'%d for d in range(16)]]+\
+    [('walls.anir','a'),('walls.anir','b')]
+
+def check_manifest():
+    have=set(tuple(l.split('\t')[1:3]) for l in manifest)
+    missing=[r for r in REQUIRED if r not in have]
+    if missing: raise SystemExit('manifest is missing strips: %s'%missing)
+    if len(have)!=len(manifest): raise SystemExit('manifest has a strip twice')
 
 def main():
     ap=argparse.ArgumentParser(description='Build the HD structure packs (data/hd)')
@@ -342,6 +363,8 @@ def main():
     for name,job in JOBS:
         if args.only is None or args.only==name:
             job()
+    if args.only is None:
+        check_manifest()
     finish(args.out,args.preview)
 
 if __name__=='__main__':

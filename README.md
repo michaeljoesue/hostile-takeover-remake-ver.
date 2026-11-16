@@ -79,8 +79,9 @@ The engine has been updated from its 2007 handheld roots:
   paused). The HQ's hatch follows the classic animation, its pauses
   included; the generator's fan, the Surveillance Center's dish and the
   R&D Center's panel, which have far more pictures than the classic
-  frames, turn at a calmer pace of their own (a turn of the fan in 2.9 s,
-  the dish in 5.8 s, the panel out and back in 8.3 s at speed 1.0). The Processor's door opens and closes through
+  frames, play their pictures at a steady pace of their own: 60 a second
+  at the default game speed (2.0), a new picture every frame on a 60 Hz
+  screen. The Processor's door opens and closes through
   all its pictures for each miner, the damaged R&D Center's panel turns
   like the healthy one (the classic damaged one is still), and buildings
   without power stand still as before. Damaged and destroyed

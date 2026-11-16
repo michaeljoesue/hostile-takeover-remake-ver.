@@ -146,6 +146,16 @@ void WallGob::InitMenu(Form *pfrm)
 	StructGob::InitMenu(pfrm);
 }
 
+void WallGob::OnMenuItemSelected(int idc)
+{
+	if (idc == kidcSelfDestruct) {
+		if (PopupConfirmation("SELL WALL"))
+			gcmdq.Enqueue(kmidSelfDestructCommand, m_gid);
+		return;
+	}
+	StructGob::OnMenuItemSelected(idc);
+}
+
 int WallGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
 BeginStateMachine

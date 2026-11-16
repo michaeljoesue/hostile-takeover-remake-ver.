@@ -6764,6 +6764,7 @@ public:
 	virtual void SetHealth(fix fxHealth);
 	virtual bool IsTakeoverable(Player *pplr);
 	virtual void InitMenu(Form *pfrm);
+	virtual void OnMenuItemSelected(int idc);
 
 	// StateMachine methods
 
