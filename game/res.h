@@ -314,6 +314,10 @@
 #define kidcVolLabel 1002
 #define kidcMute 1003
 #define kidcVolumeString 1004
+#define kidcBattleVol 1005
+#define kidcBattleVolLabel 1006
+#define kidcResponseVol 1007
+#define kidcResponseVolLabel 1008
 
 // ColorOptions constants
 

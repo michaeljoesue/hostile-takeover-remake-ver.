@@ -233,7 +233,7 @@ int ReplicatorGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
 BeginStateMachine
 	OnMsg(kmidPlaySfx)
-		gsndm.PlaySfx((Sfx)pmsg->PlaySfx.sfx);
+		gsndm.PlayResponseSfx((Sfx)pmsg->PlaySfx.sfx);	// a new unit announcing itself
 
 	State(kstIdle)
 		OnUpdate

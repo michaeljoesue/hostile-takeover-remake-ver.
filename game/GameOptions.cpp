@@ -55,6 +55,8 @@ private:
 	void UpdateLabels();
 
 	int m_nVolume;
+	int m_nVolumeBattle;
+	int m_nVolumeResponses;
 	bool m_fEnabled;
 };
 
@@ -421,6 +423,8 @@ bool SoundOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	// Save away values to restore in case of cancel
 
 	m_nVolume = gsndm.GetVolume();
+	m_nVolumeBattle = gnVolumeBattle;
+	m_nVolumeResponses = gnVolumeResponses;
 	m_fEnabled = gsndm.IsEnabled();
 
 	InitResettableControls();
@@ -443,6 +447,15 @@ void SoundOptionsForm::InitResettableControls()
 		psldr->SetValue(nVolume);
 	}
 
+	// Battle sounds and unit responses, relative to the volume
+
+	psldr = (SliderControl *)GetControlPtr(kidcBattleVol);
+	psldr->SetRange(0, 256);
+	psldr->SetValue(gnVolumeBattle);
+	psldr = (SliderControl *)GetControlPtr(kidcResponseVol);
+	psldr->SetRange(0, 256);
+	psldr->SetValue(gnVolumeResponses);
+
 	UpdateLabels();
 }
 
@@ -451,6 +464,12 @@ void SoundOptionsForm::UpdateLabels()
 	char szT[80];
 	LabelControl *plbl = (LabelControl *)GetControlPtr(kidcVolLabel);
 	itoa((gsndm.GetVolume() * 100) / 255, szT, 10);
+	plbl->SetText(szT);
+	plbl = (LabelControl *)GetControlPtr(kidcBattleVolLabel);
+	itoa((gnVolumeBattle * 100) / 256, szT, 10);
+	plbl->SetText(szT);
+	plbl = (LabelControl *)GetControlPtr(kidcResponseVolLabel);
+	itoa((gnVolumeResponses * 100) / 256, szT, 10);
 	plbl->SetText(szT);
 }
 
@@ -465,6 +484,18 @@ void SoundOptionsForm::OnControlSelected(word idc)
 		}
 		break;
 
+	case kidcBattleVol:
+		gnVolumeBattle = ((SliderControl *)GetControlPtr(kidcBattleVol))->GetValue();
+		UpdateLabels();
+		gsndm.PlaySfx(ksfxGuiScrollingListSelectItem, 0, gnVolumeBattle);
+		break;
+
+	case kidcResponseVol:
+		gnVolumeResponses = ((SliderControl *)GetControlPtr(kidcResponseVol))->GetValue();
+		UpdateLabels();
+		gsndm.PlaySfx(ksfxGuiScrollingListSelectItem, 0, gnVolumeResponses);
+		break;
+
 	case kidcMute:
 		{
 			gsndm.Enable(!GetControlChecked(kidcMute));
@@ -475,6 +506,8 @@ void SoundOptionsForm::OnControlSelected(word idc)
 	case kidcCancel:
 		gsndm.Enable(m_fEnabled);
 		gsndm.SetVolume(m_nVolume);
+		gnVolumeBattle = m_nVolumeBattle;
+		gnVolumeResponses = m_nVolumeResponses;
 		EndForm(idc);
 		break;
 

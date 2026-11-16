@@ -7112,7 +7112,8 @@ public:
 	void Enable(bool fEnable);
 	bool IsEnabled();
 	void PlaySfx(Sfx sfx, int nPan = 0, int nVolume = 256);
-	void PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy);
+	void PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy);	// battle sound
+	void PlayResponseSfx(Sfx sfx);	// a unit's reply to the player
 	void WaitSilence();
 	long FilterSleepTicks(long ct);
 	void SetVolume(int nVolume);
@@ -7133,6 +7134,8 @@ private:
 	SoundDevice *m_psndd;
 };
 extern SoundMgr gsndm;
+extern int gnVolumeBattle;		// 0..256
+extern int gnVolumeResponses;	// 0..256
 
 // StringTable Class
 
@@ -7208,9 +7211,12 @@ struct Preferences // prefs
 	double nScrollSpeed;
 	word fFullscreen;				// added in 0x201
 	word fSmoothMotion;
+	word nVolumeBattle;				// added in 0x202: 0..256
+	word nVolumeResponses;
 };
 
-#define knVersionPreferences 0x201
+#define knVersionPreferences 0x202
+#define knVersionPreferences201 0x201	// without nVolumeBattle / nVolumeResponses
 #define knVersionPreferences200 0x200	// same layout, without the fields added since
 extern bool gfSmoothMotion;
 extern Preferences gprefsInit;

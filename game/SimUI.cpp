@@ -815,13 +815,22 @@ void SimUIForm::OnGuardClick(int x, int y, bool fQueue)
         if (puntHit->IsAlly(gpplrLocal->GetSide())) {
             Gid *pgid = new Gid[kcpgobMax];
             int cgid = GetOwnSelection(pgid, kcpgobMax, true);
+            MobileUnitGob *pmuntAck = NULL;
             for (int i = 0; i < cgid; i++) {
                 MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pgid[i]);
-                if (pmunt != NULL && pmunt != pgobHit)
+                if (pmunt != NULL && pmunt != pgobHit) {
                     pmunt->GuardUnit(pgobHit->GetId());
+                    if (pmuntAck == NULL)
+                        pmuntAck = pmunt;
+                }
             }
             delete[] pgid;
             pgobHit->Flash();
+
+            // The units' reply, as for a move
+
+            if (pmuntAck != NULL)
+                gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[pmuntAck->GetUnitType()])->sfxcMove));
         } else {
             MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, kfMasAttack);
         }
@@ -855,10 +864,12 @@ void SimUIForm::OnRightClick(int x, int y, bool fQueue, bool fForce)
             (pgobHit->GetFlags() & (kfGobUnit | kfGobActive)) == (kfGobUnit | kfGobActive)) {
         gfForceAttackOrder = true;
         gfQueueOrder = fQueue;
-        SetSelectionTargets(pgobHit->GetId(), wxTarget, wyTarget);
+        MobileUnitGob *pmunt = SetSelectionTargets(pgobHit->GetId(), wxTarget, wyTarget);
         gfQueueOrder = false;
         gfForceAttackOrder = false;
         pgobHit->Flash();
+        if (pmunt != NULL)
+            gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[pmunt->GetUnitType()])->sfxcAttack));
         return;
     }
 
@@ -1319,7 +1330,7 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 				m_wxMoveTarget = WcTrunc(wxTarget) + kwcTileHalf;
 				m_wyMoveTarget = WcTrunc(wyTarget) + kwcTileHalf;
 				m_nStateMoveTarget = 1;
-				gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[pmunt->GetUnitType()])->sfxcMove));
+				gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[pmunt->GetUnitType()])->sfxcMove));
 			}
 
 #ifdef RALLY_POINTS
@@ -1367,7 +1378,7 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 
 		MobileUnitGob *pmunt = SetSelectionTargets(pgobHit->GetId(), wxTarget, wyTarget);
 		if (pmunt != NULL)
-			gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[pmunt->GetUnitType()])->sfxcMove));
+			gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[pmunt->GetUnitType()])->sfxcMove));
 		return;
 	}
 
@@ -1407,10 +1418,10 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 
 			if (!gfGodMode) {
 				if (pgobHit->GetFlags() & kfGobStructure) {
-					gsndm.PlaySfx(((StructConsts *)gapuntc[((StructGob *)pgobHit)->GetUnitType()])->sfxSelect);
+					gsndm.PlayResponseSfx(((StructConsts *)gapuntc[((StructGob *)pgobHit)->GetUnitType()])->sfxSelect);
 				} else {
 					if (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())
-						gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pgobHit)->GetUnitType()])->sfxcSelect));
+						gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pgobHit)->GetUnitType()])->sfxcSelect));
 				}
 			}
 		}
@@ -1431,7 +1442,7 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 		wyTarget = wptTarget.wy;
 		MobileUnitGob *pmunt = SetSelectionTargets(puntHit->GetId(), wxTarget, wyTarget);
 		if (pmunt != NULL)
-			gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pmunt)->GetUnitType()])->sfxcAttack));
+			gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pmunt)->GetUnitType()])->sfxcAttack));
 	}
 }
 
@@ -1541,9 +1552,9 @@ void SimUIForm::PlaySelectSfx(Gob *pgob)
     if (gfGodMode)
         return;
     if (pgob->GetFlags() & kfGobStructure) {
-        gsndm.PlaySfx(((StructConsts *)gapuntc[((StructGob *)pgob)->GetUnitType()])->sfxSelect);
+        gsndm.PlayResponseSfx(((StructConsts *)gapuntc[((StructGob *)pgob)->GetUnitType()])->sfxSelect);
     } else if (pgob->GetSide() == gpplrLocal->GetSide()) {
-        gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pgob)->GetUnitType()])->sfxcSelect));
+        gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pgob)->GetUnitType()])->sfxcSelect));
     }
 }
 
@@ -1568,7 +1579,7 @@ void SimUIForm::SelectSameUnitTypes(Gob *pgob, bool fSfx)
     gsim.SelectSameUnitTypes((UnitGob *)pgob, &trc);
 
     if (gfGodMode || pgob->GetSide() == gpplrLocal->GetSide()) {
-        gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)
+        gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)
                 gapuntc[((UnitGob *)pgob)->GetUnitType()])->sfxcSelect));
     }
 }

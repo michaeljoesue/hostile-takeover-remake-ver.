@@ -131,8 +131,19 @@ bool SoundMgr::IsEnabled()
 // centre of the view, and quieter the further off screen they are (but
 // never silent, so the player can tell where a fight is).
 
+int gnVolumeBattle = 256;
+int gnVolumeResponses = 256;
+
+void SoundMgr::PlayResponseSfx(Sfx sfx)
+{
+	if (gnVolumeResponses > 0)
+		PlaySfx(sfx, 0, gnVolumeResponses);
+}
+
 void SoundMgr::PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy)
 {
+	if (gnVolumeBattle <= 0)
+		return;
 	Size sizPlayfield;
 	ggame.GetPlayfieldSize(&sizPlayfield);
 	WCoord wxView, wyView;
@@ -140,15 +151,16 @@ void SoundMgr::PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy)
 	int cxHalf = WcFromPc(sizPlayfield.cx) / 2;
 	int cyHalf = WcFromPc(sizPlayfield.cy) / 2;
 	if (cxHalf <= 0 || cyHalf <= 0) {
-		PlaySfx(sfx);
+		PlaySfx(sfx, 0, gnVolumeBattle);
 		return;
 	}
 	int dx = (int)wx - ((int)wxView + cxHalf);
 	int dy = (int)wy - ((int)wyView + cyHalf);
 
-	// Pan: the edges of the view are halfway, further off screen fully
+	// Pan: strongly to the side the sound is on - the edges of the view
+	// are nearly all the way (7/8), further off screen fully
 
-	int nPan = dx * 128 / cxHalf;
+	int nPan = dx * 224 / cxHalf;
 	if (nPan > 256)
 		nPan = 256;
 	if (nPan < -256)
@@ -166,7 +178,7 @@ void SoundMgr::PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy)
 	int nVolume = 256 - nOut * 192 / (256 * 4);
 	if (nVolume < 64)
 		nVolume = 64;
-	PlaySfx(sfx, nPan, nVolume);
+	PlaySfx(sfx, nPan, nVolume * gnVolumeBattle / 256);
 }
 
 void SoundMgr::PlaySfx(Sfx sfx, int nPan, int nVolume)

@@ -63,7 +63,13 @@
 	LABEL=kidcVolumeString (11 28 68 0) "Volume" kifntShadow
 	SLIDER=kidcVol (11 42 95 8)
 	LABEL=kidcVolLabel (121 42 17 0) "0" kifntShadow
-	CHECKBOX=kidcMute (11 62 67 0) "Mute" kifntShadow
+	LABEL=0 (11 58 95 0) "Battle Sounds" kifntShadow
+	SLIDER=kidcBattleVol (11 72 95 8)
+	LABEL=kidcBattleVolLabel (121 72 17 0) "0" kifntShadow
+	LABEL=0 (11 88 95 0) "Unit Responses" kifntShadow
+	SLIDER=kidcResponseVol (11 102 95 8)
+	LABEL=kidcResponseVolLabel (121 102 17 0) "0" kifntShadow
+	CHECKBOX=kidcMute (11 120 67 0) "Mute" kifntShadow
 	BUTTON=kidcOk (13 140 40 12) "OK" kifntButton
 	BUTTON=kidcCancel (60 140 40 12) "CANCEL" kifntButton
 

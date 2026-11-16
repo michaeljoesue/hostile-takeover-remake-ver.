@@ -191,13 +191,13 @@ void SdlSoundDevice::PlayAdpcm(int ichnl, byte *pb, word cb, int nPan,
 	pchnl->nStepIndex = 0;
 	pchnl->bSampleLast = 128;
 
-    // Constant-power-ish pan: centre is full in both ears, a sound far to
-    // one side is quiet in the other ear but not silent
+    // Pan: centre is full in both ears; to one side the far ear fades out
+    // almost completely (1/16 left at full pan) so the side is easy to tell
 
     nPan = SDL_clamp(nPan, -256, 256);
     nVolume = SDL_clamp(nVolume, 0, 256);
-    int nLeft = nPan <= 0 ? 256 : 256 - nPan * 3 / 4;
-    int nRight = nPan >= 0 ? 256 : 256 + nPan * 3 / 4;
+    int nLeft = nPan <= 0 ? 256 : 256 - nPan * 15 / 16;
+    int nRight = nPan >= 0 ? 256 : 256 + nPan * 15 / 16;
     pchnl->nGainLeft = nLeft * nVolume / 256;
     pchnl->nGainRight = nRight * nVolume / 256;
 

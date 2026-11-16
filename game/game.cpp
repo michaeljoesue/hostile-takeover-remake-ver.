@@ -218,6 +218,8 @@ bool Game::Init(int imm)
 	gfFullscreen = gprefsInit.fFullscreen != 0;
 	gfSmoothMotion = gprefsInit.fSmoothMotion != 0;
 	gfShowFPS = gprefsInit.fShowFPS != 0;
+	gnVolumeBattle = gprefsInit.nVolumeBattle > 256 ? 256 : gprefsInit.nVolumeBattle;
+	gnVolumeResponses = gprefsInit.nVolumeResponses > 256 ? 256 : gprefsInit.nVolumeResponses;
 
 	// Temp buffer used for several things, including decompression, TBitmap compiling.
 
@@ -1989,6 +1991,17 @@ void Game::LoadPreferences()
 
 	// Older preferences: keep them and default the newer settings
 
+	const int cbPrefs201 = (int)offsetof(Preferences, nVolumeBattle);
+	if (cbRead == cbPrefs201 && prefs.dwVersion == knVersionPreferences201 &&
+			prefs.cbSize == (dword)cbPrefs201) {
+		gprefsInit = prefs;
+		gprefsInit.dwVersion = knVersionPreferences;
+		gprefsInit.cbSize = sizeof(gprefsInit);
+		gprefsInit.nVolumeBattle = 256;
+		gprefsInit.nVolumeResponses = 256;
+		return;
+	}
+
 	const int cbPrefs200 = (int)offsetof(Preferences, fFullscreen);
 	if (cbRead == cbPrefs200 && prefs.dwVersion == knVersionPreferences200 &&
 			prefs.cbSize == (dword)cbPrefs200) {
@@ -1997,6 +2010,8 @@ void Game::LoadPreferences()
 		gprefsInit.cbSize = sizeof(gprefsInit);
 		gprefsInit.fFullscreen = 1;
 		gprefsInit.fSmoothMotion = 1;
+		gprefsInit.nVolumeBattle = 256;
+		gprefsInit.nVolumeResponses = 256;
 		return;
 	}
 
@@ -2010,6 +2025,8 @@ void Game::LoadPreferences()
 	gprefsInit.nScrollSpeed = 1.0;
 	gprefsInit.fFullscreen = 1;
 	gprefsInit.fSmoothMotion = 1;
+	gprefsInit.nVolumeBattle = 256;
+	gprefsInit.nVolumeResponses = 256;
 }
 
 void Game::SavePreferences()
@@ -2034,6 +2051,8 @@ void Game::SavePreferences()
 	prefs.nScrollSpeed = gnScrollSpeed;
 	prefs.fFullscreen = gfFullscreen ? 1 : 0;
 	prefs.fSmoothMotion = gfSmoothMotion ? 1 : 0;
+	prefs.nVolumeBattle = (word)gnVolumeBattle;
+	prefs.nVolumeResponses = (word)gnVolumeResponses;
 
 	if (gpdisp != NULL && m_immBest != -1) {
 		ModeInfo mode;
