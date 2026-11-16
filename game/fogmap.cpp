@@ -437,7 +437,6 @@ void FogMap::Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap 
 // soft tiles (coverage 0..255 per pixel) are cached by neighbourhood.
 
 const int kcSoftCacheMax = 4096;
-const byte kbOffMap = 16;	// GetFogAt: outside the map
 const int kcSoftLevels = 8;	// 0: clear, 1..7: shadow map applied that many times, 8: black
 
 static const byte s_abBayer4[16] = {
@@ -482,10 +481,11 @@ void FogMap::InitSoftEdges()
 
 byte FogMap::GetFogAt(int tx, int ty)
 {
-	// Off the map (nothing is drawn there; it's black) counts as fog
+	// Off the map counts as the nearest tile on it, so revealed ground
+	// shows right up to the map's edge and fog doesn't fade in there
 
-	if (tx < 0 || ty < 0 || tx >= m_ctxMap || ty >= m_ctyMap)
-		return kbOffMap;
+	tx = tx < 0 ? 0 : (tx >= m_ctxMap ? m_ctxMap - 1 : tx);
+	ty = ty < 0 ? 0 : (ty >= m_ctyMap ? m_ctyMap - 1 : ty);
 	return m_pbMap[ty * m_ctxMap + tx] & kbfFogMask;
 }
 
@@ -516,7 +516,7 @@ byte *FogMap::GetSoftTile(byte *abNeighbours)
 	for (int ty = 0; ty < 3; ty++) {
 		for (int tx = 0; tx < 3; tx++) {
 			byte bN = abNeighbours[ty * 3 + tx];
-			int *pnSrc = m_apnCoverage[bN == kbOffMap ? kbOpaque : bN];
+			int *pnSrc = m_apnCoverage[bN];
 			for (int y = 0; y < cy; y++)
 				memcpy(&pnCov[(ty * cy + y) * cxBig + tx * cx], &pnSrc[y * cx], cx * sizeof(int));
 		}
@@ -557,22 +557,6 @@ byte *FogMap::GetSoftTile(byte *abNeighbours)
 		for (int x = 0; x < cx; x++) {
 			int nCov = pnCov[(cy + y) * cxBig + cx + x];
 
-			// Fully dark at the edge of the map: past it nothing is drawn
-
-			int nDist = cSpan * 2;
-			for (int i = 0; i < 9; i++) {
-				if (abNeighbours[i] != kbOffMap)
-					continue;
-				int xT = cx + x, yT = cy + y;
-				int xL = (i % 3) * cx, yTop = (i / 3) * cy;
-				int dx = xT < xL ? xL - xT : (xT >= xL + cx ? xT - (xL + cx - 1) : 0);
-				int dy = yT < yTop ? yTop - yT : (yT >= yTop + cy ? yT - (yTop + cy - 1) : 0);
-				int d = dx > dy ? dx : dy;
-				if (d < nDist)
-					nDist = d;
-			}
-			if (nDist < cSpan * 2)
-				nCov += (256 - nCov) * (cSpan * 2 - nDist) / (cSpan * 2);
 			if (nCov > 256)
 				nCov = 256;
 

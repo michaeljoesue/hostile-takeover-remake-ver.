@@ -2139,13 +2139,14 @@ void MiniMapControl::RedrawTRect(TRect *ptrc)
 	}
 }
 
-// Fog coverage of a tile, 0 (revealed) .. 256 (unexplored); off the map
-// counts as unexplored
+// Fog coverage of a tile, 0 (revealed) .. 256 (unexplored)
 
 int MiniMapControl::FogCoverage(int tx, int ty)
 {
-	if (tx < 0 || ty < 0 || tx >= m_ctx || ty >= m_cty)
-		return 256;
+	// Off the map counts as the nearest tile on it
+
+	tx = tx < 0 ? 0 : (tx >= m_ctx ? m_ctx - 1 : tx);
+	ty = ty < 0 ? 0 : (ty >= m_cty ? m_cty - 1 : ty);
 	int nBits = m_pbFogMap[ty * m_ctx + tx] & kbfFogMask;
 	int cRevealed = (nBits & 1) + ((nBits >> 1) & 1) + ((nBits >> 2) & 1) + ((nBits >> 3) & 1);
 	return (4 - cRevealed) * 64;
