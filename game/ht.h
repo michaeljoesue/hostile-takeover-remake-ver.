@@ -3167,14 +3167,6 @@ private:
     void UpdateHoverCursor(int x, int y, word ffMods);
     void ScrollViewBy(WCoord dwx, WCoord dwy);
 
-    // Control groups: Ctrl+1..9 sets, 1..9 selects
-    enum { kcGroups = 10, kcgidGroupMax = 128 };
-    Gid m_aagidGroup[kcGroups][kcgidGroupMax];
-    int m_acgidGroup[kcGroups];
-    int m_nGroupLast;
-    long m_tGroupLast;
-    void SetGroup(int nGroup, bool fAdd);
-    void SelectGroup(int nGroup);
     int GetOwnSelection(Gid *agid, int cgidMax, bool fMobileOnly);
 
     bool m_fAttackMoveArmed;

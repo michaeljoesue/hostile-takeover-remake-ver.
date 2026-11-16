@@ -71,9 +71,6 @@ SimUIForm::SimUIForm()
     m_xPanLast = 0;
     m_yPanLast = 0;
     m_fAttackMoveArmed = false;
-    memset(m_acgidGroup, 0, sizeof(m_acgidGroup));
-    m_nGroupLast = -1;
-    m_tGroupLast = 0;
 }
 
 SimUIForm::~SimUIForm()
@@ -604,9 +601,6 @@ bool SimUIForm::EventProc(Event *pevt)
 }
 
 // Hotkeys on the battlefield:
-//   1-9          select control group (twice quickly: also centre on it)
-//   Ctrl+1-9     make the selection control group 1-9
-//   Shift+1-9    add the selection to control group 1-9
 //   A            attack-move: the next left-click is the destination
 //   S            stop
 //   Space        centre on the last "under attack" alert
@@ -618,18 +612,6 @@ bool SimUIForm::OnBattlefieldKey(Event *pevt)
     int chr = pevt->chr;
     if (chr >= 'A' && chr <= 'Z')
         chr += 'a' - 'A';
-
-    if (chr >= '1' && chr <= '9') {
-        int nGroup = chr - '0';
-        if (ffMods & kfModCtrl) {
-            SetGroup(nGroup, false);
-        } else if (ffMods & kfModShift) {
-            SetGroup(nGroup, true);
-        } else {
-            SelectGroup(nGroup);
-        }
-        return true;
-    }
 
     if (ffMods & (kfModCtrl | kfModAlt))
         return false;
@@ -712,66 +694,6 @@ int SimUIForm::GetOwnSelection(Gid *agid, int cgidMax, bool fMobileOnly)
         agid[cgid++] = pgobT->GetId();
     }
     return cgid;
-}
-
-void SimUIForm::SetGroup(int nGroup, bool fAdd)
-{
-    Gid *pgid = new Gid[kcgidGroupMax];
-    int cgid = GetOwnSelection(pgid, kcgidGroupMax, false);
-    if (cgid == 0) {
-        delete[] pgid;
-        return;
-    }
-    if (!fAdd)
-        m_acgidGroup[nGroup] = 0;
-    for (int i = 0; i < cgid; i++) {
-        bool fHave = false;
-        for (int j = 0; j < m_acgidGroup[nGroup]; j++) {
-            if (m_aagidGroup[nGroup][j] == pgid[i])
-                fHave = true;
-        }
-        if (!fHave && m_acgidGroup[nGroup] < kcgidGroupMax)
-            m_aagidGroup[nGroup][m_acgidGroup[nGroup]++] = pgid[i];
-    }
-    delete[] pgid;
-}
-
-void SimUIForm::SelectGroup(int nGroup)
-{
-    // Select the members still alive
-
-    bool fAny = false;
-    long tNow = HostGetTickCount();
-    WCoord wxSum = 0, wySum = 0;
-    int cSum = 0;
-    int cgidLive = 0;
-    for (int i = 0; i < m_acgidGroup[nGroup]; i++) {
-        Gob *pgob = ggobm.GetGob(m_aagidGroup[nGroup][i]);
-        if (pgob == NULL || (pgob->GetFlags() & kfGobUnit) == 0 ||
-                ((UnitGob *)pgob)->GetOwner() != gpplrLocal)
-            continue;
-        m_aagidGroup[nGroup][cgidLive++] = m_aagidGroup[nGroup][i];
-        if (!fAny) {
-            gsim.ClearGobSelection();
-            fAny = true;
-        }
-        ((UnitGob *)pgob)->Select(true);
-        WPoint wpt;
-        pgob->GetCenter(&wpt);
-        wxSum += wpt.wx;
-        wySum += wpt.wy;
-        cSum++;
-    }
-    m_acgidGroup[nGroup] = cgidLive;
-    if (!fAny)
-        return;
-
-    // Pressed twice quickly: centre on the group
-
-    if (m_nGroupLast == nGroup && tNow - m_tGroupLast < kctDoubleClick)
-        CenterViewOn(wxSum / cSum, wySum / cSum);
-    m_nGroupLast = nGroup;
-    m_tGroupLast = tNow;
 }
 
 void SimUIForm::CenterViewOn(WCoord wx, WCoord wy)

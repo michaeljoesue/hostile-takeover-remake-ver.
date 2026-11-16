@@ -34,7 +34,7 @@ The engine has been updated from its 2007 handheld roots:
   draws over it later still covers it.
 - **Fullscreen or windowed**, resizable window; Alt+Enter or F11 switches.
 - **Modern RTS controls** in place of the original one-button Palm controls:
-  right-click orders, box and Shift selection, control groups, attack-move,
+  right-click orders, box and Shift selection, attack-move,
   stop, middle-drag panning and wheel scrolling (see Playing below).
 - **Smooth motion.** The simulation still runs at its original fixed rate
   (so gameplay is unchanged), but units and projectiles are drawn
@@ -141,8 +141,6 @@ Modern RTS controls:
 | A, then left-click | Attack-move: units fight enemies they meet, including defence towers in range (buildings without weapons are left alone), then carry on |
 | Ctrl+Alt+right-click | Red Alert style: on one of your (or an ally's) units, the selected units guard it: they follow it and fight enemies and defence towers near it, and keep guarding a miner while it's inside a Processor. On an enemy: attack. On the ground: attack-move. Shift queues it |
 | S | Stop |
-| Ctrl+1 to 9 | Make the selection control group 1 to 9 (Shift+number adds to it) |
-| 1 to 9 | Select a control group; press twice quickly to go to it |
 | Space | Go to the last "under attack" alert |
 | Esc | Close the open menu or dialog; otherwise cancel attack-move or placement, otherwise deselect |
 | Middle-drag | Pan the map |

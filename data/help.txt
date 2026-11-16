@@ -98,7 +98,6 @@ A, then left-click: attack-move. Units fight what they meet on the way, then car
 Ctrl+right-click: force attack, even your own or an ally's units.<BR>
 Ctrl+Alt+right-click on one of your units: the selected units guard it, following it and fighting enemies near it. On an enemy it attacks; on the ground it attack-moves.<BR>
 S: stop. Esc: cancel attack-move or building placement, otherwise clear the selection.<BR>
-Ctrl+1 to 9: make the selection a group. 1 to 9: select the group; press twice to go to it.<BR>
 Space: go to the last "under attack" alert.</H2>
 <HR>
 <A NAME="scrollmap"><H1>SCROLLING THE MAP </H1></A>

@@ -835,9 +835,8 @@ bool MobileUnitBuildForm::OnPenEvent(Event *pevt)
     return Form::OnPenEvent(pevt);
 }
 
-// The menu closes on any key (auto takedown), so a key like 1-9 (control
-// groups) goes on to the battlefield. Shift / Ctrl / Alt pressed on their
-// own don't close it (SDL key codes of keys without a character have bit
+// The menu closes on any key (auto takedown), and the key goes on to the
+// battlefield. Shift / Ctrl / Alt pressed on their own don't close it (SDL key codes of keys without a character have bit
 // 30 set).
 
 bool MobileUnitBuildForm::OnKeyTest(Event *pevt)
