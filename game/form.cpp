@@ -10,6 +10,7 @@ Form::Form()
 {
 	m_iclrBack = kiclrFormBackground;
 	m_pctlCapture = NULL;
+	m_pctlHover = NULL;
 	m_pfrmm = NULL;
 	m_ptbm = NULL;
 	m_wf = 0;
@@ -612,6 +613,48 @@ bool Form::IsControlInside(Control *pctl)
 {
 	if (m_pctlCapture != NULL && (m_wf & kfFrmPenInside))
 		return m_pctlCapture == pctl;
+	return m_pctlHover != NULL && m_pctlHover == pctl;
+}
+
+void Form::SetHoverControl(Control *pctl)
+{
+	if (pctl == m_pctlHover)
+		return;
+	if (m_pctlHover != NULL)
+		m_pctlHover->Invalidate();
+	m_pctlHover = pctl;
+	if (m_pctlHover != NULL)
+		m_pctlHover->Invalidate();
+}
+
+// Mouse-style buttons: the button under the mouse is highlighted and a
+// left click acts on it at once. No press-and-drag, no form dragging.
+
+bool Form::MouseButtonPenEvent(Event *pevt)
+{
+	ButtonControl *pbtn = NULL;
+	Control *pctl = HitTestControls(pevt);
+	if (pctl != NULL && (pctl->GetFlags() & (kfCtlVisible | kfCtlDisabled)) == kfCtlVisible)
+		pbtn = dynamic_cast<ButtonControl *>(pctl);
+
+	switch (pevt->eType) {
+	case penHoverEvent:
+	case penMoveEvent:
+		SetHoverControl(pbtn);
+		return pbtn != NULL;
+
+	case penDownEvent:
+		if (pbtn == NULL)
+			return false;
+		gsndm.PlaySfx(ksfxGuiButtonTap);
+		SetHoverControl(NULL);
+		OnControlSelected(pbtn->GetId());
+		return true;
+
+	case penUpEvent:
+	case penHoldEvent:
+		return pbtn != NULL;
+	}
 	return false;
 }
 

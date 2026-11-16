@@ -1053,6 +1053,7 @@ UnitGob *UnitMenu::GetOwner()
 bool UnitMenu::DoModal(int *pnResult, Sfx sfxShow, Sfx sfxHide)
 {
 	gtimm.AddTimer(this, 25);
+	SetHoverControl(NULL);
 	bool f = Form::DoModal(pnResult, sfxShow, sfxHide);
 	gtimm.RemoveTimer(this);
 	return f;
@@ -1269,7 +1270,24 @@ void UnitMenu::OnPaint(DibBitmap *pbm)
 	Form::OnPaint(pbm);
 }
 
-// Treat everything except a tap on one of the button controls as a 'miss'
+// The button under the mouse is highlighted and a click acts on it
+
+bool UnitMenu::OnPenEvent(Event *pevt)
+{
+	MouseButtonPenEvent(pevt);
+	return true;
+}
+
+// Right-click anywhere closes the menu
+
+bool UnitMenu::OnRightDown(Event *pevt)
+{
+	SetHoverControl(NULL);
+	EndForm(kidcCancel);
+	return true;
+}
+
+// Treat everything except a click on one of the button controls as a 'miss'
 // and auto-takedown.
 
 bool UnitMenu::OnHitTest(Event *pevt)

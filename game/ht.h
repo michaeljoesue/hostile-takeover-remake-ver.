@@ -2307,6 +2307,8 @@ public:
 	void EndForm(int nResult = 0);
 	Control *GetControlPtr(word idc);
 	bool IsControlInside(Control *pctl);
+	bool MouseButtonPenEvent(Event *pevt);
+	void SetHoverControl(Control *pctl);
 	void SetUserDataPtr(void *pUserData);
 	void *GetUserDataPtr();
     Form *FindPen2Form();
@@ -2321,6 +2323,7 @@ protected:
 	FormMgr *m_pfrmm;
 	TBitmap *m_ptbm;
 	Control *m_pctlCapture;
+	Control *m_pctlHover;
 	Rect m_rc;
 	int m_nResult;
 	word m_wf;
@@ -5708,6 +5711,8 @@ public:
 	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
 	virtual void OnPaint(DibBitmap *pbm);
 	virtual bool OnHitTest(Event *pevt);
+	virtual bool OnPenEvent(Event *pevt);
+	virtual bool OnRightDown(Event *pevt);
 
 	// Timer overrides
 

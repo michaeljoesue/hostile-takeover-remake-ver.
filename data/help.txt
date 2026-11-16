@@ -90,7 +90,7 @@ The + and - keys on the number pad change the game speed while playing.<BR>
 Clicking the Default button will restore these settings to their default values.</H2>
 <HR>
 <A NAME="howtoplay"><H1>GAME PLAY CONTROLS </H1></A>
-<H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly: left-click a unit to select it, then right-click where it should go. To move several units, <A HREF="#multiselect">select</A> them, then right-click the destination. To attack, select your units, then right-click the enemy. Left-click one of your buildings to open its menu; right-click one of your units to open its menu.<BR>
+<H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly: left-click a unit to select it, then right-click where it should go. To move several units, <A HREF="#multiselect">select</A> them, then right-click the destination. To attack, select your units, then right-click the enemy. Left-click one of your buildings to open its menu; right-click one of your units to open its menu. Point at a menu button to light it up and left-click it to choose it; right-click anywhere to close the menu. The "Are you sure?" box for selling a building works the same way, and right-clicking it answers No.<BR>
 <BR>
 MORE ORDERS<BR>
 Shift+right-click: queue the order after the ones being carried out.<BR>
@@ -131,7 +131,7 @@ Grey Wrench: Indicates that the selected resource is not damaged.<BR>
 White Dollar Sign: Can be used to sell a resource. Your entire investment will not be returned. However, sometimes it is necessary to sell one resource to create a more critical one. Be aware that selling a Galaxite Warehouse will lose any credits it contains.<BR>
 <BR>
 PLACE BUILDING ICONS<BR>
-When you click the HQ and select build, the Order Building screen is displayed. Point at a building to see its details; right-click anywhere outside the list to close the screen. Once you click something to build, its footprint follows the mouse. White markings mean it can be built there; red markings mean it can't. Left-click to place it. Right-click or press Esc to cancel.<BR>
+When you click the HQ and choose the hammer, the Order Building screen is displayed. Point at a building to see its details; right-click anywhere outside the list to close the screen. Once you click something to build, its footprint follows the mouse. White markings mean it can be built there; red markings mean it can't. Left-click to place it. Right-click or press Esc to cancel.<BR>
 <BR>
 </H2>
 <HR>

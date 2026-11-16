@@ -234,14 +234,34 @@ bool StructGob::SaveState(Stream *pstm)
 	return UnitGob::SaveState(pstm);
 }
 
-// are you sure dialog used to confirm structure recycling
+// are you sure dialog used to confirm structure recycling. Mouse-style: the
+// button under the mouse is highlighted, a click acts on it, it can't be
+// dragged, and a right-click anywhere answers No.
+
+class ConfirmForm : public DialogForm
+{
+public:
+	virtual bool OnPenEvent(Event *pevt) {
+		MouseButtonPenEvent(pevt);
+		return true;
+	}
+	virtual bool OnRightDown(Event *pevt) {
+		SetHoverControl(NULL);
+		EndForm(kidcCancel);
+		return true;
+	}
+	virtual bool DoModal(int *pnResult = NULL, Sfx sfxShow = ksfxGuiFormShow, Sfx sfxHide = ksfxGuiFormHide) {
+		SetHoverControl(NULL);
+		return DialogForm::DoModal(pnResult, sfxShow, sfxHide);
+	}
+};
 
 bool StructGob::LoadConfirmation()
 {
 	if (s_pfrmConfirmation != NULL)
 		return true;
 
-	s_pfrmConfirmation = new DialogForm();
+	s_pfrmConfirmation = new ConfirmForm();
 	if (s_pfrmConfirmation == NULL)
 		return false;
 
