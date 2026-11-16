@@ -70,7 +70,6 @@ SimUIForm::SimUIForm()
     m_fPanning = false;
     m_xPanLast = 0;
     m_yPanLast = 0;
-    m_fAttackMoveArmed = false;
 }
 
 SimUIForm::~SimUIForm()
@@ -601,10 +600,9 @@ bool SimUIForm::EventProc(Event *pevt)
 }
 
 // Hotkeys on the battlefield:
-//   A            attack-move: the next left-click is the destination
 //   S            stop
 //   Space        centre on the last "under attack" alert
-//   Esc          cancel attack-move / building placement, else deselect
+//   Esc          cancel building placement, else deselect
 
 bool SimUIForm::OnBattlefieldKey(Event *pevt)
 {
@@ -617,14 +615,6 @@ bool SimUIForm::OnBattlefieldKey(Event *pevt)
         return false;
 
     switch (chr) {
-    case 'a':
-        {
-            Gid agid[1];
-            if (GetOwnSelection(agid, 1, true) != 0)
-                SetAttackMoveArmed(true);
-        }
-        return true;
-
     case 's':
         {
             Gid *pgid = new Gid[kcpgobMax];
@@ -641,9 +631,7 @@ bool SimUIForm::OnBattlefieldKey(Event *pevt)
         return true;
 
     case 0x1b: // Esc
-        if (m_fAttackMoveArmed) {
-            SetAttackMoveArmed(false);
-        } else if (gpfrmPlace != NULL && gpfrmPlace->IsBusy()) {
+        if (gpfrmPlace != NULL && gpfrmPlace->IsBusy()) {
             gpfrmPlace->OnControlSelected(kidcCancel);
         } else {
             gsim.ClearGobSelection();
@@ -651,29 +639,6 @@ bool SimUIForm::OnBattlefieldKey(Event *pevt)
         return true;
     }
     return false;
-}
-
-void SimUIForm::SetAttackMoveArmed(bool fArmed)
-{
-    m_fAttackMoveArmed = fArmed;
-    HostSetTargetCursor(fArmed);
-}
-
-// A + left-click: the selected units move there, attacking enemies they meet
-// on the way. Clicking an enemy attacks it.
-
-void SimUIForm::AttackMoveTo(int x, int y)
-{
-    SetAttackMoveArmed(false);
-    WCoord wxTarget, wyTarget;
-    Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
-    if (pgobHit != NULL && pgobHit->GetSide() != gpplrLocal->GetSide()) {
-        MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, kfMasAttack);
-        return;
-    }
-    gfAttackMoveOrder = true;
-    MoveOrAttackOrSelect(NULL, wxTarget, wyTarget, kfMasMove);
-    gfAttackMoveOrder = false;
 }
 
 // The player's selected units (and towers), optionally mobile units only
@@ -726,7 +691,6 @@ void SimUIForm::OnGuardClick(int x, int y, bool fQueue)
 {
     if (gpfrmPlace != NULL && gpfrmPlace->IsBusy())
         return;
-    SetAttackMoveArmed(false);
 
     WCoord wxTarget, wyTarget;
     Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
@@ -768,13 +732,6 @@ void SimUIForm::OnRightClick(int x, int y, bool fQueue, bool fForce)
 {
     if (gpfrmPlace != NULL && gpfrmPlace->IsBusy())
         return;
-
-    // Right-click cancels a pending attack-move
-
-    if (m_fAttackMoveArmed) {
-        SetAttackMoveArmed(false);
-        return;
-    }
 
     WCoord wxTarget, wyTarget;
     Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
@@ -825,10 +782,8 @@ bool SimUIForm::OnPenEvent(Event *pevt)
         return true;
     }
 
-    if (pevt->eType == penHoverEvent) {
-        UpdateHoverCursor(pevt->x, pevt->y, pevt->ffMods);
+    if (pevt->eType == penHoverEvent)
         return true;
-    }
 
     bool fScrollOnly = false;
     if (gpfrmPlace != NULL && gpfrmPlace->IsBusy()) {
@@ -1193,52 +1148,6 @@ MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord w
 	}
 
 	return pmuntSetTarget;
-}
-
-// The cursor shows what a click would do: crosshair over an enemy (or any
-// unit with Ctrl) when you have units selected, a hand over a unit or
-// building you could select, "no entry" over cliffs, walls and water the
-// selected units can't reach. Nothing under unexplored fog is given away.
-
-void SimUIForm::UpdateHoverCursor(int x, int y, word ffMods)
-{
-    int ncur = kcurDefault;
-    if (m_fAttackMoveArmed) {
-        ncur = kcurTarget;
-    } else if (gpfrmPlace == NULL || !gpfrmPlace->IsBusy()) {
-        WCoord wx, wy;
-        Gob *pgobHit = HitTestGob(x, y, &wx, &wy);
-        TCoord tx = TcFromWc(wx);
-        TCoord ty = TcFromWc(wy);
-        TCoord ctx, cty;
-        ggobm.GetMapSize(&ctx, &cty);
-        FogMap *pfogm = gsim.GetLevel()->GetFogMap();
-        bool fUnexplored = tx < 0 || ty < 0 || tx >= ctx || ty >= cty ||
-                IsFogOpaque(pfogm->GetMapPtr()[ty * ctx + tx]);
-        if (!fUnexplored) {
-            // Are any of your own mobile units selected?
-
-            bool fSelection = false;
-            for (Gob *pgob = ggobm.GetFirstGob(); pgob != NULL; pgob = ggobm.GetNextGob(pgob)) {
-                if ((pgob->GetFlags() & (kfGobSelected | kfGobMobileUnit)) == (kfGobSelected | kfGobMobileUnit) &&
-                        ((UnitGob *)pgob)->GetOwner() == gpplrLocal) {
-                    fSelection = true;
-                    break;
-                }
-            }
-            if (pgobHit != NULL && (pgobHit->GetFlags() & kfGobUnit) && pgobHit->GetType() != kgtReplicator) {
-                UnitGob *punt = (UnitGob *)pgobHit;
-                bool fEnemy = !punt->IsAlly(gpplrLocal->GetSide());
-                if (fSelection && (fEnemy || (ffMods & kfModCtrl)))
-                    ncur = kcurTarget;
-                else
-                    ncur = kcurSelect;
-            } else if (fSelection && gsim.GetLevel()->GetTerrainMap()->GetTerrainType(tx, ty) >= kttWall) {
-                ncur = kcurBlocked;
-            }
-        }
-    }
-    HostSetCursor(ncur);
 }
 
 Gob *SimUIForm::HitTestGob(int x, int y, WCoord *pwx, WCoord *pwy)

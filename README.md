@@ -34,7 +34,7 @@ The engine has been updated from its 2007 handheld roots:
   draws over it later still covers it.
 - **Fullscreen or windowed**, resizable window; Alt+Enter or F11 switches.
 - **Modern RTS controls** in place of the original one-button Palm controls:
-  right-click orders, box and Shift selection, attack-move,
+  right-click orders, box and Shift selection, attack-move (Ctrl+Alt+right-click),
   stop, middle-drag panning and wheel scrolling (see Playing below).
 - **Smooth motion.** The simulation still runs at its original fixed rate
   (so gameplay is unchanged), but units and projectiles are drawn
@@ -146,7 +146,7 @@ Modern RTS controls:
 | | |
 |---|---|
 | Left-click | Select a unit or building (enemies too, to look at them). Clicking one of your buildings also opens its menu. Clicking the ground deselects. |
-| Unit build menus | Point at a unit to see what it is; left-click orders one, right-click cancels one from the queue |
+| Build menus | The selection box and the info follow the mouse. Buildings: left-click starts placing it. Units: left-click orders one, right-click on it cancels one from the queue. Right-click anywhere else closes the menu |
 | Placing a building | After Build, the building follows the mouse: left-click puts it down (white tiles: it fits; red: it doesn't), right-click or Esc cancels |
 | Drag a box | Select your fighting units in it; miners and defence towers are left out unless the box holds nothing else (Shift+drag adds to the selection) |
 | Double-click, Ctrl+click | Select all your units of that type on screen |
@@ -154,20 +154,16 @@ Modern RTS controls:
 | Right-click | Move to the ground, attack an enemy, or open the menu of one of your units or buildings; cancels building placement |
 | Shift+right-click | Queue a move or attack: units carry it out after their current orders (up to 16) |
 | Ctrl+right-click | Force attack: attack the unit or building clicked, even your own or an ally's (Ctrl+Shift queues it). Destroying a friend isn't counted as a kill |
-| A, then left-click | Attack-move: units fight enemies they meet, including defence towers in range (buildings without weapons are left alone), then carry on |
-| Ctrl+Alt+right-click | Red Alert style: on one of your (or an ally's) units, the selected units guard it: they follow it and fight enemies and defence towers near it, and keep guarding a miner while it's inside a Processor. On an enemy: attack. On the ground: attack-move. Shift queues it |
+| Ctrl+Alt+right-click | Red Alert style: on the ground, attack-move: units fight enemies they meet, including defence towers in range (buildings without weapons are left alone), then carry on. On an enemy: attack. On one of your (or an ally's) units, the selected units guard it: they follow it and fight enemies and defence towers near it, and keep guarding a miner while it's inside a Processor. Shift queues it |
 | S | Stop |
 | Space | Go to the last "under attack" alert |
-| Esc | Close the open menu or dialog; otherwise cancel attack-move or placement, otherwise deselect |
+| Esc | Close the open menu or dialog; otherwise cancel placement, otherwise deselect |
 | Middle-drag | Pan the map |
 | Mouse wheel | Scroll the map up and down (Shift+wheel: sideways) |
-
-The cursor shows what a click would do: a crosshair over an enemy (or any
-unit while Ctrl is held) when you have units selected, a hand over a unit
-or building, and a "no entry" sign over cliffs and walls the selected units
-can't reach. Double-click (within half a second) selects all units of that
-type on screen.
 | Arrow keys, mouse at the edge, mini map | Scroll the map |
+
+Double-click (within half a second) selects all units of that type on
+screen.
 
 The mini map (bottom right) is about a third of the screen's height
 whatever the map's size, and shows units moving smoothly. Its terrain is

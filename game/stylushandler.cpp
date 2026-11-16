@@ -66,14 +66,6 @@ void SimUIForm::StylusHandler::OnPenDown(Event *pevt)
     // Enter dragging mode; this'll cause OnPenDrag to be called until
     // that mode exits.
 
-    // A, then click: attack-move
-
-    if (m_psui->IsAttackMoveArmed()) {
-        m_psui->AttackMoveTo(pevt->x, pevt->y);
-        m_fDragging = false;
-        return;
-    }
-
 	m_fDragging = true;
     m_ffMods = pevt->ffMods;
 

@@ -17,10 +17,13 @@ public:
 	virtual void OnControlSelected(word idc);
 	virtual void OnControlNotify(word idc, int nNotify);
 	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
+	virtual bool OnPenEvent(Event *pevt);
+	virtual bool OnRightDown(Event *pevt);
 
 private:
 	BuilderGob *m_pgobOwner;
 	bool m_fLimitReached;
+	int m_iliHover;
 };
 
 
@@ -312,6 +315,7 @@ void StructureBuildForm::SetOwner(BuilderGob *pgobOwner)
 
 	m_wf |= kfFrmAutoTakedown | kfFrmNoEcom;
 	m_pgobOwner = pgobOwner;
+	m_iliHover = -1;
 
 	BuildListControl *plstc = (BuildListControl *)GetControlPtr(kidcList);
 	plstc->Clear();
@@ -500,9 +504,46 @@ void StructureBuildForm::OnControlNotify(word idc, int nNotify)
     }
 
     ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
-    if (plstc->GetSelectedItemIndex() == -1) {
+    ListItem *pli = plstc->GetSelectedItem();
+    if (pli == NULL) {
 		GetControlPtr(kidcOk)->Show(false);
+		return;
     }
+    UpdateStructureInfo(pli);
+
+    // A click on a building starts placing it (as Ok does)
+
+    if (plstc->IsUserClick()) {
+        if (!pli->fDisabled && !m_fLimitReached) {
+            OnControlSelected(kidcOk);
+        } else {
+            gsndm.PlaySfx(ksfxGuiFormHide);
+        }
+    }
+}
+
+// The selection box and the info follow the building under the mouse
+
+bool StructureBuildForm::OnPenEvent(Event *pevt)
+{
+    if (pevt->eType == penHoverEvent) {
+        ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
+        int ili = plstc->HitTestItem(pevt->x, pevt->y);
+        if (ili != m_iliHover) {
+            m_iliHover = ili;
+            if (ili >= 0)
+                plstc->HoverSelect(ili);
+        }
+    }
+    return Form::OnPenEvent(pevt);
+}
+
+// Right-click anywhere closes the menu
+
+bool StructureBuildForm::OnRightDown(Event *pevt)
+{
+    OnControlSelected(kidcCancel);
+    return true;
 }
 
 void StructureBuildForm::OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd)

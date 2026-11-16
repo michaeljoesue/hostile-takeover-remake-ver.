@@ -817,8 +817,8 @@ void MobileUnitBuildForm::OnControlNotify(word idc, int nNotify)
     }
 }
 
-// The info panel shows the unit under the mouse (a click orders it, so it
-// can't be selected just to look); back to the selected one off the list
+// The selection box and the info panel follow the unit under the mouse
+// (a click orders it)
 
 bool MobileUnitBuildForm::OnPenEvent(Event *pevt)
 {
@@ -827,9 +827,8 @@ bool MobileUnitBuildForm::OnPenEvent(Event *pevt)
         int ili = plstc->HitTestItem(pevt->x, pevt->y);
         if (ili != m_iliHover) {
             m_iliHover = ili;
-            ListItem *pli = ili >= 0 ? plstc->GetItem(ili) : plstc->GetSelectedItem();
-            if (pli != NULL)
-                UpdateUnitInfo(pli);
+            if (ili >= 0)
+                plstc->HoverSelect(ili);
         }
     }
     return Form::OnPenEvent(pevt);
@@ -847,14 +846,17 @@ bool MobileUnitBuildForm::OnKeyTest(Event *pevt)
     return Form::OnKeyTest(pevt);
 }
 
-// Right click on an item cancels one of it from the queue
+// Right click on an item cancels one of it from the queue; anywhere else
+// closes the menu
 
 bool MobileUnitBuildForm::OnRightDown(Event *pevt)
 {
     ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
     int ili = plstc->HitTestItem(pevt->x, pevt->y);
-    if (ili < 0)
-        return false;
+    if (ili < 0) {
+        OnControlSelected(kidcCancel);
+        return true;
+    }
     if (plstc->GetSelectedItemIndex() != ili)
         plstc->Select(ili, true);
     UnitType ut = UnitTypeFromPVoid(plstc->GetSelectedItemData());

@@ -94,10 +94,9 @@ Clicking the Default button will restore these settings to their default values.
 <BR>
 MORE ORDERS<BR>
 Shift+right-click: queue the order after the ones being carried out.<BR>
-A, then left-click: attack-move. Units fight what they meet on the way, then carry on.<BR>
 Ctrl+right-click: force attack, even your own or an ally's units.<BR>
-Ctrl+Alt+right-click on one of your units: the selected units guard it, following it and fighting enemies near it. On an enemy it attacks; on the ground it attack-moves.<BR>
-S: stop. Esc: cancel attack-move or building placement, otherwise clear the selection.<BR>
+Ctrl+Alt+right-click on the ground: attack-move. Units fight what they meet on the way, then carry on. On an enemy it attacks; on one of your units, the selected units guard it, following it and fighting enemies near it.<BR>
+S: stop. Esc: cancel building placement, otherwise clear the selection.<BR>
 Space: go to the last "under attack" alert.</H2>
 <HR>
 <A NAME="scrollmap"><H1>SCROLLING THE MAP </H1></A>
@@ -132,7 +131,7 @@ Grey Wrench: Indicates that the selected resource is not damaged.<BR>
 White Dollar Sign: Can be used to sell a resource. Your entire investment will not be returned. However, sometimes it is necessary to sell one resource to create a more critical one. Be aware that selling a Galaxite Warehouse will lose any credits it contains.<BR>
 <BR>
 PLACE BUILDING ICONS<BR>
-When you click the HQ and select build, the Order Building screen is displayed. Once you choose something to build, its footprint follows the mouse. White markings mean it can be built there; red markings mean it can't. Left-click to place it. Right-click or press Esc to cancel.<BR>
+When you click the HQ and select build, the Order Building screen is displayed. Point at a building to see its details; right-click anywhere outside the list to close the screen. Once you click something to build, its footprint follows the mouse. White markings mean it can be built there; red markings mean it can't. Left-click to place it. Right-click or press Esc to cancel.<BR>
 <BR>
 </H2>
 <HR>

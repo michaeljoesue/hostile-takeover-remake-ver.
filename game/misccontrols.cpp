@@ -1395,6 +1395,26 @@ void ListControl::Select(int iliSelect, bool fOnly, bool fMakeCenter)
 }
 
 
+// The mouse is over an item (build menus): the selection box follows it.
+// Unlike Select, the list doesn't scroll and no sound plays; it isn't a
+// user click.
+
+void ListControl::HoverSelect(int iliSelect)
+{
+	bool fChange = false;
+	int ili = 0;
+	for (ListItem *pli = m_pliFirst; pli != NULL; pli = pli->pliNext, ili++) {
+		if (pli->fSelected != (ili == iliSelect)) {
+			pli->fSelected = (ili == iliSelect);
+			fChange = true;
+		}
+	}
+	if (!fChange)
+		return;
+	Invalidate();
+	m_pceh->OnControlNotify(m_idc, knNotifySelectionChange);
+}
+
 // Index of the item under (x, y) (form manager coordinates, like pen
 // events), or -1
 

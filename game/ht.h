@@ -2771,6 +2771,7 @@ public:
 //	ListItem *EnumItemPtr(Enum *penum);
 	int GetSelectedItemIndex();
 	int HitTestItem(int x, int y);	// item under the point (form manager coords) or -1
+	void HoverSelect(int ili);	// select an item the mouse is over: no scrolling, no sound
 	ListItem *GetItem(int iItem);
 	bool IsUserClick() { return m_fUserClick; }	// notifying because of a click
 	ListItem *GetSelectedItem();
@@ -3134,9 +3135,6 @@ public:
 
     // Keyboard commands (InputUIForm passes keys on)
     bool OnBattlefieldKey(Event *pevt);
-    bool IsAttackMoveArmed() { return m_fAttackMoveArmed; }
-    void SetAttackMoveArmed(bool fArmed);
-    void AttackMoveTo(int x, int y);
     void CenterViewOn(WCoord wx, WCoord wy);
 
     class PenHandler {
@@ -3200,12 +3198,10 @@ private:
             WCoord wyTarget);
     void OnRightClick(int x, int y, bool fQueue = false, bool fForce = false);
     void OnGuardClick(int x, int y, bool fQueue);
-    void UpdateHoverCursor(int x, int y, word ffMods);
     void ScrollViewBy(WCoord dwx, WCoord dwy);
 
     int GetOwnSelection(Gid *agid, int cgidMax, bool fMobileOnly);
 
-    bool m_fAttackMoveArmed;
 
     // Middle-button panning
     bool m_fPanning;
@@ -7576,12 +7572,6 @@ bool HostGetEvent(Event *pevt, long ctWait = -1);
 void HostOutputDebugString(char *pszFormat, ...);
 long HostGetTickCount();
 dword HostGetModifiers();
-void HostSetTargetCursor(bool fTarget);
-#define kcurDefault 0	// arrow
-#define kcurTarget 1	// crosshair: attack, attack-move, force attack
-#define kcurSelect 2	// hand: a unit or building to select
-#define kcurBlocked 3	// no entry: the selected units can't go there
-void HostSetCursor(int ncur);
 bool HostGetMousePosition(int *px, int *py);	// game screen pixels
 long HostGetMillisecondCount();
 dword HostGetCurrentKeyState(dword keyBit);

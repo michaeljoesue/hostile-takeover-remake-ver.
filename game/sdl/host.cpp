@@ -158,8 +158,8 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
                 (event.motion.state & SDL_BUTTON_LMASK) == 0) {
             pevt->eType = middleMoveEvent;
         } else if (event.motion.state == 0) {
-            // No button held: the mouse is just hovering (cursor feedback,
-            // build menu unit info, the building being placed)
+            // No button held: the mouse is just hovering (build menu
+            // info, the building being placed)
 
             pevt->eType = penHoverEvent;
         } else {
@@ -345,34 +345,6 @@ bool HostGetMousePosition(int *px, int *py)
     *px = xT;
     *py = yT;
     return true;
-}
-
-void HostSetCursor(int ncur)
-{
-    static SDL_Cursor *s_apcur[4];
-    static int s_ncurCurrent = kcurDefault;
-    if (ncur < 0 || ncur >= 4)
-        ncur = kcurDefault;
-    if (ncur == s_ncurCurrent)
-        return;
-    s_ncurCurrent = ncur;
-    if (ncur == kcurDefault) {
-        SDL_SetCursor(SDL_GetDefaultCursor());
-        return;
-    }
-    if (s_apcur[ncur] == NULL) {
-        static const SDL_SystemCursor s_asc[4] = { SDL_SYSTEM_CURSOR_DEFAULT,
-                SDL_SYSTEM_CURSOR_CROSSHAIR, SDL_SYSTEM_CURSOR_POINTER,
-                SDL_SYSTEM_CURSOR_NOT_ALLOWED };
-        s_apcur[ncur] = SDL_CreateSystemCursor(s_asc[ncur]);
-    }
-    if (s_apcur[ncur] != NULL)
-        SDL_SetCursor(s_apcur[ncur]);
-}
-
-void HostSetTargetCursor(bool fTarget)
-{
-    HostSetCursor(fTarget ? kcurTarget : kcurDefault);
 }
 
 long HostGetTickCount()
