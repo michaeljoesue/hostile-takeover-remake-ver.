@@ -1359,6 +1359,7 @@ bool HdWantsStrip(HdBinding *phdb, int nStrip, DibBitmap *pbm);
 bool HdWantsRedraw();
 void HdBeginFrame();
 void HdPaintStart();
+void HdHoldAnimation(class Animation *pani, bool fHold);
 void HdNoteCovered(DibBitmap *pbm, int x, int y, int cx, int cy);
 void HdRecord(HdBinding *phdb, AnimationData *panid, int nStrip, int nFrame, DibBitmap *pbm,
 		int x, int y, Side side, class Animation *pani, const Rect *prcShadow);

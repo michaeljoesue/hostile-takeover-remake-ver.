@@ -48,6 +48,18 @@ def bounds(anir,strip,frame):
         m=re.match(r"\s+frame (\d+) bounds (-?\d+) (-?\d+) (-?\d+) (-?\d+)",l)
         if m and cur==strip and int(m.group(1))==frame:
             return [int(x) for x in m.groups()[1:]]
+def strip_timing(anir,strip):
+    """(frame count, length of one loop in game updates) of a classic strip"""
+    cur=None; nfrm=0; delay=0; total=0
+    for l in open(os.path.join(CLASSIC,'%s.txt'%anir)):
+        m=re.match(r"strip (\d+) '[^']*' frames (\d+) delay (\d+)",l)
+        if m:
+            cur=int(m.group(1))
+            if cur==strip: nfrm=int(m.group(2)); delay=int(m.group(3))
+            continue
+        m=re.match(r"\s+frame (\d+) bounds .* hold (\d+)",l)
+        if m and cur==strip: total+=delay+int(m.group(2))+1
+    return nfrm,total
 def fit(cmask, hdalpha, smin=1.8, smax=7.0, step=0.02):
     """cmask: game-res bool mask (object). hdalpha: HD cell alpha (0..255).
     returns (S, ox, oy): hd = S*(g) + (ox,oy) where g = game pixel coords in cmask frame"""
@@ -170,7 +182,13 @@ def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows
     preview(bld+'_w',anir,2,0,W,gx,gy,S)
     s0,s1,s2=strips
     strip(anir,s0,pics='%s/h'%bld,n=healthy_n,var=0)
-    strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1)
+    # A damaged strip the classic art doesn't animate (one frame) still plays
+    # all its pictures, looping at the healthy animation's speed
+    nfrm_d,_=strip_timing(anir,1); nfrm_h,cycle_h=strip_timing(anir,0)
+    if nfrm_d==1 and nfrm_h>1:
+        strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1,cycle=cycle_h)
+    else:
+        strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1)
     strip(anir,s2,pics='%s/w'%bld,n=1,var=2)
 
 # HQ: 8x9 cells 288x216; 32 healthy, 32 damaged, last row wreck+icon
@@ -285,6 +303,7 @@ def finish(out, preview_dir):
     hdr=['# HD structure pictures (see game/sdl/hdsprites.cpp). Made by tools/hd/build_hd.py from the artist\'s sheets.',
          '# strip<TAB>anir<TAB>strip name<TAB>key=value...: pics=<pack>/<prefix> n=<count> var=<0 healthy|1 damaged|2 wreck>',
          '#   blend=0 (no in-between pictures) map=/bmap= (picture per classic frame going forward/back) none=1 (draw nothing)',
+         '#   cycle=<updates>: the classic strip has one frame; the pictures loop on their own, one loop in that many game updates',
          '#   {V} in pics = h/d by the variant of the strip drawn just before (2 = draw nothing)']
     open(os.path.join(out,'manifest.txt'),'w').write('\n'.join(hdr+manifest)+'\n')
 JOBS=[

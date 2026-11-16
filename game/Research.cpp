@@ -265,6 +265,10 @@ BeginStateMachine
 			if (!m_pplr->IsPowerLow())
 				AdvanceAnimation(&m_ani);
 
+			// HD pictures that loop on their own (damaged) stop and go with it
+
+			HdHoldAnimation(&m_ani, m_pplr->IsPowerLow());
+
 			if (m_utTarget != kutNone) {
 				UpgradeUpdate();
 				MarkRedraw();

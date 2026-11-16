@@ -20,10 +20,10 @@
 //   once and kept as textures per side, so they stay sharp without shimmer.
 //   Team colour: the blue paint (a mask made from the sheets) takes the side's
 //   colour, keeping the painted shading.
-// - Animations stay the game's: the classic strip and frame pick the picture.
-//   When the classic frame steps, the artist's in-between pictures play over
-//   that step (HQ hatch, generator fan, dishes, Processor door), so the game
-//   logic and timing don't change.
+// - Animations stay the game's: the classic strip and frame pick the
+//   picture, and all the artist's in-between pictures play between classic
+//   frames in game time (see PickPic), so the game logic and timing don't
+//   change and the motion follows the game speed.
 //
 // Data: hd/manifest.txt (strip -> pictures) and hd/<pack>.hdp (pictures, QOI
 // compressed, with a team colour mask each). Made by tools/hd/build_hd.py from
@@ -36,6 +36,7 @@
 #include <SDL3/SDL.h>
 #include <math.h>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -134,6 +135,8 @@ struct HdStrip {
     int var;                    // -1, or the variant this strip sets
     bool fBlend;
     bool fNone;
+    int cycle;                  // > 0: one classic frame; the pictures loop every this many updates
+    int cupdMotion;             // updates a step of the animation takes (-1: not worked out yet)
     std::vector<int> amap, abmap;
 };
 
@@ -157,11 +160,16 @@ struct HdItem {
 struct HdTrack {
     int nStrip;
     int nFrame;
+    double tCreate;
     double tChange;
     double tDur;
     int picFrom, picTo;
     int nDir;                   // 1 forward, -1 back, 0 none
     int nLastDir;
+    bool fRunning;              // seen stepping forward by itself
+    double tLast;               // when last drawn
+    double tCycle;              // own clock of a picture loop (cycle=)
+
     int cFrameSeen;
 };
 
@@ -176,6 +184,7 @@ static std::vector<byte> s_vbHdShadow;  // front pixels darkened by an HD buildi
 static std::vector<byte> s_vbHdCovered; // front pixels covered by opaque fog
 static int s_cxHdShadow, s_cyHdShadow;
 static std::map<Animation *, HdTrack> s_maptrack;
+static std::set<Animation *> s_setHeld;
 static int s_cFrame;
 static int s_nVarLast;
 static bool s_fMoving;
@@ -302,6 +311,8 @@ static void LoadManifest() {
             pstrip->fBlend = true;
             pstrip->fNone = false;
             pstrip->fVariantPics = false;
+            pstrip->cycle = 0;
+            pstrip->cupdMotion = -1;
             std::string strPics;
             for (size_t k = 3; k < astr.size(); k++) {
                 size_t iEq = astr[k].find('=');
@@ -314,6 +325,7 @@ static void LoadManifest() {
                 else if (strKey == "var") pstrip->var = atoi(strVal.c_str());
                 else if (strKey == "blend") pstrip->fBlend = atoi(strVal.c_str()) != 0;
                 else if (strKey == "none") pstrip->fNone = atoi(strVal.c_str()) != 0;
+                else if (strKey == "cycle") pstrip->cycle = atoi(strVal.c_str());
                 else if (strKey == "map") ParseList(strVal, &pstrip->amap);
                 else if (strKey == "bmap") ParseList(strVal, &pstrip->abmap);
             }
@@ -476,6 +488,16 @@ void HdNoteCovered(DibBitmap *pbm, int x, int y, int cx, int cy) {
     }
 }
 
+// The game holds this animation still (a building without power), or lets
+// it go again: pictures looping on their own stop and go with it
+
+void HdHoldAnimation(Animation *pani, bool fHold) {
+    if (fHold)
+        s_setHeld.insert(pani);
+    else
+        s_setHeld.erase(pani);
+}
+
 // Game time in updates (with the fraction since the last update)
 
 static double SimTime() {
@@ -492,14 +514,49 @@ static int TargetPic(HdStrip *pstrip, int nFrame, int cFrames, int nDir) {
     return nFrame * pstrip->n / cFrames;
 }
 
-// Which picture: the classic frame's, with the artist's in-between pictures
-// played after the classic animation steps (over the shorter of the two
-// frames' durations), forward through the sheet's order
+// Updates the classic frame is shown for
+
+static int FrameUpdates(AnimationData *panid, int nStrip, int nFrame) {
+    return panid->GetStripDelay(nStrip) + panid->GetFrameDelay(nStrip, nFrame) + 1;
+}
+
+// Updates one step of the motion takes: the strip's shortest frame. Longer
+// frames are pauses (the HQ's hatch staying shut): the picture holds, then
+// moves at the same speed as the rest of the animation.
+
+static int MotionUpdates(HdStrip *pstrip, AnimationData *panid, int nStrip) {
+    if (pstrip->cupdMotion < 0) {
+        int cFrames = panid->GetFrameCount(nStrip);
+        int cupdMin = 0;
+        for (int f = 0; f < cFrames; f++) {
+            int cupd = FrameUpdates(panid, nStrip, f);
+            if (cupdMin == 0 || cupd < cupdMin)
+                cupdMin = cupd;
+        }
+        pstrip->cupdMotion = cupdMin > 0 ? cupdMin : 1;
+    }
+    return pstrip->cupdMotion;
+}
+
+// Which picture. Every picture the artist drew plays, in game time (so it
+// follows the game speed and stops when the game is paused):
+//
+// - A looping animation (generator, dishes, HQ, R&D panel) runs through the
+//   pictures between one classic frame's and the next's while the classic
+//   frame is shown, reaching the next one's picture just as the classic
+//   frame changes: a continuous motion that keeps step with the classic
+//   frames (which the game logic still uses).
+// - An animation the game steps itself (the Processor's door, forward to
+//   open and back to close) plays the pictures between the old frame's and
+//   the new one's after each step, at the same speed.
+// - A strip whose classic art has one frame but the artist drew more
+//   (the damaged R&D Center) loops on its own (cycle=).
 
 static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame, Animation *pani) {
     int cFrames = panid->GetFrameCount(nStrip);
-    if (!pstrip->fBlend || pani == NULL || pstrip->n <= 1)
-        return TargetPic(pstrip, nFrame, cFrames, 0) % pstrip->n;
+    int n = pstrip->n;
+    if (!pstrip->fBlend || pani == NULL || n <= 1)
+        return TargetPic(pstrip, nFrame, cFrames, 0) % n;
 
     double t = SimTime();
     std::map<Animation *, HdTrack>::iterator it = s_maptrack.find(pani);
@@ -507,18 +564,42 @@ static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame
         HdTrack trk;
         trk.nStrip = nStrip;
         trk.nFrame = nFrame;
-        trk.tChange = -1000;
+        trk.tCreate = t;
+        trk.tChange = t;
         trk.tDur = 1;
         trk.picFrom = trk.picTo = TargetPic(pstrip, nFrame, cFrames, 0);
         trk.nDir = 0;
         trk.nLastDir = 0;
+        trk.fRunning = false;
+        trk.tLast = t;
+        trk.tCycle = 0;
         trk.cFrameSeen = s_cFrame;
-        s_maptrack[pani] = trk;
-        return trk.picTo % pstrip->n;
+        it = s_maptrack.insert(std::make_pair(pani, trk)).first;
+        it->second = trk;
     }
     HdTrack *ptrk = &it->second;
     ptrk->cFrameSeen = s_cFrame;
-    int n = pstrip->n;
+
+    // Looping on its own
+
+    if (cFrames == 1) {
+        if (pstrip->cycle <= 0)
+            return TargetPic(pstrip, nFrame, cFrames, 0) % n;
+        double dt = t - ptrk->tLast;
+        ptrk->tLast = t;
+        if (dt > 0 && dt < 4 && s_setHeld.find(pani) == s_setHeld.end()) {
+            ptrk->tCycle += dt;
+            s_fMoving = true;
+        }
+        double p = ptrk->tCycle / pstrip->cycle;
+        p -= floor(p);
+        return ((int)(p * n)) % n;
+    }
+
+    int cupdMotion = MotionUpdates(pstrip, panid, nStrip);
+    word wf = pani->GetFlags();
+    bool fLoop = (wf & kfAniLoop) && !(wf & kfAniDone) && pstrip->abmap.empty();
+
     if (nFrame != ptrk->nFrame) {
         int nPrev = ptrk->nFrame;
         int nDir = 0;
@@ -544,15 +625,40 @@ static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame
 
         ptrk->picTo = TargetPic(pstrip, nFrame, cFrames, nDir);
         ptrk->picFrom = nDir != 0 ? picNow : ptrk->picTo;
-        int nDelay = panid->GetStripDelay(nStrip);
-        int nDurPrev = nDelay + panid->GetFrameDelay(nStrip, nPrev) + 1;
-        int nDurNow = nDelay + panid->GetFrameDelay(nStrip, nFrame) + 1;
-        ptrk->tDur = nDurPrev < nDurNow ? nDurPrev : nDurNow;
-        ptrk->tChange = t;
+        ptrk->tDur = cupdMotion;
+
+        // The frame changed in the latest update
+
+        ptrk->tChange = gsim.GetUpdateCount();
+        if (ptrk->tChange > t)
+            ptrk->tChange = t;
         ptrk->nFrame = nFrame;
         if (nDir != 0)
             ptrk->nLastDir = nDir;
+        ptrk->fRunning = nDir == 1;
     }
+
+    // Only while the animation is seen running: a building that has stopped
+    // (no power) keeps its classic frame's picture
+
+    if (fLoop && ptrk->fRunning) {
+        // Towards the next classic frame's picture, over the last
+        // cupdMotion updates of this frame
+
+        int nNext = (nFrame + 1) % cFrames;
+        int picKey = TargetPic(pstrip, nFrame, cFrames, 1) % n;
+        int picNext = TargetPic(pstrip, nNext, cFrames, 1) % n;
+        int cSteps = (picNext - picKey + n) % n;
+        int cupdFrame = FrameUpdates(panid, nStrip, nFrame);
+        double p = (t - ptrk->tChange - (cupdFrame - cupdMotion)) / cupdMotion;
+        if (p <= 0 || cSteps == 0)
+            return picKey;
+        if (p >= 1)
+            return picNext;
+        s_fMoving = true;
+        return (picKey + (int)(cSteps * p)) % n;
+    }
+
     if (t - ptrk->tChange >= ptrk->tDur || ptrk->picFrom == ptrk->picTo)
         return ptrk->picTo % n;
     s_fMoving = true;
@@ -560,7 +666,7 @@ static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame
     double p = (t - ptrk->tChange) / ptrk->tDur;
     if (p < 0)
         p = 0;
-    return (ptrk->picFrom + (int)(cSteps * p + 0.5)) % n;
+    return (ptrk->picFrom + (int)(cSteps * p)) % n;
 }
 
 void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, DibBitmap *pbm,

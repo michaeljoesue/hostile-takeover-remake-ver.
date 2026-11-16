@@ -1,6 +1,7 @@
 # HD structure pictures (see game/sdl/hdsprites.cpp). Made by tools/hd/build_hd.py from the artist's sheets.
 # strip<TAB>anir<TAB>strip name<TAB>key=value...: pics=<pack>/<prefix> n=<count> var=<0 healthy|1 damaged|2 wreck>
 #   blend=0 (no in-between pictures) map=/bmap= (picture per classic frame going forward/back) none=1 (draw nothing)
+#   cycle=<updates>: the classic strip has one frame; the pictures loop on their own, one loop in that many game updates
 #   {V} in pics = h/d by the variant of the strip drawn just before (2 = draw nothing)
 strip	Warehouse.anir	a 0	pics=warehouse/h	n=4	var=0	blend=0
 strip	Warehouse.anir	a 1	pics=warehouse/d	n=4	var=1	blend=0
@@ -71,5 +72,5 @@ strip	Radar.anir	a 0	pics=radar/h	n=36	var=0
 strip	Radar.anir	a 1	pics=radar/d	n=36	var=1
 strip	Radar.anir	a 2	pics=radar/w	n=1	var=2
 strip	Research.anir	a 0	pics=research/h	n=52	var=0
-strip	Research.anir	a 1	pics=research/d	n=52	var=1
+strip	Research.anir	a 1	pics=research/d	n=52	var=1	cycle=26
 strip	Research.anir	a 2	pics=research/w	n=1	var=2
