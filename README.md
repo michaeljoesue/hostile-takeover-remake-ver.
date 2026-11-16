@@ -95,8 +95,8 @@ The engine has been updated from its 2007 handheld roots:
   Its picture joins the walls next to it, in its side's colour. Units
   never pick walls as targets on their own (nor do the computer players,
   hunting units or towers): a wall is attacked only when ordered to
-  (right-click, or Ctrl+right-click on your own). Your walls can be
-  selected, repaired and sold. Walls in missions made before are neutral.
+  (right-click, or Ctrl+right-click on your own). Walls can be selected
+  but not repaired or sold. Walls in missions made before are neutral.
 - **Five sides.** Side 1 is ACME and side 2 is OMNI (now bright red,
   #FF3333). There is a new side 5, Crimson (#DC143C), for missions to use.
   Allied sides share what they can see.

@@ -6763,8 +6763,7 @@ public:
 	virtual void Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer);
 	virtual void SetHealth(fix fxHealth);
 	virtual bool IsTakeoverable(Player *pplr);
-	virtual void InitMenu(Form *pfrm);
-	virtual void OnMenuItemSelected(int idc);
+	virtual void PopupMenu();
 
 	// StateMachine methods
 

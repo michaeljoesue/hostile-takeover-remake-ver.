@@ -6,8 +6,8 @@ namespace wi {
 // WallGob implementation
 //
 // A wall is one tile, owned by a side (neutral walls belong to no one). It
-// blocks the tile like any structure, can be selected, repaired, sold and
-// destroyed, and its picture joins the walls next to it (any side's).
+// blocks the tile like any structure, can be selected and destroyed (not
+// repaired or sold), and its picture joins the walls next to it (any side's).
 // Units never pick walls as targets on their own: only when ordered to.
 //
 
@@ -141,19 +141,10 @@ bool WallGob::IsTakeoverable(Player *pplr)
 	return false;
 }
 
-void WallGob::InitMenu(Form *pfrm)
-{
-	StructGob::InitMenu(pfrm);
-}
+// Walls can't be repaired or sold: no menu
 
-void WallGob::OnMenuItemSelected(int idc)
+void WallGob::PopupMenu()
 {
-	if (idc == kidcSelfDestruct) {
-		if (PopupConfirmation("SELL WALL"))
-			gcmdq.Enqueue(kmidSelfDestructCommand, m_gid);
-		return;
-	}
-	StructGob::OnMenuItemSelected(idc);
 }
 
 int WallGob::ProcessStateMachineMessage(State st, Message *pmsg)
@@ -179,6 +170,12 @@ BeginStateMachine
 		// Friends nearby fight back
 
 		NotifyNearbyAlliesOfHit(pmsg->Hit.gidAssailant);
+
+	// Walls can't be repaired or sold
+
+	OnMsg(kmidRepairCommand)
+
+	OnMsg(kmidSelfDestructCommand)
 
 	//-----------------------------------------------------------------------
 
