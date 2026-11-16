@@ -107,9 +107,26 @@ namespace m
 		void UpdateScrollRange() {
 			if (m_bm == null)
 				return;
-			AutoScrollMinSize = Size.Empty;
+
+			// Lay out the windows holding the view from the top down, as
+			// resizing the window does, so the view fills its pane (and its
+			// scroll bars aren't left outside the visible area)
+
+			AutoScroll = false;
+			ArrayList alsParents = new ArrayList();
+			for (Control ctl = Parent; ctl != null; ctl = ctl.Parent)
+				alsParents.Insert(0, ctl);
+			foreach (Control ctl in alsParents)
+				ctl.PerformLayout();
+
+			// Then set up the scroll bars again
+
+			AutoScroll = true;
 			AutoScrollMinSize = WorldToViewSize(m_bm.Size);
 			PerformLayout();
+			Size sizBitmapView = WorldToViewSize(m_bm.Size);
+			AutoScrollPosition = new Point((int)(m_xRatioView * sizBitmapView.Width),
+					(int)(m_yRatioView * sizBitmapView.Height));
 			Invalidate();
 		}
 
@@ -401,8 +418,18 @@ namespace m
 		}
 
 		protected override void OnPaintBackground(System.Windows.Forms.PaintEventArgs e) {
-			if (this.DesignMode)
+			if (this.DesignMode || m_bm == null) {
 				base.OnPaintBackground(e);
+				return;
+			}
+
+			// The view fills its pane; clear what's beyond the map
+
+			Rectangle rcMap = new Rectangle(AutoScrollPosition, WorldToViewSize(m_bm.Size));
+			using (Region rgn = new Region(ClientRectangle)) {
+				rgn.Exclude(rcMap);
+				e.Graphics.FillRegion(SystemBrushes.AppWorkspace, rgn);
+			}
 		}
 
 		private void Redraw() {
@@ -1079,6 +1106,11 @@ namespace m
 		}
 
 		public void CheckSize() {
+			// A docked view fills its pane; resizing it here would leave it
+			// a different size from the pane until the window is resized
+
+			if (Dock != DockStyle.None)
+				return;
 			SuspendLayout();
 			Size sizBitmapView = WorldToViewSize(m_bm.Size);
 			if (ClientSize.Width > sizBitmapView.Width)
