@@ -234,15 +234,14 @@ bool StructGob::SaveState(Stream *pstm)
 	return UnitGob::SaveState(pstm);
 }
 
-// are you sure dialog used to confirm structure recycling. Mouse-style: a
-// click on a button acts on it at once, it can't be
+// are you sure dialog used to confirm structure recycling. It can't be
 // dragged, and a right-click anywhere answers No.
 
 class ConfirmForm : public DialogForm
 {
 public:
 	virtual bool OnPenEvent(Event *pevt) {
-		MouseButtonPenEvent(pevt);
+		Form::OnPenEvent(pevt);
 		return true;
 	}
 	virtual bool OnRightDown(Event *pevt) {

@@ -25,6 +25,8 @@ Form::Form()
 
 Form::~Form()
 {
+	ClearHover(false);
+
 	// Delete controls
 
 	for (int n = 0; n < m_cctl; n++)
@@ -280,6 +282,7 @@ void Form::Show(bool fShow)
 	} else {
 		if (!(m_wf & kfFrmVisible))
 			return;
+		ClearHover(false);
 		InvalidateRect(NULL);
 		m_wf &= ~kfFrmVisible;
 	}
@@ -460,9 +463,19 @@ bool Form::OnPenEvent(Event *pevt)
 	if (pevt->eType != penDownEvent)
 		return false;
 
-    // Auto-capture if we've hit a control
+    // A button acts as soon as it is clicked: no pressed state, no
+    // press-and-release (the white box shows on hover instead)
 
     Control *pctlHit = HitTestControls(pevt);
+    ButtonControl *pbtn = GetActiveButton(pctlHit);
+    if (pbtn != NULL) {
+        gsndm.PlaySfx(ksfxGuiButtonTap);
+        pbtn->OnSelect(knSelUpInside);
+        return true;
+    }
+
+    // Auto-capture if we've hit a control
+
     if (pctlHit != NULL) {
         m_wf |= kfFrmPenInside;
         m_pctlCapture = pctlHit;
@@ -612,36 +625,56 @@ bool Form::IsControlInside(Control *pctl)
 {
 	if (m_pctlCapture != NULL && (m_wf & kfFrmPenInside))
 		return m_pctlCapture == pctl;
-	return false;
+	return pctl != NULL && pctl == s_pctlHover;
 }
 
-// Mouse-style buttons: a left click acts on the button at once. No hover
-// highlight, no press-and-drag, no form dragging.
+// The button under the mouse shows its white (pressed) box. One for the
+// whole game; EventMgr::DispatchEvent updates it on every mouse move.
 
-bool Form::MouseButtonPenEvent(Event *pevt)
+Control *Form::s_pctlHover = NULL;
+
+ButtonControl *Form::GetActiveButton(Control *pctl)
 {
-	ButtonControl *pbtn = NULL;
-	Control *pctl = HitTestControls(pevt);
-	if (pctl != NULL && (pctl->GetFlags() & (kfCtlVisible | kfCtlDisabled)) == kfCtlVisible)
-		pbtn = dynamic_cast<ButtonControl *>(pctl);
+	if (pctl == NULL)
+		return NULL;
+	if ((pctl->GetFlags() & (kfCtlVisible | kfCtlDisabled)) != kfCtlVisible)
+		return NULL;
+	return dynamic_cast<ButtonControl *>(pctl);
+}
 
-	switch (pevt->eType) {
-	case penHoverEvent:
-	case penMoveEvent:
-		return pbtn != NULL;
+void Form::UpdateHover(Form *pfrm, Event *pevt)
+{
+	Control *pctl = NULL;
+	if (pfrm != NULL && (pfrm->m_wf & kfFrmVisible))
+		pctl = GetActiveButton(pfrm->HitTestControls(pevt));
+	SetHoverControl(pctl);
+}
 
-	case penDownEvent:
-		if (pbtn == NULL)
-			return false;
-		gsndm.PlaySfx(ksfxGuiButtonTap);
-		OnControlSelected(pbtn->GetId());
-		return true;
+void Form::SetHoverControl(Control *pctl)
+{
+	if (pctl == s_pctlHover)
+		return;
+	if (s_pctlHover != NULL)
+		s_pctlHover->Invalidate();
+	s_pctlHover = pctl;
+	if (s_pctlHover != NULL)
+		s_pctlHover->Invalidate();
+}
 
-	case penUpEvent:
-	case penHoldEvent:
-		return pbtn != NULL;
+// Forget the hover if it's on this form (being hidden or deleted)
+
+void Form::ClearHover(bool fInvalidate)
+{
+	if (s_pctlHover == NULL)
+		return;
+	for (int n = 0; n < m_cctl; n++) {
+		if (m_apctl[n] == s_pctlHover) {
+			if (fInvalidate)
+				s_pctlHover->Invalidate();
+			s_pctlHover = NULL;
+			return;
+		}
 	}
-	return false;
 }
 
 void Form::OnControlSelected(word idc)

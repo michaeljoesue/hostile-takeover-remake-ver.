@@ -1269,11 +1269,11 @@ void UnitMenu::OnPaint(DibBitmap *pbm)
 	Form::OnPaint(pbm);
 }
 
-// A click on a button acts on it at once
+// A click on a button acts on it at once (see Form::OnPenEvent)
 
 bool UnitMenu::OnPenEvent(Event *pevt)
 {
-	MouseButtonPenEvent(pevt);
+	Form::OnPenEvent(pevt);
 	return true;
 }
 

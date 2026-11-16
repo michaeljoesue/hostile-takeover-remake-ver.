@@ -2138,6 +2138,7 @@ private:
 #define kfFrmmNoScroll 1
 
 class Form;
+class ButtonControl;
 class FormMgr // frmm
 {
 public:
@@ -2307,7 +2308,10 @@ public:
 	void EndForm(int nResult = 0);
 	Control *GetControlPtr(word idc);
 	bool IsControlInside(Control *pctl);
-	bool MouseButtonPenEvent(Event *pevt);
+	static void UpdateHover(Form *pfrm, Event *pevt);
+	static void SetHoverControl(Control *pctl);
+	static ButtonControl *GetActiveButton(Control *pctl);
+	void ClearHover(bool fInvalidate = true);
 	void SetUserDataPtr(void *pUserData);
 	void *GetUserDataPtr();
     Form *FindPen2Form();
@@ -2322,6 +2326,7 @@ protected:
 	FormMgr *m_pfrmm;
 	TBitmap *m_ptbm;
 	Control *m_pctlCapture;
+	static Control *s_pctlHover;
 	Rect m_rc;
 	int m_nResult;
 	word m_wf;

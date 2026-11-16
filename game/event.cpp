@@ -380,6 +380,11 @@ void EventMgr::Init()
 bool EventMgr::DispatchEvent(Event *pevt)
 {
 	Form *pfrm = gpmfrmm->GetFormPtr(pevt->idf);
+
+	// Buttons light up under the mouse
+
+	if (pevt->eType == penHoverEvent || pevt->eType == penMoveEvent)
+		Form::UpdateHover(pfrm, pevt);
 //	Trace("EventMgr::DispatchEvent: evt 0x%0lx, eType %d, idf %d", pevt, pevt->eType, pevt->idf); 
 	if (pfrm != NULL)
 		return pfrm->EventProc(pevt);

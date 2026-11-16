@@ -86,6 +86,7 @@ void FormMgr::AddForm(Form *pfrm)
 
 void FormMgr::RemoveForm(Form *pfrm)
 {
+	pfrm->ClearHover(false);
 	for (int n = 0; n < m_cfrm; n++) {
 		if (m_apfrm[n] == pfrm) {
 			if (n < kcFormsMax - 1)
