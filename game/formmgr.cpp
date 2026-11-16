@@ -355,9 +355,11 @@ void FormMgr::Paint(bool fScrolled, Rect *prcOpaqueStart)
 			CalcOpaqueRect(m_apfrm[j], prcOpaqueStart, &rcOpaque);
 			if (!rcOpaque.RectIn(&m_apfrm[j]->m_rc)) {
 				// The true colour layer under the form is redrawn along
-				// with it
+				// with it. Translucent forms (e.g. structure placement) draw
+				// over the map, so the map's layer (fog edges) stays.
 
-				if (m_pbm->GetTrueColor() != NULL) {
+				if (m_pbm->GetTrueColor() != NULL &&
+						!(m_apfrm[j]->m_wf & kfFrmTranslucent)) {
 					Rect rcT;
 					bool fFirst = true;
 					while (m_pupd->EnumUpdateRects(fFirst, NULL, &rcT)) {
