@@ -61,8 +61,12 @@ The engine has been updated from its 2007 handheld roots:
   are panned left or right by where they happen relative to the middle of
   the view, and are quieter off screen, so you can hear where a fight is.
   The panning is strong: at the edge of the view a sound is almost only
-  in one ear. Options > Sound has separate Battle Sounds and Unit
-  Responses volumes (relative to the main volume).
+  in one ear.
+- **Sound groups.** Options > Sound has a volume for each group, relative
+  to the main volume: Effects (interface clicks), Battlefield (shots,
+  explosions, hits, units dying), Unit Responses (units replying to you)
+  and Menus & Alerts (build menus, buildings' select, build and ready
+  sounds, alerts, credits, win / lose).
 - **Five sides.** Side 1 is ACME and side 2 is OMNI (now bright red,
   #FF3333). There is a new side 5, Crimson (#DC143C), for missions to use.
   Allied sides share what they can see.

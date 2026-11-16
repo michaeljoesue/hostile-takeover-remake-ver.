@@ -7111,9 +7111,14 @@ public:
 	void Exit();
 	void Enable(bool fEnable);
 	bool IsEnabled();
-	void PlaySfx(Sfx sfx, int nPan = 0, int nVolume = 256);
-	void PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy);	// battle sound
+	// Sound groups, each with its own volume (Options > Sound):
+	// effects (interface clicks), battlefield (PlaySfxAt), unit responses
+	// (PlayResponseSfx) and menus & alerts (everything else)
+
+	void PlaySfx(Sfx sfx, int nPan = 0, int nVolume = 256);	// effect or menu / alert, by sfx
+	void PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy);	// battlefield sound
 	void PlayResponseSfx(Sfx sfx);	// a unit's reply to the player
+	void PlaySfxRaw(Sfx sfx, int nPan, int nVolume);	// no group volume
 	void WaitSilence();
 	long FilterSleepTicks(long ct);
 	void SetVolume(int nVolume);
@@ -7134,8 +7139,10 @@ private:
 	SoundDevice *m_psndd;
 };
 extern SoundMgr gsndm;
+extern int gnVolumeEffects;		// 0..256
 extern int gnVolumeBattle;		// 0..256
 extern int gnVolumeResponses;	// 0..256
+extern int gnVolumeMenu;		// 0..256
 
 // StringTable Class
 
@@ -7213,9 +7220,12 @@ struct Preferences // prefs
 	word fSmoothMotion;
 	word nVolumeBattle;				// added in 0x202: 0..256
 	word nVolumeResponses;
+	word nVolumeEffects;			// added in 0x203: 0..256
+	word nVolumeMenu;
 };
 
-#define knVersionPreferences 0x202
+#define knVersionPreferences 0x203
+#define knVersionPreferences202 0x202	// without nVolumeEffects / nVolumeMenu
 #define knVersionPreferences201 0x201	// without nVolumeBattle / nVolumeResponses
 #define knVersionPreferences200 0x200	// same layout, without the fields added since
 extern bool gfSmoothMotion;

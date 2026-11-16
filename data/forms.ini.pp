@@ -60,18 +60,25 @@
 [kidfSoundOptions]
 	FORM=(0 0 160 160) kidcCancel center
 	LABEL=0 (38 6 83 0) "SOUND OPTIONS" kifntTitle center
-	LABEL=kidcVolumeString (11 28 68 0) "Volume" kifntShadow
-	SLIDER=kidcVol (11 42 95 8)
-	LABEL=kidcVolLabel (121 42 17 0) "0" kifntShadow
-	LABEL=0 (11 58 95 0) "Battle Sounds" kifntShadow
-	SLIDER=kidcBattleVol (11 72 95 8)
-	LABEL=kidcBattleVolLabel (121 72 17 0) "0" kifntShadow
-	LABEL=0 (11 88 95 0) "Unit Responses" kifntShadow
-	SLIDER=kidcResponseVol (11 102 95 8)
-	LABEL=kidcResponseVolLabel (121 102 17 0) "0" kifntShadow
-	CHECKBOX=kidcMute (11 120 67 0) "Mute" kifntShadow
+	LABEL=kidcVolumeString (6 24 64 0) "Volume" kifntShadow
+	SLIDER=kidcVol (70 26 64 8)
+	LABEL=kidcVolLabel (137 24 17 0) "0" kifntShadow right
+	LABEL=0 (6 44 64 0) "Effects" kifntShadow
+	SLIDER=kidcEffectsVol (70 46 64 8)
+	LABEL=kidcEffectsVolLabel (137 44 17 0) "0" kifntShadow right
+	LABEL=0 (6 60 64 0) "Battlefield" kifntShadow
+	SLIDER=kidcBattleVol (70 62 64 8)
+	LABEL=kidcBattleVolLabel (137 60 17 0) "0" kifntShadow right
+	LABEL=0 (6 76 64 0) "Unit Responses" kifntShadow
+	SLIDER=kidcResponseVol (70 78 64 8)
+	LABEL=kidcResponseVolLabel (137 76 17 0) "0" kifntShadow right
+	LABEL=0 (6 92 64 0) "Menus & Alerts" kifntShadow
+	SLIDER=kidcMenuVol (70 94 64 8)
+	LABEL=kidcMenuVolLabel (137 92 17 0) "0" kifntShadow right
+	CHECKBOX=kidcMute (6 114 67 0) "Mute" kifntShadow
 	BUTTON=kidcOk (13 140 40 12) "OK" kifntButton
 	BUTTON=kidcCancel (60 140 40 12) "CANCEL" kifntButton
+	BUTTON=kidcDefault (107 140 40 12) "DEFAULT" kifntButton
 
 [kidfColorOptions]
 	FORM=(0 92 160 68) kidcCancel center

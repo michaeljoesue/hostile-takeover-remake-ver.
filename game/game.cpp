@@ -220,6 +220,8 @@ bool Game::Init(int imm)
 	gfShowFPS = gprefsInit.fShowFPS != 0;
 	gnVolumeBattle = gprefsInit.nVolumeBattle > 256 ? 256 : gprefsInit.nVolumeBattle;
 	gnVolumeResponses = gprefsInit.nVolumeResponses > 256 ? 256 : gprefsInit.nVolumeResponses;
+	gnVolumeEffects = gprefsInit.nVolumeEffects > 256 ? 256 : gprefsInit.nVolumeEffects;
+	gnVolumeMenu = gprefsInit.nVolumeMenu > 256 ? 256 : gprefsInit.nVolumeMenu;
 
 	// Temp buffer used for several things, including decompression, TBitmap compiling.
 
@@ -1991,6 +1993,17 @@ void Game::LoadPreferences()
 
 	// Older preferences: keep them and default the newer settings
 
+	const int cbPrefs202 = (int)((offsetof(Preferences, nVolumeEffects) + 7) & ~7);
+	if (cbRead == cbPrefs202 && prefs.dwVersion == knVersionPreferences202 &&
+			prefs.cbSize == (dword)cbRead) {
+		gprefsInit = prefs;
+		gprefsInit.dwVersion = knVersionPreferences;
+		gprefsInit.cbSize = sizeof(gprefsInit);
+		gprefsInit.nVolumeEffects = 256;
+		gprefsInit.nVolumeMenu = 256;
+		return;
+	}
+
 	// 0x201 ended with fSmoothMotion; with the struct's padding its size
 	// can be the same as now
 
@@ -2003,6 +2016,8 @@ void Game::LoadPreferences()
 		gprefsInit.cbSize = sizeof(gprefsInit);
 		gprefsInit.nVolumeBattle = 256;
 		gprefsInit.nVolumeResponses = 256;
+		gprefsInit.nVolumeEffects = 256;
+		gprefsInit.nVolumeMenu = 256;
 		return;
 	}
 
@@ -2016,6 +2031,8 @@ void Game::LoadPreferences()
 		gprefsInit.fSmoothMotion = 1;
 		gprefsInit.nVolumeBattle = 256;
 		gprefsInit.nVolumeResponses = 256;
+		gprefsInit.nVolumeEffects = 256;
+		gprefsInit.nVolumeMenu = 256;
 		return;
 	}
 
@@ -2031,6 +2048,8 @@ void Game::LoadPreferences()
 	gprefsInit.fSmoothMotion = 1;
 	gprefsInit.nVolumeBattle = 256;
 	gprefsInit.nVolumeResponses = 256;
+	gprefsInit.nVolumeEffects = 256;
+	gprefsInit.nVolumeMenu = 256;
 }
 
 void Game::SavePreferences()
@@ -2057,6 +2076,8 @@ void Game::SavePreferences()
 	prefs.fSmoothMotion = gfSmoothMotion ? 1 : 0;
 	prefs.nVolumeBattle = (word)gnVolumeBattle;
 	prefs.nVolumeResponses = (word)gnVolumeResponses;
+	prefs.nVolumeEffects = (word)gnVolumeEffects;
+	prefs.nVolumeMenu = (word)gnVolumeMenu;
 
 	if (gpdisp != NULL && m_immBest != -1) {
 		ModeInfo mode;

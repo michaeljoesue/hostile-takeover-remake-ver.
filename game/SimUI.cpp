@@ -1418,7 +1418,7 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 
 			if (!gfGodMode) {
 				if (pgobHit->GetFlags() & kfGobStructure) {
-					gsndm.PlayResponseSfx(((StructConsts *)gapuntc[((StructGob *)pgobHit)->GetUnitType()])->sfxSelect);
+					gsndm.PlaySfx(((StructConsts *)gapuntc[((StructGob *)pgobHit)->GetUnitType()])->sfxSelect);
 				} else {
 					if (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())
 						gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pgobHit)->GetUnitType()])->sfxcSelect));
@@ -1552,7 +1552,7 @@ void SimUIForm::PlaySelectSfx(Gob *pgob)
     if (gfGodMode)
         return;
     if (pgob->GetFlags() & kfGobStructure) {
-        gsndm.PlayResponseSfx(((StructConsts *)gapuntc[((StructGob *)pgob)->GetUnitType()])->sfxSelect);
+        gsndm.PlaySfx(((StructConsts *)gapuntc[((StructGob *)pgob)->GetUnitType()])->sfxSelect);
     } else if (pgob->GetSide() == gpplrLocal->GetSide()) {
         gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pgob)->GetUnitType()])->sfxcSelect));
     }

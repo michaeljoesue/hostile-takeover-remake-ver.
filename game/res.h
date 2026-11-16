@@ -318,6 +318,10 @@
 #define kidcBattleVolLabel 1006
 #define kidcResponseVol 1007
 #define kidcResponseVolLabel 1008
+#define kidcEffectsVol 1009
+#define kidcEffectsVolLabel 1010
+#define kidcMenuVol 1011
+#define kidcMenuVolLabel 1012
 
 // ColorOptions constants
 

@@ -57,6 +57,8 @@ private:
 	int m_nVolume;
 	int m_nVolumeBattle;
 	int m_nVolumeResponses;
+	int m_nVolumeEffects;
+	int m_nVolumeMenu;
 	bool m_fEnabled;
 };
 
@@ -425,6 +427,8 @@ bool SoundOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	m_nVolume = gsndm.GetVolume();
 	m_nVolumeBattle = gnVolumeBattle;
 	m_nVolumeResponses = gnVolumeResponses;
+	m_nVolumeEffects = gnVolumeEffects;
+	m_nVolumeMenu = gnVolumeMenu;
 	m_fEnabled = gsndm.IsEnabled();
 
 	InitResettableControls();
@@ -447,14 +451,15 @@ void SoundOptionsForm::InitResettableControls()
 		psldr->SetValue(nVolume);
 	}
 
-	// Battle sounds and unit responses, relative to the volume
+	// The sound groups, relative to the volume
 
-	psldr = (SliderControl *)GetControlPtr(kidcBattleVol);
-	psldr->SetRange(0, 256);
-	psldr->SetValue(gnVolumeBattle);
-	psldr = (SliderControl *)GetControlPtr(kidcResponseVol);
-	psldr->SetRange(0, 256);
-	psldr->SetValue(gnVolumeResponses);
+	static const word s_aidc[4] = { kidcEffectsVol, kidcBattleVol, kidcResponseVol, kidcMenuVol };
+	int *apn[4] = { &gnVolumeEffects, &gnVolumeBattle, &gnVolumeResponses, &gnVolumeMenu };
+	for (int i = 0; i < 4; i++) {
+		psldr = (SliderControl *)GetControlPtr(s_aidc[i]);
+		psldr->SetRange(0, 256);
+		psldr->SetValue(*apn[i]);
+	}
 
 	UpdateLabels();
 }
@@ -465,12 +470,13 @@ void SoundOptionsForm::UpdateLabels()
 	LabelControl *plbl = (LabelControl *)GetControlPtr(kidcVolLabel);
 	itoa((gsndm.GetVolume() * 100) / 255, szT, 10);
 	plbl->SetText(szT);
-	plbl = (LabelControl *)GetControlPtr(kidcBattleVolLabel);
-	itoa((gnVolumeBattle * 100) / 256, szT, 10);
-	plbl->SetText(szT);
-	plbl = (LabelControl *)GetControlPtr(kidcResponseVolLabel);
-	itoa((gnVolumeResponses * 100) / 256, szT, 10);
-	plbl->SetText(szT);
+	static const word s_aidcLabel[4] = { kidcEffectsVolLabel, kidcBattleVolLabel, kidcResponseVolLabel, kidcMenuVolLabel };
+	int anVolume[4] = { gnVolumeEffects, gnVolumeBattle, gnVolumeResponses, gnVolumeMenu };
+	for (int i = 0; i < 4; i++) {
+		plbl = (LabelControl *)GetControlPtr(s_aidcLabel[i]);
+		itoa((anVolume[i] * 100) / 256, szT, 10);
+		plbl->SetText(szT);
+	}
 }
 
 void SoundOptionsForm::OnControlSelected(word idc)
@@ -484,16 +490,34 @@ void SoundOptionsForm::OnControlSelected(word idc)
 		}
 		break;
 
+	case kidcEffectsVol:
+		gnVolumeEffects = ((SliderControl *)GetControlPtr(kidcEffectsVol))->GetValue();
+		UpdateLabels();
+		gsndm.PlaySfxRaw(ksfxGuiScrollingListSelectItem, 0, gnVolumeEffects);
+		break;
+
 	case kidcBattleVol:
 		gnVolumeBattle = ((SliderControl *)GetControlPtr(kidcBattleVol))->GetValue();
 		UpdateLabels();
-		gsndm.PlaySfx(ksfxGuiScrollingListSelectItem, 0, gnVolumeBattle);
+		gsndm.PlaySfxRaw(ksfxGuiScrollingListSelectItem, 0, gnVolumeBattle);
 		break;
 
 	case kidcResponseVol:
 		gnVolumeResponses = ((SliderControl *)GetControlPtr(kidcResponseVol))->GetValue();
 		UpdateLabels();
-		gsndm.PlaySfx(ksfxGuiScrollingListSelectItem, 0, gnVolumeResponses);
+		gsndm.PlaySfxRaw(ksfxGuiScrollingListSelectItem, 0, gnVolumeResponses);
+		break;
+
+	case kidcMenuVol:
+		gnVolumeMenu = ((SliderControl *)GetControlPtr(kidcMenuVol))->GetValue();
+		UpdateLabels();
+		gsndm.PlaySfxRaw(ksfxGuiScrollingListSelectItem, 0, gnVolumeMenu);
+		break;
+
+	case kidcDefault:
+		gsndm.SetVolume(255);
+		gnVolumeEffects = gnVolumeBattle = gnVolumeResponses = gnVolumeMenu = 256;
+		InitResettableControls();
 		break;
 
 	case kidcMute:
@@ -508,6 +532,8 @@ void SoundOptionsForm::OnControlSelected(word idc)
 		gsndm.SetVolume(m_nVolume);
 		gnVolumeBattle = m_nVolumeBattle;
 		gnVolumeResponses = m_nVolumeResponses;
+		gnVolumeEffects = m_nVolumeEffects;
+		gnVolumeMenu = m_nVolumeMenu;
 		EndForm(idc);
 		break;
 

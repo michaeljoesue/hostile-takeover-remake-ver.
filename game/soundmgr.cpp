@@ -131,13 +131,28 @@ bool SoundMgr::IsEnabled()
 // centre of the view, and quieter the further off screen they are (but
 // never silent, so the player can tell where a fight is).
 
+int gnVolumeEffects = 256;
 int gnVolumeBattle = 256;
 int gnVolumeResponses = 256;
+int gnVolumeMenu = 256;
 
 void SoundMgr::PlayResponseSfx(Sfx sfx)
 {
 	if (gnVolumeResponses > 0)
-		PlaySfx(sfx, 0, gnVolumeResponses);
+		PlaySfxRaw(sfx, 0, gnVolumeResponses);
+}
+
+// Interface clicks are effects; other sounds played this way (build menus,
+// building select / build / ready sounds, alerts, credits, win / lose) are
+// menus & alerts
+
+void SoundMgr::PlaySfx(Sfx sfx, int nPan, int nVolume)
+{
+	bool fEffect = sfx >= ksfxGuiBuildMenuHide && sfx <= ksfxGuiScrollingListSelectItem;
+	int nGroup = fEffect ? gnVolumeEffects : gnVolumeMenu;
+	if (nGroup <= 0)
+		return;
+	PlaySfxRaw(sfx, nPan, nVolume * nGroup / 256);
 }
 
 void SoundMgr::PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy)
@@ -151,7 +166,7 @@ void SoundMgr::PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy)
 	int cxHalf = WcFromPc(sizPlayfield.cx) / 2;
 	int cyHalf = WcFromPc(sizPlayfield.cy) / 2;
 	if (cxHalf <= 0 || cyHalf <= 0) {
-		PlaySfx(sfx, 0, gnVolumeBattle);
+		PlaySfxRaw(sfx, 0, gnVolumeBattle);
 		return;
 	}
 	int dx = (int)wx - ((int)wxView + cxHalf);
@@ -178,10 +193,10 @@ void SoundMgr::PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy)
 	int nVolume = 256 - nOut * 192 / (256 * 4);
 	if (nVolume < 64)
 		nVolume = 64;
-	PlaySfx(sfx, nPan, nVolume * gnVolumeBattle / 256);
+	PlaySfxRaw(sfx, nPan, nVolume * gnVolumeBattle / 256);
 }
 
-void SoundMgr::PlaySfx(Sfx sfx, int nPan, int nVolume)
+void SoundMgr::PlaySfxRaw(Sfx sfx, int nPan, int nVolume)
 {
 	// Get the sfx entry and channel
 
