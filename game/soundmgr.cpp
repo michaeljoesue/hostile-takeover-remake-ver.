@@ -142,14 +142,53 @@ void SoundMgr::PlayResponseSfx(Sfx sfx)
 		PlaySfxRaw(sfx, 0, gnVolumeResponses);
 }
 
-// Interface clicks are effects; other sounds played this way (build menus,
-// building select / build / ready sounds, alerts, credits, win / lose) are
-// menus & alerts
+// Base sounds that go with the battlefield group: credits counting up and
+// down, building repair (start / stop) and miners unloading Galaxite
+
+static bool IsBaseSfx(Sfx sfx)
+{
+	switch (sfx) {
+	case ksfxGameCreditsDecreasing:
+	case ksfxGameCreditsIncreasing:
+	case ksfxGalaxMinerDeliver:
+	case ksfxGalaxiteProcessorDoorOpening:
+	case ksfxGalaxiteProcessorDoorClosing:
+	case ksfxGalaxiteProcessorRepair:
+	case ksfxGalaxiteProcessorAbortRepair:
+	case ksfxGalaxiteWarehouseRepair:
+	case ksfxGalaxiteWarehouseAbortRepair:
+	case ksfxHeadquartersRepair:
+	case ksfxHeadquartersAbortRepair:
+	case ksfxHumanResourceCenterRepair:
+	case ksfxHumanResourceCenterAbortRepair:
+	case ksfxMachineGunTowerRepair:
+	case ksfxMachineGunTowerAbortRepair:
+	case ksfxRadarRepair:
+	case ksfxRadarAbortRepair:
+	case ksfxReactorRepair:
+	case ksfxReactorAbortRepair:
+	case ksfxResearchCenterRepair:
+	case ksfxResearchCenterAbortRepair:
+	case ksfxRocketTowerRepair:
+	case ksfxRocketTowerAbortRepair:
+	case ksfxVehicleTransportStationRepair:
+	case ksfxVehicleTransportStationAbortRepair:
+		return true;
+	}
+	return false;
+}
+
+// Sound groups (Options > Sound):
+//   Interface     - button and menu clicks
+//   Battle & Base - fighting (PlaySfxAt) plus credits, repairs, unloading
+//   Unit Voices   - units replying to the player (PlayResponseSfx)
+//   Announcements - everything else: buildings' select / build / ready
+//                   sounds, new options, alerts, win / lose
 
 void SoundMgr::PlaySfx(Sfx sfx, int nPan, int nVolume)
 {
 	bool fEffect = sfx >= ksfxGuiBuildMenuHide && sfx <= ksfxGuiScrollingListSelectItem;
-	int nGroup = fEffect ? gnVolumeEffects : gnVolumeMenu;
+	int nGroup = fEffect ? gnVolumeEffects : IsBaseSfx(sfx) ? gnVolumeBattle : gnVolumeMenu;
 	if (nGroup <= 0)
 		return;
 	PlaySfxRaw(sfx, nPan, nVolume * nGroup / 256);

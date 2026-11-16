@@ -7192,11 +7192,11 @@ public:
 	void Exit();
 	void Enable(bool fEnable);
 	bool IsEnabled();
-	// Sound groups, each with its own volume (Options > Sound):
-	// effects (interface clicks), battlefield (PlaySfxAt), unit responses
-	// (PlayResponseSfx) and menus & alerts (everything else)
+	// Sound groups, each with its own volume (Options > Sound): Interface
+	// (clicks), Battle & Base (PlaySfxAt, credits, repairs, unloading),
+	// Unit Voices (PlayResponseSfx) and Announcements (everything else)
 
-	void PlaySfx(Sfx sfx, int nPan = 0, int nVolume = 256);	// effect or menu / alert, by sfx
+	void PlaySfx(Sfx sfx, int nPan = 0, int nVolume = 256);	// group chosen by sfx
 	void PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy);	// battlefield sound
 	void PlayResponseSfx(Sfx sfx);	// a unit's reply to the player
 	void PlaySfxRaw(Sfx sfx, int nPan, int nVolume);	// no group volume
