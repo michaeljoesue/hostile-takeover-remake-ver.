@@ -44,6 +44,75 @@ namespace m
 			m_lvld = null;
 		}
 
+		// Space + left drag pans the map
+
+		[DllImport("user32.dll")]
+		static extern short GetAsyncKeyState(int vKey);
+		const int VK_SPACE = 0x20;
+		bool m_fPanning = false;
+		Point m_ptPanStartScreen;
+		Point m_ptPanStartScroll;
+		Cursor m_curPanSave;
+
+		static bool IsSpaceDown() {
+			try {
+				return (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0;
+			} catch (Exception) {
+				return false;
+			}
+		}
+
+		bool PanMouseDown(MouseEventArgs e) {
+			if (e.Button != MouseButtons.Left || !IsSpaceDown())
+				return false;
+			m_fPanning = true;
+			m_ptPanStartScreen = Control.MousePosition;
+			m_ptPanStartScroll = new Point(-AutoScrollPosition.X, -AutoScrollPosition.Y);
+			m_curPanSave = Cursor;
+			Cursor = Cursors.SizeAll;
+			Capture = true;
+			return true;
+		}
+
+		bool PanMouseMove(MouseEventArgs e) {
+			if (!m_fPanning)
+				return false;
+			Point pt = Control.MousePosition;
+			int x = m_ptPanStartScroll.X - (pt.X - m_ptPanStartScreen.X);
+			int y = m_ptPanStartScroll.Y - (pt.Y - m_ptPanStartScreen.Y);
+			AutoScrollPosition = new Point(Math.Max(0, x), Math.Max(0, y));
+			RememberScrollRatios();
+			return true;
+		}
+
+		bool PanMouseUp(MouseEventArgs e) {
+			if (!m_fPanning)
+				return false;
+			m_fPanning = false;
+			Capture = false;
+			Cursor = m_curPanSave != null ? m_curPanSave : Cursors.Default;
+			return true;
+		}
+
+		void RememberScrollRatios() {
+			Point ptWorldScrollPos = ViewToWorld(AutoScrollPosition);
+			m_xRatioView = (float)-ptWorldScrollPos.X / (float)m_bm.Width;
+			m_yRatioView = (float)-ptWorldScrollPos.Y / (float)m_bm.Height;
+		}
+
+		// Make the scroll bars match the map at the current zoom. Done once
+		// the view has its final size, since the bars set up while the view
+		// was being created don't always show.
+
+		void UpdateScrollRange() {
+			if (m_bm == null)
+				return;
+			AutoScrollMinSize = Size.Empty;
+			AutoScrollMinSize = WorldToViewSize(m_bm.Size);
+			PerformLayout();
+			Invalidate();
+		}
+
 		public void SetDocument(Document doc) {
 			// This call is required by the Windows.Forms Form Designer.
 
@@ -102,6 +171,7 @@ namespace m
 			if (flScale > 3.0f)
 				flScale = 3.0f;
 			SetScale(flScale);
+			UpdateScrollRange();
 		}
 
 		public void SetScale(float flScale) {
@@ -111,6 +181,7 @@ namespace m
 				return;
 			m_flScale = flScale;
 			ResetClientSize();
+			UpdateScrollRange();
 			DrawLevelImage(null);
 			if (ScaleChanged != null)
 				ScaleChanged(this, null);
@@ -401,6 +472,8 @@ namespace m
 		}
 
 		private void LevelView_MouseDown(object sender, System.Windows.Forms.MouseEventArgs e) {
+			if (PanMouseDown(e))
+				return;
 			m_fJustSelected = false;
 
 			m_ptMouseDown = ViewToWorld(new Point(e.X - AutoScrollPosition.X, e.Y - AutoScrollPosition.Y));
@@ -500,6 +573,8 @@ namespace m
 		}
 
 		private void LevelView_MouseMove(object sender, System.Windows.Forms.MouseEventArgs e) {
+			if (PanMouseMove(e))
+				return;
 			Point ptMouse = ViewToWorld(new Point(e.X - AutoScrollPosition.X, e.Y - AutoScrollPosition.Y));
 			TemplateDoc tmpd = GetTemplateDoc();
 			Size sizTile = GetTileSize();
@@ -541,6 +616,8 @@ namespace m
 		}
 
 		private void LevelView_MouseUp(object sender, System.Windows.Forms.MouseEventArgs e) {
+			if (PanMouseUp(e))
+				return;
 			Point ptMouse = ViewToWorld(new Point(e.X - AutoScrollPosition.X, e.Y - AutoScrollPosition.Y));
 
 			// If a MapItem has captured the mouse, give it a crack at the event

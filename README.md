@@ -292,6 +292,7 @@ one with File > New.
   to 100 steps. A mouse drag counts as one step. In a text box they undo
   the typing instead. The old Settings > Comments (a note stored in the
   .ld that the game never used) is gone.
+- **Hold Space and drag with the left mouse button** to pan the map.
 - **Misc > Run (F5)** test-plays the mission: M checks it, exports it to a
   temporary mission pack and starts the game straight into it with
   `HostileTakeover.exe -pdb <pack> -l <level>`. M looks for the game next to
