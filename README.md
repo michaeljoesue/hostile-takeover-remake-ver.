@@ -128,7 +128,7 @@ Modern RTS controls:
 | | |
 |---|---|
 | Left-click | Select a unit or building (enemies too, to look at them). Clicking one of your buildings also opens its menu. Clicking the ground deselects. |
-| Unit build menus | Left-click a unit to order one (the panel shows what it is), right-click it to cancel one from the queue |
+| Unit build menus | Point at a unit to see what it is; left-click (or 1-9) orders one, right-click (or Shift+1-9) cancels one from the queue |
 | Placing a building | After Build, the building follows the mouse: left-click puts it down (white tiles: it fits; red: it doesn't), right-click or Esc cancels |
 | Drag a box | Select your fighting units in it; miners and defence towers are left out unless the box holds nothing else (Shift+drag adds to the selection) |
 | Double-click, Ctrl+click | Select all your units of that type on screen |
@@ -142,9 +142,15 @@ Modern RTS controls:
 | Ctrl+1 to 9 | Make the selection control group 1 to 9 (Shift+number adds to it) |
 | 1 to 9 | Select a control group; press twice quickly to go to it |
 | Space | Go to the last "under attack" alert |
-| Esc | Cancel attack-move or placement, otherwise deselect |
+| Esc | Close the open menu or dialog; otherwise cancel attack-move or placement, otherwise deselect |
 | Middle-drag | Pan the map |
 | Mouse wheel | Scroll the map up and down (Shift+wheel: sideways) |
+
+The cursor shows what a click would do: a crosshair over an enemy (or any
+unit while Ctrl is held) when you have units selected, a hand over a unit
+or building, and a "no entry" sign over cliffs and walls the selected units
+can't reach. Double-click (within half a second) selects all units of that
+type on screen.
 | Arrow keys, mouse at the edge, mini map | Scroll the map |
 
 The mini map (bottom right) is about a third of the screen's height

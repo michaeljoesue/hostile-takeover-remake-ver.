@@ -354,6 +354,12 @@ bool Form::EventProc(Event *pevt)
 {
 	switch (pevt->eType) {
 	case penHoverEvent:
+		// The battlefield sets its own cursor; menus and panels have the arrow
+
+		if (m_idf != kidfSimUI)
+			HostSetCursor(kcurDefault);
+		return OnPenEvent(pevt);
+
 	case penDownEvent:
 	case penMoveEvent:
 	case penUpEvent:

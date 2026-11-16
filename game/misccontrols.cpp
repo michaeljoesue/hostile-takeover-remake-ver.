@@ -1440,6 +1440,14 @@ void *ListControl::GetSelectedItemData()
 
 // Return first selected item's ListItem pointer
 
+ListItem *ListControl::GetItem(int iItem)
+{
+	ListItem *pli = m_pliFirst;
+	for (int i = 0; pli != NULL && i < iItem; i++)
+		pli = pli->pliNext;
+	return iItem >= 0 ? pli : NULL;
+}
+
 ListItem *ListControl::GetSelectedItem()
 {
 	for (ListItem *pli = m_pliFirst; pli != NULL; pli = pli->pliNext)

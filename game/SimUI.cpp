@@ -903,9 +903,8 @@ bool SimUIForm::OnPenEvent(Event *pevt)
         return true;
     }
 
-    // Debug gob identification
-
     if (pevt->eType == penHoverEvent) {
+        UpdateHoverCursor(pevt->x, pevt->y, pevt->ffMods);
         return true;
     }
 
@@ -1274,6 +1273,52 @@ MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord w
 	return pmuntSetTarget;
 }
 
+// The cursor shows what a click would do: crosshair over an enemy (or any
+// unit with Ctrl) when you have units selected, a hand over a unit or
+// building you could select, "no entry" over cliffs, walls and water the
+// selected units can't reach. Nothing under unexplored fog is given away.
+
+void SimUIForm::UpdateHoverCursor(int x, int y, word ffMods)
+{
+    int ncur = kcurDefault;
+    if (m_fAttackMoveArmed) {
+        ncur = kcurTarget;
+    } else if (gpfrmPlace == NULL || !gpfrmPlace->IsBusy()) {
+        WCoord wx, wy;
+        Gob *pgobHit = HitTestGob(x, y, &wx, &wy);
+        TCoord tx = TcFromWc(wx);
+        TCoord ty = TcFromWc(wy);
+        TCoord ctx, cty;
+        ggobm.GetMapSize(&ctx, &cty);
+        FogMap *pfogm = gsim.GetLevel()->GetFogMap();
+        bool fUnexplored = tx < 0 || ty < 0 || tx >= ctx || ty >= cty ||
+                IsFogOpaque(pfogm->GetMapPtr()[ty * ctx + tx]);
+        if (!fUnexplored) {
+            // Are any of your own mobile units selected?
+
+            bool fSelection = false;
+            for (Gob *pgob = ggobm.GetFirstGob(); pgob != NULL; pgob = ggobm.GetNextGob(pgob)) {
+                if ((pgob->GetFlags() & (kfGobSelected | kfGobMobileUnit)) == (kfGobSelected | kfGobMobileUnit) &&
+                        ((UnitGob *)pgob)->GetOwner() == gpplrLocal) {
+                    fSelection = true;
+                    break;
+                }
+            }
+            if (pgobHit != NULL && (pgobHit->GetFlags() & kfGobUnit) && pgobHit->GetType() != kgtReplicator) {
+                UnitGob *punt = (UnitGob *)pgobHit;
+                bool fEnemy = !punt->IsAlly(gpplrLocal->GetSide());
+                if (fSelection && (fEnemy || (ffMods & kfModCtrl)))
+                    ncur = kcurTarget;
+                else
+                    ncur = kcurSelect;
+            } else if (fSelection && gsim.GetLevel()->GetTerrainMap()->GetTerrainType(tx, ty) >= kttWall) {
+                ncur = kcurBlocked;
+            }
+        }
+    }
+    HostSetCursor(ncur);
+}
+
 Gob *SimUIForm::HitTestGob(int x, int y, WCoord *pwx, WCoord *pwy)
 {
 	WCoord wxTarget, wyTarget;
@@ -1310,7 +1355,7 @@ void SimUIForm::MoveOrAttackOrSelect(int x, int y, dword ff)
 // 1. On pen down to select the unit tapped on (fSelectOnly == true)
 // 2. On pen up to attack the unit tapped on or to move to the location tapped on (fSelectOnly == false)
 
-const int kctDoubleTapDelay = 100; // TUNE:
+const int kctDoubleTapDelay = 50; // half a second, like a mouse double-click
 
 void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
         WCoord wyTarget, dword ff)

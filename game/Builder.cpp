@@ -472,6 +472,8 @@ void BuilderGob::FindInitPosition(WPoint *pwpt)
 
 void MobileUnitBuildForm::SetOwner(BuilderGob *pbldr)
 {
+	m_iliHover = -1;
+
 	// Position
 
 	Size sizDib;
@@ -813,6 +815,64 @@ void MobileUnitBuildForm::OnControlNotify(word idc, int nNotify)
             gsndm.PlaySfx(ksfxGuiFormHide);
         }
     }
+}
+
+// The info panel shows the unit under the mouse (a click orders it, so it
+// can't be selected just to look); back to the selected one off the list
+
+bool MobileUnitBuildForm::OnPenEvent(Event *pevt)
+{
+    if (pevt->eType == penHoverEvent) {
+        ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
+        int ili = plstc->HitTestItem(pevt->x, pevt->y);
+        if (ili != m_iliHover) {
+            m_iliHover = ili;
+            ListItem *pli = ili >= 0 ? plstc->GetItem(ili) : plstc->GetSelectedItem();
+            if (pli != NULL)
+                UpdateUnitInfo(pli);
+        }
+    }
+    return Form::OnPenEvent(pevt);
+}
+
+// The menu closes on any key (auto takedown) except 1-9, its hotkeys
+
+bool MobileUnitBuildForm::OnKeyTest(Event *pevt)
+{
+    if (pevt != NULL && pevt->eType == keyDownEvent) {
+        // 1-9, and Shift / Ctrl / Alt pressed on their own (SDL key codes
+        // of keys without a character have bit 30 set)
+
+        if ((pevt->chr >= '1' && pevt->chr <= '9') || (pevt->chr & 0x40000000) != 0)
+            return true;
+    }
+    return Form::OnKeyTest(pevt);
+}
+
+// Keys 1-9 order the 1st-9th unit in the list, Shift+1-9 cancel one
+
+bool MobileUnitBuildForm::EventProc(Event *pevt)
+{
+    if (pevt->eType == keyDownEvent && pevt->chr >= '1' && pevt->chr <= '9') {
+        ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
+        int ili = pevt->chr - '1';
+        ListItem *pli = plstc->GetItem(ili);
+        if (pli == NULL)
+            return true;
+        if (plstc->GetSelectedItemIndex() != ili)
+            plstc->Select(ili, true);
+        UnitType ut = UnitTypeFromPVoid(plstc->GetSelectedItemData());
+        if (pevt->ffMods & kfModShift) {
+            if (m_bqPrivate.GetUnitCount(ut) > 0)
+                OnControlSelected(kidcCancelOrder);
+        } else if (!pli->fDisabled && m_fOrderValid && !m_fLimitReached) {
+            OnControlSelected(kidcOrder);
+        } else {
+            gsndm.PlaySfx(ksfxGuiFormHide);
+        }
+        return true;
+    }
+    return Form::EventProc(pevt);
 }
 
 // Right click on an item cancels one of it from the queue

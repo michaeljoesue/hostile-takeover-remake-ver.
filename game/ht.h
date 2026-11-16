@@ -2707,6 +2707,7 @@ public:
 //	ListItem *EnumItemPtr(Enum *penum);
 	int GetSelectedItemIndex();
 	int HitTestItem(int x, int y);	// item under the point (form manager coords) or -1
+	ListItem *GetItem(int iItem);
 	bool IsUserClick() { return m_fUserClick; }	// notifying because of a click
 	ListItem *GetSelectedItem();
 	void *GetSelectedItemData();
@@ -3134,6 +3135,7 @@ private:
             WCoord wyTarget);
     void OnRightClick(int x, int y, bool fQueue = false, bool fForce = false);
     void OnGuardClick(int x, int y, bool fQueue);
+    void UpdateHoverCursor(int x, int y, word ffMods);
     void ScrollViewBy(WCoord dwx, WCoord dwy);
 
     // Control groups: Ctrl+1..9 sets, 1..9 selects
@@ -5992,9 +5994,13 @@ public:
 	virtual void OnControlNotify(word idc, int nNotify);
 	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd);
 	virtual bool OnRightDown(Event *pevt);
+	virtual bool OnPenEvent(Event *pevt);
+	virtual bool EventProc(Event *pevt);
+	virtual bool OnKeyTest(Event *pevt);
 
 private:
 	int m_cupdLast;
+	int m_iliHover;		// item whose info shows because the mouse is over it, or -1
 	bool m_fLimitReached;
 	bool m_fOrderValid;
 	BuilderGob *m_pbldr;
@@ -7497,6 +7503,11 @@ void HostOutputDebugString(char *pszFormat, ...);
 long HostGetTickCount();
 dword HostGetModifiers();
 void HostSetTargetCursor(bool fTarget);
+#define kcurDefault 0	// arrow
+#define kcurTarget 1	// crosshair: attack, attack-move, force attack
+#define kcurSelect 2	// hand: a unit or building to select
+#define kcurBlocked 3	// no entry: the selected units can't go there
+void HostSetCursor(int ncur);
 bool HostGetMousePosition(int *px, int *py);	// game screen pixels
 long HostGetMillisecondCount();
 dword HostGetCurrentKeyState(dword keyBit);
