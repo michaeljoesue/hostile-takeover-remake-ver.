@@ -359,17 +359,12 @@ void StructureBuildForm::SetOwner(BuilderGob *pgobOwner)
 	// If we're at the structure limit, hide the order button, show the limit reached text
 	// Otherwise hide the limit reached text
 
-	if (ggobm.IsBelowLimit(knLimitStruct, m_pgobOwner->GetOwner())) {
-		m_fLimitReached = false;
-	} else {
-		m_fLimitReached = true;
-		GetControlPtr(kidcOk)->Show(false);
-	}
+	m_fLimitReached = !ggobm.IsBelowLimit(knLimitStruct, m_pgobOwner->GetOwner());
 	GetControlPtr(kidcLimitReached)->Show(m_fLimitReached);
 
-    if (!m_fLimitReached && plstc->GetSelectedItemIndex() == -1) {
-		GetControlPtr(kidcOk)->Show(false);
-    }
+	// No Build button: clicking a building builds it
+
+	GetControlPtr(kidcOk)->Show(false);
 }
 
 void StructureBuildForm::UpdateStructureInfo(ListItem *pli)
@@ -449,12 +444,6 @@ void StructureBuildForm::UpdateStructureInfo(ListItem *pli)
 		plbl->SetText(pstruc->szDescription);
 	}
 
-	// Hide the "Build" button if this structure is disabled
-
-	if (!m_fLimitReached) {
-		ButtonControl *pbtn = (ButtonControl *)GetControlPtr(kidcOk);
-		pbtn->Show(!pli->fDisabled);
-	}
 }
 
 void StructureBuildForm::EndForm(int nResult)
@@ -511,7 +500,7 @@ void StructureBuildForm::OnControlNotify(word idc, int nNotify)
     }
     UpdateStructureInfo(pli);
 
-    // A click on a building starts placing it (as Ok does)
+    // A click on a building starts placing it
 
     if (plstc->IsUserClick()) {
         if (!pli->fDisabled && !m_fLimitReached) {
