@@ -233,7 +233,8 @@ bool MobileUnitGob::Init(IniReader *pini, FindProp *pfind, const char *pszName)
 	if (cArgs > 0)
 		m_wfMunt = (m_wfMunt & ~kfMuntAggressivenessBits) | AggBitsFromAgg(nAggressiveness);
 
-	// Only computer-controlled units respond to their initial Action
+	// Only computer-controlled units respond to their initial Action. The
+	// exception is Mine: a player's Bullpup placed with it starts mining.
 
 	if (m_pplr->GetFlags() & kfPlrComputer) {
 		if (cArgs > 1)
@@ -243,6 +244,9 @@ bool MobileUnitGob::Init(IniReader *pini, FindProp *pfind, const char *pszName)
 
 	} else {
 		m_wfMunt &= ~kfMuntAttackEnemiesWhenMoving;
+		int nUnitAction;
+		if (cArgs > 1 && IniScanf(szAction, "%d", &nUnitAction) != 0 && nUnitAction == knMineUnitAction)
+			PerformAction(szAction);
 	}
 
 	return true;
