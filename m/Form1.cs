@@ -63,8 +63,9 @@ namespace m
 		private System.Windows.Forms.ToolStripMenuItem menuItemUnitGroups;
 		private System.Windows.Forms.ToolStripSeparator menuItem7;
 		private System.Windows.Forms.ToolStripSeparator menuItem3;
-		private System.Windows.Forms.ToolStripMenuItem menuItemComments;
-		private System.Windows.Forms.ToolStripSeparator menuItem9;
+		private System.Windows.Forms.ToolStripMenuItem menuItemUndo;
+		private System.Windows.Forms.ToolStripMenuItem menuItemRedo;
+		private System.Windows.Forms.ToolStripSeparator menuItemUndoSep;
 		private System.Windows.Forms.ToolStripMenuItem menuItemRun;
 		private System.Windows.Forms.ToolStripSeparator menuItem8;
 		private System.Windows.Forms.ToolStripMenuItem menuItemSwitches;
@@ -168,6 +169,9 @@ namespace m
 			this.menuItem10 = new System.Windows.Forms.ToolStripSeparator();
 			this.menuItemExit = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemUndo = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemRedo = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemUndoSep = new System.Windows.Forms.ToolStripSeparator();
 			this.menuItemCut = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemCopy = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemPaste = new System.Windows.Forms.ToolStripMenuItem();
@@ -185,8 +189,6 @@ namespace m
 			this.menuItemSide3Properties = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSide4Properties = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSide5Properties = new System.Windows.Forms.ToolStripMenuItem();
-			this.menuItem9 = new System.Windows.Forms.ToolStripSeparator();
-			this.menuItemComments = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemMisc = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemValidate = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemRun = new System.Windows.Forms.ToolStripMenuItem();
@@ -298,11 +300,28 @@ namespace m
 			// menuItem1
 			// 
 			this.menuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+																					  this.menuItemUndo,
+																					  this.menuItemRedo,
+																					  this.menuItemUndoSep,
 																					  this.menuItemCut,
 																					  this.menuItemCopy,
 																					  this.menuItemPaste,
 																					  this.menuItemDelete});
 			this.menuItem1.Text = "&Edit";
+			// 
+			// menuItemUndo
+			// 
+			this.menuItemUndo.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Z;
+			this.menuItemUndo.Text = "&Undo";
+			this.menuItemUndo.Click += new System.EventHandler(this.menuItemUndo_Click);
+			// 
+			// menuItemRedo
+			// 
+			this.menuItemRedo.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Y;
+			this.menuItemRedo.ShortcutKeyDisplayString = "Ctrl+Y";
+			this.menuItemRedo.Text = "&Redo";
+			this.menuItemRedo.Click += new System.EventHandler(this.menuItemRedo_Click);
+			this.menuItem1.DropDownOpening += new System.EventHandler(this.menuItemEdit_DropDownOpening);
 			// 
 			// menuItemCut
 			// 
@@ -342,9 +361,7 @@ namespace m
 																					  this.menuItemSide2Properties,
 																					  this.menuItemSide3Properties,
 																					  this.menuItemSide4Properties,
-																					  this.menuItemSide5Properties,
-																					  this.menuItem9,
-																					  this.menuItemComments});
+																					  this.menuItemSide5Properties});
 			this.menuItem4.Text = "&Settings";
 			// 
 			// menuItemTriggers
@@ -405,15 +422,6 @@ namespace m
 			// 
 			this.menuItemSide5Properties.Text = "Side &5 (Crimson)";
 			this.menuItemSide5Properties.Click += new System.EventHandler(this.menuItemSide5Properties_Click);
-			// 
-			// menuItem9
-			// 
-			// 
-			// menuItemComments
-			// 
-			this.menuItemComments.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift | System.Windows.Forms.Keys.C;
-			this.menuItemComments.Text = "Comments...";
-			this.menuItemComments.Click += new System.EventHandler(this.menuItemComments_Click);
 			// 
 			// menuItemMisc
 			// 
@@ -1057,10 +1065,47 @@ namespace m
 				lvld.EditUnitGroups();
 		}
 
-		private void menuItemComments_Click(object sender, System.EventArgs e) {
+		// Undo / Redo (Ctrl+Z, Ctrl+Y; Ctrl+Shift+Z also redoes). In a text
+		// box they undo the typing instead.
+
+		TextBoxBase FocusedTextBox() {
+			Control ctl = this.ActiveControl;
+			while (ctl is ContainerControl && ((ContainerControl)ctl).ActiveControl != null)
+				ctl = ((ContainerControl)ctl).ActiveControl;
+			return ctl as TextBoxBase;
+		}
+
+		private void menuItemUndo_Click(object sender, System.EventArgs e) {
+			TextBoxBase tb = FocusedTextBox();
+			if (tb != null) {
+				tb.Undo();
+				return;
+			}
 			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
 			if (lvld != null)
-				lvld.EditComments();
+				lvld.Undo();
+		}
+
+		private void menuItemRedo_Click(object sender, System.EventArgs e) {
+			if (FocusedTextBox() != null)
+				return;
+			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
+			if (lvld != null)
+				lvld.Redo();
+		}
+
+		private void menuItemEdit_DropDownOpening(object sender, System.EventArgs e) {
+			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
+			menuItemUndo.Enabled = lvld != null && lvld.CanUndo();
+			menuItemRedo.Enabled = lvld != null && lvld.CanRedo();
+		}
+
+		protected override bool ProcessCmdKey(ref Message msg, Keys keyData) {
+			if (keyData == (Keys.Control | Keys.Shift | Keys.Z) && FocusedTextBox() == null) {
+				menuItemRedo_Click(this, EventArgs.Empty);
+				return true;
+			}
+			return base.ProcessCmdKey(ref msg, keyData);
 		}
 
 		private void menuItemSwitches_Click(object sender, System.EventArgs e) {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Windows.Forms;
@@ -39,7 +40,14 @@ namespace m {
 		TriggerManager m_tgrm = new TriggerManager();
 		UnitGroupManager m_ugm = new UnitGroupManager();
 		SwitchManager m_swm = new SwitchManager();
-		string m_strComment;
+		// Undo / redo: snapshots of the level (map items, sides, triggers,
+		// unit groups, switches, settings). An edit is committed when the app
+		// goes idle with no mouse button held, so a drag is one step.
+		List<byte[]> m_aabUndo = new List<byte[]>();
+		List<byte[]> m_aabRedo = new List<byte[]>();
+		byte[] m_abUndoCurrent = null;
+		bool m_fUndoDirty = false;
+		const int kcUndoMax = 100;
 		int[] m_mpDirToDx = new int[] { 0, 1, 1, 1, 0, -1, -1, -1 };
 		int[] m_mpDirToDy = new int[] { -1, -1, 0, 1, 1, 1, 0, -1 };
 		ArrayList m_alsmiSelected = new ArrayList();
@@ -125,13 +133,6 @@ namespace m {
 				m_swm = new SwitchManager();
 			}
 
-			// Comment string
-
-			try {
-				m_strComment = info.GetString("Comment");
-			} catch (SerializationException) {
-			}
-
 			string strTemplatesFileName = null;
 
 			// Load the desired template set
@@ -201,7 +202,6 @@ namespace m {
 			info.AddValue("TriggerManager", m_tgrm);
 			info.AddValue("UnitGroupManager", m_ugm);
 			info.AddValue("SwitchManager", m_swm);
-			info.AddValue("Comment", m_strComment);
 			if (m_tmpd == null) {
 				info.AddValue("TemplatesFileName", "");
 			} else {
@@ -230,6 +230,7 @@ namespace m {
 
 		void Application_IdleHandler(object sender, EventArgs e) {
 			s_fLoading = false;
+			UndoIdle();
 			if (!m_fUpdateDirty)
 				return;
 			m_fUpdateDirty = false;
@@ -1498,6 +1499,133 @@ namespace m {
 				SetModified(true);
 		}
 
+		//
+		// Undo / redo
+		//
+
+		protected override void OnEdited() {
+			m_fUndoDirty = true;
+		}
+
+		byte[] TakeSnapshot() {
+			object[] aob = new object[] {
+				(IMapItem[])m_alsmi.ToArray(typeof(IMapItem)), GetSideInfos(),
+				m_tgrm, m_ugm, m_swm, m_strTitle,
+				m_trcBounds.X, m_trcBounds.Y, m_trcBounds.Width, m_trcBounds.Height,
+				m_nPlayersMin, m_nPlayersMax, (int)m_gxr, m_ctx, m_cty
+			};
+			MemoryStream stm = new MemoryStream();
+			DocFormat.Save(stm, aob);
+			return stm.ToArray();
+		}
+
+		void RestoreSnapshot(byte[] ab) {
+			Hashtable ht = new Hashtable();
+			ht.Add("DocTemplate", m_doct);
+			ht.Add("Filename", GetPath());
+			StreamingContext ctx = new StreamingContext(StreamingContextStates.File, ht);
+			object[] aob = (object[])DocFormat.Load(new MemoryStream(ab), ctx);
+
+			// Out with the old items
+
+			IMapItem[] amiOld = (IMapItem[])m_alsmi.ToArray(typeof(IMapItem));
+			RemoveEventHandlers(amiOld);
+			m_alsmi.Clear();
+			m_alsmiSelected = new ArrayList();
+			if (ItemsRemoved != null)
+				ItemsRemoved(amiOld);
+
+			// In with the snapshot's
+
+			IMapItem[] ami = (IMapItem[])aob[0];
+			m_alsmi.AddRange(ami);
+			AddEventHandlers(ami);
+			m_alsidi.Clear();
+			m_alsidi.AddRange((SideInfo[])aob[1]);
+			m_tgrm = (TriggerManager)aob[2];
+			m_ugm = (UnitGroupManager)aob[3];
+			m_swm = (SwitchManager)aob[4];
+			string strTitle = (string)aob[5];
+			m_trcBounds = new Rectangle((int)aob[6], (int)aob[7], (int)aob[8], (int)aob[9]);
+			m_nPlayersMin = (int)aob[10];
+			m_nPlayersMax = (int)aob[11];
+			m_gxr = (GalaxiteRegrowth)(int)aob[12];
+			m_ctx = (int)aob[13];
+			m_cty = (int)aob[14];
+			if (strTitle != m_strTitle)
+				Title = strTitle;
+
+			m_fUpdateDirty = true;
+			SetModified(true);
+			if (ImageChanged != null)
+				ImageChanged();
+		}
+
+		// Called when idle: an edit since the last step becomes a new step
+
+		void UndoIdle() {
+			if (Control.MouseButtons != MouseButtons.None)
+				return;
+			if (m_abUndoCurrent == null) {
+				m_abUndoCurrent = TakeSnapshot();
+				m_fUndoDirty = false;
+				return;
+			}
+			if (!m_fUndoDirty)
+				return;
+			m_fUndoDirty = false;
+			byte[] ab = TakeSnapshot();
+			if (SameBytes(ab, m_abUndoCurrent))
+				return;
+			m_aabUndo.Add(m_abUndoCurrent);
+			if (m_aabUndo.Count > kcUndoMax)
+				m_aabUndo.RemoveAt(0);
+			m_aabRedo.Clear();
+			m_abUndoCurrent = ab;
+		}
+
+		static bool SameBytes(byte[] ab1, byte[] ab2) {
+			if (ab1.Length != ab2.Length)
+				return false;
+			for (int i = 0; i < ab1.Length; i++) {
+				if (ab1[i] != ab2[i])
+					return false;
+			}
+			return true;
+		}
+
+		public bool CanUndo() {
+			return m_aabUndo.Count > 0 || (m_fUndoDirty && m_abUndoCurrent != null);
+		}
+
+		public bool CanRedo() {
+			return m_aabRedo.Count > 0;
+		}
+
+		public void Undo() {
+			UndoIdle();
+			if (m_aabUndo.Count == 0)
+				return;
+			byte[] ab = m_aabUndo[m_aabUndo.Count - 1];
+			m_aabUndo.RemoveAt(m_aabUndo.Count - 1);
+			m_aabRedo.Add(m_abUndoCurrent);
+			m_abUndoCurrent = ab;
+			RestoreSnapshot(ab);
+			m_fUndoDirty = false;
+		}
+
+		public void Redo() {
+			UndoIdle();
+			if (m_aabRedo.Count == 0)
+				return;
+			byte[] ab = m_aabRedo[m_aabRedo.Count - 1];
+			m_aabRedo.RemoveAt(m_aabRedo.Count - 1);
+			m_aabUndo.Add(m_abUndoCurrent);
+			m_abUndoCurrent = ab;
+			RestoreSnapshot(ab);
+			m_fUndoDirty = false;
+		}
+
 		public void EditUnitGroups() {
 			UnitGroupsForm frm = new UnitGroupsForm(this, m_ugm);
 #if false
@@ -1505,14 +1633,6 @@ namespace m {
 #else
 			frm.ShowDialog();
 #endif
-		}
-
-		public void EditComments() {
-			EditCommentsForm frm = new EditCommentsForm(m_strComment);
-			if (frm.ShowDialog() == DialogResult.OK) {
-				m_strComment = frm.textBox1.Text;
-				SetModified(true);
-			}
 		}
 
 		public void EditLevelText() {

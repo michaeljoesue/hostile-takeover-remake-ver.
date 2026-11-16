@@ -286,6 +286,12 @@ Start
 `bin\m.exe`, and open a mission (`.ld`) from the `data` folder or make a new
 one with File > New.
 
+- **Edit > Undo (Ctrl+Z) / Redo (Ctrl+Y or Ctrl+Shift+Z)** step back and
+  forward through changes to the open mission (tiles, units and buildings,
+  Galaxite, areas, triggers, unit groups, switches, sides and settings), up
+  to 100 steps. A mouse drag counts as one step. In a text box they undo
+  the typing instead. The old Settings > Comments (a note stored in the
+  .ld that the game never used) is gone.
 - **Misc > Run (F5)** test-plays the mission: M checks it, exports it to a
   temporary mission pack and starts the game straight into it with
   `HostileTakeover.exe -pdb <pack> -l <level>`. M looks for the game next to

@@ -30,7 +30,6 @@
     <Compile Include="CaTypeUpgradeTypesForm.cs" />
     <Compile Include="Doc.cs" />
     <Compile Include="DocFormat.cs" />
-    <Compile Include="EditCommentsForm.cs" />
     <Compile Include="EditLevelTextForm.cs" />
     <Compile Include="EditRichTextForm.cs" />
     <Compile Include="EditStringForm.cs" />
@@ -110,9 +109,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="CaTypeUpgradeTypesForm.resx">
       <DependentUpon>CaTypeUpgradeTypesForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="EditCommentsForm.resx">
-      <DependentUpon>EditCommentsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="EditLevelTextForm.resx">
       <DependentUpon>EditLevelTextForm.cs</DependentUpon>

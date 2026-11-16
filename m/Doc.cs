@@ -352,6 +352,11 @@ namespace m
 			m_cOpen = 0;
 		}
 
+		// Every edit (not just the first) - for undo
+
+		protected virtual void OnEdited() {
+		}
+
 		public virtual void InitDone() {
 			m_fIniting = false;
 		}
@@ -363,6 +368,8 @@ namespace m
 		public void SetModified(bool fModified) {
 			if (m_fIniting)
 				return;
+			if (fModified)
+				OnEdited();
 			if (fModified == m_fModified)
 				return;
 			m_fModified = fModified;
