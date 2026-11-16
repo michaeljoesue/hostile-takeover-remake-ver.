@@ -2065,8 +2065,16 @@ void MiniMapControl::RedrawTRect(TRect *ptrc)
 
 int MiniMapControl::FogCoverage(int tx, int ty)
 {
-	// Off the map counts as the nearest tile on it
+	// Off the map: mirrored across the edge tile, as in the main view
 
+	if (tx < 0)
+		tx = -tx;
+	if (tx >= m_ctx)
+		tx = 2 * (m_ctx - 1) - tx;
+	if (ty < 0)
+		ty = -ty;
+	if (ty >= m_cty)
+		ty = 2 * (m_cty - 1) - ty;
 	tx = tx < 0 ? 0 : (tx >= m_ctx ? m_ctx - 1 : tx);
 	ty = ty < 0 ? 0 : (ty >= m_cty ? m_cty - 1 : ty);
 	int nBits = m_pbFogMap[ty * m_ctx + tx] & kbfFogMask;

@@ -1044,7 +1044,7 @@ private:
 	bool m_fSoftInit;
 	void *m_pvSoftCache;	// soft tiles by 3x3 neighbourhood (see fogmap.cpp)
 	void InitSoftEdges();
-	byte *GetSoftTile(byte *abNeighbours);
+	byte *GetSoftTile(byte *abNeighbours, int ffEdges);
 	void DrawSoftEdge(DibBitmap *pbm, byte *pbSoft, int x, int y);
 	byte GetFogAt(int tx, int ty);
 	TBitmap *m_aptbmGalax[9];

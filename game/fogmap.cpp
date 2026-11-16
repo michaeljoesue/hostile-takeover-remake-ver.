@@ -479,19 +479,37 @@ void FogMap::InitSoftEdges()
 	delete pbmT;
 }
 
+// Off the map, the fog is the map's fog mirrored across the edge tile (the
+// tile past the edge looks like the tile before it). Revealed ground shows
+// right up to the edge, and fog near the edge fades the same as anywhere
+// else, instead of running into the edge as a solid block.
+
+static int MirrorTc(int tc, int ctc)
+{
+	if (tc < 0)
+		tc = -tc;
+	if (tc >= ctc)
+		tc = 2 * (ctc - 1) - tc;
+	return tc < 0 ? 0 : (tc >= ctc ? ctc - 1 : tc);
+}
+
 byte FogMap::GetFogAt(int tx, int ty)
 {
-	// Off the map counts as the nearest tile on it, so revealed ground
-	// shows right up to the map's edge and fog doesn't fade in there
-
-	tx = tx < 0 ? 0 : (tx >= m_ctxMap ? m_ctxMap - 1 : tx);
-	ty = ty < 0 ? 0 : (ty >= m_ctyMap ? m_ctyMap - 1 : ty);
+	tx = MirrorTc(tx, m_ctxMap);
+	ty = MirrorTc(ty, m_ctyMap);
 	return m_pbMap[ty * m_ctxMap + tx] & kbfFogMask;
 }
 
-byte *FogMap::GetSoftTile(byte *abNeighbours)
+// Which sides of a tile are the map's edge (kfSoftEdge*)
+
+#define kfSoftEdgeLeft 1
+#define kfSoftEdgeTop 2
+#define kfSoftEdgeRight 4
+#define kfSoftEdgeBottom 8
+
+byte *FogMap::GetSoftTile(byte *abNeighbours, int ffEdges)
 {
-	unsigned long long key = 0;
+	unsigned long long key = ffEdges;
 	for (int i = 0; i < 9; i++)
 		key = (key << 5) | abNeighbours[i];
 	SoftCache *pcache = (SoftCache *)m_pvSoftCache;
@@ -520,6 +538,29 @@ byte *FogMap::GetSoftTile(byte *abNeighbours)
 			for (int y = 0; y < cy; y++)
 				memcpy(&pnCov[(ty * cy + y) * cxBig + tx * cx], &pnSrc[y * cx], cx * sizeof(int));
 		}
+	}
+
+	// Past the map's edge: mirror the coverage across the middle of this
+	// tile, pixel by pixel (the neighbour slots past the edge hold the
+	// mirrored tiles' fog, unflipped)
+
+	if (ffEdges & kfSoftEdgeLeft) {
+		for (int y = 0; y < cyBig; y++)
+			for (int x = 0; x < cx; x++)
+				pnCov[y * cxBig + x] = pnCov[y * cxBig + (3 * cx - 1 - x)];
+	}
+	if (ffEdges & kfSoftEdgeRight) {
+		for (int y = 0; y < cyBig; y++)
+			for (int x = 2 * cx; x < cxBig; x++)
+				pnCov[y * cxBig + x] = pnCov[y * cxBig + (3 * cx - 1 - x)];
+	}
+	if (ffEdges & kfSoftEdgeTop) {
+		for (int y = 0; y < cy; y++)
+			memcpy(&pnCov[y * cxBig], &pnCov[(3 * cy - 1 - y) * cxBig], cxBig * sizeof(int));
+	}
+	if (ffEdges & kfSoftEdgeBottom) {
+		for (int y = 2 * cy; y < cyBig; y++)
+			memcpy(&pnCov[y * cxBig], &pnCov[(3 * cy - 1 - y) * cxBig], cxBig * sizeof(int));
 	}
 	int nRadius = cx / 3;
 	if (nRadius < 1)
@@ -680,7 +721,9 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 						pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
 						cEmpty = 0;
 					}
-					DrawSoftEdge(pbm, GetSoftTile(abNeighbours), xTile, yTile);
+					int ffEdges = (txT == 0 ? kfSoftEdgeLeft : 0) | (tyT == 0 ? kfSoftEdgeTop : 0) |
+							(txT == m_ctxMap - 1 ? kfSoftEdgeRight : 0) | (tyT == m_ctyMap - 1 ? kfSoftEdgeBottom : 0);
+					DrawSoftEdge(pbm, GetSoftTile(abNeighbours, ffEdges), xTile, yTile);
 					xTile += gcxTile;
 					continue;
 				}
