@@ -1596,6 +1596,9 @@ MiniMapControl::MiniMapControl()
 	m_nPpt = 1 << 16;
 	m_cxDisp = 0;
 	m_cyDisp = 0;
+	m_pbFogLevel = NULL;
+	m_pbNearest = NULL;
+	m_ppal = NULL;
 }
 
 MiniMapControl::~MiniMapControl()
@@ -1604,12 +1607,16 @@ MiniMapControl::~MiniMapControl()
 	delete m_pbm;
 	delete[] m_axSrc;
 	delete[] m_aySrc;
+	delete[] m_pbFogLevel;
+	delete[] m_pbNearest;
 }
 
-// Mini map layout. The terrain is kept in a dib at 1 or 2 pixels per tile
-// (the mini tile sets' sizes) and stretched to the display size when
-// painted, so the mini map can be any size. Units are drawn on top at their
-// current (interpolated) positions every paint so they move smoothly.
+// Mini map layout. The terrain is kept in a dib at the mini map's display
+// size, each pixel the average colour of the part of the map it covers
+// (from the full size tiles). The fog is kept per display pixel too,
+// interpolated between tiles so its edges are soft. Units are drawn on top
+// at their current (interpolated) positions every paint so they move
+// smoothly.
 
 #define kpctMiniMapTarget 34	// mini map height as % of the playfield height
 #define kcxyMiniMapMin 96
@@ -1676,9 +1683,14 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	// Terrain dib at the base scale
 
 	ggobm.GetMapSize(&m_ctx, &m_cty);
-	m_pbm = CreateDibBitmap(NULL, m_ctx * m_nScale, m_cty * m_nScale);
+	m_pbm = CreateDibBitmap(NULL, m_cxDisp, m_cyDisp);
 	if (m_pbm == NULL)
 		return false;
+	m_pbFogLevel = new byte[m_cxDisp * m_cyDisp];
+	memset(m_pbFogLevel, 8, m_cxDisp * m_cyDisp);
+	m_pbNearest = new byte[32 * 32 * 32];
+	memset(m_pbNearest, 0, 32 * 32 * 32);
+	m_ppal = gsim.GetLevel()->GetPalette();
 
 	// Stretch tables: display pixel -> terrain dib pixel
 
@@ -1757,12 +1769,23 @@ void MiniMapControl::OnPaint(DibBitmap *pbm)
 	byte *pbSrcBase = m_pbm->GetBits();
 	byte *pbDstBase = pbm->GetBits();
 	int cbRowDst = pbm->GetRowBytes();
+	byte *mpShadow = gmpiclriclrShadow;
 	for (int yD = rcClip.top; yD < rcClip.bottom; yD++) {
-		byte *pbSrcRow = pbSrcBase + (long)m_aySrc[yD - yMap] * m_cbRowBytes;
+		int yS = yD - yMap;
+		byte *pbSrc = pbSrcBase + (long)yS * m_cbRowBytes + (rcClip.left - xMap);
+		byte *pbFog = m_pbFogLevel + (long)yS * m_cxDisp + (rcClip.left - xMap);
 		byte *pbDst = pbDstBase + (long)yD * cbRowDst + rcClip.left;
-		int *pxSrc = &m_axSrc[rcClip.left - xMap];
-		for (int xD = rcClip.left; xD < rcClip.right; xD++)
-			*pbDst++ = pbSrcRow[*pxSrc++];
+		for (int xD = rcClip.left; xD < rcClip.right; xD++) {
+			int nLevel = *pbFog++;
+			byte b = *pbSrc++;
+			if (nLevel >= 8) {
+				b = m_clrBlack;
+			} else if (mpShadow != NULL) {
+				while (nLevel-- > 0)
+					b = mpShadow[b];
+			}
+			*pbDst++ = b;
+		}
 	}
 
 	// Units and buildings, where they are being drawn right now
@@ -1949,44 +1972,124 @@ void MiniMapControl::RedrawTRect(TRect *ptrc)
 #pragma clang diagnostic pop
 #endif
 
-	// Redraw the terrain, fog and Galaxite of this rect in the terrain dib.
-	// Units are drawn over it when the mini map paints.
+	// Redraw the terrain, Galaxite and fog of this rect of tiles. The fog
+	// at a pixel depends on the tiles around it, so one more tile around.
 
-	for (TCoord ty = ptrc->top; ty < ptrc->bottom; ty++) {
-		for (TCoord tx = ptrc->left; tx < ptrc->right; tx++) {
-			long offset = (long)ty * m_ctx + tx;
-			byte bFog = m_pbFogMap[offset];
-			byte *pbDst = m_pbm->GetBits() + (long)ty * m_nScale * m_cbRowBytes + tx * m_nScale;
-			byte ab[4];
-			if (IsFogOpaque(bFog)) {
-				ab[0] = ab[1] = ab[2] = ab[3] = m_clrBlack;
-			} else {
-				m_wfMm |= kfMmRedraw;
-				if (HasGalaxite(bFog)) {
-					ab[0] = ab[1] = ab[2] = ab[3] = m_clrGalaxite;
-				} else {
-					int nTile = (BigWord(m_pwTileMap[offset]) & 0x7fc);
-					if (m_nScale == 1) {
-						ab[0] = m_pbTileData[nTile >> 2];
+	TRect trc = *ptrc;
+	trc.left = trc.left > 0 ? trc.left - 1 : 0;
+	trc.top = trc.top > 0 ? trc.top - 1 : 0;
+	trc.right = trc.right < m_ctx ? trc.right + 1 : m_ctx;
+	trc.bottom = trc.bottom < m_cty ? trc.bottom + 1 : m_cty;
+	int xD0 = (int)((long long)trc.left * m_cxDisp / m_ctx);
+	int yD0 = (int)((long long)trc.top * m_cyDisp / m_cty);
+	int xD1 = (int)(((long long)trc.right * m_cxDisp + m_ctx - 1) / m_ctx);
+	int yD1 = (int)(((long long)trc.bottom * m_cyDisp + m_cty - 1) / m_cty);
+	if (xD1 > m_cxDisp)
+		xD1 = m_cxDisp;
+	if (yD1 > m_cyDisp)
+		yD1 = m_cyDisp;
+
+	TileMap *ptmap = gsim.GetLevel()->GetTileMap();
+	int cxMap = m_ctx * gcxTile;
+	int cyMap = m_cty * gcyTile;
+	int cSamplesX = cxMap / m_cxDisp;
+	int cSamplesY = cyMap / m_cyDisp;
+	cSamplesX = cSamplesX < 1 ? 1 : (cSamplesX > 4 ? 4 : cSamplesX);
+	cSamplesY = cSamplesY < 1 ? 1 : (cSamplesY > 4 ? 4 : cSamplesY);
+	byte *argbGx = m_ppal->argb[m_clrGalaxite];
+	static const byte s_abBayer4[16] = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
+
+	for (int yD = yD0; yD < yD1; yD++) {
+		for (int xD = xD0; xD < xD1; xD++) {
+			// Terrain: average of samples over the area this pixel covers
+
+			int r = 0, g = 0, b = 0, c = 0;
+			for (int sy = 0; sy < cSamplesY; sy++) {
+				int yM = (int)(((long long)(yD * cSamplesY + sy) * 2 + 1) * cyMap / (2 * m_cyDisp * cSamplesY));
+				for (int sx = 0; sx < cSamplesX; sx++) {
+					int xM = (int)(((long long)(xD * cSamplesX + sx) * 2 + 1) * cxMap / (2 * m_cxDisp * cSamplesX));
+					int tx = xM / gcxTile;
+					int ty = yM / gcyTile;
+					long offset = (long)ty * m_ctx + tx;
+					byte *argb;
+					if (HasGalaxite(m_pbFogMap[offset])) {
+						argb = argbGx;
 					} else {
-						byte *pbSrc = &m_pbTileData[nTile];
-						ab[0] = pbSrc[0];
-						ab[1] = pbSrc[1];
-						ab[2] = pbSrc[2];
-						ab[3] = pbSrc[3];
+						byte *pbTile = ptmap->m_apbTileData[BigWord(m_pwTileMap[offset]) / 4];
+						byte bPixel = pbTile[(yM - ty * gcyTile) * gcxTile + (xM - tx * gcxTile)];
+						argb = m_ppal->argb[bPixel];
 					}
+					r += argb[0];
+					g += argb[1];
+					b += argb[2];
+					c++;
 				}
 			}
-			if (m_nScale == 1) {
-				*pbDst = ab[0];
-			} else {
-				pbDst[0] = ab[0];
-				pbDst[1] = ab[1];
-				pbDst[m_cbRowBytes] = ab[2];
-				pbDst[m_cbRowBytes + 1] = ab[3];
-			}
+			m_pbm->GetBits()[(long)yD * m_cbRowBytes + xD] = NearestColor(r / c, g / c, b / c);
+
+			// Fog: coverage interpolated between tile centres
+
+			int nFx = (int)(((long long)(2 * xD + 1) * m_ctx << 8) / (2 * m_cxDisp)) - 128;
+			int nFy = (int)(((long long)(2 * yD + 1) * m_cty << 8) / (2 * m_cyDisp)) - 128;
+			int tx0 = nFx >> 8, ty0 = nFy >> 8;
+			int fx = nFx & 0xff, fy = nFy & 0xff;
+			int c00 = FogCoverage(tx0, ty0), c10 = FogCoverage(tx0 + 1, ty0);
+			int c01 = FogCoverage(tx0, ty0 + 1), c11 = FogCoverage(tx0 + 1, ty0 + 1);
+			int cTop = c00 + (((c10 - c00) * fx) >> 8);
+			int cBot = c01 + (((c11 - c01) * fx) >> 8);
+			int nCov = cTop + (((cBot - cTop) * fy) >> 8);
+
+			// Mostly dark over unexplored tiles, so their terrain doesn't show
+
+			nCov = nCov * 3 / 2;
+			if (nCov > 256)
+				nCov = 256;
+			int nLevel = (nCov * 8 * 16 + s_abBayer4[(yD & 3) * 4 + (xD & 3)] * 256) / (256 * 16);
+			if (nCov <= 4)
+				nLevel = 0;
+			if (nCov >= 252)
+				nLevel = 8;
+			m_pbFogLevel[(long)yD * m_cxDisp + xD] = (byte)(nLevel > 8 ? 8 : nLevel);
 		}
 	}
+}
+
+// Fog coverage of a tile, 0 (revealed) .. 256 (unexplored); off the map
+// counts as unexplored
+
+int MiniMapControl::FogCoverage(int tx, int ty)
+{
+	if (tx < 0 || ty < 0 || tx >= m_ctx || ty >= m_cty)
+		return 256;
+	int nBits = m_pbFogMap[ty * m_ctx + tx] & kbfFogMask;
+	int cRevealed = (nBits & 1) + ((nBits >> 1) & 1) + ((nBits >> 2) & 1) + ((nBits >> 3) & 1);
+	return (4 - cRevealed) * 64;
+}
+
+// Nearest palette colour, cached by 15 bit colour
+
+byte MiniMapControl::NearestColor(int r, int g, int b)
+{
+	int key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+	if (m_pbNearest[key] != 0)
+		return m_pbNearest[key] - 1;
+	int cEntries = BigWord(m_ppal->cEntries);
+	if (cEntries > 255)
+		cEntries = 255;
+	int iBest = 0;
+	int nBest = 0x7fffffff;
+	for (int i = 0; i < cEntries; i++) {
+		int dr = m_ppal->argb[i][0] - r;
+		int dg = m_ppal->argb[i][1] - g;
+		int db = m_ppal->argb[i][2] - b;
+		int n = dr * dr * 3 + dg * dg * 4 + db * db * 2;
+		if (n < nBest) {
+			nBest = n;
+			iBest = i;
+		}
+	}
+	m_pbNearest[key] = (byte)(iBest + 1);
+	return (byte)iBest;
 }
 
 } // namespace wi

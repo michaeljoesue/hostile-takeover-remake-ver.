@@ -746,6 +746,18 @@ bool UnitGroup::LoadAction(IniReader *pini, FindProp *pfind)
 		pactn = new MineUnitGroupAction();
 		break;
 
+	case knProtectGroupUnitGroupAction:
+		pactn = new ProtectGroupUnitGroupAction();
+		break;
+
+	case knProtectAreaUnitGroupAction:
+		pactn = new ProtectAreaUnitGroupAction();
+		break;
+
+	case knAttackAreaUnitGroupAction:
+		pactn = new AttackAreaUnitGroupAction();
+		break;
+
 	default:
 		Assert(false);
 		break;
@@ -1436,6 +1448,374 @@ bool GuardVicinityUnitGroupAction::Perform(UnitGroup *pug)
 
 	// Keep 'waiting' (until all group members are dead or the Guard time runs out).
 
+	return false;
+}
+
+// Helpers for the actions below
+
+static void SendGroupMove(UnitGroup *pug, int nArea)
+{
+	TRect trc;
+	ggobm.GetAreaRect(nArea, &trc, pug->GetOwner()->GetSide());
+	Point ptCenter;
+	trc.GetCenter(&ptCenter);
+	WCoord wcMoveDistPerUpdate = kwcMax;
+	UnitListEntry *pule = pug->GetUnitList();
+	int iule;
+	for (iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pule->gid);
+		if (pmunt == NULL)
+			continue;
+		MobileUnitConsts *pmuntc = (MobileUnitConsts *)pmunt->GetConsts();
+		if (pmuntc->GetMoveDistPerUpdate() < wcMoveDistPerUpdate)
+			wcMoveDistPerUpdate = pmuntc->GetMoveDistPerUpdate();
+	}
+	TCoord tcRadius = RadiusFromUnitCount(pug->GetUnitCount()) + 1;
+	pule = pug->GetUnitList();
+	for (iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pule->gid);
+		if (pmunt == NULL)
+			continue;
+		SendMoveAction(pmunt->GetId(), WcFromTc(ptCenter.x), WcFromTc(ptCenter.y), tcRadius, wcMoveDistPerUpdate);
+	}
+}
+
+static bool IsGroupIdle(UnitGroup *pug)
+{
+	UnitListEntry *pule = pug->GetUnitList();
+	for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		UnitGob *punt = (UnitGob *)ggobm.GetGob(pule->gid);
+		if (punt != NULL && !punt->IsIdle())
+			return false;
+	}
+	return true;
+}
+
+// ProtectGroupUnitGroupAction
+
+#define knVerProtectGroupUnitGroupActionState 1
+bool ProtectGroupUnitGroupAction::LoadState(Stream *pstm)
+{
+	if (pstm->ReadByte() != knVerProtectGroupUnitGroupActionState)
+		return false;
+	m_fWaiting = pstm->ReadByte() != 0;
+	m_tStart = pstm->ReadDword();
+	return pstm->IsSuccess();
+}
+
+bool ProtectGroupUnitGroupAction::SaveState(Stream *pstm)
+{
+	pstm->WriteByte(knVerProtectGroupUnitGroupActionState);
+	pstm->WriteByte(m_fWaiting);
+	pstm->WriteDword((dword)m_tStart);
+	return pstm->IsSuccess();
+}
+
+bool ProtectGroupUnitGroupAction::Init(char *psz)
+{
+	Reset();
+	if (!ParseNumber(&psz, &m_iugProtect))
+		return false;
+	int cSecs;
+	if (!ParseNumber(&psz, &cSecs))
+		return false;
+	m_ctWait = cSecs < 0 ? kctWaitUnlimited : cSecs * 100;
+	return true;
+}
+
+void ProtectGroupUnitGroupAction::Reset()
+{
+	m_fWaiting = false;
+}
+
+bool ProtectGroupUnitGroupAction::Perform(UnitGroup *pug)
+{
+	long t = gsim.GetTickCount();
+	if (!m_fWaiting) {
+		m_fWaiting = true;
+		m_tStart = t;
+	} else if (t - m_tStart >= m_ctWait) {
+		m_fWaiting = false;
+		return true;
+	}
+
+	// The living units of the group to protect
+
+	UnitGroup *pugProtect = gsim.GetLevel()->GetUnitGroupMgr()->GetUnitGroupByIndex(m_iugProtect);
+	if (pugProtect == NULL || pugProtect == pug) {
+		m_fWaiting = false;
+		return true;
+	}
+	Gid agidProtect[64];
+	int cgidProtect = 0;
+	UnitListEntry *pule = pugProtect->GetUnitList();
+	for (int iule = 0; iule < pugProtect->GetUnitCount() && cgidProtect < ARRAYSIZE(agidProtect); iule++, pule++) {
+		// Inactive includes a miner inside a Processor
+
+		Gob *pgob = ggobm.GetGob(pule->gid, false);
+		if (pgob != NULL && (pgob->GetFlags() & kfGobUnit) && ((UnitGob *)pgob)->GetHealth() > 0)
+			agidProtect[cgidProtect++] = pule->gid;
+	}
+
+	// None left to protect: done (unless it hasn't been built yet)
+
+	if (cgidProtect == 0) {
+		word wf = pugProtect->GetFlags();
+		if ((wf & kfUgActive) || !(wf & kfUgActivatedBefore))
+			return false;
+		m_fWaiting = false;
+		return true;
+	}
+
+	// Members not guarding one of them yet are shared out among them
+
+	pule = pug->GetUnitList();
+	for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pule->gid);
+		if (pmunt == NULL || !(pmunt->GetFlags() & kfGobMobileUnit))
+			continue;
+		Gid gidGuarded = pmunt->GetGuardedGid();
+		bool fOk = false;
+		for (int i = 0; i < cgidProtect; i++) {
+			if (agidProtect[i] == gidGuarded) {
+				fOk = true;
+				break;
+			}
+		}
+		if (!fOk)
+			pmunt->GuardUnit(agidProtect[iule % cgidProtect], false);
+	}
+	return false;
+}
+
+// ProtectAreaUnitGroupAction
+
+#define knVerProtectAreaUnitGroupActionState 1
+bool ProtectAreaUnitGroupAction::LoadState(Stream *pstm)
+{
+	if (pstm->ReadByte() != knVerProtectAreaUnitGroupActionState)
+		return false;
+	m_nPhase = pstm->ReadByte();
+	m_tStart = pstm->ReadDword();
+	return pstm->IsSuccess();
+}
+
+bool ProtectAreaUnitGroupAction::SaveState(Stream *pstm)
+{
+	pstm->WriteByte(knVerProtectAreaUnitGroupActionState);
+	pstm->WriteByte((byte)m_nPhase);
+	pstm->WriteDword((dword)m_tStart);
+	return pstm->IsSuccess();
+}
+
+bool ProtectAreaUnitGroupAction::Init(char *psz)
+{
+	Reset();
+	if (!ParseArea(&psz, &m_nArea))
+		return false;
+	int cSecs;
+	if (!ParseNumber(&psz, &cSecs))
+		return false;
+	m_ctWait = cSecs < 0 ? kctWaitUnlimited : cSecs * 100;
+	return true;
+}
+
+void ProtectAreaUnitGroupAction::Reset()
+{
+	m_nPhase = 0;
+}
+
+bool ProtectAreaUnitGroupAction::Perform(UnitGroup *pug)
+{
+	long t = gsim.GetTickCount();
+	switch (m_nPhase) {
+	case 0:
+		// Into the area (the time starts now)
+
+		m_tStart = t;
+		SendGroupMove(pug, m_nArea);
+		m_nPhase = 1;
+		return false;
+
+	case 1:
+		if (t - m_tStart >= m_ctWait) {
+			m_nPhase = 0;
+			return true;
+		}
+		if (!IsGroupIdle(pug))
+			return false;
+
+		// There: guard it (attack enemies that come into it)
+
+		{
+			UnitListEntry *pule = pug->GetUnitList();
+			for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+				MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pule->gid);
+				if (pmunt == NULL)
+					continue;
+				SendGuardAreaAction(pmunt->GetId(), m_nArea);
+			}
+		}
+		m_nPhase = 2;
+		return false;
+
+	default:
+		if (t - m_tStart >= m_ctWait) {
+			m_nPhase = 0;
+			return true;
+		}
+		return false;
+	}
+}
+
+// AttackAreaUnitGroupAction
+
+#define knVerAttackAreaUnitGroupActionState 1
+bool AttackAreaUnitGroupAction::LoadState(Stream *pstm)
+{
+	if (pstm->ReadByte() != knVerAttackAreaUnitGroupActionState)
+		return false;
+	m_fWaiting = pstm->ReadByte() != 0;
+	m_fMovedToArea = pstm->ReadByte() != 0;
+	m_tStart = pstm->ReadDword();
+	m_gidTarget = pstm->ReadWord();
+	return pstm->IsSuccess();
+}
+
+bool AttackAreaUnitGroupAction::SaveState(Stream *pstm)
+{
+	pstm->WriteByte(knVerAttackAreaUnitGroupActionState);
+	pstm->WriteByte(m_fWaiting);
+	pstm->WriteByte(m_fMovedToArea);
+	pstm->WriteDword((dword)m_tStart);
+	pstm->WriteWord(m_gidTarget);
+	return pstm->IsSuccess();
+}
+
+bool AttackAreaUnitGroupAction::Init(char *psz)
+{
+	Reset();
+	if (!ParseUnitMask(&psz, &m_um))
+		return false;
+	int nCaSideMask;
+	if (!ParseNumber(&psz, &nCaSideMask))
+		return false;
+	m_wfCaSideMask = nCaSideMask;
+	if (!ParseArea(&psz, &m_nArea))
+		return false;
+	int cSecs;
+	if (!ParseNumber(&psz, &cSecs))
+		return false;
+	m_ctWait = cSecs < 0 ? kctWaitUnlimited : cSecs * 100;
+	return true;
+}
+
+void AttackAreaUnitGroupAction::Reset()
+{
+	m_fWaiting = false;
+	m_fMovedToArea = false;
+	m_gidTarget = kgidNull;
+}
+
+bool AttackAreaUnitGroupAction::Perform(UnitGroup *pug)
+{
+	long t = gsim.GetTickCount();
+	if (m_fWaiting) {
+		if (t - m_tStart >= m_ctWait) {
+			Reset();
+			return true;
+		}
+	} else {
+		m_fWaiting = true;
+		m_fMovedToArea = false;
+		m_tStart = t;
+		m_gidTarget = kgidNull;
+	}
+
+	// Still a target in the area?
+
+	SideMask sidmTarget = GetSideMaskFromCaSideMask(pug->GetOwner()->GetSide(), m_wfCaSideMask);
+	UnitGob *puntTarget = (UnitGob *)ggobm.GetGob(m_gidTarget);
+	if (puntTarget != NULL && (!(GetSideMask(puntTarget->GetSide()) & sidmTarget) ||
+			!ggobm.IsGobWithinArea(puntTarget, m_nArea)))
+		puntTarget = NULL;
+	if (puntTarget != NULL)
+		return false;
+	m_gidTarget = kgidNull;
+
+	// The group's centre
+
+	UnitListEntry *pule = pug->GetUnitList();
+	int txCenter = 0, tyCenter = 0, cpunt = 0;
+	int iule;
+	for (iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		UnitGob *punt = (UnitGob *)ggobm.GetGob(pule->gid);
+		if (punt == NULL)
+			continue;
+		TPoint tpt;
+		punt->GetTilePosition(&tpt);
+		txCenter += tpt.tx;
+		tyCenter += tpt.ty;
+		cpunt++;
+	}
+	if (cpunt == 0)
+		return false;
+	txCenter /= cpunt;
+	tyCenter /= cpunt;
+
+	// Nearest matching enemy in the area
+
+	int nDist = 0x7fffffff;
+	for (Gob *pgob = ggobm.GetFirstGob(); pgob != NULL; pgob = ggobm.GetNextGob(pgob)) {
+		if ((pgob->GetFlags() & (kfGobUnit | kfGobActive)) != (kfGobUnit | kfGobActive))
+			continue;
+		UnitGob *punt = (UnitGob *)pgob;
+		if (!(punt->GetConsts()->um & m_um))
+			continue;
+		if (!(GetSideMask(punt->GetSide()) & sidmTarget))
+			continue;
+		if (!ggobm.IsGobWithinArea(punt, m_nArea))
+			continue;
+		TPoint tpt;
+		punt->GetTilePosition(&tpt);
+		int dtx = tpt.tx - txCenter;
+		int dty = tpt.ty - tyCenter;
+		int nDistT = dtx * dtx + dty * dty;
+		if (nDistT < nDist) {
+			nDist = nDistT;
+			m_gidTarget = punt->GetId();
+		}
+	}
+
+	// None: wait in the area
+
+	if (m_gidTarget == kgidNull) {
+		if (!m_fMovedToArea) {
+			SendGroupMove(pug, m_nArea);
+			m_fMovedToArea = true;
+		}
+		return false;
+	}
+	m_fMovedToArea = false;
+
+	// Everyone attacks it
+
+	puntTarget = (UnitGob *)ggobm.GetGob(m_gidTarget);
+	Message msgT;
+	memset(&msgT, 0, sizeof(msgT));
+	msgT.smidSender = ksmidNull;
+	puntTarget->GetAttackPoint(&msgT.AttackCommand.wptTarget);
+	msgT.AttackCommand.gidTarget = m_gidTarget;
+	msgT.AttackCommand.wptTargetCenter = msgT.AttackCommand.wptTarget;
+	pule = pug->GetUnitList();
+	for (iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pule->gid);
+		if (pmunt == NULL)
+			continue;
+		msgT.mid = kmidAttackAction;
+		msgT.smidReceiver = pmunt->GetId();
+		gsmm.SendMsg(&msgT);
+	}
 	return false;
 }
 

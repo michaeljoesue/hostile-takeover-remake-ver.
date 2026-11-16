@@ -74,6 +74,18 @@ namespace m
 			case 6: // knGuardVicinityUnitGroupAction
 				cab = new GuardVicinityUnitGroupAction();
 				break;
+
+			case 7: // knProtectGroupUnitGroupAction
+				cab = new ProtectGroupUnitGroupAction();
+				break;
+
+			case 8: // knProtectAreaUnitGroupAction
+				cab = new ProtectAreaUnitGroupAction();
+				break;
+
+			case 9: // knAttackAreaUnitGroupAction
+				cab = new AttackAreaUnitGroupAction();
+				break;
 			}
 			if (cab != null) {
 				cab.FromSaveString(strValue);
@@ -1359,6 +1371,48 @@ namespace m
 		}
 		protected override void UpgradeTypes() {
 			UpgradeDuration(0);
+		}
+	}
+
+	[Serializable]
+	[DisplayName("Protect Group")]
+	[Description("Each member of the group guards a unit of another unit group: it follows " +
+			"that unit and attacks enemies (and enemy defence towers) near it. When the " +
+			"unit is destroyed it moves on to another one. The action is complete when the " +
+			"other group is destroyed or the time runs out.")]
+	public class ProtectGroupUnitGroupAction : CaBase {
+		override public string GetString() {
+			return "Protect unit group '$1' $2";
+		}
+		public ProtectGroupUnitGroupAction() {
+			m_acat = new CaType[] { new CaTypeUnitGroup(), new CaTypeDuration() };
+		}
+	}
+
+	[Serializable]
+	[DisplayName("Protect In Area")]
+	[Description("The group moves into the area, then guards it: enemy units that come " +
+			"into the area are attacked. The action is complete when the time runs out.")]
+	public class ProtectAreaUnitGroupAction : CaBase {
+		override public string GetString() {
+			return "Protect area '$1' $2";
+		}
+		public ProtectAreaUnitGroupAction() {
+			m_acat = new CaType[] { new CaTypeArea(), new CaTypeDuration() };
+		}
+	}
+
+	[Serializable]
+	[DisplayName("Attack In Area")]
+	[Description("Like Attack, but only units in the area are targeted: the whole group " +
+			"attacks the nearest matching unit in the area, then the next. With none " +
+			"there, the group waits in the area. The action is complete when the time runs out.")]
+	public class AttackAreaUnitGroupAction : CaBase {
+		override public string GetString() {
+			return "Attack $1 owned by $2 in area '$3' $4";
+		}
+		public AttackAreaUnitGroupAction() {
+			m_acat = new CaType[] { new CaTypeUnitTypes(), new CaTypeSide(), new CaTypeArea(), new CaTypeDuration() };
 		}
 	}
 

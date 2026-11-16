@@ -581,7 +581,7 @@ const TCoord ktcGuardFollow = 2;	// follow when further away than this
 const TCoord ktcGuardSight = 5;		// fight enemies this close
 const TCoord ktcGuardLeash = 8;		// stop chasing this far from the friend
 
-void MobileUnitGob::GuardUnit(Gid gidTarget)
+void MobileUnitGob::GuardUnit(Gid gidTarget, bool fPlayerOrder)
 {
 	if (gidTarget == m_gid || m_pmuntc->tcFiringRange == 0)
 		return;
@@ -591,7 +591,10 @@ void MobileUnitGob::GuardUnit(Gid gidTarget)
 	msgT.smidSender = kgidNull;
 	msgT.smidReceiver = m_gid;
 	msgT.AttackCommand.gidTarget = gidTarget;
-	IssueOrder(&msgT);
+	if (fPlayerOrder)
+		IssueOrder(&msgT);
+	else
+		gsmm.SendMsg(&msgT);
 }
 
 UnitGob *MobileUnitGob::GetGuardedUnit()

@@ -2907,6 +2907,11 @@ private:
 	byte m_clrBlack;
 	byte m_clrGalaxite;
 	byte m_aclrSide[kcSides];
+	byte *m_pbFogLevel;		// per display pixel: 0 clear .. 8 black
+	byte *m_pbNearest;		// 15 bit RGB -> nearest palette index (0 = not yet; index + 1)
+	Palette *m_ppal;
+	byte NearestColor(int r, int g, int b);
+	int FogCoverage(int tx, int ty);
 };
 
 // Pip Meter Control
@@ -4063,6 +4068,9 @@ public:
 	void ActivateRandomUnitGroup();
 	bool CreateAtLevelLoadGroups();
 	UnitGroup *GetUnitGroup(Gid gid);
+	UnitGroup *GetUnitGroupByIndex(int iug) {
+		return iug >= 0 && iug < m_cug ? &m_aug[iug] : NULL;
+	}
 
 private:
 	int m_cug;
@@ -4196,6 +4204,68 @@ private:
 
 	bool m_fWaiting;
 	long m_tStart;
+};
+
+// Protect Group <unit group> for <seconds>: each member guards (follows and
+// protects) a unit of the other group
+
+class ProtectGroupUnitGroupAction : public UnitGroupAction
+{
+public:
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual void Reset();
+	virtual bool Perform(UnitGroup *pug);
+
+private:
+	int m_iugProtect;
+	dword m_ctWait;
+	bool m_fWaiting;
+	long m_tStart;
+};
+
+// Protect In Area <area> for <seconds>: the group moves into the area, then
+// guards it
+
+class ProtectAreaUnitGroupAction : public UnitGroupAction
+{
+public:
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual void Reset();
+	virtual bool Perform(UnitGroup *pug);
+
+private:
+	int m_nArea;
+	dword m_ctWait;
+	int m_nPhase;		// 0: start, 1: moving there, 2: guarding
+	long m_tStart;
+};
+
+// Attack In Area <unit types> owned by <sides> in <area> for <seconds>: like
+// Attack, but only targets in the area; with none there the group waits in
+// the area
+
+class AttackAreaUnitGroupAction : public UnitGroupAction
+{
+public:
+	virtual bool LoadState(Stream *pstm);
+	virtual bool SaveState(Stream *pstm);
+	virtual bool Init(char *psz);
+	virtual void Reset();
+	virtual bool Perform(UnitGroup *pug);
+
+private:
+	UnitMask m_um;
+	word m_wfCaSideMask;
+	int m_nArea;
+	dword m_ctWait;
+	bool m_fWaiting;
+	bool m_fMovedToArea;
+	long m_tStart;
+	Gid m_gidTarget;
 };
 
 // BuildMgr
@@ -5721,7 +5791,10 @@ protected:
 	UnitGob *FindGuardTarget();
 
 public:
-	void GuardUnit(Gid gidTarget);	// player's guard order (Ctrl+Alt+right-click)
+	void GuardUnit(Gid gidTarget, bool fPlayerOrder = true);	// guard order (Ctrl+Alt+right-click)
+	Gid GetGuardedGid() {
+		return m_mua == kmuaGuardUnit ? m_msgAction.AttackCommand.gidTarget : kgidNull;
+	}
 
 protected:
 

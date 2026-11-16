@@ -141,7 +141,8 @@ Modern RTS controls:
 | Arrow keys, mouse at the edge, mini map | Scroll the map |
 
 The mini map (bottom right) is about a third of the screen's height
-whatever the map's size, and shows units moving smoothly.
+whatever the map's size, and shows units moving smoothly. Its terrain is
+drawn from the full size tiles scaled down, and its fog has soft edges.
 
 - The bar at the bottom shows what's selected: one unit's name and health,
   or how many of each type.
@@ -283,10 +284,20 @@ Maps, sides and limits:
   side, 64 switches or 64 areas, or more scenery objects (600) and units
   and buildings placed on the map (1600) than the game has room for. The
   last two grow with the map like the game's limits.
-- **Unit group time limits.** Wait, Attack, Guard and Guard Vicinity
-  actions take a number of seconds or Unlimited (set Unlimited to True in
-  the action's properties): with no limit the group keeps at it until
-  it's destroyed.
+- **Unit group time limits.** Wait, Attack, Guard, Guard Vicinity and the
+  new actions below take a number of seconds or Unlimited (set Unlimited
+  to True in the action's properties): with no limit the group keeps at
+  it until it's destroyed.
+- **New unit group actions.**
+  - *Protect Group*: each member guards a unit of another unit group
+    (follows it, attacks enemies and enemy defence towers near it, keeps
+    guarding a miner inside a Processor); when that unit is destroyed it
+    moves on to another. Done when the other group is gone (once it has
+    been created) or the time runs out.
+  - *Protect In Area*: the group moves into the area, then attacks enemy
+    units that come into it.
+  - *Attack In Area*: like Attack, but only units in the area are
+    targeted; with none there the group waits in the area.
 - **Counters removed.** The game never had Counters (the Counter condition
   and Modify Counter action did nothing), so M no longer has the Counters
   menu or the Modify Counter action. Older missions still open; any Modify
