@@ -549,6 +549,8 @@ void StructureBuildForm::OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd)
 PlaceStructureForm::PlaceStructureForm()
 {
 	m_pgobOwner = NULL;
+	m_gidDeploy = kgidNull;
+	m_pplr = NULL;
 	m_fDragging = false;
 	m_fHaveMouse = false;
 	m_fValid = false;
@@ -562,6 +564,26 @@ void PlaceStructureForm::OnControlSelected(word idc)
 	if (idc == kidcCancel) {
 		gpfrmmSim->RemoveForm(this);
 		m_pgobOwner = NULL;
+		m_gidDeploy = kgidNull;
+		return;
+	}
+
+	// Deploy: the Dominion drives there and becomes a Headquarters
+
+	if (m_gidDeploy != kgidNull) {
+		Gob *pgob = ggobm.GetGob(m_gidDeploy);
+		if (pgob != NULL && pgob->GetType() == kgtMobileHeadquarters &&
+				(pgob->GetFlags() & kfGobActive)) {
+			MobileHqGob *pmhq = (MobileHqGob *)pgob;
+			gfQueueOrder = false;
+			pmhq->OrderDeploy(m_tx, m_ty);
+			if (pmhq->GetOwner() == gpplrLocal) {
+				gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)
+						pmhq->GetConsts())->sfxcMove));
+			}
+		}
+		gpfrmmSim->RemoveForm(this);
+		m_gidDeploy = kgidNull;
 		return;
 	}
 
@@ -590,6 +612,8 @@ void PlaceStructureForm::SetOwner(BuilderGob *pgobOwner, UnitType ut)
 	// form is loaded as the size of the whole playfield
 	// draw the structure placement indicator near the HQ
 	m_pgobOwner = pgobOwner;
+	m_gidDeploy = kgidNull;
+	m_pplr = pgobOwner->GetOwner();
 	m_pstruc = (StructConsts *)gapuntc[ut];
 	WPoint wptT;
 	m_pgobOwner->GetPosition(&wptT);
@@ -649,6 +673,36 @@ void PlaceStructureForm::SetOwner(BuilderGob *pgobOwner, UnitType ut)
 	}
 	
 	m_ty = m_tyStart = TcFromWc(wyTarget);
+	StartPlacement();
+}
+
+// Deploy mode: the Headquarters' footprint follows the mouse; a left click
+// sends the Dominion there to transform, right-click or Esc cancels
+
+void PlaceStructureForm::SetDeployer(MobileHqGob *pmhq)
+{
+	gtimm.AddTimer(this, kctMapScrollRate);
+
+	m_pgobOwner = NULL;
+	m_gidDeploy = pmhq->GetId();
+	m_pplr = pmhq->GetOwner();
+	m_pstruc = (StructConsts *)gapuntc[kutHeadquarters];
+
+	// Start where it would transform now
+
+	TPoint tpt;
+	pmhq->GetTilePosition(&tpt);
+	m_tx = m_txStart = tpt.tx - 1;
+	m_ty = m_tyStart = tpt.ty - 1;
+	StartPlacement();
+}
+
+void PlaceStructureForm::StartPlacement()
+{
+	WCoord wxView, wyView;
+	gsim.GetViewPos(&wxView, &wyView);
+	Size sizPlayfield;
+	ggame.GetPlayfieldSize(&sizPlayfield);
 
 	m_wxPen = m_wxDragStart = 0;
 	m_wyPen = m_wyDragStart = 0;
@@ -787,33 +841,46 @@ void PlaceStructureForm::UpdatePlacementIndicator(WCoord wxViewStart, WCoord wyV
 	pbtn->SetPosition(rcOutside.left - rcCtl.Width() +
             PcFromWc(kwcButtonInset), y);
 
-	// See if it's valid
-
-	bool fValid = true;
-	bool fPlacementValid = ggobm.IsStructurePlacementValid(m_pstruc, m_tx, m_ty, m_pgobOwner->GetOwner());
-
-	// Show / hide ok button?
-
-	TerrainMap *ptmap = gsim.GetLevel()->GetTerrainMap();
-	FogMap *pfogm = gsim.GetLevel()->GetFogMap();
-
-	for (int ty = m_ty; ty < m_ty + m_pstruc->ctyReserve; ty++) {
-		for (int tx = m_tx; tx < m_tx + m_pstruc->ctxReserve; tx++) {
-			if (fPlacementValid && IsTileFree(tx, ty, kbfReserved | kbfStructure) && pfogm->GetGalaxite(tx, ty) == 0) {
-				continue;
-			} else {
-				fValid = false;
-				break;
-			}
-		}
-	}
-
-
 	// Modern placement: no Ok button; a left click places when valid
 
-	m_fValid = fValid || gfGodMode;
+	m_fValid = IsPlacementValid() || gfGodMode;
 	GetControlPtr(kidcOk)->Show(false);
 	GetControlPtr(kidcCancel)->Show(false);
+}
+
+// Whether the building (or the deploying Dominion's HQ) can go on this tile.
+// fPlacementValid: the building as a whole may go here (near the base, on
+// the map); a Dominion can deploy anywhere
+
+bool PlaceStructureForm::IsTileGood(TCoord tx, TCoord ty, bool fPlacementValid)
+{
+	if (!fPlacementValid)
+		return false;
+	FogMap *pfogm = gsim.GetLevel()->GetFogMap();
+	if (pfogm->GetGalaxite(tx, ty) != 0)
+		return false;
+	Gob *pgob = NULL;
+	if (IsTileFree(tx, ty, kbfReserved | kbfStructure, &pgob))
+		return true;
+	return m_gidDeploy != kgidNull && pgob != NULL &&
+			pgob->GetId() == m_gidDeploy;
+}
+
+bool PlaceStructureForm::IsPlacementValid()
+{
+	if (m_gidDeploy != kgidNull) {
+		return MobileHqGob::CanDeployAt(m_tx, m_ty,
+				ggobm.GetGob(m_gidDeploy));
+	}
+	bool fPlacementValid = ggobm.IsStructurePlacementValid(m_pstruc, m_tx,
+			m_ty, m_pplr);
+	for (int ty = m_ty; ty < m_ty + m_pstruc->ctyReserve; ty++) {
+		for (int tx = m_tx; tx < m_tx + m_pstruc->ctxReserve; tx++) {
+			if (!IsTileGood(tx, ty, fPlacementValid))
+				return false;
+		}
+	}
+	return true;
 }
 
 bool PlaceStructureForm::OnPenEvent(Event *pevt)
@@ -884,6 +951,16 @@ void PlaceStructureForm::UpdatePosition(Event *pevt)
 
 void PlaceStructureForm::OnTimer(long tCurrent)
 {
+	// The Dominion being deployed was destroyed
+
+	if (m_gidDeploy != kgidNull) {
+		Gob *pgob = ggobm.GetGob(m_gidDeploy);
+		if (pgob == NULL || !(pgob->GetFlags() & kfGobActive)) {
+			OnControlSelected(kidcCancel);
+			return;
+		}
+	}
+
 	// The view may have scrolled (mouse at the screen edge, arrow keys)
 	// under a still mouse; keep the placement under it. Something may also
 	// have moved under the placement, which changes whether it fits.
@@ -920,7 +997,7 @@ void PlaceStructureForm::OnScroll(int dx, int dy)
 
 void PlaceStructureForm::OnPaintSimUI(DibBitmap *pbm)
 {
-	if (m_pgobOwner == NULL)
+	if (!IsBusy())
 		return;
 
 	WCoord wxViewOrigin, wyViewOrigin;
@@ -955,17 +1032,18 @@ void PlaceStructureForm::OnPaintSimUI(DibBitmap *pbm)
         }
     }
 
-	bool fPlacementValid = ggobm.IsStructurePlacementValid(m_pstruc, m_tx, m_ty, m_pgobOwner->GetOwner());
+	// A Dominion can deploy anywhere on the map, not only near the base
+
+	bool fPlacementValid = true;
+	if (m_gidDeploy == kgidNull)
+		fPlacementValid = ggobm.IsStructurePlacementValid(m_pstruc, m_tx, m_ty, m_pplr);
 
 	// Draw placement tiles, properly colored
-
-	TerrainMap *ptmap = gsim.GetLevel()->GetTerrainMap();
-	FogMap *pfogm = gsim.GetLevel()->GetFogMap();
 
 	for (int ty = m_ty; ty < m_ty + m_pstruc->ctyReserve; ty++) {
 		for (int tx = m_tx; tx < m_tx + m_pstruc->ctxReserve; tx++) {
 			TBitmap *ptbm;
-			if (fPlacementValid && IsTileFree(tx, ty, kbfReserved | kbfStructure) && pfogm->GetGalaxite(tx, ty) == 0) {
+			if (IsTileGood(tx, ty, fPlacementValid)) {
 				ptbm = s_ptbmPlacementGood;
 			} else {
 				ptbm = s_ptbmPlacementBad;
@@ -977,7 +1055,7 @@ void PlaceStructureForm::OnPaintSimUI(DibBitmap *pbm)
 
 void PlaceStructureForm::OnPaintControlsSimUI(DibBitmap *pbm, UpdateMap *pupd)
 {
-	if (m_pgobOwner == NULL)
+	if (!IsBusy())
 		return;
 	Form::OnPaintControls(pbm, pupd);
 }

@@ -309,6 +309,8 @@ def proc():
 def tower(t, anir):
     print(t)
     A=sheet('%s_ok.png'%t); B=sheet('%s_dmg.png'%t); Wr=sheet('%s_wreck.png'%t)
+    # the Gatling tower's sheets are swapped: its _ok sheet is the cracked one
+    if t=='mtower': A,B=B,A
     cw=ch=384
     # classic composite: base 0 + turret 00 frame 0 at the base's special point (16,7)
     bm,(bl,bt)=classic_mask(anir,0,0); tm,(tl,tt)=classic_mask(anir,3,0)

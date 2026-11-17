@@ -2196,6 +2196,12 @@ public:
 	word GetFlags() {
 		return m_wf;
 	}
+	int GetFormCount() {
+		return m_cfrm;
+	}
+	Form *GetFormAt(int n) {
+		return m_apfrm[n];
+	}
 protected:
     Form *FindPen2Form();
 	bool CookPenEvent(Event *pevt);
@@ -3161,6 +3167,7 @@ public:
     void SelectSameUnitTypes(Gob *pgob, bool fSfx);
     bool IsSelectionCommand(Gob *pgobHit);
     void ClickSelect(Gob *pgob, dword ffMods);
+    bool DeliverSelectedMiners(Gob *pgobProcessor, bool fQueue);
     void PlaySelectSfx(Gob *pgob);
 
     // The name label shown while the mouse rests on a unit or building
@@ -6287,6 +6294,7 @@ public:
 	void SetFavoriteProcessor(Gid gid);
 	void Hide(bool fHide);
 	void SendDeliverCommand(Gid gidProcessor);
+	void DeliverTo(Gid gidProcessor);
 
 	bool IsAttemptingToDeliver(Gid gid) {
 		if (m_fAttemptingToDeliver && gid == m_gidFavoriteProcessor)
@@ -6296,8 +6304,6 @@ public:
 
 	// Gob overrides
 
-	virtual void InitMenu(Form *pfrm);
-	virtual void OnMenuItemSelected(int id);
 	virtual bool LoadState(Stream *pstm);
 	virtual bool SaveState(Stream *pstm);
 	virtual void GetClippingBounds(Rect *prc);
@@ -6366,14 +6372,22 @@ public:
 	static void ExitClass();
 	bool CanTransform(TPoint *ptp = NULL);
 
-	// Gob overrides
+	// Deploy: drive to where the Headquarters goes (its top-left tile) and
+	// transform there
+	static bool CanDeployAt(TCoord tx, TCoord ty, Gob *pgobIgnore);
+	void OrderDeploy(TCoord txHq, TCoord tyHq);
 
-	virtual void InitMenu(Form *pfrm);
-	virtual void OnMenuItemSelected(int id);
+	// UnitGob overrides
+
+	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0);
 
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
+
+private:
+	int m_nDeploy;			// 0 none, 1 ordered, 2 driving there
+	TCoord m_txDeploy, m_tyDeploy;
 };
 
 class MobileUnitBuilderGob : public BuilderGob // mub
@@ -6503,9 +6517,12 @@ public:
 	BuilderGob *GetOwner() {
 		return m_pgobOwner;
 	}
+
+	// Deploy mode: where a Dominion should drive and become a Headquarters
+	void SetDeployer(MobileHqGob *pmhq);
 	void UpdatePlacementIndicator(WCoord wxViewStart, WCoord wyViewStart, WCoord wxView, WCoord wyView);
 
-    bool IsBusy() { return m_pgobOwner != NULL; }
+    bool IsBusy() { return m_pgobOwner != NULL || m_gidDeploy != kgidNull; }
 	void OnPaintSimUI(DibBitmap *pbm);
 	void OnPaintControlsSimUI(DibBitmap *pbm, UpdateMap *pupd);
     void UpdatePosition(Event *pevt);
@@ -6522,8 +6539,13 @@ public:
 
 private:
     void GetSubRects(WCoord wx, WCoord wy, Rect *prcInside, Rect *prcOutside);
+    bool IsTileGood(TCoord tx, TCoord ty, bool fPlacementValid);
+    bool IsPlacementValid();
+    void StartPlacement();
 
 	BuilderGob *m_pgobOwner;
+	Gid m_gidDeploy;		// the Dominion in deploy mode
+	Player *m_pplr;
 	StructConsts *m_pstruc;
 	TCoord m_tx, m_ty;
 	TCoord m_wxPen, m_wyPen;

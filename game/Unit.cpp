@@ -641,6 +641,13 @@ void UnitGob::PopupMenu()
 	if (m_puntc->pfrmMenu == NULL)
 		return;
 
+	// Mobile units have no menu: hovering shows their name, miners deliver
+	// with a right-click on a Processor and a Dominion deploys with a
+	// right-click on itself
+
+	if (m_ff & kfGobMobileUnit)
+		return;
+
 	// UNDONE: show a special being-built menu (Abort only)
 	if (m_ff & kfGobBeingBuilt)
 		return;

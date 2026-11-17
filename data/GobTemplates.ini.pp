@@ -237,7 +237,6 @@ UIBoundsRight=10
 UIBoundsBottom=11
 SortOffset=7
 Animation=miner.anir
-Menu=kidfMinerMenu
 Description=Increase your mining rate with additional Bullpups. It has no weapons but can take a lot of punishment.
 
 [kgtMobileHeadquarters]
@@ -255,7 +254,6 @@ UIBoundsRight=10
 UIBoundsBottom=11
 SortOffset=7
 Animation=mobilehq.anir
-Menu=kidfMobileHqMenu
 Description=Not happy where you are? Start a new base at a remote location with this Mobile Headquarters.
 
 // Structures

@@ -41,6 +41,9 @@ void MobileHqGob::ExitClass()
 MobileHqGob::MobileHqGob() : MobileUnitGob(&gConsts)
 {
 	m_wfMunt &= ~kfMuntAggressivenessBits;
+	m_nDeploy = 0;
+	m_txDeploy = 0;
+	m_tyDeploy = 0;
 }
 
 bool MobileHqGob::CanTransform(TPoint *ptp)
@@ -100,37 +103,90 @@ bool MobileHqGob::CanTransform(TPoint *ptp)
 	return !fOccupied;
 }
 
-void MobileHqGob::InitMenu(Form *pfrm)
+// Deploy (select a Dominion, right-click it, left-click where the
+// Headquarters goes): the HQ's tiles must be on the map, free of buildings
+// and units (pgobIgnore, the Dominion itself, doesn't count) and of Galaxite
+
+bool MobileHqGob::CanDeployAt(TCoord tx, TCoord ty, Gob *pgobIgnore)
 {
-	ButtonControl *pbtn = (ButtonControl *)pfrm->GetControlPtr(kidcTransform);
-	LabelControl *plbl = (LabelControl *)pfrm->GetControlPtr(kidcCantTransform);
-	bool fCanTransform = CanTransform();
-	pbtn->Show(fCanTransform);
-	plbl->Show(!fCanTransform);
+	Size siz;
+	gsim.GetLevel()->GetTileMap()->GetTCoordMapSize(&siz);
+	if (tx < 0 || ty < 0 || tx + gbldcHq.ctx > siz.cx ||
+			ty + gbldcHq.cty > siz.cy) {
+		return false;
+	}
+	FogMap *pfogm = gsim.GetLevel()->GetFogMap();
+	for (TCoord tyT = ty; tyT < ty + gbldcHq.cty; tyT++) {
+		for (TCoord txT = tx; txT < tx + gbldcHq.ctx; txT++) {
+			Gob *pgob = NULL;
+			if (!IsTileFree(txT, tyT, kbfReserved | kbfStructure, &pgob) &&
+					(pgob == NULL || pgob != pgobIgnore)) {
+				return false;
+			}
+			if (pfogm->GetGalaxite(txT, tyT) != 0)
+				return false;
+		}
+	}
+	return true;
 }
 
-void MobileHqGob::OnMenuItemSelected(int idc)
+// The Dominion transforms from the tile below the middle of the HQ's top row
+// (see CanTransform), so it drives there first
+
+void MobileHqGob::OrderDeploy(TCoord txHq, TCoord tyHq)
 {
-	switch (idc) {
-	case kidcTransform:
-		{
-			// The player shouldn't have been able to select this command unless
-			// it can be carried out.
+	m_txDeploy = txHq;
+	m_tyDeploy = tyHq;
 
-			Assert(CanTransform());
-
-			gcmdq.Enqueue(kmidTransformCommand, m_gid);
-		}
-		break;
-
-	case kidcSelfDestruct:
-		gcmdq.Enqueue(kmidSelfDestructCommand, m_gid);
-		break;
+	TPoint tpt;
+	GetTilePosition(&tpt);
+	if (tpt.tx == txHq + 1 && tpt.ty == tyHq + 1) {
+		m_nDeploy = 0;
+		gcmdq.Enqueue(kmidClearActionCommand, m_gid);
+		gcmdq.Enqueue(kmidTransformCommand, m_gid);
+		return;
 	}
+
+	WCoord wx = WcFromTc(txHq + 1) + kwcTileHalf;
+	WCoord wy = WcFromTc(tyHq + 1) + kwcTileHalf;
+	MobileUnitGob::SetTarget(kgidNull, wx, wy, wx, wy, 0,
+			m_pmuntc->GetMoveDistPerUpdate());
+	m_nDeploy = 1;
+}
+
+// Any other order calls the deploy off
+
+void MobileHqGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter,
+		WCoord wyCenter, TCoord tcRadius, WCoord wcMoveDistPerUpdate)
+{
+	m_nDeploy = 0;
+	MobileUnitGob::SetTarget(gid, wx, wy, wxCenter, wyCenter, tcRadius,
+			wcMoveDistPerUpdate);
 }
 
 int MobileHqGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
+	// Deploy: the move starts (kstMove), then ends (kstGuard): on the spot,
+	// transform; stopped short (blocked), give up
+
+	if (pmsg->mid == kmidReservedEnter && m_nDeploy != 0) {
+		if (st == kstMove) {
+			m_nDeploy = 2;
+		} else if (st == kstGuard && m_nDeploy == 2) {
+			m_nDeploy = 0;
+			TPoint tpt;
+			GetTilePosition(&tpt);
+			if (tpt.tx == m_txDeploy + 1 && tpt.ty == m_tyDeploy + 1 &&
+					CanTransform()) {
+				gcmdq.Enqueue(kmidTransformCommand, m_gid);
+			} else if (m_pplr == gpplrLocal) {
+				ShowAlert("Dominion can't deploy there");
+			}
+		}
+	}
+	if (pmsg->mid == kmidStopCommand)
+		m_nDeploy = 0;
+
 BeginStateMachine
 	OnMsg(kmidTransformCommand)
 

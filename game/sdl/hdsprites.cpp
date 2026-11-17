@@ -981,6 +981,28 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
         SDL_SetTextureScaleMode(s_ptexTarget, SDL_SCALEMODE_NEAREST);
     }
 
+    // The forms over the playfield (the minimap, menus, dialogs) cover the
+    // pictures under them, whether or not they were repainted this frame.
+    // (A form that didn't repaint leaves its old pixels, which an HD
+    // picture's snapshot of that spot would match.)
+
+    if (gpmfrmm != NULL && !s_vbHdCovered.empty()) {
+        for (int n = 0; n < gpmfrmm->GetFormCount(); n++) {
+            Form *pfrm = gpmfrmm->GetFormAt(n);
+            word wf = pfrm->GetFlags();
+            if (!(wf & kfFrmVisible) || (wf & kfFrmTranslucent))
+                continue;
+            Rect rcF;
+            pfrm->GetRect(&rcF);
+            int xL = rcF.left < 0 ? 0 : rcF.left;
+            int xR = rcF.right > s_cxHdShadow ? s_cxHdShadow : rcF.right;
+            int yT = rcF.top < 0 ? 0 : rcF.top;
+            int yB = rcF.bottom > s_cyHdShadow ? s_cyHdShadow : rcF.bottom;
+            for (int yF = yT; yF < yB && xL < xR; yF++)
+                memset(&s_vbHdCovered[(size_t)yF * s_cxHdShadow + xL], 1, xR - xL);
+        }
+    }
+
     SDL_Texture *ptexScreen = SDL_GetRenderTarget(prend);
     for (size_t n = 0; n < s_vitem.size(); n++) {
         HdItem *pitm = &s_vitem[n];
@@ -1009,6 +1031,7 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
                 int nLight;
                 if (i < (int)s_vbHdCovered.size() && s_vbHdCovered[i] != 0) {
                     pdw[x] = 0;
+                    fWhole = false;
                     continue;
                 }
                 if (b == s) {

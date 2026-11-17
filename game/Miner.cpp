@@ -162,36 +162,19 @@ void MinerGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer
 	}
 }
 
-void MinerGob::InitMenu(Form *pfrm)
+// Selected miners right-clicked on one of the player's Processors unload
+// there
+
+void MinerGob::DeliverTo(Gid gidProcessor)
 {
-	ButtonControl *pbtn = (ButtonControl *)pfrm->GetControlPtr(kidcDeliver);
-	pbtn->Show(GetGalaxiteAmount() != 0);
-}
-
-void MinerGob::OnMenuItemSelected(int idc)
-{
-	switch (idc) {
-	case kidcDeliver:
-		{
-			// The player shouldn't have been able to select this command unless
-			// it can be carried out.
-
-			Assert(GetGalaxiteAmount() != 0);
-
-			Message msg;
-			msg.mid = kmidDeliverCommand;
-			msg.smidSender = m_gid;
-			msg.smidReceiver = m_gid;
-			msg.DeliverCommand.gidTarget = kgidNull;
-			msg.tDelivery = 0;
-			gcmdq.Enqueue(&msg);
-
-			// Full, off to unload: heard only while the miner is in view
-
-			gsndm.PlaySfxIfSeen(ksfxGalaxMinerDeliver, this);
-		}
-		break;
-	}
+	Message msg;
+	memset(&msg, 0, sizeof(msg));
+	msg.mid = kmidDeliverCommand;
+	msg.smidSender = m_gid;
+	msg.smidReceiver = m_gid;
+	msg.DeliverCommand.gidTarget = gidProcessor;
+	msg.tDelivery = 0;
+	IssueOrder(&msg);
 }
 
 bool MinerGob::IsValidTarget(Gob *pgobTarget)

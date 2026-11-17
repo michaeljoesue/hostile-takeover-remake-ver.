@@ -427,17 +427,6 @@
 	FORM=(0 0 66 51) kidcCancel
 	LABEL=kidcTitle (0 2 66 0) "" kifntTitle center
 
-[kidfMobileHqMenu]
-	FORM=(0 0 66 51) kidcCancel
-	LABEL=kidcTitle (0 2 66 0) "" kifntTitle center
-	BUTTON=kidcTransform (3 14 60 12) "Transform" kifntButton
-	LABEL=kidcCantTransform (2 14 62 24) "Can't Transform. Move to clear area." kifntShadow left multiline
-
-[kidfMinerMenu]
-	FORM=(0 0 66 51) kidcCancel
-	LABEL=kidcTitle (0 2 66 0) "" kifntTitle center
-	BUTTON=kidcDeliver (3 14 60 12) "Deliver" kifntButton
-
 [kidfMessageBox]
 	FORM=(0 0 140 50) kidcOk center topmost
 	LABEL=kidcTitle (61 2 18 0) "Title" kifntTitle center

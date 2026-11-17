@@ -57,6 +57,11 @@ long gcPathScoresCalced = 0;
 
 bool SimUIForm::s_fReadyForPaint;
     
+// Set while the miners of the selection are sent to a Processor and the
+// rest move
+
+static bool s_fSkipMiners = false;
+
 SimUIForm::SimUIForm()
 {
 	s_fReadyForPaint = false;
@@ -638,37 +643,6 @@ bool SimUIForm::OnBattlefieldKey(Event *pevt)
         }
         return true;
 
-    case 'd':
-        // Deliver: selected miners carrying Galaxite go unload (the miner
-        // menu's Deliver button, which right-click used to open)
-        {
-            Gid *pgid = new Gid[kcpgobMax];
-            int cgid = GetOwnSelection(pgid, kcpgobMax, true);
-            for (int i = 0; i < cgid; i++) {
-                Gob *pgob = ggobm.GetGob(pgid[i]);
-                if (pgob != NULL && pgob->GetType() == kgtGalaxMiner &&
-                        ((MinerGob *)pgob)->GetGalaxiteAmount() != 0)
-                    pgob->OnMenuItemSelected(kidcDeliver);
-            }
-            delete[] pgid;
-        }
-        return true;
-
-    case 't':
-        // Transform: selected Mobile HQs that have room become a Headquarters
-        {
-            Gid *pgid = new Gid[kcpgobMax];
-            int cgid = GetOwnSelection(pgid, kcpgobMax, true);
-            for (int i = 0; i < cgid; i++) {
-                Gob *pgob = ggobm.GetGob(pgid[i]);
-                if (pgob != NULL && pgob->GetType() == kgtMobileHeadquarters &&
-                        ((MobileHqGob *)pgob)->CanTransform())
-                    pgob->OnMenuItemSelected(kidcTransform);
-            }
-            delete[] pgid;
-        }
-        return true;
-
     case ' ':
         if (gfLastAlertValid)
             CenterViewOn(gwptLastAlert.wx, gwptLastAlert.wy);
@@ -801,8 +775,35 @@ void SimUIForm::OnRightClick(int x, int y, bool fQueue, bool fForce)
     if (pgobHit != NULL && pgobHit->GetType() != kgtReplicator &&
             (pgobHit->GetFlags() & kfGobUnit) != 0 &&
             (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())) {
-        // Right-click on one of your own units or buildings is a move there
-        // (hovering shows its name; left-click opens a building's menu)
+        // Right-click on a selected Dominion: pick where its Headquarters
+        // goes (the placement follows the mouse, left-click deploys there)
+
+        if (!fQueue && pgobHit->GetType() == kgtMobileHeadquarters &&
+                (pgobHit->GetFlags() & kfGobSelected) &&
+                (pgobHit->GetFlags() & kfGobActive)) {
+            gpfrmPlace->SetDeployer((MobileHqGob *)pgobHit);
+            gpfrmmSim->AddForm(gpfrmPlace);
+            return;
+        }
+
+        // Right-click on one of your Processors: the selected miners unload
+        // there; the other selected units move there
+
+        if (pgobHit->GetType() == kgtProcessor &&
+                (pgobHit->GetFlags() & kfGobActive) &&
+                !(pgobHit->GetFlags() & kfGobBeingBuilt) &&
+                DeliverSelectedMiners(pgobHit, fQueue)) {
+            gfQueueOrder = fQueue;
+            s_fSkipMiners = true;
+            SetSelectionTargets(kgidNull, wxTarget, wyTarget);
+            s_fSkipMiners = false;
+            gfQueueOrder = false;
+            return;
+        }
+
+        // Otherwise right-click on one of your own units or buildings is a
+        // move there (hovering shows its name; left-click opens a building's
+        // menu)
 
         pgobHit = NULL;
     }
@@ -903,6 +904,39 @@ int RadiusFromUnitCount(int cUnits)
 		tcRadius = gmpcUnitsToRadius[cUnits];
 	}
 	return tcRadius;
+}
+
+// The selected miners unload at this Processor. Returns false if none are
+// selected.
+
+bool SimUIForm::DeliverSelectedMiners(Gob *pgobProcessor, bool fQueue)
+{
+    bool fAny = false;
+    MinerGob *pmnrFirst = NULL;
+    gfQueueOrder = fQueue;
+    for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL;
+            pgobT = ggobm.GetNextGob(pgobT)) {
+        if ((pgobT->GetFlags() & (kfGobSelected | kfGobActive)) !=
+                (kfGobSelected | kfGobActive))
+            continue;
+        if (pgobT->GetType() != kgtGalaxMiner)
+            continue;
+        if (!gfGodMode && pgobT->GetOwner() != pgobProcessor->GetOwner())
+            continue;
+        ((MinerGob *)pgobT)->DeliverTo(pgobProcessor->GetId());
+        if (pmnrFirst == NULL)
+            pmnrFirst = (MinerGob *)pgobT;
+        fAny = true;
+    }
+    gfQueueOrder = false;
+    if (!fAny)
+        return false;
+
+    pgobProcessor->Flash();
+    WPoint wpt;
+    pmnrFirst->GetCenter(&wpt);
+    gsndm.PlaySfxAt(ksfxGalaxMinerDeliver, wpt.wx, wpt.wy);
+    return true;
 }
 
 MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord wyTarget)
@@ -1054,6 +1088,10 @@ MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord w
 
 			// If it's a mobile gob, give it a move command to a scaled coordinate
 
+			if ((ff & kfGobMobileUnit) && s_fSkipMiners &&
+					pgobT->GetType() == kgtGalaxMiner) {
+				continue;
+			}
 			if (ff & kfGobMobileUnit) {
 				// Calc dst
 
