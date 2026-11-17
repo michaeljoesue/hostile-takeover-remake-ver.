@@ -685,7 +685,9 @@ void SimUIForm::ScrollViewBy(WCoord dwx, WCoord dwy)
 
 // Ctrl+Alt+right-click (Red Alert style): on a friendly unit or building,
 // the selected units guard it; on an enemy, attack it; on the ground,
-// attack-move there. Shift queues the order.
+// attack-move there. Shift queues the order. A wall isn't something to
+// guard or to attack this way: clicking one attack-moves to it like ground
+// (walls are attacked only by a plain or Ctrl+right-click on them).
 
 void SimUIForm::OnGuardClick(int x, int y, bool fQueue)
 {
@@ -695,7 +697,7 @@ void SimUIForm::OnGuardClick(int x, int y, bool fQueue)
     WCoord wxTarget, wyTarget;
     Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
     gfQueueOrder = fQueue;
-    if (pgobHit != NULL && pgobHit->GetType() != kgtReplicator &&
+    if (pgobHit != NULL && pgobHit->GetType() != kgtReplicator && pgobHit->GetType() != kgtWall &&
             (pgobHit->GetFlags() & (kfGobUnit | kfGobActive)) == (kfGobUnit | kfGobActive)) {
         UnitGob *puntHit = (UnitGob *)pgobHit;
         if (puntHit->IsAlly(gpplrLocal->GetSide())) {

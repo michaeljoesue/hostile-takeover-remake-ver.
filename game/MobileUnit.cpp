@@ -595,6 +595,12 @@ void MobileUnitGob::GuardUnit(Gid gidTarget, bool fPlayerOrder)
 {
 	if (gidTarget == m_gid || m_pmuntc->tcFiringRange == 0)
 		return;
+
+	// Walls aren't guarded
+
+	Gob *pgobGuard = ggobm.GetGob(gidTarget, false);
+	if (pgobGuard != NULL && pgobGuard->GetType() == kgtWall)
+		return;
 	Message msgT;
 	memset(&msgT, 0, sizeof(msgT));
 	msgT.mid = kmidGuardUnitCommand;
@@ -612,7 +618,7 @@ UnitGob *MobileUnitGob::GetGuardedUnit()
 	// Inactive includes a miner inside a Processor
 
 	Gob *pgob = ggobm.GetGob(m_msgAction.AttackCommand.gidTarget, false);
-	if (pgob == NULL || !(pgob->GetFlags() & kfGobUnit) || pgob == this)
+	if (pgob == NULL || !(pgob->GetFlags() & kfGobUnit) || pgob == this || pgob->GetType() == kgtWall)
 		return NULL;
 	UnitGob *punt = (UnitGob *)pgob;
 	if (!IsAlly(punt->GetSide()) || punt->GetHealth() <= 0)

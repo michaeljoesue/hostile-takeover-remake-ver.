@@ -97,7 +97,7 @@ Walls belong to a side (grey walls belong to no one). They block the way until t
 MORE ORDERS<BR>
 Shift+right-click: queue the order after the ones being carried out.<BR>
 Ctrl+right-click: force attack, even your own or an ally's units.<BR>
-Ctrl+Alt+right-click on the ground: attack-move. Units fight what they meet on the way, then carry on. On an enemy it attacks; on one of your units, the selected units guard it, following it and fighting enemies near it.<BR>
+Ctrl+Alt+right-click on the ground: attack-move. Units fight what they meet on the way, then carry on. On an enemy it attacks; on one of your units, the selected units guard it, following it and fighting enemies near it. Walls are left alone: they aren't guarded or attacked this way.<BR>
 S: stop. Esc: cancel building placement, otherwise clear the selection.<BR>
 Space: go to the last "under attack" alert.</H2>
 <HR>
