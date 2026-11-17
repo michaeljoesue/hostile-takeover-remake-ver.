@@ -188,11 +188,14 @@ Modern RTS controls:
 | Drag a box | Select your fighting units in it; miners and defence towers are left out unless the box holds nothing else (Shift+drag adds to the selection) |
 | Double-click, Ctrl+click | Select all your units of that type on screen |
 | Shift+click | Add a unit to the selection, or take it out |
-| Right-click | Move to the ground, attack an enemy, or open the menu of one of your units or buildings; cancels building placement |
+| Hover | Rest the mouse on any unit or building you can see (yours, an ally's or an enemy's) to show its name |
+| Right-click | Move to the ground (or to where one of your units or buildings stands), attack an enemy; cancels building placement |
 | Shift+right-click | Queue a move or attack: units carry it out after their current orders (up to 16) |
 | Ctrl+right-click | Force attack: attack the unit or building clicked, even your own or an ally's (Ctrl+Shift queues it). Destroying a friend isn't counted as a kill |
 | Ctrl+Alt+right-click | Red Alert style: on the ground, attack-move: units fight enemies they meet, including defence towers in range (buildings without weapons are left alone), then carry on. On an enemy: attack. On one of your (or an ally's) units, the selected units guard it: they follow it and fight enemies and defence towers near it, and keep guarding a miner while it's inside a Processor. Walls are neither guarded nor attacked this way (clicking a wall attack-moves to it), and attack-moving and guarding units never pick walls as targets. Shift queues it |
 | S | Stop |
+| D | Deliver: selected miners carrying Galaxite go unload it |
+| T | Transform: selected Dominions (Mobile HQs) that have room become a Headquarters |
 | Space | Go to the last "under attack" alert |
 | Esc | Close the open menu or dialog; otherwise cancel placement, otherwise deselect |
 | Middle-drag | Pan the map |

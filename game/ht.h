@@ -3163,6 +3163,9 @@ public:
     void ClickSelect(Gob *pgob, dword ffMods);
     void PlaySelectSfx(Gob *pgob);
 
+    // The name label shown while the mouse rests on a unit or building
+    void SetHover(bool fHover, int x = 0, int y = 0);
+
     // Keyboard commands (InputUIForm passes keys on)
     bool OnBattlefieldKey(Event *pevt);
     void CenterViewOn(WCoord wx, WCoord wy);
@@ -3196,6 +3199,15 @@ public:
 	virtual void OnTimer(long tCurrent);
 
 private:
+    void CalcHoverLabel(Rect *prc, const char **ppsz);
+    void UpdateHoverLabel(UpdateMap *pupd);
+    void DrawHoverLabel(DibBitmap *pbm);
+
+    bool m_fHover;
+    int m_xHover, m_yHover;
+    Rect m_rcHover;
+    const char *m_pszHover;
+
     PenHandler *m_ppenh;
 
     class StylusHandler : public PenHandler {

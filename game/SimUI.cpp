@@ -67,6 +67,11 @@ SimUIForm::SimUIForm()
 	m_nStateMoveTarget = 0;
 
     m_ppenh = new StylusHandler(this);
+    m_fHover = false;
+    m_xHover = 0;
+    m_yHover = 0;
+    m_rcHover.SetEmpty();
+    m_pszHover = NULL;
     m_fPanning = false;
     m_xPanLast = 0;
     m_yPanLast = 0;
@@ -279,6 +284,10 @@ void SimUIForm::OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque)
 
 	InvalidateDragSelection();
 
+	// The hover label follows its unit
+
+	UpdateHoverLabel(pupd);
+
 	// Calculate the current opaquing rect for the map.
 	// HACK: Store in a global since various places need it, such as when a gob gets removed or when
 	// galaxite gets invalidated.
@@ -472,6 +481,10 @@ void SimUIForm::OnPaintControls(DibBitmap *pbm, UpdateMap *pupd)
 	}
 
 
+	// Name of the unit or building under the mouse
+
+	DrawHoverLabel(pbm);
+
 	// Draw controls
 
 	Form::OnPaintControls(pbm, pupd);
@@ -625,6 +638,37 @@ bool SimUIForm::OnBattlefieldKey(Event *pevt)
         }
         return true;
 
+    case 'd':
+        // Deliver: selected miners carrying Galaxite go unload (the miner
+        // menu's Deliver button, which right-click used to open)
+        {
+            Gid *pgid = new Gid[kcpgobMax];
+            int cgid = GetOwnSelection(pgid, kcpgobMax, true);
+            for (int i = 0; i < cgid; i++) {
+                Gob *pgob = ggobm.GetGob(pgid[i]);
+                if (pgob != NULL && pgob->GetType() == kgtGalaxMiner &&
+                        ((MinerGob *)pgob)->GetGalaxiteAmount() != 0)
+                    pgob->OnMenuItemSelected(kidcDeliver);
+            }
+            delete[] pgid;
+        }
+        return true;
+
+    case 't':
+        // Transform: selected Mobile HQs that have room become a Headquarters
+        {
+            Gid *pgid = new Gid[kcpgobMax];
+            int cgid = GetOwnSelection(pgid, kcpgobMax, true);
+            for (int i = 0; i < cgid; i++) {
+                Gob *pgob = ggobm.GetGob(pgid[i]);
+                if (pgob != NULL && pgob->GetType() == kgtMobileHeadquarters &&
+                        ((MobileHqGob *)pgob)->CanTransform())
+                    pgob->OnMenuItemSelected(kidcTransform);
+            }
+            delete[] pgid;
+        }
+        return true;
+
     case ' ':
         if (gfLastAlertValid)
             CenterViewOn(gwptLastAlert.wx, gwptLastAlert.wy);
@@ -681,7 +725,7 @@ void SimUIForm::ScrollViewBy(WCoord dwx, WCoord dwy)
 }
 
 // Right-click: on the ground, move the selected units there; on an enemy,
-// attack it; on one of the player's own units or buildings, open its menu.
+// attack it; on one of the player's own units or buildings, move there.
 
 // Ctrl+Alt+right-click (Red Alert style): on a friendly unit or building,
 // the selected units guard it; on an enemy, attack it; on the ground,
@@ -757,13 +801,9 @@ void SimUIForm::OnRightClick(int x, int y, bool fQueue, bool fForce)
     if (pgobHit != NULL && pgobHit->GetType() != kgtReplicator &&
             (pgobHit->GetFlags() & kfGobUnit) != 0 &&
             (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())) {
-        // Shift+right-click on one of your own units queues a move there
-        // instead of opening its menu
+        // Right-click on one of your own units or buildings is a move there
+        // (hovering shows its name; left-click opens a building's menu)
 
-        if (!fQueue) {
-            pgobHit->PopupMenu();
-            return;
-        }
         pgobHit = NULL;
     }
 
@@ -784,8 +824,12 @@ bool SimUIForm::OnPenEvent(Event *pevt)
         return true;
     }
 
-    if (pevt->eType == penHoverEvent)
+    if (pevt->eType == penHoverEvent) {
+        // The mouse resting on the battlefield: name what's under it
+
+        SetHover(true, pevt->x, pevt->y);
         return true;
+    }
 
     bool fScrollOnly = false;
     if (gpfrmPlace != NULL && gpfrmPlace->IsBusy()) {
@@ -1367,6 +1411,84 @@ bool SimUIForm::IsSelectionCommand(Gob *pgobHit)
     }
 
     return fSelection;
+}
+
+// Hover label: the name of the unit or building the mouse rests on. Shown
+// for anything visible (own, allied or enemy), not while dragging or when a
+// menu or dialog is up.
+
+void SimUIForm::SetHover(bool fHover, int x, int y)
+{
+    m_fHover = fHover;
+    m_xHover = x;
+    m_yHover = y;
+}
+
+void SimUIForm::CalcHoverLabel(Rect *prc, const char **ppsz)
+{
+    prc->SetEmpty();
+    *ppsz = NULL;
+    if (!m_fHover || !s_fReadyForPaint || gfDragSelecting)
+        return;
+    if (gpfrmPlace != NULL && gpfrmPlace->IsBusy())
+        return;
+
+    WCoord wxT, wyT;
+    Gob *pgob = HitTestGob(m_xHover, m_yHover, &wxT, &wyT);
+    if (pgob == NULL || (pgob->GetFlags() & kfGobUnit) == 0)
+        return;
+    UnitConsts *puntc = ((UnitGob *)pgob)->GetConsts();
+    if (puntc == NULL || puntc->szName == NULL || puntc->szName[0] == 0)
+        return;
+
+    Font *pfnt = gapfnt[kifntShadow];
+    int cx = pfnt->GetTextExtent(puntc->szName) + 6;
+    int cy = pfnt->GetHeight() + 4;
+
+    // Below and right of the pointer, kept on the battlefield
+
+    int x = m_xHover + 10;
+    int y = m_yHover + 14;
+    if (x + cx > m_rc.Width())
+        x = m_xHover - cx - 2;
+    if (y + cy > m_rc.Height())
+        y = m_yHover - cy - 2;
+    if (x < 0)
+        x = 0;
+    if (y < 0)
+        y = 0;
+    prc->Set(x, y, x + cx, y + cy);
+    *ppsz = puntc->szName;
+}
+
+void SimUIForm::UpdateHoverLabel(UpdateMap *pupd)
+{
+    Rect rcNew;
+    const char *psz;
+    CalcHoverLabel(&rcNew, &psz);
+    if (rcNew.left == m_rcHover.left && rcNew.top == m_rcHover.top &&
+            rcNew.right == m_rcHover.right &&
+            rcNew.bottom == m_rcHover.bottom && psz == m_pszHover) {
+        return;
+    }
+    if (!m_rcHover.IsEmpty())
+        pupd->InvalidateRect(&m_rcHover);
+    if (!rcNew.IsEmpty())
+        pupd->InvalidateRect(&rcNew);
+    m_rcHover = rcNew;
+    m_pszHover = psz;
+}
+
+void SimUIForm::DrawHoverLabel(DibBitmap *pbm)
+{
+    if (m_rcHover.IsEmpty() || m_pszHover == NULL)
+        return;
+    Rect rc = m_rcHover;
+    pbm->Shadow(rc.left, rc.top, rc.Width(), rc.Height());
+    pbm->Shadow(rc.left, rc.top, rc.Width(), rc.Height());
+    DrawBorder(pbm, &rc, 1, GetColor(kiclrWhite));
+    gapfnt[kifntShadow]->DrawText(pbm, (char *)m_pszHover, rc.left + 3,
+            rc.top + 2);
 }
 
 void SimUIForm::ShowUnitMenu(Gob *pgob) {

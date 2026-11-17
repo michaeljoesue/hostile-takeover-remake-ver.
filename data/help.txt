@@ -91,7 +91,7 @@ Buildings, defence towers and walls are drawn with new high-resolution art, shar
 Clicking the Default button will restore these settings to their default values.</H2>
 <HR>
 <A NAME="howtoplay"><H1>GAME PLAY CONTROLS </H1></A>
-<H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly: left-click a unit to select it, then right-click where it should go. To move several units, <A HREF="#multiselect">select</A> them, then right-click the destination. To attack, select your units, then right-click the enemy. Left-click one of your buildings to open its menu; right-click one of your units to open its menu. Buttons light up while the mouse is over them and act the moment you click them; right-click anywhere to close the menu. The "Are you sure?" box for selling a building works the same way, and right-clicking it answers No.<BR>
+<H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly: left-click a unit to select it, then right-click where it should go. To move several units, <A HREF="#multiselect">select</A> them, then right-click the destination. To attack, select your units, then right-click the enemy. Rest the mouse on any unit or building to see its name. Left-click one of your buildings to open its menu. Press D to send the selected miners to deliver their Galaxite, and T to transform the selected Dominions. Buttons light up while the mouse is over them and act the moment you click them; right-click anywhere to close the menu. The "Are you sure?" box for selling a building works the same way, and right-clicking it answers No.<BR>
 Walls belong to a side (grey walls belong to no one). They block the way until they are destroyed. Units never attack walls on their own: to break through, select your units and right-click the wall (Ctrl+right-click for your own walls). Walls can't be repaired or sold.<BR>
 <BR>
 MORE ORDERS<BR>
@@ -407,7 +407,7 @@ Power Supply: 0<BR>
 <H2>To display the options associated with a particular building click on the building and select the Build Icon (the white hammer). The units associated with that building are displayed. Note that not all units are available on all missions. As you advance through more difficult missions, additional options are added to the build menus. Some units are only available after upgrading via the <A HREF="#randd">Research & Development Center</A>.</H2>
 <HR>
 <A NAME="Transform"><H1>TRANSFORMING YOUR HEADQUARTERS </H1></A>
-<H2>To change your Dominion into a Headquarters you need to bring up the Transform Menu. Right-click the Dominion and choose Transform from its menu.</H2>
+<H2>To change your Dominion into a Headquarters, select the Dominion and press T. It transforms if there is room for the Headquarters where it stands.</H2>
 <HR>
 <A NAME="difficulty"><H1>CHANGING THE DIFFICULTY </H1></A>
 <H2>You can change the difficulty level of the game in the <A HREF="#gameoptions">Options</A>.</H2>

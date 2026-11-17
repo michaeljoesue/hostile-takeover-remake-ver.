@@ -796,6 +796,15 @@ bool MultiFormMgr::CookEvent(Event *pevt)
     case penUpEvent2:
     case penMoveEvent2:
 	case penHoldEvent:
+		// The battlefield's hover label stays only while hover events keep
+		// reaching it
+
+		{
+			SimUIForm *psui = ggame.GetSimUIForm();
+			if (psui != NULL)
+				psui->SetHover(false);
+		}
+
 		// Send to the form with the capture
 
 		for (n = 0; n < m_cfrmm; n++) {

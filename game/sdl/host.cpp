@@ -268,6 +268,13 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         pevt->eType = appStopEvent;
         break;
 
+    case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+        // The pointer left the window: drop the battlefield's hover label
+
+        if (ggame.GetSimUIForm() != NULL)
+            ggame.GetSimUIForm()->SetHover(false);
+        return false;
+
     case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
         gfFullscreen = true;
         RedrawWindow();
