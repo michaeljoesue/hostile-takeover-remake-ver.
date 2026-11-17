@@ -12,7 +12,7 @@ namespace m
 		[DisplayName("side 1 (ACME)")] side1, 
 		[DisplayName("side 2 (OMNI)")] side2,
 		[DisplayName("side 3")] side3, 
-		[DisplayName("side 4")] side4,
+		[DisplayName("side 4 (Spring Green)")] side4,
 		[DisplayName("side 5 (Crimson)")] side5
 	};
 

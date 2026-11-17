@@ -425,6 +425,13 @@
 #define kiclr3CrimsonSide 53
 #define kiclr4CrimsonSide 54
 #define kiclrCrimsonSideLast 54
+#define kiclrSpringGreenSideFirst 55
+#define kiclr0SpringGreenSide 55
+#define kiclr1SpringGreenSide 56
+#define kiclr2SpringGreenSide 57
+#define kiclr3SpringGreenSide 58
+#define kiclr4SpringGreenSide 59
+#define kiclrSpringGreenSideLast 59
 
 // ARM code resource ids
 

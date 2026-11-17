@@ -1248,6 +1248,11 @@ Color gaclr4bpp[] = {
 	0x0009, // crimson side 2
 	0x000a, // crimson side 3
 	0x000b, // crimson side 4
+	0x0003, // spring green side 0
+	0x0004, // spring green side 1
+	0x0005, // spring green side 2
+	0x0006, // spring green side 3
+	0x0007, // spring green side 4
 };
 
 Color gaclr8bpp[] = {
@@ -1259,7 +1264,7 @@ Color gaclr8bpp[] = {
 	0x0010, // side 1 color
 	0x0015, // side 2 color
 	0x001a, // side 3 color
-	0x000b, // side 4 color
+	246,	// side 4 color (spring green, see the spring green side ramp)
 	0x0005, // button fill
 	0x0011, // button border
 	0x0000, // menu background
@@ -1306,6 +1311,11 @@ Color gaclr8bpp[] = {
 	253,	// crimson side 2
 	254,	// crimson side 3
 	255,	// crimson side 4
+	246,	// spring green side 0 (terrain palettes reserve 246-250 for side 4)
+	247,	// spring green side 1
+	248,	// spring green side 2
+	249,	// spring green side 3
+	250,	// spring green side 4
 };
 
 int gaiclrSide[kcSides] = { kiclrSideNeutral, kiclrSide1, kiclrSide2, kiclrSide3, kiclrSide4, kiclrSide5 };

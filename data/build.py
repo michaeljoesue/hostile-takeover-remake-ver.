@@ -50,12 +50,17 @@ PAL_SIZE = 256
 FIXED_PAL_SIZE = 131
 BACKGROUND_PAL_SIZE = 32
 
-# Side 5 (Crimson, #DC143C) has no slots in the fixed palette, so the
-# terrain palettes are made with 5 fewer colors and its ramp goes in
-# entries 251-255 (see gaclr8bpp in game/misc.cpp). The ramp scales the
-# color the same way the original red side ramp is scaled.
-SIDE5_RAMP = [tuple(round(c * k) for c in (220, 20, 60))
-        for k in (1.0, 196 / 232, 120 / 232, 92 / 232, 64 / 232)]
+# Side 4 (Spring Green, #00FF7F) and side 5 (Crimson, #DC143C) have no
+# slots in the fixed palette (its cyan ramp is the interface's colour), so
+# the terrain palettes are made with 10 fewer colors and their ramps go in
+# entries 246-250 and 251-255 (see gaclr8bpp in game/misc.cpp). A ramp
+# scales the color the same way the original red side ramp is scaled.
+def side_ramp(rgb):
+    return [tuple(round(c * k) for c in rgb)
+            for k in (1.0, 196 / 232, 120 / 232, 92 / 232, 64 / 232)]
+SIDE4_RAMP = side_ramp((0, 255, 127))
+SIDE5_RAMP = side_ramp((220, 20, 60))
+SIDE_RAMPS = SIDE4_RAMP + SIDE5_RAMP
 
 AMX_SCALEARG = ['-scale', '1.3333333333333', '-noscaleicon']
 MAPBMP_SCALEARG = ['-scale', '1.3333333333333']
@@ -294,11 +299,11 @@ def crunch_ini(pp, inicrunch, src, dst, extra_macros=None):
     os.remove(tmp)
 
 
-def append_side5_ramp(pal):
+def append_side_ramps(pal):
     with open(pal) as f:
         lines = [l.strip() for l in f if l.strip()]
     entries = lines[3:3 + int(lines[2])]
-    entries += ['%d %d %d' % rgb for rgb in SIDE5_RAMP]
+    entries += ['%d %d %d' % rgb for rgb in SIDE_RAMPS]
     assert len(entries) == PAL_SIZE
     with open(pal, 'w', newline='\n') as f:
         f.write('JASC-PAL\n0100\n%d\n' % PAL_SIZE)
@@ -335,9 +340,9 @@ def build(args):
 
     for terrain, pal in (('desert', DESERT_PAL), ('grassy', GRASSY_PAL)):
         run(['mcl.exe', '-makepal', TILESIZE, terrain + '.tc',
-                PAL_SIZE - len(SIDE5_RAMP), FIXED_PAL_SIZE,
+                PAL_SIZE - len(SIDE_RAMPS), FIXED_PAL_SIZE,
                 BACKGROUND_PAL_SIZE, FIXED_PAL, pal])
-        append_side5_ramp(pal)
+        append_side_ramps(pal)
         run(['palbin.exe', pal, '%s/%s.palbin' % (OUTDIR, terrain)])
         run(['shadowmap.exe', pal,
                 '%s/%s.palbin.shadowmap' % (OUTDIR, terrain), '0.6'])

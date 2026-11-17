@@ -415,7 +415,7 @@ namespace m
 			// 
 			// menuItemSide4Properties
 			// 
-			this.menuItemSide4Properties.Text = "Side &4";
+			this.menuItemSide4Properties.Text = "Side &4 (Spring Green)";
 			this.menuItemSide4Properties.Click += new System.EventHandler(this.menuItemSide4Properties_Click);
 			// 
 			// menuItemSide5Properties

@@ -214,7 +214,7 @@ namespace m {
 		[DisplayName("Side 1 (ACME)")] Side1,
 		[DisplayName("Side 2 (OMNI)")] Side2,
 		[DisplayName("Side 3")] Side3,
-		[DisplayName("Side 4")] Side4,
+		[DisplayName("Side 4 (Spring Green)")] Side4,
 		Enemies, Allies,
 		[DisplayName("All Sides")] AllSides,
 		[DisplayName("Current Side")] CurrentSide,
@@ -349,6 +349,7 @@ namespace m {
 			}
 		}
 
+		[System.ComponentModel.DisplayName("Side 4 (Spring Green)")]
 		public bool Side4 {
 			get {
 				return Af[(int)CaSide.Side4];

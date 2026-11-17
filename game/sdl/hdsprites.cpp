@@ -769,7 +769,7 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
 
 static const int s_aiclrRampFirst[kcSides] = {
     kiclrNeutralSideFirst, kiclrBlueSideFirst, kiclrRedSideFirst,
-    kiclrYellowSideFirst, kiclrCyanSideFirst, kiclrCrimsonSideFirst
+    kiclrYellowSideFirst, kiclrSpringGreenSideFirst, kiclrCrimsonSideFirst
 };
 
 static float Luma(float r, float g, float b) {

@@ -239,12 +239,12 @@ namespace m {
 												  Color.FromArgb(64, 63, 0)
 											  },
 								  new Color[] {
-												  // cyan
-												  Color.FromArgb(0, 229, 232),	// (h: 128, s: 255, l: 116)
-												  Color.FromArgb(0, 194, 196),	// (h: 128, s: 255, l: 98)
-												  Color.FromArgb(0, 119, 120),	// (h: 128, s: 255, l: 60)
-												  Color.FromArgb(0, 91, 92),		// (h: 128, s: 255, l: 46)
-												  Color.FromArgb(0, 63, 64)		// (h: 128, s: 255, l: 32)
+												  // side 4 (Spring Green): #00FF7F, same as the game
+												  Color.FromArgb(0, 255, 127),
+												  Color.FromArgb(0, 215, 107),
+												  Color.FromArgb(0, 132, 66),
+												  Color.FromArgb(0, 101, 50),
+												  Color.FromArgb(0, 70, 35)
 											  },
 								  new Color[] {
 												  // side 5 (Crimson): #DC143C, same as the game
