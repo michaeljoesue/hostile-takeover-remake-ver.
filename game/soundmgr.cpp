@@ -235,6 +235,25 @@ void SoundMgr::PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy)
 	PlaySfxRaw(sfx, nPan, nVolume * gnVolumeBattle / 256);
 }
 
+// A sound only heard while what makes it is in view (a miner unloading at
+// a Processor): placed like a battlefield sound
+
+void SoundMgr::PlaySfxIfSeen(Sfx sfx, Gob *pgob)
+{
+	Size sizPlayfield;
+	ggame.GetPlayfieldSize(&sizPlayfield);
+	WCoord wxView, wyView;
+	gsim.GetViewPos(&wxView, &wyView);
+	TRect trc;
+	pgob->GetTileRect(&trc);
+	if (WcFromTc(trc.right) <= wxView || WcFromTc(trc.left) >= wxView + WcFromPc(sizPlayfield.cx) ||
+			WcFromTc(trc.bottom) <= wyView || WcFromTc(trc.top) >= wyView + WcFromPc(sizPlayfield.cy))
+		return;
+	WPoint wpt;
+	pgob->GetCenter(&wpt);
+	PlaySfxAt(sfx, wpt.wx, wpt.wy);
+}
+
 void SoundMgr::PlaySfxRaw(Sfx sfx, int nPan, int nVolume)
 {
 	// Get the sfx entry and channel

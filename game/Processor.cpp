@@ -13,17 +13,10 @@ static StructConsts gConsts;
 // Gob methods
 //
 
-// Unloading (the door opening and closing for a miner) sounds from where the
-// Processor is, like fighting: panned left or right, quieter off screen
+// Unloading (the door opening and closing for a miner) is heard only while
+// the Processor is in view, from its side of the screen
 
-static void PlayDoorSfxAt(Sfx sfx, Gob *pgob)
-{
-	WPoint wpt;
-	pgob->GetCenter(&wpt);
-	gsndm.PlaySfxAt(sfx, wpt.wx, wpt.wy);
-}
-
-#define PlayDoorSfx(sfx) PlayDoorSfxAt(sfx, this)
+#define PlayDoorSfx(sfx) gsndm.PlaySfxIfSeen(sfx, this)
 
 bool ProcessorGob::InitClass(IniReader *pini)
 {

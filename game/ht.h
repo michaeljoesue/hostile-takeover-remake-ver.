@@ -7261,6 +7261,7 @@ public:
 
 	void PlaySfx(Sfx sfx, int nPan = 0, int nVolume = 256);	// group chosen by sfx
 	void PlaySfxAt(Sfx sfx, WCoord wx, WCoord wy);	// battlefield sound
+	void PlaySfxIfSeen(Sfx sfx, Gob *pgob);		// placed like PlaySfxAt, only if in view
 	void PlayResponseSfx(Sfx sfx);	// a unit's reply to the player
 	void PlaySfxRaw(Sfx sfx, int nPan, int nVolume);	// no group volume
 	void WaitSilence();

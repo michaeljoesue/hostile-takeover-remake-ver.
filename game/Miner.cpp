@@ -186,9 +186,9 @@ void MinerGob::OnMenuItemSelected(int idc)
 			msg.tDelivery = 0;
 			gcmdq.Enqueue(&msg);
 
-			// Full, off to unload: from where the miner is
+			// Full, off to unload: heard only while the miner is in view
 
-			gsndm.PlaySfxAt(ksfxGalaxMinerDeliver, m_wx, m_wy);
+			gsndm.PlaySfxIfSeen(ksfxGalaxMinerDeliver, this);
 		}
 		break;
 	}
