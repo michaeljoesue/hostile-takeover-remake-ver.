@@ -115,7 +115,8 @@
 #define kside2 2
 #define kside3 3
 #define kside4 4
-#define kcSides 5
+#define kside5 5
+#define kcSides 6
 
 #define knIntelligenceHuman 0
 #define knIntelligenceComputer 1
@@ -680,3 +681,26 @@
 
 #define knsfxHappyEnding 0
 #define knsfxExplosion 1
+
+// Kept in step with game/res.h (fifth side, newer controls)
+#define kidcSelectionInfo 2007
+#define kidcCustomList 1504
+#define kidcBattleVol 1005
+#define kidcBattleVolLabel 1006
+#define kidcResponseVol 1007
+#define kidcResponseVolLabel 1008
+#define kidcEffectsVol 1009
+#define kidcEffectsVolLabel 1010
+#define kidcMenuVol 1011
+#define kidcMenuVolLabel 1012
+#define kidcFullscreen 1002
+#define kidcSmoothMotion 1003
+#define kiclrSide5 49
+#define kiclrCrimsonSideFirst 50
+#define kiclr0CrimsonSide 50
+#define kiclr1CrimsonSide 51
+#define kiclr2CrimsonSide 52
+#define kiclr3CrimsonSide 53
+#define kiclr4CrimsonSide 54
+#define kiclrCrimsonSideLast 54
+#define knCaSideSide5 9
