@@ -185,7 +185,10 @@ void MinerGob::OnMenuItemSelected(int idc)
 			msg.DeliverCommand.gidTarget = kgidNull;
 			msg.tDelivery = 0;
 			gcmdq.Enqueue(&msg);
-			gsndm.PlaySfx(ksfxGalaxMinerDeliver);
+
+			// Full, off to unload: from where the miner is
+
+			gsndm.PlaySfxAt(ksfxGalaxMinerDeliver, m_wx, m_wy);
 		}
 		break;
 	}

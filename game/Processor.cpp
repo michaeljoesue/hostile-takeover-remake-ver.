@@ -13,6 +13,18 @@ static StructConsts gConsts;
 // Gob methods
 //
 
+// Unloading (the door opening and closing for a miner) sounds from where the
+// Processor is, like fighting: panned left or right, quieter off screen
+
+static void PlayDoorSfxAt(Sfx sfx, Gob *pgob)
+{
+	WPoint wpt;
+	pgob->GetCenter(&wpt);
+	gsndm.PlaySfxAt(sfx, wpt.wx, wpt.wy);
+}
+
+#define PlayDoorSfx(sfx) PlayDoorSfxAt(sfx, this)
+
 bool ProcessorGob::InitClass(IniReader *pini)
 {
 	gConsts.gt = kgtProcessor;
@@ -390,7 +402,7 @@ lbError:
 				if (!m_fDoorMoving) {
 					m_fDoorMoving = true;
 					if (m_pplr == gpplrLocal)
-						gsndm.PlaySfx(ksfxGalaxiteProcessorDoorOpening);
+						PlayDoorSfx(ksfxGalaxiteProcessorDoorOpening);
 				}
 			}
 
@@ -510,7 +522,7 @@ lbError:
 					if (!m_fDoorMoving) {
 						m_fDoorMoving = true;
 						if (m_pplr == gpplrLocal)
-							gsndm.PlaySfx(ksfxGalaxiteProcessorDoorClosing);
+							PlayDoorSfx(ksfxGalaxiteProcessorDoorClosing);
 					}
 				}
 			}
