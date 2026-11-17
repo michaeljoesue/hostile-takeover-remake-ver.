@@ -1495,6 +1495,27 @@ void SimUIForm::CalcHoverLabel(Rect *prc, const char **ppsz)
         x = 0;
     if (y < 0)
         y = 0;
+
+    // Keep it off the minimap: above the pointer, or failing that to its
+    // left
+
+    Form *pfrmMiniMap = gpmfrmm->GetFormPtr(kidfMiniMap);
+    if (pfrmMiniMap != NULL) {
+        Rect rcMM, rcT;
+        pfrmMiniMap->GetRect(&rcMM);
+        rcT.Set(x, y, x + cx, y + cy);
+        if (rcT.Intersect(&rcT, &rcMM)) {
+            y = m_yHover - cy - 4;
+            if (y < 0)
+                y = 0;
+            rcT.Set(x, y, x + cx, y + cy);
+            if (rcT.Intersect(&rcT, &rcMM)) {
+                x = m_xHover - cx - 4;
+                if (x < 0)
+                    x = 0;
+            }
+        }
+    }
     prc->Set(x, y, x + cx, y + cy);
     *ppsz = puntc->szName;
 }
