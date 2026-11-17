@@ -94,8 +94,9 @@ The engine has been updated from its 2007 handheld roots:
 - **Walls are objects.** Each wall tile belongs to a side or is neutral
   (no one's), and can be damaged and destroyed: it then opens the way.
   Its picture joins the walls next to it, in its side's colour. Units
-  never pick walls as targets on their own (nor do the computer players,
-  hunting units or towers): a wall is attacked only when ordered to
+  never pick walls as targets on their own, whatever their side (nor do
+  defence towers, the computer players or hunting units): a wall is
+  attacked only when ordered to
   (right-click, or Ctrl+right-click on your own). Walls can be selected
   but not repaired or sold. Walls in missions made before are neutral.
 - **Five sides.** Side 1 is ACME and side 2 is OMNI (now bright red,

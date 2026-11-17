@@ -715,6 +715,12 @@ void UnitGob::RememberEnemyNearby(Gid gidEnemy)
 	UnitGob *puntEnemy = (UnitGob *)ggobm.GetGob(gidEnemy);
 	if (puntEnemy == NULL)
 		return;
+
+	// Walls are never picked as targets on their own, by any side's units
+	// or towers: only attacked when ordered
+
+	if (puntEnemy->GetType() == kgtWall)
+		return;
 	TCoord txThis = TcFromWc(m_wx);
 	TCoord tyThis = TcFromWc(m_wy);
 	Side sideThis = GetSide();
@@ -793,7 +799,8 @@ UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 			continue;
 		}
 		UnitGob *puntEnemyNearby = (UnitGob *)ggobm.GetGob(gidEnemyNearby);
-		if (puntEnemyNearby == NULL || puntEnemyNearby->GetSide() == sideThis) {
+		if (puntEnemyNearby == NULL || puntEnemyNearby->GetSide() == sideThis ||
+				puntEnemyNearby->GetType() == kgtWall) {
 			m_agidEnemyNearby[n] = kgidNull;
 			cEmpty++;
 			continue;
@@ -824,6 +831,11 @@ UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 
 void UnitGob::NotifyEnemyNearby()
 {
+	// A wall tells no one it's near (nobody should go for it on their own)
+
+	if (GetType() == kgtWall)
+		return;
+
 	// OPT: Could scan leading edges only (when moving), as long as
 	// the edge is 2 tiles thick. Would need to break out cases where the whole
 	// rect needs to be scanned.

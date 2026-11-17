@@ -470,10 +470,12 @@ void HdBeginFrame() {
 void HdNoteCovered(DibBitmap *pbm, int x, int y, int cx, int cy) {
     if (!HdIsActive() || s_vitem.empty() || s_vbHdCovered.empty())
         return;
-    if (gpfrmmSim == NULL || pbm != gpfrmmSim->GetDib())
-        return;
+    // Any part of the back buffer (the playfield, or a form over it such
+    // as the minimap's)
+
     DibBitmap *pbmBack = gpdisp->GetBackDib();
-    if (pbmBack == NULL || pbm->GetRowBytes() != pbmBack->GetRowBytes())
+    if (pbmBack == NULL || pbm->GetRowBytes() != pbmBack->GetRowBytes() ||
+            pbm->GetBits() < pbmBack->GetBits())
         return;
     int yTop = (int)((pbm->GetBits() - pbmBack->GetBits()) / pbmBack->GetRowBytes());
     Size siz;

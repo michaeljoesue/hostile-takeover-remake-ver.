@@ -1641,6 +1641,11 @@ void MiniMapControl::OnPaint(DibBitmap *pbm)
 	int xMap = x + m_cxyBorder;
 	int yMap = y + m_cxyBorder;
 
+	// HD pictures (hdsprites.cpp) of buildings under the minimap mustn't show
+	// through it where its colours happen to match the ground's
+
+	HdNoteCovered(pbm, x, y, m_rc.Width(), m_rc.Height());
+
 	// Border: top, and left down to the input bar
 
 	int iclr = kiclr0CyanSide;
