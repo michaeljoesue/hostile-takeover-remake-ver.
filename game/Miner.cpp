@@ -261,9 +261,10 @@ void MinerGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord 
 		return;
 	}
 
-	// Play deliver sfx
+	// Play deliver sfx, from the miner's side of the screen like the other
+	// unloading sounds (it may be off screen: ordered from a group key)
 
-	gsndm.PlaySfx(ksfxGalaxMinerDeliver);
+	gsndm.PlaySfxAt(ksfxGalaxMinerDeliver, m_wx, m_wy);
 
 	// Flash the target Gob
 
