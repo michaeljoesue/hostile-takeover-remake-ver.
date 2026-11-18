@@ -1376,14 +1376,7 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 
 			// Play sfx
 
-			if (!gfGodMode) {
-				if (pgobHit->GetFlags() & kfGobStructure) {
-					gsndm.PlaySfx(((StructConsts *)gapuntc[((StructGob *)pgobHit)->GetUnitType()])->sfxSelect);
-				} else {
-					if (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())
-						gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[((UnitGob *)pgobHit)->GetUnitType()])->sfxcSelect));
-				}
-			}
+			PlaySelectSfx(pgobHit);
 		}
 
         if (ff & kfMasShowMenu) {
@@ -1606,9 +1599,16 @@ void SimUIForm::ClickSelect(Gob *pgob, dword ffMods)
     PlaySelectSfx(pgob);
 }
 
+// Only the player's own units and buildings answer when selected; walls
+// make no sound
+
 void SimUIForm::PlaySelectSfx(Gob *pgob)
 {
     if (gfGodMode)
+        return;
+    if (pgob->GetSide() != gpplrLocal->GetSide())
+        return;
+    if (pgob->GetType() == kgtWall)
         return;
     if (pgob->GetFlags() & kfGobStructure) {
         gsndm.PlaySfx(((StructConsts *)gapuntc[((StructGob *)pgob)->GetUnitType()])->sfxSelect);
