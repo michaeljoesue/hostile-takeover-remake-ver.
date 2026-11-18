@@ -3237,6 +3237,7 @@ private:
         int m_cgidKeep;
 
         void OnPenDown(Event *pevt);
+        void OpenMenu(Gid gid);
         void OnPenUp(Event *pevt);
         void OnPenDrag(Event *pevt);
         void CancelModes();

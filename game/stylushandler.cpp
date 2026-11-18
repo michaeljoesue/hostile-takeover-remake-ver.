@@ -101,6 +101,43 @@ void SimUIForm::StylusHandler::OnPenDown(Event *pevt)
 
     if (pgobHit != NULL)
         m_psui->ClickSelect(pgobHit, m_ffMods);
+
+    // A plain click on one of the player's buildings opens its menu right
+    // away too. The menu is modal and takes the button release.
+
+    if (pgobHit != NULL && (pgobHit->GetFlags() & kfGobStructure) &&
+            (m_ffMods & (kfModShift | kfModCtrl)) == 0 &&
+            (gfGodMode || pgobHit->GetSide() == gpplrLocal->GetSide())) {
+        m_fDragging = false;
+        m_gidDown = kgidNull;
+        OpenMenu(pgobHit->GetId());
+    }
+}
+
+// A click outside an open building menu closes it and passes the click on,
+// which can land on another building while the first menu is still closing:
+// that building's menu then opens once the first one is gone.
+
+static bool s_fMenuOpen = false;
+static Gid s_gidMenuNext = kgidNull;
+
+void SimUIForm::StylusHandler::OpenMenu(Gid gid)
+{
+    if (s_fMenuOpen) {
+        s_gidMenuNext = gid;
+        return;
+    }
+    while (gid != kgidNull) {
+        s_gidMenuNext = kgidNull;
+        Gob *pgob = ggobm.GetGob(gid);
+        if (pgob == NULL || !(pgob->GetFlags() & kfGobActive))
+            break;
+        s_fMenuOpen = true;
+        m_psui->ShowUnitMenu(pgob);
+        s_fMenuOpen = false;
+        m_fDragging = false;
+        gid = s_gidMenuNext;
+    }
 }
 
 void SimUIForm::StylusHandler::OnPenUp(Event *pevt)
@@ -137,19 +174,12 @@ void SimUIForm::StylusHandler::OnPenDrag(Event *pevt)
             break;
 		}
 
-        // A click. On the ground: deselect. On one of the player's buildings:
-        // open its menu.
+        // A click on the ground: deselect. (A building's menu opened when
+        // the button went down.)
 
         if (m_gidDown == kgidNull) {
             if ((m_ffMods & kfModShift) == 0)
                 gsim.ClearGobSelection();
-        } else {
-            Gob *pgob = ggobm.GetGob(m_gidDown);
-            if (pgob != NULL && (pgob->GetFlags() & kfGobStructure) &&
-                    (m_ffMods & (kfModShift | kfModCtrl)) == 0 &&
-                    (gfGodMode || pgob->GetSide() == gpplrLocal->GetSide())) {
-                m_psui->ShowUnitMenu(pgob);
-            }
         }
 		break;
 
