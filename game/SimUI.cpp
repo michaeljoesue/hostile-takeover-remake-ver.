@@ -1253,10 +1253,30 @@ Gob *SimUIForm::HitTestGob(int x, int y, WCoord *pwx, WCoord *pwy)
     *pwx = wxTarget;
     *pwy = wyTarget;
 
+    // Nothing under unexplored fog can be pointed at (hovered, selected or
+    // targeted): neither where the pointer is, nor a unit standing in fog
+    // whose picture reaches out of it (a building partly out of the fog can
+    // be pointed at where it shows)
+
+    byte *pbFog = gsim.GetLevel()->GetFogMap()->GetMapPtr();
+    if (IsFogOpaque(pbFog[TcFromWc(wyTarget) * ctx + TcFromWc(wxTarget)]))
+        return NULL;
+
     Gob *pgobHit = NULL;
     Enum enm;
-    gsim.HitTest(&enm, wxTarget, wyTarget, kfGobActive | kfGobUnit, &pgobHit);
-    return pgobHit;
+    while (gsim.HitTest(&enm, wxTarget, wyTarget, kfGobActive | kfGobUnit, &pgobHit)) {
+        WPoint wpt;
+        pgobHit->GetCenter(&wpt);
+        TCoord tx = TcFromWc(wpt.wx);
+        TCoord ty = TcFromWc(wpt.wy);
+        if ((pgobHit->GetFlags() & kfGobMobileUnit) &&
+                tx >= 0 && tx < ctx && ty >= 0 && ty < cty &&
+                IsFogOpaque(pbFog[ty * ctx + tx])) {
+            continue;
+        }
+        return pgobHit;
+    }
+    return NULL;
 }
 
 void SimUIForm::MoveOrAttackOrSelect(int x, int y, dword ff)
