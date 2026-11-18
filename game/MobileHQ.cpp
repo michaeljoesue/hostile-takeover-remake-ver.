@@ -11,7 +11,7 @@ bool MobileHqGob::InitClass(IniReader *pini)
 {
 	gConsts.gt = kgtMobileHeadquarters;
 	gConsts.ut = kutMobileHeadquarters;
-	gConsts.umPrerequisites = kumResearchCenter;
+	// Needs the Advanced VTS upgrade only (not an R&D Center as well)
 	gConsts.upgmPrerequisites = kupgmAdvancedVTS;
 
 	// Initialize the frame indices arrays

@@ -368,7 +368,7 @@ Power Supply: 0<BR>
 <BR>
 <IMG SRC="research.anir">
 <BR>
-<H2>Investing in a R&D Center will allow you to upgrade your <A HREF="#hrc">HRC</A> and <A HREF="#vts">VTS</A>, giving you access to the newest technologies available. Note that once the VTS is upgraded you can sell your R&D center to return some of your credits. However, even after upgrading the HRC, if you lose your R&D Center you will be unable to create <A HREF="#corporateraider">Corporate Raiders</A>. The R&D center must be intact for these very special units to be available. <BR>
+<H2>Investing in a R&D Center will allow you to upgrade your <A HREF="#hrc">HRC</A> and <A HREF="#vts">VTS</A>, giving you access to the newest technologies available. Once the HRC and VTS are upgraded you can sell your R&D center to return some of your credits: the upgrades stay, including <A HREF="#corporateraider">Corporate Raiders</A> and Dominions. <BR>
 <BR>
 Cost: 750<BR>
 Armor: Medium<BR>
@@ -399,7 +399,7 @@ Power Supply: 0<BR>
 </H2><HR>
 <A NAME="upgrades"><H1>Research Upgrades </H1></A>
 <BR>
-<H2>Research upgrades allow you to improve the units available at your Human Resource Center (HRC) and Vehicle Transport Station (VTS). The Research & Development Center is available starting on Mission 3. Select this building and use the build icon to view available upgrades. Upgrading the HRC enables production of Rocket Troopers and later Corporate Raiders. Upgrading the VTS enables production of Dominions, Cyclops and other advanced tanks. Not all upgrades are available in all missions. It is worth noting that even after you have upgraded your HRC, the R&D Center must survive to enable production of <A HREF="#corporateraider">Corporate Raiders</A>. Therefore you cannot sell this building if you wish to produce these very special units.<BR>
+<H2>Research upgrades allow you to improve the units available at your Human Resource Center (HRC) and Vehicle Transport Station (VTS). The Research & Development Center is available starting on Mission 3. Select this building and use the build icon to view available upgrades. Upgrading the HRC enables production of Rocket Troopers and later Corporate Raiders. Upgrading the VTS enables production of Dominions, Cyclops and other advanced tanks. Not all upgrades are available in all missions. Once an upgrade is done it stays, even if the R&D Center is sold or destroyed: <A HREF="#corporateraider">Corporate Raiders</A> and Dominions only need their upgrade.<BR>
 </H2><HR>
 <A NAME="Tips"><H1>TIPS</H1></A>
 <HR>

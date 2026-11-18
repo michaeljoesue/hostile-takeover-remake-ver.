@@ -12,7 +12,7 @@ bool SpInfantryGob::InitClass(IniReader *pini)
 {
 	gConsts.gt = kgtTakeoverSpecialist;
 	gConsts.ut = kutTakeoverSpecialist;
-	gConsts.umPrerequisites = kumResearchCenter;
+	// Needs the Advanced HRC upgrade only (not an R&D Center as well)
 	gConsts.upgmPrerequisites = kupgmAdvancedHRC;
 
 	// Initialize the frame indices arrays
