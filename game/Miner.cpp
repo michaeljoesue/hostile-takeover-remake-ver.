@@ -62,6 +62,8 @@ MinerGob::MinerGob() : MobileUnitGob(&gConsts)
 	m_fAttemptingToDeliver = false;
 	m_fKeepMining = false;
 	m_fQuietRetry = false;
+	m_tptAvoid.tx = kxInvalid;
+	m_tptAvoid.ty = kxInvalid;
 }
 
 #define knVerMinerGobState 3
@@ -275,7 +277,7 @@ void MinerGob::Idle()
 	if (!m_fKeepMining || m_fHidden || !(m_ff & kfGobActive) || !IsIdle())
 		return;
 	if (m_nGalaxiteAmount > 0) {
-		SendDeliverCommand(m_gidFavoriteProcessor);
+		SendDeliverCommand(ChooseProcessor());
 		return;
 	}
 	m_fQuietRetry = true;
@@ -304,9 +306,7 @@ if (!(m_ff & kfGobActive)) {
 
 			// Go to Galaxite closest to the previous location
 
-			FogMap *pfogm = gsim.GetLevel()->GetFogMap();
-			if (pfogm->FindNearestGalaxite(m_tptGalaxite.tx, m_tptGalaxite.ty, 
-					&m_tptGalaxite, (m_pplr->GetFlags() & kfPlrComputer) != 0)) {
+			if (FindGalaxite(m_tptGalaxite.tx, m_tptGalaxite.ty, &m_tptGalaxite)) {
 				m_wptTarget.wx = WcFromTc(m_tptGalaxite.tx);
 				m_wptTarget.wy = WcFromTc(m_tptGalaxite.ty);
 				SetState(kstMinerApproachGalaxite);
@@ -607,7 +607,7 @@ BeginStateMachine
 
 				// Yes, deliver our load to our favorite Processor
 
-				SendDeliverCommand(m_gidFavoriteProcessor);
+				SendDeliverCommand(ChooseProcessor());
 
 			} else {
 
@@ -642,8 +642,7 @@ if (!(m_ff & kfGobActive)) {
 					// No, look around for some
 					// Miners controlled by computer players or in a network game can (must) ignore fog.
 
-					bool fFound = pfogm->FindNearestGalaxite(tx, ty, &m_tptGalaxite, 
-							(m_pplr->GetFlags() & kfPlrComputer) != 0);
+					bool fFound = FindGalaxite(tx, ty, &m_tptGalaxite);
 					if (!fFound) {
 
 						// Can't find any! Deliver what we have & then we'll park it by our
@@ -656,7 +655,7 @@ if (!(m_ff & kfGobActive)) {
 								ShowAlert(kidsMinerNeedsGalaxite);
 							SetState(kstGuard);
 						} else {
-							SendDeliverCommand(m_gidFavoriteProcessor);
+							SendDeliverCommand(ChooseProcessor());
 						}
 
 					} else {
@@ -751,9 +750,10 @@ if (!(m_ff & kfGobActive)) {
 				break;
 
 			case knMoveStuck:
-				// UNDONE: what to do? Doing nothing means we repath every
-				// Update until a valid path can be determined.
+				// Couldn't get there (other units in the way). Stand by and
+				// try again in a moment (Idle), picking other Galaxite.
 
+				m_tptAvoid = m_tptGalaxite;
 				SetState(kstGuard);
 				break;
 			}
@@ -799,9 +799,10 @@ if (!(m_ff & kfGobActive)) {
 				break;
 
 			case knMoveStuck:
-				// UNDONE: what to do? Doing nothing means we repath every
-				// Update until a valid path can be determined.
+				// Couldn't get there (other units in the way). Stand by and
+				// try again in a moment (Idle), picking other Galaxite.
 
+				m_tptAvoid = m_tptGalaxite;
 				SetState(kstGuard);
 				break;
 			}
@@ -819,11 +820,12 @@ if (!(m_ff & kfGobActive)) {
 			// Begin countdown to Galaxite decrement
 
 			m_cDelay = kcMinerSuckDelay;
+			m_tptAvoid.tx = kxInvalid;
 
 			// Are we full?
 
 			if (m_nGalaxiteAmount == knMinerGalaxiteMax)
-				SendDeliverCommand(m_gidFavoriteProcessor);
+				SendDeliverCommand(ChooseProcessor());
 
 		OnUpdate
 			// Are we full?
@@ -833,7 +835,7 @@ if (!(m_ff & kfGobActive)) {
 				// Yes, deliver our load to our favorite Processor
 
 				MarkRedraw();
-				SendDeliverCommand(m_gidFavoriteProcessor);
+				SendDeliverCommand(ChooseProcessor());
 
 			} else {
 				// If target tile is out of Galaxite try another
@@ -901,6 +903,183 @@ Gid MinerGob::FindClosestProcessor()
 	}
 
 	return gidClosest;
+}
+
+// The tile in front of a Processor's door, where a miner stops to go in
+
+bool MinerGob::GetProcessorEntrance(Gid gidProcessor, TPoint *ptpt)
+{
+	Gob *pgob = ggobm.GetGob(gidProcessor);
+	if (pgob == NULL || pgob->GetType() != kgtProcessor)
+		return false;
+	TPoint tpt;
+	pgob->GetTilePosition(&tpt);
+	ptpt->tx = tpt.tx + 1;
+	ptpt->ty = tpt.ty + 2;
+	return true;
+}
+
+// Which Processor to take a load to: the nearest, but one that is busy (a
+// miner inside, others on their way or waiting at the door) counts as
+// further away, so miners spread over the player's Processors instead of
+// queueing at one. The favorite wins a tie.
+
+Gid MinerGob::ChooseProcessor()
+{
+	TPoint tptMe;
+	GetTilePosition(&tptMe);
+
+	Gid gidBest = kgidNull;
+	int nBest = 0x7fffffff;
+	for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
+		if (pgobT->GetType() != kgtProcessor)
+			continue;
+		if (pgobT->GetOwner() != m_pplr)
+			continue;
+		if (pgobT->GetFlags() & kfGobBeingBuilt)
+			continue;
+		if (!(pgobT->GetFlags() & kfGobActive))
+			continue;
+
+		TPoint tptDoor;
+		if (!GetProcessorEntrance(pgobT->GetId(), &tptDoor))
+			continue;
+		int nCost = _max(abs(tptDoor.tx - tptMe.tx), abs(tptDoor.ty - tptMe.ty));
+
+		// Miners already using it: inside it (hidden), heading there, or
+		// waiting for the door
+
+		int cBusy = 0;
+		for (Gob *pgobM = ggobm.GetFirstGob(); pgobM != NULL; pgobM = ggobm.GetNextGob(pgobM)) {
+			if (pgobM == this || pgobM->GetType() != kgtGalaxMiner)
+				continue;
+			if (pgobM->GetOwner() != m_pplr)
+				continue;
+			MinerGob *pmnr = (MinerGob *)pgobM;
+			if (pmnr->m_gidFavoriteProcessor != pgobT->GetId())
+				continue;
+			if (pmnr->m_fHidden || pmnr->m_fAttemptingToDeliver ||
+					pmnr->m_st == kstMinerMoveToProcessor ||
+					pmnr->m_st == kstMinerRotateForEntry) {
+				cBusy++;
+			}
+		}
+		nCost += cBusy * 8;
+		if (pgobT->GetId() == m_gidFavoriteProcessor)
+			nCost -= 2;
+
+		if (nCost < nBest) {
+			nBest = nCost;
+			gidBest = pgobT->GetId();
+		}
+	}
+	if (gidBest == kgidNull)
+		return m_gidFavoriteProcessor;
+	return gidBest;
+}
+
+// Pick Galaxite to mine, near txFrom, tyFrom (where the miner is, or where
+// it mined last). Instead of simply the nearest:
+// - near the base too: the trip there plus the trip back to the Processor
+//   is what counts, so miners don't wander off to far fields
+// - a tile needs a free spot next to it to mine from; tiles crowded by
+//   other units count as further away
+// - tiles other miners are already working are left to them if possible
+// - the tile it couldn't reach last time is tried last
+// Falls back to the nearest Galaxite anywhere.
+
+bool MinerGob::FindGalaxite(TCoord txFrom, TCoord tyFrom, TPoint *ptpt)
+{
+	const int ktcSearch = 16;
+
+	FogMap *pfogm = gsim.GetLevel()->GetFogMap();
+	bool fIgnoreFog = (m_pplr->GetFlags() & kfPlrComputer) != 0;
+	byte *pbFog = pfogm->GetMapPtr();
+	TCoord ctx, cty;
+	ggobm.GetMapSize(&ctx, &cty);
+
+	TPoint tptMe;
+	GetTilePosition(&tptMe);
+
+	TPoint tptDoor;
+	Gid gidProcessor = m_gidFavoriteProcessor;
+	if (ggobm.GetGob(gidProcessor) == NULL)
+		gidProcessor = FindClosestProcessor();
+	bool fDoor = GetProcessorEntrance(gidProcessor, &tptDoor);
+
+	// Tiles other miners are working on, or heading to
+
+	TPoint atptClaimed[64];
+	int ctptClaimed = 0;
+	for (Gob *pgobM = ggobm.GetFirstGob(); pgobM != NULL; pgobM = ggobm.GetNextGob(pgobM)) {
+		if (pgobM == this || pgobM->GetType() != kgtGalaxMiner)
+			continue;
+		if (!(pgobM->GetFlags() & kfGobActive))
+			continue;
+		MinerGob *pmnr = (MinerGob *)pgobM;
+		if (pmnr->m_tptGalaxite.tx == kxInvalid)
+			continue;
+		if (pmnr->m_st != kstMinerApproachGalaxite && pmnr->m_st != kstMinerFaceGalaxite &&
+				pmnr->m_st != kstMinerSuck && pmnr->m_st != kstMinerStepAside)
+			continue;
+		if (ctptClaimed < ARRAYSIZE(atptClaimed))
+			atptClaimed[ctptClaimed++] = pmnr->m_tptGalaxite;
+	}
+
+	int nBest = 0x7fffffff;
+	TCoord txMin = _max(0, txFrom - ktcSearch);
+	TCoord txMax = _min((int)ctx - 1, txFrom + ktcSearch);
+	TCoord tyMin = _max(0, tyFrom - ktcSearch);
+	TCoord tyMax = _min((int)cty - 1, tyFrom + ktcSearch);
+	for (TCoord ty = tyMin; ty <= tyMax; ty++) {
+		for (TCoord tx = txMin; tx <= txMax; tx++) {
+			byte b = pbFog[ty * ctx + tx];
+			if (!HasGalaxite(b))
+				continue;
+			if (IsFogOpaque(b) && !fIgnoreFog)
+				continue;
+
+			int nCost = _max(abs(tx - txFrom), abs(ty - tyFrom));
+			if (fDoor)
+				nCost += _max(abs(tx - tptDoor.tx), abs(ty - tptDoor.ty));
+
+			// A spot next to it to mine from (the miner's own counts)
+
+			int cFree = 0;
+			for (int dir = 0; dir < 8; dir++) {
+				TCoord txT = tx + g_mpDirToDx[dir];
+				TCoord tyT = ty + g_mpDirToDy[dir];
+				if (txT == tptMe.tx && tyT == tptMe.ty) {
+					cFree++;
+					continue;
+				}
+				if (IsTileFree(txT, tyT))
+					cFree++;
+			}
+			if (cFree == 0)
+				continue;
+			if (cFree < 3)
+				nCost += 4;
+
+			for (int i = 0; i < ctptClaimed; i++) {
+				if (atptClaimed[i].tx == tx && atptClaimed[i].ty == ty) {
+					nCost += 6;
+					break;
+				}
+			}
+			if (tx == m_tptAvoid.tx && ty == m_tptAvoid.ty)
+				nCost += 40;
+
+			if (nCost < nBest) {
+				nBest = nCost;
+				ptpt->tx = tx;
+				ptpt->ty = ty;
+			}
+		}
+	}
+	if (nBest != 0x7fffffff)
+		return true;
+	return pfogm->FindNearestGalaxite(txFrom, tyFrom, ptpt, fIgnoreFog);
 }
 
 void MinerGob::SendDeliverCommand(Gid gidProcessor)

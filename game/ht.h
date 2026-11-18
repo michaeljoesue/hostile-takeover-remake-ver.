@@ -6329,6 +6329,9 @@ public:
 private:
 	void Mine(WCoord wx, WCoord wy);
 	Gid FindClosestProcessor();
+	Gid ChooseProcessor();
+	bool GetProcessorEntrance(Gid gidProcessor, TPoint *ptpt);
+	bool FindGalaxite(TCoord txFrom, TCoord tyFrom, TPoint *ptpt);
 
 private:
 	Animation m_aniVacuum;
@@ -6342,6 +6345,7 @@ private:
 	bool m_fHidden;
 	bool m_fKeepMining;		// mining (or delivering) until told otherwise
 	bool m_fQuietRetry;		// retrying: don't announce "needs Galaxite" again
+	TPoint m_tptAvoid;		// Galaxite it couldn't get to last time
 };
 
 inline void MinerGob::SetGalaxiteAmount(int nAmount)
