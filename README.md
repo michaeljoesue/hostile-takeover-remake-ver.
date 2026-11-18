@@ -65,11 +65,11 @@ The engine has been updated from its 2007 handheld roots:
   The panning is strong: at the edge of the view a sound is almost only
   in one ear.
 - **Sound groups.** Options > Sound has a volume for each group, relative
-  to the main volume: Interface (button and menu clicks), Battle & Base
-  (shots, explosions, hits, units dying, plus credits counting, building
-  repairs and miners unloading), Unit Voices (units replying to you) and
-  Announcements (buildings' select, build and ready sounds, new build
-  options, alerts, win / lose).
+  to the main volume: Interface (button and menu clicks, selecting a
+  building), Battle & Base (shots, explosions, hits, units dying, plus
+  credits counting, building repairs and miners unloading), Unit Voices
+  (units replying to you) and Announcements (buildings' build and ready
+  sounds, new build options, alerts, win / lose).
 - **HD buildings.** Every building, defence tower and wall is drawn with
   new high-resolution art over the 8-bit game, at the window's own pixel
   resolution: each picture is scaled down once to the window's size

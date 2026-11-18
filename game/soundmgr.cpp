@@ -179,15 +179,36 @@ static bool IsBaseSfx(Sfx sfx)
 }
 
 // Sound groups (Options > Sound):
-//   Interface     - button and menu clicks
+//   Interface     - button and menu clicks, selecting a building
 //   Battle & Base - fighting (PlaySfxAt) plus credits, repairs, unloading
 //   Unit Voices   - units replying to the player (PlayResponseSfx)
-//   Announcements - everything else: buildings' select / build / ready
+//   Announcements - everything else: buildings' build / ready
 //                   sounds, new options, alerts, win / lose
+
+// Clicking a building plays its select sound: that's interface feedback
+
+static bool IsBuildingSelectSfx(Sfx sfx)
+{
+	switch (sfx) {
+	case ksfxGalaxiteProcessorSelect:
+	case ksfxGalaxiteWarehouseSelect:
+	case ksfxHeadquartersSelect:
+	case ksfxHumanResourceCenterSelect:
+	case ksfxMachineGunTowerSelect:
+	case ksfxRadarSelect:
+	case ksfxReactorSelect:
+	case ksfxResearchCenterSelect:
+	case ksfxRocketTowerSelect:
+	case ksfxVehicleTransportStationSelect:
+		return true;
+	}
+	return false;
+}
 
 void SoundMgr::PlaySfx(Sfx sfx, int nPan, int nVolume)
 {
-	bool fEffect = sfx >= ksfxGuiBuildMenuHide && sfx <= ksfxGuiScrollingListSelectItem;
+	bool fEffect = (sfx >= ksfxGuiBuildMenuHide &&
+			sfx <= ksfxGuiScrollingListSelectItem) || IsBuildingSelectSfx(sfx);
 	int nGroup = fEffect ? gnVolumeEffects : IsBaseSfx(sfx) ? gnVolumeBattle : gnVolumeMenu;
 	if (nGroup <= 0)
 		return;
