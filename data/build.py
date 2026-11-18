@@ -50,17 +50,19 @@ PAL_SIZE = 256
 FIXED_PAL_SIZE = 131
 BACKGROUND_PAL_SIZE = 32
 
-# Side 4 (Spring Green, #00FF7F) and side 5 (Crimson, #DC143C) have no
-# slots in the fixed palette (its cyan ramp is the interface's colour), so
-# the terrain palettes are made with 10 fewer colors and their ramps go in
-# entries 246-250 and 251-255 (see gaclr8bpp in game/misc.cpp). A ramp
+# Side 4 (Spring Green, #00FF7F), side 5 (Crimson, #DC143C) and side 6
+# (Sky Blue, #00BFFF) have no slots in the fixed palette (its cyan ramp is
+# the interface's colour), so the terrain palettes are made with 15 fewer
+# colors and their ramps go in entries 241-245 (side 6), 246-250 (side 4)
+# and 251-255 (side 5) (see gaclr8bpp in game/misc.cpp). A ramp
 # scales the color the same way the original red side ramp is scaled.
 def side_ramp(rgb):
     return [tuple(round(c * k) for c in rgb)
             for k in (1.0, 196 / 232, 120 / 232, 92 / 232, 64 / 232)]
 SIDE4_RAMP = side_ramp((0, 255, 127))
 SIDE5_RAMP = side_ramp((220, 20, 60))
-SIDE_RAMPS = SIDE4_RAMP + SIDE5_RAMP
+SIDE6_RAMP = side_ramp((0, 191, 255))
+SIDE_RAMPS = SIDE6_RAMP + SIDE4_RAMP + SIDE5_RAMP
 
 AMX_SCALEARG = ['-scale', '1.3333333333333', '-noscaleicon']
 MAPBMP_SCALEARG = ['-scale', '1.3333333333333']

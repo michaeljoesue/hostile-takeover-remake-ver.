@@ -1411,7 +1411,7 @@ namespace m {
 
 			// SideInfo
 
-			for (Side side = Side.side1; side <= Side.side5; side++) {
+			for (Side side = Side.side1; side <= Side.side6; side++) {
 				Ini.Section sec = ini[side.ToString()];
 				if (sec == null) {
 					continue;

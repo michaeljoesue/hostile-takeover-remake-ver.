@@ -35,6 +35,7 @@ namespace m
 		private System.Windows.Forms.ToolStripMenuItem menuItemSide3Properties;
 		private System.Windows.Forms.ToolStripMenuItem menuItemSide4Properties;
 		private System.Windows.Forms.ToolStripMenuItem menuItemSide5Properties;
+		private System.Windows.Forms.ToolStripMenuItem menuItemSide6Properties;
 		private System.Windows.Forms.ToolStripMenuItem menuItemSaveTileMapBitmap;
 		private System.Windows.Forms.ToolStripMenuItem menuItemSaveLevelBitmap;
 		private System.Windows.Forms.Splitter splitterMapRight;
@@ -191,6 +192,7 @@ namespace m
 			this.menuItemSide3Properties = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSide4Properties = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSide5Properties = new System.Windows.Forms.ToolStripMenuItem();
+			this.menuItemSide6Properties = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemMisc = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemValidate = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemRun = new System.Windows.Forms.ToolStripMenuItem();
@@ -363,7 +365,8 @@ namespace m
 																					  this.menuItemSide2Properties,
 																					  this.menuItemSide3Properties,
 																					  this.menuItemSide4Properties,
-																					  this.menuItemSide5Properties});
+																					  this.menuItemSide5Properties,
+																					  this.menuItemSide6Properties});
 			this.menuItem4.Text = "&Settings";
 			// 
 			// menuItemTriggers
@@ -424,6 +427,11 @@ namespace m
 			// 
 			this.menuItemSide5Properties.Text = "Side &5 (Crimson)";
 			this.menuItemSide5Properties.Click += new System.EventHandler(this.menuItemSide5Properties_Click);
+			//
+			// menuItemSide6Properties
+			//
+			this.menuItemSide6Properties.Text = "Side &6 (Sky Blue)";
+			this.menuItemSide6Properties.Click += new System.EventHandler(this.menuItemSide6Properties_Click);
 			// 
 			// menuItemMisc
 			// 
@@ -829,6 +837,12 @@ namespace m
 			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
 			if (lvld != null)
 				Globals.PropertyGrid.SelectedObject = lvld.GetSideInfo(Side.side4);
+		}
+
+		private void menuItemSide6Properties_Click(object sender, System.EventArgs e) {
+			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
+			if (lvld != null)
+				Globals.PropertyGrid.SelectedObject = lvld.GetSideInfo(Side.side6);
 		}
 
 		private void menuItemSide5Properties_Click(object sender, System.EventArgs e) {

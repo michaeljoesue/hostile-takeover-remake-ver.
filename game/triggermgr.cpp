@@ -579,6 +579,8 @@ SideMask GetSideMaskFromCaSideMask(Side sideCur, word wfCaSideMask)
 	SideMask sidm = wfCaSideMask & (ksidmNeutral | ksidmSide1 | ksidmSide2 | ksidmSide3 | ksidmSide4);
 	if (wfCaSideMask & (1 << knCaSideSide5))
 		sidm |= ksidmSide5;
+	if (wfCaSideMask & (1 << knCaSideSide6))
+		sidm |= ksidmSide6;
 	if (wfCaSideMask & (1 << knCaSideAllSides)) {
 		sidm |= ksidmAll;
 	} else {

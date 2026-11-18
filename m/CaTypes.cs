@@ -218,7 +218,8 @@ namespace m {
 		Enemies, Allies,
 		[DisplayName("All Sides")] AllSides,
 		[DisplayName("Current Side")] CurrentSide,
-		[DisplayName("Side 5 (Crimson)")] Side5
+		[DisplayName("Side 5 (Crimson)")] Side5,
+		[DisplayName("Side 6 (Sky Blue)")] Side6
 	};
 
 	[Serializable]
@@ -367,6 +368,17 @@ namespace m {
 			}
 			set {
 				Af[(int)CaSide.Side5] = value;
+				m_fInit = true;
+			}
+		}
+
+		[System.ComponentModel.DisplayName("Side 6 (Sky Blue)")]
+		public bool Side6 {
+			get {
+				return Af[(int)CaSide.Side6];
+			}
+			set {
+				Af[(int)CaSide.Side6] = value;
 				m_fInit = true;
 			}
 		}

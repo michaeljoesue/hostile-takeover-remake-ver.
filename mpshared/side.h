@@ -9,7 +9,8 @@
 #define kside3 3
 #define kside4 4
 #define kside5 5
-#define kcSides 6
+#define kside6 6
+#define kcSides 7
 
 #define knIntelligenceHuman 0
 #define knIntelligenceComputer 1

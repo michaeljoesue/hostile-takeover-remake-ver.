@@ -134,6 +134,7 @@ bool TBitmap::InitClass()
 			{ kiclrYellowSideFirst, kiclrYellowSideLast },
 			{ kiclrSpringGreenSideFirst, kiclrSpringGreenSideLast },
 			{ kiclrCrimsonSideFirst, kiclrCrimsonSideLast },
+			{ kiclrSkyBlueSideFirst, kiclrSkyBlueSideLast },
 			{ kiclrWhite, kiclrWhite }
 	};
 

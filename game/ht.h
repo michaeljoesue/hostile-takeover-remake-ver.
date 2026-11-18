@@ -709,7 +709,7 @@ public:
 #define kfTbShared 2
 
 #define kcCopyBy4Procs 32
-#define kcColoredSides 7
+#define kcColoredSides 8
 #define kiSideCodeWhite (kcColoredSides - 1)	// side code table used to flash units white
 class TBitmap : public HtBitmap
 {
@@ -7790,7 +7790,7 @@ bool PickSaveGameStream(Stream **ppstm);
 void DeleteStaleSaveGames();
 // Version of the saved game format. Saved games of other versions can't be
 // loaded.
-const byte knVerGameState = 12;
+const byte knVerGameState = 13;
 bool CheckSaveGameVersion(char *pszVersion, byte bVer);
 bool HostDeleteSaveGame(char *psz, int nGame);
 

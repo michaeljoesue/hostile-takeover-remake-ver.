@@ -13,7 +13,8 @@ namespace m
 		[DisplayName("side 2 (OMNI)")] side2,
 		[DisplayName("side 3")] side3, 
 		[DisplayName("side 4 (Spring Green)")] side4,
-		[DisplayName("side 5 (Crimson)")] side5
+		[DisplayName("side 5 (Crimson)")] side5,
+		[DisplayName("side 6 (Sky Blue)")] side6
 	};
 
 	// Shows sides by their display names in the property grid

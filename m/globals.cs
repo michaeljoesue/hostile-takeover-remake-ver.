@@ -321,13 +321,21 @@ namespace m {
 												  Color.FromArgb(87, 8, 24),
 												  Color.FromArgb(61, 6, 17)
 											  },
+								  new Color[] {
+												  // side 6 (Sky Blue): #00BFFF, same as the game
+												  Color.FromArgb(0, 191, 255),
+												  Color.FromArgb(0, 161, 215),
+												  Color.FromArgb(0, 99, 132),
+												  Color.FromArgb(0, 76, 101),
+												  Color.FromArgb(0, 53, 70)
+											  },
 			};
 
 			// Make the side bitmaps
-			m_abmSides = new Bitmap[6];
+			m_abmSides = new Bitmap[aaclr.Length];
 			double nScale = (double)sizTile.Width / 16.0;
 			Bitmap bmScaled = TBitmapTools.ScaleBitmap(bmUnscaled, nScale, null);
-			for (int i = 0; i < 6; i++) {
+			for (int i = 0; i < aaclr.Length; i++) {
 				Bitmap bmSide = new Bitmap(bmScaled);
 				MapColors(bmSide, aaclr[1], aaclr[i]);
 				MapColors(bmSide, new Color[] { Color.FromArgb(156, 212, 248) }, new Color[] { Color.FromArgb(75, 0, 0, 0) });

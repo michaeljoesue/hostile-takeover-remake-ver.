@@ -116,7 +116,8 @@
 #define kside3 3
 #define kside4 4
 #define kside5 5
-#define kcSides 6
+#define kside6 6
+#define kcSides 7
 
 #define knIntelligenceHuman 0
 #define knIntelligenceComputer 1
@@ -710,4 +711,13 @@
 #define kiclr3SpringGreenSide 58
 #define kiclr4SpringGreenSide 59
 #define kiclrSpringGreenSideLast 59
+#define kiclrSide6 60
+#define kiclrSkyBlueSideFirst 61
+#define kiclr0SkyBlueSide 61
+#define kiclr1SkyBlueSide 62
+#define kiclr2SkyBlueSide 63
+#define kiclr3SkyBlueSide 64
+#define kiclr4SkyBlueSide 65
+#define kiclrSkyBlueSideLast 65
 #define knCaSideSide5 9
+#define knCaSideSide6 10	// after side 5, same reason

@@ -432,6 +432,14 @@
 #define kiclr3SpringGreenSide 58
 #define kiclr4SpringGreenSide 59
 #define kiclrSpringGreenSideLast 59
+#define kiclrSide6 60
+#define kiclrSkyBlueSideFirst 61
+#define kiclr0SkyBlueSide 61
+#define kiclr1SkyBlueSide 62
+#define kiclr2SkyBlueSide 63
+#define kiclr3SkyBlueSide 64
+#define kiclr4SkyBlueSide 65
+#define kiclrSkyBlueSideLast 65
 
 // ARM code resource ids
 
@@ -470,7 +478,8 @@
 #define knCaSideAllies 6
 #define knCaSideAllSides 7
 #define knCaSideCurrentSide 8
-#define knCaSideSide5 9	// appended after the special values so old masks keep their meaning
+#define knCaSideSide5 9
+#define knCaSideSide6 10	// after side 5, same reason	// appended after the special values so old masks keep their meaning
 
 #define knCounterTypeNone 0
 #define knCounterTypeTotal 1

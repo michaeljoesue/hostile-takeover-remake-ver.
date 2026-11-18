@@ -99,8 +99,10 @@ The engine has been updated from its 2007 handheld roots:
   attacked only when ordered to
   (right-click, or Ctrl+right-click on your own). Walls can be selected
   but not repaired or sold. Walls in missions made before are neutral.
-- **Five sides.** Side 1 is ACME and side 2 is OMNI (now bright red,
-  #FF3333). There is a new side 5, Crimson (#DC143C), for missions to use.
+- **Six sides.** Side 1 is ACME and side 2 is OMNI (now bright red,
+  #FF3333). Side 4 is Spring Green (#00FF7F), and there are two new sides
+  for missions to use: side 5, Crimson (#DC143C), and side 6, Sky Blue
+  (#00BFFF).
   Allied sides share what they can see.
 - **Smarter units.** Pathfinding is a real A* search: units go around a
   lake instead of following its shore into dead ends, and paths are about
@@ -218,7 +220,7 @@ its fog fades smoothly.
 Saved games, settings and mission progress are stored in
 `%APPDATA%\Spiffcode\HostileTakeover`. If you quit during a mission, it is
 saved and restored the next time the game starts. Games saved by versions
-before side 5 and the bigger maps can't be loaded.
+before side 6 can't be loaded.
 
 ## Game data
 
@@ -361,9 +363,10 @@ Maps, sides and limits:
   Map Width and Map Height under Map Size set the editing area, from 16 to
   258 tiles. Bounds, the part the game gets, can be up to 256x256 tiles.
   Maps wider or taller than 64 tiles get a mini map with 1 pixel per tile.
-- **Sides.** Side 1 (ACME), side 2 (OMNI), sides 3 and 4, and side 5
-  (Crimson). Settings > Side 5 (Crimson) sets up side 5; triggers and units
-  can use it like the others.
+- **Sides.** Side 1 (ACME), side 2 (OMNI), side 3, side 4 (Spring Green),
+  side 5 (Crimson) and side 6 (Sky Blue). Settings > Side 5 (Crimson) and
+  Settings > Side 6 (Sky Blue) set them up; triggers, unit groups, units,
+  buildings and walls can use them like the others.
 - **Walls.** Place walls from the gob panel. Each wall has a Side (pick it
   in the panel's side list before placing, or in the wall's properties;
   a coloured band shows it, none for neutral) and a Health (percent).
