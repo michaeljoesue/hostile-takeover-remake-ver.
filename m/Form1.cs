@@ -119,7 +119,9 @@ namespace m
 
 			// Load settings
 
+			AddPanelIconSizeMenu();
 			LoadSettings();
+			ApplyPanelIconScale();
 
 			if (Globals.IsKit()) {
 				// Remove stuff we don't want in the kit. Validate and Run
@@ -867,6 +869,7 @@ namespace m
 				secGeneral.Add(new Ini.Property("GamePath", GamePath));
 			secGeneral.Add(new Ini.Property("Kit", Globals.IsKit().ToString()));
 			secGeneral.Add(new Ini.Property("Eula", "1"));
+			secGeneral.Add(new Ini.Property("PanelIconScale", Globals.PanelIconScale.ToString()));
 
 			ini.Add(secGeneral);
 			
@@ -935,6 +938,45 @@ namespace m
 			prop = sec["GamePath"];
 			if (prop != null && prop.Value.Length != 0)
 				GamePath = prop.Value;
+
+			prop = sec["PanelIconScale"];
+			int nScale;
+			if (prop != null && int.TryParse(prop.Value, out nScale))
+				Globals.SetPanelIconScale(nScale);
+		}
+
+		// Window > Panel Icon Size: how big the pictures in the side panels
+		// (buildings, units, scenery and terrain) are. The side panel widens
+		// to fit; its splitters still resize it.
+
+		ToolStripMenuItem[] m_amniPanelIconSize;
+
+		void AddPanelIconSizeMenu() {
+			ToolStripMenuItem mniSize = new ToolStripMenuItem("Panel &Icon Size");
+			string[] astr = { "&Small (original)", "&Medium (double)", "&Large (triple)" };
+			m_amniPanelIconSize = new ToolStripMenuItem[astr.Length];
+			for (int n = 0; n < astr.Length; n++) {
+				ToolStripMenuItem mni = new ToolStripMenuItem(astr[n]);
+				mni.Tag = n + 1;
+				mni.Click += new EventHandler(menuItemPanelIconSize_Click);
+				mniSize.DropDownItems.Add(mni);
+				m_amniPanelIconSize[n] = mni;
+			}
+			menuItemWindow.DropDownItems.Insert(0, mniSize);
+			menuItemWindow.DropDownItems.Insert(1, new ToolStripSeparator());
+		}
+
+		void menuItemPanelIconSize_Click(object sender, EventArgs e) {
+			Globals.SetPanelIconScale((int)((ToolStripMenuItem)sender).Tag);
+			ApplyPanelIconScale();
+		}
+
+		void ApplyPanelIconScale() {
+			int nScale = Globals.PanelIconScale;
+			foreach (ToolStripMenuItem mni in m_amniPanelIconSize)
+				mni.Checked = (int)mni.Tag == nScale;
+			panel1.Width = 168 + (nScale - 1) * 80;
+			ctlGobPanel.Height = 216 + (nScale - 1) * 100;
 		}
 
 		// Path of HostileTakeover.exe, used by Run (F5). Saved in m.ini.

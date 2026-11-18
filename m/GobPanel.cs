@@ -36,6 +36,7 @@ namespace m
 			// Fill
 
 			FillGobPanel();
+			Globals.PanelIconScaleChanged += new Globals.PanelIconScaleChangedHandler(Globals_PanelIconScaleChanged);
 		}
 
 		/// <summary> 
@@ -104,7 +105,7 @@ namespace m
 			Wall wall = picb.Tag as Wall;
 			if (wall != null) {
 				wall.Side = side;
-				picb.Image = wall.GetBitmap(new Size(16, 16), null);
+				picb.Image = wall.GetBitmap(PanelTileSize(), null);
 				return;
 			}
 			Unit unit = picb.Tag as Unit;
@@ -112,7 +113,25 @@ namespace m
 				return;
 
 			unit.Side = side;
-			picb.Image = unit.GetBitmap(new Size(16, 16), null);
+			picb.Image = unit.GetBitmap(PanelTileSize(), null);
+		}
+
+		// The pictures are drawn for tiles of this size (16 is the original)
+
+		static Size PanelTileSize() {
+			return new Size(16 * Globals.PanelIconScale, 16 * Globals.PanelIconScale);
+		}
+
+		void Globals_PanelIconScaleChanged() {
+			flowPanel.SuspendLayout();
+			foreach (Control ctl in flowPanel.Controls) {
+				PictureBox picb = ctl as PictureBox;
+				if (picb == null || picb.Tag == null)
+					continue;
+				picb.Image = ((IMapItem)picb.Tag).GetBitmap(PanelTileSize(), null);
+			}
+			flowPanel.ResumeLayout();
+			flowPanel.RefreshScrollbar();
 		}
 
 		void FillGobPanel() {
@@ -190,7 +209,7 @@ namespace m
 
 		PictureBox CreatePictureBox(IMapItem mi) {
 			PictureBox picb = new PictureBox();
-			picb.Image = mi.GetBitmap(new Size(16, 16), null);
+			picb.Image = mi.GetBitmap(PanelTileSize(), null);
 			picb.SizeMode = PictureBoxSizeMode.AutoSize;
 			picb.Tag = (Object)mi;
 			picb.MouseDown += new MouseEventHandler(PictureBox_MouseDown);
@@ -220,8 +239,8 @@ namespace m
 			LevelData ldat = new LevelData();
 			IMapItem mi = (IMapItem)ctlSelected.Tag;
 			ldat.ami = new IMapItem[] { mi };
-			ldat.txMouse = e.X / 16.0;
-			ldat.tyMouse = e.Y / 16.0;
+			ldat.txMouse = e.X / (double)PanelTileSize().Width;
+			ldat.tyMouse = e.Y / (double)PanelTileSize().Height;
 			ldat.Grid.Width = mi.Grid.Width;
 			ldat.Grid.Height = mi.Grid.Height;
 			DoDragDrop(ldat, DragDropEffects.Copy);

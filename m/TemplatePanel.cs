@@ -52,6 +52,7 @@ namespace m
 		{
 			// This call is required by the Windows.Forms Form Designer.
 			InitializeComponent();
+			Globals.PanelIconScaleChanged += new Globals.PanelIconScaleChangedHandler(Globals_PanelIconScaleChanged);
 
 			if (Globals.IsKit()) {
 				Controls.Remove(toolBar);
@@ -122,9 +123,26 @@ namespace m
 			flowPanel.RefreshScrollbar();
 		}
 
+		// A terrain piece's picture as the panel shows it: outlined, and
+		// scaled up by the panel icon size
+
+		static Image PanelImage(Bitmap bm) {
+			return Globals.ScalePixels(Misc.TraceEdges(bm, 1, Color.Azure), Globals.PanelIconScale);
+		}
+
+		void Globals_PanelIconScaleChanged() {
+			foreach (ComboItem ci in comboDocs.Items) {
+				foreach (PictureBox picb in ci.m_alsPictureBoxes) {
+					Tile tile = (Tile)picb.Tag;
+					picb.Image = PanelImage(tile.GetBitmap(ci.m_tmpd.TileSize, ci.m_tmpd));
+				}
+			}
+			flowPanel.RefreshScrollbar();
+		}
+
 		PictureBox CreatePictureBox(TemplateDoc tmpd, Size sizTile, IMapItem mi) {
 			PictureBox picb = new PictureBox();
-			picb.Image = Misc.TraceEdges(mi.GetBitmap(sizTile, tmpd), 1, Color.Azure);
+			picb.Image = PanelImage(mi.GetBitmap(sizTile, tmpd));
 			picb.SizeMode = PictureBoxSizeMode.AutoSize;
 			picb.Tag = (Object)mi;
 			picb.MouseDown += new MouseEventHandler(PictureBox_MouseDown);
@@ -215,7 +233,7 @@ namespace m
 				Tile tile = (Tile)picb.Tag;
 				if (tile.Name == strName) {
 					Template tmpl = tmpd.FindTemplate(strProperty == "Name" ? strParam : strName);
-					picb.Image = Misc.TraceEdges(tmpl.Bitmap, 1, Color.Azure);
+					picb.Image = PanelImage(tmpl.Bitmap);
 					break;
 				}
 			}
@@ -265,8 +283,8 @@ namespace m
 			IMapItem mi = (IMapItem)ctlSelected.Tag;
 			ldat.ami = new IMapItem[] { mi };
 			Size sizTile = m_tmpdActive.TileSize;
-			ldat.txMouse = e.X / (double)sizTile.Width;
-			ldat.tyMouse = e.Y / (double)sizTile.Height;
+			ldat.txMouse = e.X / (double)(sizTile.Width * Globals.PanelIconScale);
+			ldat.tyMouse = e.Y / (double)(sizTile.Height * Globals.PanelIconScale);
 			ldat.Grid.Width = mi.Grid.Width;
 			ldat.Grid.Height = mi.Grid.Height;
 			DoDragDrop(ldat, DragDropEffects.Copy);

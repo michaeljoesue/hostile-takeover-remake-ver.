@@ -11,6 +11,37 @@ using SpiffLib;
 
 namespace m {
 	public class Globals {
+		// How big the side panels' pictures of buildings, units and terrain
+		// are: 1 is the original size, 2 double, 3 triple (Window > Panel
+		// Icon Size)
+
+		public static int PanelIconScale = 2;
+		public delegate void PanelIconScaleChangedHandler();
+		public static event PanelIconScaleChangedHandler PanelIconScaleChanged;
+		public static void SetPanelIconScale(int nScale) {
+			if (nScale < 1) nScale = 1;
+			if (nScale > 3) nScale = 3;
+			if (nScale == PanelIconScale)
+				return;
+			PanelIconScale = nScale;
+			if (PanelIconScaleChanged != null)
+				PanelIconScaleChanged();
+		}
+
+		// A picture scaled up by a whole number with hard pixel edges
+
+		public static Bitmap ScalePixels(Bitmap bm, int nScale) {
+			if (bm == null || nScale <= 1)
+				return bm;
+			Bitmap bmNew = new Bitmap(bm.Width * nScale, bm.Height * nScale);
+			using (Graphics g = Graphics.FromImage(bmNew)) {
+				g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+				g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+				g.DrawImage(bm, new Rectangle(0, 0, bmNew.Width, bmNew.Height));
+			}
+			return bmNew;
+		}
+
 		// A-Z ignoring case, with runs of digits compared by value, so that
 		// "group2" comes before "group10"
 
