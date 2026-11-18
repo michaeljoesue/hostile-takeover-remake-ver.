@@ -1468,22 +1468,27 @@ namespace m {
 			return lvld.UnitGroupManager.Items.IndexOf(m_ug).ToString();
 		}
 
-		StringCollection GetUnitGroupNames() {
+		// The unit groups sorted A-Z, as in the Unit Groups window
+
+		UnitGroup[] GetSortedUnitGroups() {
 			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
-			StringCollection strc = new StringCollection();
-			foreach (UnitGroup ug in lvld.UnitGroupManager.Items)
-				strc.Add(ug.Name);
-			return strc;
+			UnitGroup[] aug = (UnitGroup[])lvld.UnitGroupManager.Items.ToArray(typeof(UnitGroup));
+			Array.Sort(aug, delegate(UnitGroup ugA, UnitGroup ugB) {
+				return Globals.CompareNames(ugA.Name, ugB.Name);
+			});
+			return aug;
 		}
 
 		public override bool EditProperties() {
-			StringCollection strc = GetUnitGroupNames();
+			UnitGroup[] aug = GetSortedUnitGroups();
+			StringCollection strc = new StringCollection();
+			foreach (UnitGroup ug in aug)
+				strc.Add(ug.Name);
 			string strName = m_ug != null ? m_ug.Name : "";
 			int n = PickListForm.DoModal("Unit Group", strName, strc);
 			if (n == -1)
 				return false;
-			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));			
-			m_ug = (UnitGroup)lvld.UnitGroupManager.Items[n];
+			m_ug = aug[n];
 			m_fInit = true;
 			return true;
 		}

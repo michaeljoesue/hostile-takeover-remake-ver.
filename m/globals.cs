@@ -11,6 +11,42 @@ using SpiffLib;
 
 namespace m {
 	public class Globals {
+		// A-Z ignoring case, with runs of digits compared by value, so that
+		// "group2" comes before "group10"
+
+		public static int CompareNames(string strA, string strB) {
+			if (strA == null) strA = "";
+			if (strB == null) strB = "";
+			int iA = 0, iB = 0;
+			while (iA < strA.Length && iB < strB.Length) {
+				char chA = strA[iA], chB = strB[iB];
+				if (Char.IsDigit(chA) && Char.IsDigit(chB)) {
+					int iAEnd = iA, iBEnd = iB;
+					while (iAEnd < strA.Length && Char.IsDigit(strA[iAEnd])) iAEnd++;
+					while (iBEnd < strB.Length && Char.IsDigit(strB[iBEnd])) iBEnd++;
+					string strNumA = strA.Substring(iA, iAEnd - iA).TrimStart('0');
+					string strNumB = strB.Substring(iB, iBEnd - iB).TrimStart('0');
+					if (strNumA.Length != strNumB.Length)
+						return strNumA.Length - strNumB.Length;
+					int n = String.CompareOrdinal(strNumA, strNumB);
+					if (n != 0)
+						return n;
+					iA = iAEnd;
+					iB = iBEnd;
+					continue;
+				}
+				int nc = Char.ToUpperInvariant(chA).CompareTo(Char.ToUpperInvariant(chB));
+				if (nc != 0)
+					return nc;
+				iA++;
+				iB++;
+			}
+			int nLen = (strA.Length - iA) - (strB.Length - iB);
+			if (nLen != 0)
+				return nLen;
+			return String.CompareOrdinal(strA, strB);
+		}
+
 		public static Ini GobTemplatesIni = null;
 		public static PropertyGrid PropertyGrid;
 		public static ToolStripStatusLabel StatusBar;

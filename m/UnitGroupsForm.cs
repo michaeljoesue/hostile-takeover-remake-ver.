@@ -27,6 +27,7 @@ namespace m
 		private System.Windows.Forms.ListView listViewUnitGroups;
 		private System.Windows.Forms.Button buttonNewUnitGroup;
 		private System.Windows.Forms.Button buttonDeleteUnitGroup;
+		private System.Windows.Forms.Button buttonRenameUnitGroup;
 		private System.Windows.Forms.ListBox listBoxUnits;
 		private System.Windows.Forms.Button buttonDeleteUnits;
 		private System.Windows.Forms.Button buttonNewUnits;
@@ -107,6 +108,7 @@ namespace m
 			this.listBoxUnits = new System.Windows.Forms.ListBox();
 			this.buttonNewUnitGroup = new System.Windows.Forms.Button();
 			this.buttonDeleteUnitGroup = new System.Windows.Forms.Button();
+			this.buttonRenameUnitGroup = new System.Windows.Forms.Button();
 			this.listViewUnitGroups = new System.Windows.Forms.ListView();
 			this.label1 = new System.Windows.Forms.Label();
 			this.comboBoxSide = new System.Windows.Forms.ComboBox();
@@ -264,7 +266,7 @@ namespace m
 			// 
 			// buttonNewUnitGroup
 			// 
-			this.buttonNewUnitGroup.Location = new System.Drawing.Point(16, 456);
+			this.buttonNewUnitGroup.Location = new System.Drawing.Point(16, 424);
 			this.buttonNewUnitGroup.Name = "buttonNewUnitGroup";
 			this.buttonNewUnitGroup.TabIndex = 7;
 			this.buttonNewUnitGroup.Text = "New...";
@@ -273,6 +275,14 @@ namespace m
 			// buttonDeleteUnitGroup
 			// 
 			this.buttonDeleteUnitGroup.Location = new System.Drawing.Point(16, 488);
+			//
+			// buttonRenameUnitGroup
+			//
+			this.buttonRenameUnitGroup.Location = new System.Drawing.Point(16, 456);
+			this.buttonRenameUnitGroup.Name = "buttonRenameUnitGroup";
+			this.buttonRenameUnitGroup.TabIndex = 10;
+			this.buttonRenameUnitGroup.Text = "Rename...";
+			this.buttonRenameUnitGroup.Click += new System.EventHandler(this.buttonRenameUnitGroup_Click);
 			this.buttonDeleteUnitGroup.Name = "buttonDeleteUnitGroup";
 			this.buttonDeleteUnitGroup.TabIndex = 8;
 			this.buttonDeleteUnitGroup.Text = "Delete";
@@ -283,15 +293,21 @@ namespace m
 			this.listViewUnitGroups.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
 			this.listViewUnitGroups.FullRowSelect = true;
 			this.listViewUnitGroups.HideSelection = false;
-			this.listViewUnitGroups.LabelEdit = true;
+			this.listViewUnitGroups.LabelEdit = false;
 			this.listViewUnitGroups.Location = new System.Drawing.Point(8, 8);
 			this.listViewUnitGroups.MultiSelect = false;
 			this.listViewUnitGroups.Name = "listViewUnitGroups";
-			this.listViewUnitGroups.Size = new System.Drawing.Size(136, 440);
-			this.listViewUnitGroups.Sorting = System.Windows.Forms.SortOrder.Ascending;
+			this.listViewUnitGroups.Size = new System.Drawing.Size(136, 408);
+			this.listViewUnitGroups.Sorting = System.Windows.Forms.SortOrder.None;
 			this.listViewUnitGroups.TabIndex = 9;
-			this.listViewUnitGroups.View = System.Windows.Forms.View.List;
+			// One column scrolling down (the List view wraps into columns
+			// that scroll sideways)
+			this.listViewUnitGroups.View = System.Windows.Forms.View.Details;
+			this.listViewUnitGroups.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
+			this.listViewUnitGroups.Columns.Add("Name", 108, System.Windows.Forms.HorizontalAlignment.Left);
 			this.listViewUnitGroups.AfterLabelEdit += new System.Windows.Forms.LabelEditEventHandler(this.listViewUnitGroups_AfterLabelEdit);
+			this.listViewUnitGroups.DoubleClick += new System.EventHandler(this.buttonRenameUnitGroup_Click);
+			this.listViewUnitGroups.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listViewUnitGroups_KeyDown);
 			this.listViewUnitGroups.SelectedIndexChanged += new System.EventHandler(this.listViewUnitGroups_SelectedIndexChanged);
 			// 
 			// label1
@@ -437,6 +453,7 @@ namespace m
 																		  this.label1,
 																		  this.listViewUnitGroups,
 																		  this.buttonDeleteUnitGroup,
+																		  this.buttonRenameUnitGroup,
 																		  this.buttonNewUnitGroup,
 																		  this.groupBox2,
 																		  this.buttonClose,
@@ -544,9 +561,15 @@ namespace m
 
 		// UnitGroup management
 
+		// The list is sorted A-Z (numbers in names by value: group2 before
+		// group10), as in the pickers of trigger conditions and actions
+
 		void InitUnitGroupsListBox() {
 			listViewUnitGroups.Items.Clear();
 			UnitGroup[] aug = m_ugm.GetUnitGroupList();
+			Array.Sort(aug, delegate(UnitGroup ugA, UnitGroup ugB) {
+				return Globals.CompareNames(ugA.Name, ugB.Name);
+			});
 			bool fFirst = true;
 			foreach (UnitGroup ug in aug) {
 				ListViewItem lvi = new ListViewItem(ug.Name);
@@ -562,8 +585,46 @@ namespace m
 		}
 
 		private void listViewUnitGroups_AfterLabelEdit(object sender, System.Windows.Forms.LabelEditEventArgs e) {
-			if (e.Label != null && e.Label != "")
-				((UnitGroup)listViewUnitGroups.Items[e.Item].Tag).Name = e.Label;
+			// Renaming in place is replaced by the Rename... dialog
+			e.CancelEdit = true;
+		}
+
+		// Rename the selected unit group: Rename..., a double-click or F2
+
+		private void buttonRenameUnitGroup_Click(object sender, System.EventArgs e) {
+			if (listViewUnitGroups.SelectedItems.Count == 0)
+				return;
+			UnitGroup ug = (UnitGroup)listViewUnitGroups.SelectedItems[0].Tag;
+			string strName = ug.Name;
+			while (true) {
+				strName = EditStringForm.DoModal("Rename Unit Group", "Name:", strName);
+				if (strName == null)
+					return;
+				strName = strName.Trim();
+				if (strName == "" || strName == ug.Name)
+					return;
+				bool fUsed = false;
+				foreach (UnitGroup ugT in m_ugm.GetUnitGroupList()) {
+					if (ugT != ug && String.Compare(ugT.Name, strName, true) == 0) {
+						fUsed = true;
+						break;
+					}
+				}
+				if (!fUsed)
+					break;
+				MessageBox.Show("There is already a unit group called \"" + strName + "\".", "M");
+			}
+			ug.Name = strName;
+			m_ugm.SetModified();
+			InitUnitGroupsListBox();
+			SelectUnitGroup(strName);
+		}
+
+		private void listViewUnitGroups_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e) {
+			if (e.KeyCode == System.Windows.Forms.Keys.F2) {
+				buttonRenameUnitGroup_Click(sender, e);
+				e.Handled = true;
+			}
 		}
 
 		private void buttonNewUnitGroup_Click(object sender, System.EventArgs e) {
@@ -588,6 +649,7 @@ namespace m
 			for (int j = 0; j < listViewUnitGroups.Items.Count; j++) {
 				if (listViewUnitGroups.Items[j].Text == str ) {
 					listViewUnitGroups.Items[j].Selected = true;
+					listViewUnitGroups.Items[j].EnsureVisible();
 					break;
 				}
 			}
