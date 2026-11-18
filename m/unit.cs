@@ -288,7 +288,9 @@ namespace m {
 
 		public override Object Clone() {
 			Object[] aobj = { m_side, (int)m_tx, (int)m_ty, m_aggr, m_cab.Clone() };
-			return (Object)System.Activator.CreateInstance(GetType(), aobj);
+			MobileUnit munt = (MobileUnit)System.Activator.CreateInstance(GetType(), aobj);
+			munt.m_nHealth = m_nHealth;
+			return munt;
 		}
 
 		[Category("Behavior")]
@@ -343,6 +345,7 @@ namespace m {
 
 		public Unit(Side side) {
 			m_side = side;
+			m_nHealth = 100;	// new units and buildings start at full health
 			Init();
 		}
 
@@ -350,6 +353,7 @@ namespace m {
 			m_tx = tx;
 			m_ty = ty;
 			m_side = side;
+			m_nHealth = 100;	// new units and buildings start at full health
 			Init();
 		}
 
@@ -360,6 +364,12 @@ namespace m {
 			} catch (SerializationException) {
 				m_nHealth = 100;
 			}
+
+			// 0 is what earlier versions of the editor saved for units and
+			// buildings placed on the map; the game reads it as full health
+
+			if (m_nHealth <= 0)
+				m_nHealth = 100;
 			Init();
 		}
 
@@ -370,6 +380,8 @@ namespace m {
 			m_tx = int.Parse(m.Groups["tx"].Value) + txOrigin;
 			m_ty = int.Parse(m.Groups["ty"].Value) + tyOrigin;
 			m_nHealth = int.Parse(m.Groups["health"].Value);
+			if (m_nHealth <= 0)
+				m_nHealth = 100;
 			Init();
 		}
 
@@ -466,7 +478,9 @@ namespace m {
 
 		public override Object Clone() {
 			Object[] aobj = { m_side, (int)m_tx, (int)m_ty };
-			return (Object)System.Activator.CreateInstance(GetType(), aobj);
+			Unit unt = (Unit)System.Activator.CreateInstance(GetType(), aobj);
+			unt.m_nHealth = m_nHealth;
+			return unt;
 		}
 
 		public override void Draw(Graphics g, int x, int y, Size sizTile, TemplateDoc tmpd, LayerType layer, bool fSelected) {
