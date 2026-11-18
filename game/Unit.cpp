@@ -659,7 +659,12 @@ void UnitGob::PopupMenu()
 	m_puntc->pfrmMenu->SetOwner(this);
 	gpmfrmm->AddForm(m_puntc->pfrmMenu);
 	int idc;
-	m_puntc->pfrmMenu->DoModal(&idc);
+
+	// The click that opens a building's menu has just played the building's
+	// select sound. The menu opens without the dialog sound (the one the
+	// briefings use), which is louder and would drown the select sound.
+
+	m_puntc->pfrmMenu->DoModal(&idc, ksfxNothing);
 	gpmfrmm->RemoveForm(m_puntc->pfrmMenu);
 
 	// Act on the user's selection
