@@ -1323,7 +1323,7 @@ void HdRecord(HdBinding *phdb, AnimationData *panid, int nStrip, int nFrame, Dib
 		int x, int y, Side side, class Animation *pani, const Rect *prcShadow);
 bool HdHasIcon(HdBinding *phdb, AnimationData *panid, int nStrip, DibBitmap *pbm);
 void HdFreeBinding(HdBinding *phdb);
-void HdRecordIcon(void *pvOwner, HdBinding *phdb, AnimationData *panid, int nStrip, DibBitmap *pbm,
+void HdRecordIcon(class Control *pctlOwner, HdBinding *phdb, AnimationData *panid, int nStrip, DibBitmap *pbm,
 		const Rect *prc, Side side, bool fDim);
 void HdClearIcons(void *pvOwner);
 
@@ -2214,6 +2214,12 @@ public:
 	void DrawFrame(bool fForceBackBufferValid, bool fPaint = true);
 	void CheckSetRedrawDirty();
 	bool GetFormMgrRect(FormMgr *pfrmm, Rect *prc);
+	int GetFormMgrCount() {
+		return m_cfrmm;
+	}
+	FormMgr *GetFormMgrAt(int n) {
+		return m_apfrmm[n];
+	}
 
 
 	virtual void AddForm(Form *pfrm);
@@ -2480,6 +2486,9 @@ public:
 	word GetFlags();
 	void SetFlags(word wf);
 	void Enable(bool fEnable);
+	Form *GetForm() {
+		return m_pfrm;
+	}
 
 protected:
 	Rect m_rc;

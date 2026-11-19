@@ -35,6 +35,7 @@
 #include "game/sdl/hdsprites.h"
 #include <SDL3/SDL.h>
 #include <math.h>
+#include <algorithm>
 #include <map>
 #include <set>
 #include <string>
@@ -160,6 +161,7 @@ struct HdItem {
     bool fIcon;                 // a menu icon (see HdRecordIcon)
     bool fDim;                  // drawn darkened (an icon for something unavailable)
     void *pvOwner;              // the control that drew the icon
+    Control *pctl;              // the same, for its form's place among the forms
     std::vector<byte> vbSnap;   // an icon's snapshot (kept until its control repaints)
 };
 
@@ -753,6 +755,7 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
     itm.fIcon = false;
     itm.fDim = false;
     itm.pvOwner = NULL;
+    itm.pctl = NULL;
     itm.side = side == (Side)-1 ? kiHdFlash : (side >= 0 && side < kcSides ? side : ksideNeutral);
     itm.x = x + ppic->x;
     itm.y = y + ppic->y + yTop;
@@ -794,35 +797,58 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
 // The picture: a tower's turret turned toward the viewer, else the first
 // healthy picture of the animation's first HD strip
 
-// The icon strip's own picture when the manifest gives one (the upgrade
-// icons); else a building's healthy picture, a tower facing the viewer
+// The pictures of an icon, bottom first: the icon strip's own picture when
+// the manifest gives one (the upgrade icons); else a building's healthy
+// picture with the healthy pictures of the parts drawn over it (the
+// Galaxite Processor's door, closed); a tower faces the viewer
 
-static HdPic *IconPic(HdBinding *pbind, AnimationData *panid, int nStrip) {
+static void IconPics(HdBinding *pbind, AnimationData *panid, int nStrip, std::vector<HdPic *> *pvpic) {
+    pvpic->clear();
     if (pbind == NULL)
-        return NULL;
+        return;
     if (nStrip >= 0 && nStrip < (int)pbind->apstrip.size()) {
         HdStrip *pstrip = pbind->apstrip[nStrip];
-        if (pstrip != NULL && !pstrip->fNone && !pstrip->apic[0].empty() && pstrip->apic[0][0] != NULL)
-            return pstrip->apic[0][0];
+        if (pstrip != NULL && !pstrip->fNone && !pstrip->apic[0].empty() && pstrip->apic[0][0] != NULL) {
+            pvpic->push_back(pstrip->apic[0][0]);
+            return;
+        }
     }
-    HdPic *ppicFirst = NULL;
+    int nFirst = -1;
     for (int n = 0; n < (int)pbind->apstrip.size(); n++) {
         HdStrip *pstrip = pbind->apstrip[n];
-        if (pstrip == NULL || pstrip->fNone || pstrip->var > 0 || pstrip->apic[0].empty())
+        if (pstrip == NULL || pstrip->fNone || pstrip->var > 0 || pstrip->apic[0].empty() ||
+                pstrip->apic[0][0] == NULL)
             continue;
-        if (strcmp(panid->GetStripName(n), "turret 00") == 0)
-            return pstrip->apic[0][0];
-        if (ppicFirst == NULL)
-            ppicFirst = pstrip->apic[0][0];
+        if (strcmp(panid->GetStripName(n), "turret 00") == 0) {
+            nFirst = n;
+            break;
+        }
+        if (nFirst == -1)
+            nFirst = n;
     }
-    return ppicFirst;
+    if (nFirst == -1)
+        return;
+    HdStrip *pstripBase = pbind->apstrip[nFirst];
+    pvpic->push_back(pstripBase->apic[0][0]);
+    if (pstripBase->var != 0)
+        return;
+    for (int n = 0; n < (int)pbind->apstrip.size(); n++) {
+        HdStrip *pstrip = pbind->apstrip[n];
+        if (pstrip != NULL && pstrip->fVariantPics && pstrip->var < 0 && !pstrip->fNone &&
+                !pstrip->apic[0].empty() && pstrip->apic[0][0] != NULL)
+            pvpic->push_back(pstrip->apic[0][0]);
+    }
 }
 
 // Is there an HD icon for this animation that can show over this bitmap
 // (a part of the back buffer)?
 
 bool HdHasIcon(HdBinding *pbind, AnimationData *panid, int nStrip, DibBitmap *pbm) {
-    if (!HdIsActive() || IconPic(pbind, panid, nStrip) == NULL || gpdisp == NULL)
+    if (!HdIsActive() || gpdisp == NULL)
+        return false;
+    std::vector<HdPic *> vpic;
+    IconPics(pbind, panid, nStrip, &vpic);
+    if (vpic.empty())
         return false;
     DibBitmap *pbmBack = gpdisp->GetBackDib();
     return pbmBack != NULL && pbm->GetRowBytes() == pbmBack->GetRowBytes() &&
@@ -838,11 +864,12 @@ void HdClearIcons(void *pvOwner) {
     }
 }
 
-void HdRecordIcon(void *pvOwner, HdBinding *pbind, AnimationData *panid, int nStrip, DibBitmap *pbm,
+void HdRecordIcon(Control *pctlOwner, HdBinding *pbind, AnimationData *panid, int nStrip, DibBitmap *pbm,
         const Rect *prc, Side side, bool fDim) {
     if (!HdHasIcon(pbind, panid, nStrip, pbm))
         return;
-    HdPic *ppic = IconPic(pbind, panid, nStrip);
+    std::vector<HdPic *> vpic;
+    IconPics(pbind, panid, nStrip, &vpic);
     DibBitmap *pbmBack = gpdisp->GetBackDib();
     int cbRow = pbmBack->GetRowBytes();
     int yTop = (int)((pbm->GetBits() - pbmBack->GetBits()) / cbRow);
@@ -856,45 +883,106 @@ void HdRecordIcon(void *pvOwner, HdBinding *pbind, AnimationData *panid, int nSt
     if (rc.IsEmpty())
         return;
 
-    // Fit the picture in the cell, centered
+    // The pictures together (game pixels, as placed on the playfield),
+    // fitted in the cell, centered
 
-    float flFit = (float)ppic->cx / rc.Width();
-    float flFitY = (float)ppic->cy / rc.Height();
+    float xL = 1e9f, yT = 1e9f, xR = -1e9f, yB = -1e9f;
+    for (size_t i = 0; i < vpic.size(); i++) {
+        HdPic *ppic = vpic[i];
+        xL = std::min(xL, ppic->x);
+        yT = std::min(yT, ppic->y);
+        xR = std::max(xR, ppic->x + ppic->cx / ppic->scale);
+        yB = std::max(yB, ppic->y + ppic->cy / ppic->scale);
+    }
+    float flFit = (xR - xL) / rc.Width();      // playfield pixels per icon pixel
+    float flFitY = (yB - yT) / rc.Height();
     if (flFitY > flFit)
         flFit = flFitY;
-    HdItem itm;
-    itm.ppic = ppic;
-    itm.scale = flFit;
-    itm.fIcon = true;
-    itm.fDim = fDim;
-    itm.pvOwner = pvOwner;
-    itm.fClipped = false;
-    itm.ibSnap = 0;
-    itm.side = side >= 0 && side < kcSides ? side : ksideNeutral;
-    itm.x = rc.left + (rc.Width() - ppic->cx / flFit) / 2;
-    itm.y = rc.top + (rc.Height() - ppic->cy / flFit) / 2 + yTop;
+    float xOrg = rc.left + (rc.Width() - (xR - xL) / flFit) / 2;
+    float yOrg = rc.top + (rc.Height() - (yB - yT) / flFit) / 2 + yTop;
 
     // Snapshot of the cell's pixels
 
-    itm.vbSnap.resize((size_t)rc.Width() * rc.Height());
+    std::vector<byte> vbSnap((size_t)rc.Width() * rc.Height());
     byte *pbDib = pbm->GetBits();
-    for (int yT = rc.top; yT < rc.bottom; yT++)
-        memcpy(&itm.vbSnap[(size_t)(yT - rc.top) * rc.Width()], pbDib + yT * cbRow + rc.left, rc.Width());
+    for (int y = rc.top; y < rc.bottom; y++)
+        memcpy(&vbSnap[(size_t)(y - rc.top) * rc.Width()], pbDib + y * cbRow + rc.left, rc.Width());
     rc.top += yTop;
     rc.bottom += yTop;
-    itm.rc = rc;
 
     // It replaces this control's icon drawn there before
 
     for (size_t n = 0; n < s_vitemIcon.size(); ) {
         HdItem *pitmT = &s_vitemIcon[n];
-        if (pitmT->pvOwner == pvOwner && pitmT->rc.left < rc.right && rc.left < pitmT->rc.right &&
+        if (pitmT->pvOwner == (void *)pctlOwner && pitmT->rc.left < rc.right && rc.left < pitmT->rc.right &&
                 pitmT->rc.top < rc.bottom && rc.top < pitmT->rc.bottom)
             s_vitemIcon.erase(s_vitemIcon.begin() + n);
         else
             n++;
     }
-    s_vitemIcon.push_back(itm);
+
+    for (size_t i = 0; i < vpic.size(); i++) {
+        HdPic *ppic = vpic[i];
+        HdItem itm;
+        itm.ppic = ppic;
+        itm.scale = ppic->scale * flFit;
+        itm.fIcon = true;
+        itm.fDim = fDim;
+        itm.pvOwner = (void *)pctlOwner;
+        itm.pctl = pctlOwner;
+        itm.fClipped = false;
+        itm.ibSnap = 0;
+        itm.side = side >= 0 && side < kcSides ? side : ksideNeutral;
+        itm.x = xOrg + (ppic->x - xL) / flFit;
+        itm.y = yOrg + (ppic->y - yT) / flFit;
+        itm.rc = rc;
+        itm.vbSnap = vbSnap;
+        s_vitemIcon.push_back(itm);
+    }
+}
+
+// Where the forms in front of an icon's form are (front buffer
+// coordinates). False if the icon can't be seen at all: its control or form
+// is hidden or gone.
+
+static bool IconCovers(Control *pctl, std::vector<Rect> *pvrc) {
+    pvrc->clear();
+    if (pctl == NULL || gpmfrmm == NULL || !(pctl->GetFlags() & kfCtlVisible))
+        return false;
+    Form *pfrm = pctl->GetForm();
+    if (pfrm == NULL || !(pfrm->GetFlags() & kfFrmVisible))
+        return false;
+    FormMgr *pfrmm = pfrm->GetFormMgr();
+
+    // The form managers bottom first: the playfield's and the control
+    // strip's, then the main one's own forms over both
+
+    int cfrmm = gpmfrmm->GetFormMgrCount();
+    bool fFound = false;
+    for (int m = 0; m <= cfrmm; m++) {
+        FormMgr *pfrmmT = m < cfrmm ? gpmfrmm->GetFormMgrAt(m) : gpmfrmm;
+        Rect rcFrmm;
+        if (pfrmmT == gpmfrmm)
+            rcFrmm.Set(0, 0, 0, 0);
+        else if (!gpmfrmm->GetFormMgrRect(pfrmmT, &rcFrmm))
+            continue;
+        for (int n = 0; n < pfrmmT->GetFormCount(); n++) {
+            Form *pfrmT = pfrmmT->GetFormAt(n);
+            if (pfrmT == pfrm) {
+                fFound = true;
+                continue;
+            }
+            if (!fFound || !(pfrmT->GetFlags() & kfFrmVisible))
+                continue;
+            Rect rcT;
+            pfrmT->GetRect(&rcT);
+            rcT.Offset(rcFrmm.left, rcFrmm.top);
+            pvrc->push_back(rcT);
+        }
+        if (pfrmmT == pfrmm && !fFound)
+            return false;
+    }
+    return fFound;
 }
 
 // --------------------------------------------------------------------------
@@ -1151,8 +1239,14 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
     // The playfield's pictures, then the menu icons over them
 
     size_t citm = s_vitem.size() + s_vitemIcon.size();
+    std::vector<Rect> vrcCover;
     for (size_t n = 0; n < citm; n++) {
         HdItem *pitm = n < s_vitem.size() ? &s_vitem[n] : &s_vitemIcon[n - s_vitem.size()];
+
+        // A menu icon shows only where no form in front of its own covers it
+
+        if (pitm->fIcon && !IconCovers(pitm->pctl, &vrcCover))
+            continue;
         Rect rc = pitm->rc;
         if (rc.right > cxFront) rc.right = cxFront;
         if (rc.bottom > cyFront) rc.bottom = cyFront;
@@ -1180,6 +1274,16 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
                     pdw[x] = 0;
                     fWhole = false;
                     continue;
+                }
+                if (pitm->fIcon && !vrcCover.empty()) {
+                    bool fCovered = false;
+                    for (size_t r = 0; r < vrcCover.size() && !fCovered; r++)
+                        fCovered = vrcCover[r].PtIn(rc.left + x, rc.top + y);
+                    if (fCovered) {
+                        pdw[x] = 0;
+                        fWhole = false;
+                        continue;
+                    }
                 }
                 if (b == s) {
                     nLight = 255;
