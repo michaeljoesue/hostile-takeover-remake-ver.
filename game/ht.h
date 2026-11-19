@@ -15,12 +15,6 @@ namespace wi {
 // DEV_BUILD settings
 
 #if defined(DEV_BUILD)
-#ifdef DEBUG
-//#define INCL_VALIDATEHEAP
-//#define INCL_TESTS
-//#define INCL_MEMTRACE
-
-#endif
 
 // Enable stress testing
 #define STRESS
@@ -28,27 +22,12 @@ namespace wi {
 // Enable this to allow little arrows to be drawn showing the paths being followed
 #define DRAW_PATHS
 
-// Enable this to draw a box around each tile a unit believes it is occupying
-//#define DRAW_OCCUPIED_TILE_INDICATOR
-
-// Enable this to draw a white pixel at the upper left corner of each tile
-//#define MARK_TILE_BOUNDARIES
-
-// Enable this to see which tiles are occupied according to the terrain map
-//#define MARK_OCCUPIED_TILES
-
-// Enable this to allow stats display to be toggled via the Find button
-// <broken>
-//#define STATS_DISPLAY
-
-// Maintain and check a ring buffer of old allocs
-#endif // defined(DEV_BULD)
+#endif // defined(DEV_BUILD)
 
 // Things that are permanently on
 
 #define DRAW_LINES // Enable this to allow lines to be drawn to visualize unit targeting
 #define STATUS_LINE // Enable this to get certain status displayed at the bottom of the screen
-//#define RALLY_POINTS
 
 
 } // namespace wi
@@ -72,7 +51,6 @@ typedef word CacheHandle; // hc
 
 // Game version
 
-#define knVersion 1
 
 #define MAKEDWORD(x) ((((dword)x) << 24) | (((dword)x) << 16) | (((dword)x) << 8) | (x))
 
@@ -418,7 +396,6 @@ const WCoord kwcTileHalf = kwcTile / 2;
 const WCoord kwcTile16th = kwcTile / 16;
 const WCoord kwxInvalidPrev = -32768;	// Gob::m_wxPrev when there is none
 
-#define kwcScrollLeftExtra 0
 
 #define kwcScrollBorderSize WcFromTile16ths(5)
 #define kwcScrollStepSize	kwcTileHalf
@@ -588,22 +565,6 @@ public:
 		m_fx = addfx(m_fx, m_fdx);
 		m_fy = addfx(m_fy, m_fdy);
 		return true;
-	}
-
-	int GetX() {
-		return fxtoi(m_fx);
-	}
-
-	int GetY() {
-		return fxtoi(m_fy);
-	}
-
-	fix GetFixedX() {
-		return m_fx;
-	}
-
-	fix GetFixedY() {
-		return m_fy;
 	}
 
 private:
@@ -814,9 +775,6 @@ public:
 			int nTracking = 0);
 
 	// Vector font support for the text overlay (see TextOverlay)
-	bool IsVector() {
-		return m_pvf != NULL && InitVector();
-	}
 	void GetVectorBounds(const char *psz, int cch, int x, int y,
 			Rect *prcInk);
 	void RenderOverlay(const char *psz, int cch, int x, int y, float nScale,
@@ -979,7 +937,6 @@ struct RevealPattern // rvlp
 #define kbEmpty 15
 
 const word kbfFogMask = 0x000f;
-const int kcFogShift = 0;
 #define IsFogOpaque(bFog) (((bFog) & kbfFogMask) == kbOpaque)
 
 const word kbfGalaxiteMask = 0x00f0;
@@ -1181,7 +1138,6 @@ public:
 	bool FindLastUnoccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord tyTo, TCoord *ptxFree, TCoord *ptyFree);
 	bool IsBlocked(TCoord tx, TCoord ty, byte bf);
 	bool GetFlags(int tx, int ty, byte *pbf);
-	int GetTerrainType(TCoord tx, TCoord ty);
 
 	byte *GetMapPtr() {
 		return m_pbTerrain;
@@ -1798,8 +1754,6 @@ const int knDeleted = -1;
 #define SetState(stNext)    { m_stNext = stNext; m_fForceStateChange = true; m_unvl.MinSkip(); }
 #define DiscardMsgs			return knHandled; } else {
 
-#define EndStateMachineInherit(base)     return knHandled; } } else { \
-							return (int)##base::ProcessStateMachineMessage(st, pmsg); } return (int)##base::ProcessStateMachineMessage(st, pmsg);
 #define EndStateMachine		return knHandled; } } else { return knNotHandled; } return knNotHandled;
 
 class StateMachine // sm
@@ -2057,7 +2011,6 @@ public:
 	void SetPalette();
 
 private:
-    bool DoPlay();
 	bool PlaySinglePlayer();
 
 	FileMap m_fmapPalette;
@@ -2254,9 +2207,6 @@ public:
 	void CheckSetRedrawDirty();
 	bool GetFormMgrRect(FormMgr *pfrmm, Rect *prc);
 
-#ifdef STATS_DISPLAY
-	int GetUpdateRectCount();
-#endif
 
 	virtual void AddForm(Form *pfrm);
 	virtual void RemoveForm(Form *pfrm);
@@ -2821,7 +2771,6 @@ public:
 	int GetSelectedItemIndex();
 	int HitTestItem(int x, int y);	// item under the point (form manager coords) or -1
 	void HoverSelect(int ili);	// select an item the mouse is over: no scrolling, no sound
-	ListItem *GetItem(int iItem);
 	bool IsUserClick() { return m_fUserClick; }	// notifying because of a click
 	ListItem *GetSelectedItem();
 	void *GetSelectedItemData();
@@ -3173,7 +3122,6 @@ public:
 	void CalcLevelSpecificConstants();
 	void InvalidateDragSelection();
     Gob *HitTestGob(int x, int y, WCoord *pwx, WCoord *pwy);
-	void MoveOrAttackOrSelect(int x, int y, dword ff);
     void MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget, WCoord wyTarget,
             dword ff);
     void ShowUnitMenu(Gob *pgob);
@@ -3274,9 +3222,6 @@ private:
 	static bool s_fReadyForPaint;
     
 	bool m_fTimerAdded;
-#ifdef STATS_DISPLAY
-	bool m_fShowStats;
-#endif
 	Animation m_aniMoveTarget;
 	WCoord m_wxMoveTarget;
 	WCoord m_wyMoveTarget;
@@ -5008,7 +4953,6 @@ protected:
 #define kfGobStructure			0x00000400	// Gob is a fixed structure
 #define kfGobMobileUnit			0x00000800	// Gob is a mobile unit
 #define kfGobUnit				0x00001000	// Gob is a Unit (our version of RTTI!)
-#define kfGobDebug				0x00002000	// Gobs DebugBreak at strategic points when this is enabled
 #define kfGobSelected			0x00004000	// Gob is selected
 #define kfGobStateMachine		0x00008000	// Gob has an active StateMachine that may want Update messages
 #define kfGobVisibleLastFrame	0x00010000  // Gob was visible last frame
@@ -5280,7 +5224,6 @@ public:
 	void RemoveGob(Gob *pgob);
 	bool MoveGob(Gob *pgob, WCoord wxOld, WCoord wyOld, WCoord wxNew, WCoord wyNew);
 	Gob *GetGob(Gid gid, bool fActiveOnly = true);
-	UnitGob *GetUnitGob(TCoord tx, TCoord ty);
 	void ShadowGob(Gob *pgob, TCoord tx, TCoord ty, int ctx, int cty);
 	void UnshadowGob(Gob *pgob, TCoord tx, TCoord ty, int ctx, int cty);
 	Gob *GetShadowGob(TCoord tx, TCoord ty);
@@ -5504,7 +5447,7 @@ struct GobConsts { // gobc
 	GobType gt;
 };
 
-#define GetUnitCostMin() (gnUnitCostMin)
+
 #define GetUnitCostMax() (gnUnitCostMax)
 
 #define kfUntcNotifyEnemyNearby	0x0001	// wants to be notified of nearby mobile enemies
@@ -6173,7 +6116,6 @@ public:
 	void UpdateUnitInfo(ListItem *pli);
 	void OnUnitCompleted(BuilderGob *pbldr, UnitType ut);
 	void DefUpdate(BuilderGob *pbldr, bool fBuildInProgress);
-	int CountQueue(UnitType ut);
 	void UpdateOrderButton(bool fCalcLimit);
 
 	// Form overrides
@@ -6590,7 +6532,6 @@ public:
     bool IsBusy() { return m_pgobOwner != NULL || m_gidDeploy != kgidNull; }
 	void OnPaintSimUI(DibBitmap *pbm);
 	void OnPaintControlsSimUI(DibBitmap *pbm, UpdateMap *pupd);
-    void UpdatePosition(Event *pevt);
 
 	// Timer implementation
 
@@ -7173,10 +7114,6 @@ public:
 	dword GetTotalSize(dword *pcbDyn, dword *pcbDb);
 	static void GetInitSize(dword cbDynReserve, dword *pcbDyn, dword *pcbStorage);
 
-#ifdef INCL_VALIDATEHEAP
-	void Validate();
-	void ValidateHandleTableFreeEntries();
-#endif
 
 private:
 	HandleTable *NewHandleTable();
@@ -7189,9 +7126,6 @@ private:
 	MemHeader *SplitFreeBlock(Heap *pheap, MemHeader *pmhdr, MemHeader *pmhdrFreeLast, MemHeader *pmhdrNew, word wfHints);
 	word GetLargestFreeBlockSize(Heap *pheap);
 
-#ifdef INCL_VALIDATEHEAP
-	void ValidateHandle(HMem hmem);
-#endif
 
 	Heap *m_apheap[250];	// HMemStruct::iheap is a byte
 	int m_cheap;
@@ -7504,7 +7438,6 @@ extern bool gfDrawPaths;
 #ifdef DRAW_LINES
 extern bool gfDrawLines;
 #endif
-extern bool gfPlayingBack;
 extern CommandQueue gcmdq;
 extern bool gfOvermindEnabled;
 extern PlayerMgr gplrm;
@@ -7536,9 +7469,6 @@ extern bool gfLastAlertValid;
 void NoteAlertLocation(Gob *pgob);
 extern FormMgr *gpfrmmInput;
 extern MultiFormMgr *gpmfrmm;
-#ifdef STATS_DISPLAY
-extern long gcPathScoresCalced;
-#endif
 extern int gnHueOffset;
 extern int gnSatMultiplier;
 extern int gnLumOffset;
@@ -7561,18 +7491,11 @@ extern long gtStressTimeout;
 extern byte gmpdirdirOpposite[8];
 extern int ganSquared[256];
 extern bool gfClearFog;
-extern int gnUnitCostMin;
-extern int gnUnitCostMax;
 extern fix gfxMobileUnitArmorStrengthMin;
 extern fix gfxMobileUnitArmorStrengthMax;
 extern fix gfxStructureArmorStrengthMin;
 extern fix gfxStructureArmorStrengthMax;
-extern fix gfxStructureDamageMin;
-extern fix gfxStructureDamageMax;
-extern fix gfxVehicleDamageMin;
-extern fix gfxVehicleDamageMax;
-extern fix gfxInfantryDamageMin;
-extern fix gfxInfantryDamageMax;
+extern int gnUnitCostMax;
 extern TCoord gtcFiringRangeMin;
 extern TCoord gtcFiringRangeMax;
 extern WCoord gwcMoveDistPerUpdateMin;
@@ -7584,8 +7507,6 @@ extern int gnPowerDemandMax;
 extern int gaiclrSide[kcSides];
 extern int gatGameSpeeds[15];
 extern char *gszVersion;
-extern char gszBuildDate[];
-extern char gszBuildTime[];
 extern bool gfDragSelecting;
 extern WPoint s_wptSelect1, s_wptSelect2;
 extern WRect gwrcSelection;
@@ -7618,7 +7539,6 @@ inline UnitType UnitTypeFromPVoid(void *pv) {
 
 // Out-of-band data for gameOverEvent (knGoLoadSavedGame case)
 extern Stream *gpstmSavedGame;
-extern int gimodeReinitialize;
 extern bool gfLoadReinitializeSave;
 
 void HtStrupr(char *psz);
@@ -7637,7 +7557,6 @@ void DrawSelectionIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDeno
 void DrawHealthIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenominator);
 void DrawFullnessIndicator(DibBitmap *pbm, Rect *prc, int nPips, int nPipsMax);
 void DrawBorder(DibBitmap *pbm, Rect *prc, int nThickness, Color clr, UpdateMap *pupd = NULL);
-void DrawBitmapBorder(DibBitmap *pbm, UpdateMap *pupd, Rect *prc, AnimationData *panid, int ifrm = 0, Side side = ksideNeutral);
 int DrawFancyText(DibBitmap *pbm, Font *pfntDefault, char *psz, int x, int y, int cch = 0);
 int GetFancyTextExtent(Font *pfntDefault, char *psz, int cch = 0);
 Direction CalcDir(int dx, int dy);
@@ -7717,20 +7636,6 @@ void DrawDispatchThunk(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *
 int YClipToScan(int yClip, int cx, byte*& pop, byte*& pbSrc, word*& psc);
 int DrawScan(byte *pbDst, int cx, byte*& pbSrc, byte*& pop, word*& psc,
         dword *mpscaiclr, byte *mpiclriclrShadow);
-
-// ARM stuff
-
-void InitArmCode();
-void ExitArmCode();
-void DrawTileMapArm(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile);
-void LeftToRightBltArm(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy);
-void RightToLeftBltArm(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy);
-void memsetArm(byte *pbDst, byte b, dword cb);
-void FillArm(byte *pbDst, int cx, int cy, int cbStride, byte bFill);
-void FillShadowArm(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap);
-word Compile8Arm(byte *pb, ScanData *psd, bool fOdd);
-void DrawDispatchArm(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpscaiclrSide, byte *mpiclriclrShadow);
-extern bool gfArmPresent;
 
 // Host stuff
 
@@ -7839,7 +7744,6 @@ private:
 };
 
 const int knGameReinitializeSave = -3;
-const int knGameAutosave = 10;
 
 #define kszTempName "htsavetemp"
 bool HostGetSaveGameName(int nGame, char *psz, int cb, Date *pdate, int *pnHours24, int *pnMinutes, int *pnSeconds);

@@ -68,11 +68,6 @@ char *gszVersion = "2.0";
 char *gszVersion = "+++VERSION+++";
 #endif
 
-// Forward declarations
-
-bool AllocComputerPlayers();
-void FreeComputerPlayers();
-
 //
 //
 //
@@ -167,9 +162,6 @@ void GameMain(char *pszCmds)
     HostExit();
 
 
-#if defined(CHECK_OLD_ALLOCS) && defined(DEBUG) && !defined(CE) && !defined(PIL)
-	_CrtDumpMemoryLeaks();
-#endif
 }
 
 Game::Game()
@@ -389,15 +381,6 @@ bool Game::Init(int imm)
 
 bool Game::CheckMemoryAvailable()
 {
-	// The following constants have been calculated based on actual device measurements,
-	// scenario tests and gob count partitioning as of 8/16/03. Actual data is in \ht\docs\size.xls.
-	// The "min" scenario is the minimum playable scenario. If kcbDynMemMin is available, the following
-	// are the unit counts. If "max" scenario is the maximum scenario. If kcbDynMemMax is available, the
-	// following are the unit counts. This is partitioned by the gob count maximum and not the memory
-	// available (once over kcbDynMemMax it's gravy). The mem sizes are what is available at this
-	// point in time: PalmOS allocs globals and calls PilotMain.
-	// Note also the computer unit counts are all shared between all computer sides.
-	// Note that some of the computer units counts in certain levels may already be exceeded; that is ok.
 
 // TODO: All gob limits should be validated in M.
 
@@ -409,22 +392,6 @@ bool Game::CheckMemoryAvailable()
 #define kcScorchGobsLimit 300
 #define kcSupportGobsLimit 600
 
-// min limits
-#define kcbDynMemMin 130000
-#define kcStructGobsHumanMinSP 39
-#define kcStructGobsComputerMinSP 52
-#define kcMuntGobsHumanMinSP 60
-#define kcMuntGobsComputerMinSP 80
-
-// med limits
-#define kcbDynMemMed 140000
-#define kcStructGobsHumanMedSP 49
-#define kcStructGobsComputerMedSP 65
-#define kcMuntGobsHumanMedSP 79
-#define kcMuntGobsComputerMedSP 105
-
-// max limits
-#define kcbDynMemMax 150000
 // Limits for a 64x64 map. Raised for modern PCs (originally 55 structures and
 // 88 units for the player, 72 and 117 for the computer players). The
 // computer players together get as many as the player. Bigger maps scale
@@ -437,8 +404,6 @@ bool Game::CheckMemoryAvailable()
 #if (kcSceneryGobsLimit+kcScorchGobsLimit+kcSupportGobsLimit+kcStructGobsHumanMaxSP+kcStructGobsComputerMaxSP+kcMuntGobsHumanMaxSP+kcMuntGobsComputerMaxSP > kcpgobMax)
 #error Gob count limit error!
 #endif
-
-	// Assume max. Works for all platforms except lowest end Palms.
 
 	gcStructGobsHumanLimitSP = kcStructGobsHumanMaxSP;
 	gcStructGobsComputerLimitSP = kcStructGobsComputerMaxSP;
@@ -1792,9 +1757,6 @@ void Game::UpdateTriggers() {
 
 bool Game::FilterEvent(Event *pevt)
 {
-#ifdef INCL_VALIDATEHEAP
-	gmmgr.Validate();
-#endif
 
     UpdateTriggers();
 

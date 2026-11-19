@@ -144,31 +144,6 @@ BeginStateMachine
 						SendMineCommand(puntBuild->GetId(), kwxInvalid, 0);
 
 					} else {
-#ifdef RALLY_POINTS
-/*
-UNDONE: issues with rally points
-- rally point needs to be visible when the Builder is selected (e.g., flag)
-- units are vulnerable along the way. Need to attack-move (respond to being hit, then continue to rally point)
-- can't set rally point on the Replicator
-x need to know when to send a unit to the rally point (e.g., it's not at the default value)
-x units force others out of the way to get to the rally point
-*/
-					// If the rally point is not at the default, send the new unit there
-
-					if (m_tptRally.tx != ktxInvalid) {
-						Message msgT;
-						msgT.mid = kmidMoveCommand;
-						msgT.smidSender = m_gid;
-						msgT.smidReceiver = puntBuild->GetId();
-						FindNearestFreeTile(m_tptRally.tx, m_tptRally.ty, &msgT.MoveCommand.wptTarget);
-						msgT.MoveCommand.gidTarget = kgidNull;
-						msgT.MoveCommand.wptTargetCenter.wx = msgT.MoveCommand.wptTarget.wx;
-						msgT.MoveCommand.wptTargetCenter.wy = msgT.MoveCommand.wptTarget.wy;
-						msgT.MoveCommand.tcTargetRadius = 0;
-						msgT.MoveCommand.wcMoveDistPerUpdate = ((MobileUnitConsts *)puntBuild->GetConsts())->GetMoveDistPerUpdate();
-						gsmm.SendMsg(&msgT);
-					}
-#endif
 					}
 				}
 

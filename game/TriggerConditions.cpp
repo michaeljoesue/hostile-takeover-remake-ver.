@@ -69,31 +69,6 @@ bool Trigger::LoadCondition(IniReader *pini, FindProp *pfind)
 		pcdn = new HasUpgradesCondition();
 		break;
 
-#ifdef UNDONE
-	case knUnitDestroyedCondition:
-		pcdn = new UnitDestroyedCondition();
-		break;
-
-	case knDeathsCondition:
-		pcdn = new DeathsCondition();
-		break;
-
-	case knMobileHQDeployableCondition:
-		pcdn = new MobileHQDeployableCondition();
-		break;
-
-	case knMobileHQDeployedCondition:
-		pcdn = new MobileHQDeployedCondition();
-		break;
-
-	case knUnitSeesUnitCondition:
-		pcdn = new UnitSeesUnitCondition();
-		break;
-
-	case knUnitDestroyedCondition:
-		pcdn = new UnitDestroyedCondition();
-		break;
-#endif
 
 	default:
 		Assert(false);

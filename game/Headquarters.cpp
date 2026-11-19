@@ -907,39 +907,6 @@ bool PlaceStructureForm::OnPenEvent(Event *pevt)
 	return true;
 }
 
-void PlaceStructureForm::UpdatePosition(Event *pevt)
-{
-    // If pen down in placement form, drag it without offsetting
-    // If pen down outside placement form, center placement for under pen
-
-    WCoord wxView, wyView;
-    gsim.GetViewPos(&wxView, &wyView);
-    m_wxPen = WcFromPc(pevt->x) + wxView;
-    m_wyPen = WcFromPc(pevt->y) + wyView;
-    m_wxDragStart = m_wxPen;
-    m_wyDragStart = m_wyPen;
-
-    TRect trcT;
-    trcT.Set(m_tx, m_ty, m_tx + m_pstruc->ctxReserve,
-            m_ty + m_pstruc->ctyReserve);
-    if (!trcT.PtIn(TcFromWc(m_wxPen), TcFromWc(m_wyPen))) {
-        // New position for the placement indicator. Center indicator underneath
-        // pen
-
-        m_txStart = TcFromWc(m_wxPen) - (m_pstruc->ctxReserve - 1) / 2;
-        if (m_txStart < 0)
-            m_txStart = 0;
-        m_tyStart = TcFromWc(m_wyPen) - (m_pstruc->ctyReserve - 1) / 2;
-        if (m_tyStart < 0)
-            m_tyStart = 0;
-    } else {
-        // Start from current position
-
-        m_txStart = m_tx;
-        m_tyStart = m_ty;
-    }
-}
-
 
 // UNDONE: we should probably create an update on the form that gets called
 // after all the gobs have updated their state and use that for the placement

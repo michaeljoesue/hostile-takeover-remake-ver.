@@ -110,11 +110,6 @@ bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
 
 		bool fHaveEvent = false;
 
-//#define PAINT_BEFORE_INPUT
-#ifdef  PAINT_BEFORE_INPUT
-		if ((m_wfRedraw & (kfRedrawDirty | kfRedrawBeforeInput)) != (kfRedrawDirty | kfRedrawBeforeInput)) {
-#endif
-
             {
                 // Get the event from the host. The host doesn't coalesce
                 // messages, but does mark messages has being coalesce
@@ -136,9 +131,6 @@ bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
                     ctNext = 0;
                 }
             }   
-#ifdef PAINT_BEFORE_INPUT
-		}
-#endif
 
 		// Manage the production of penHoldEvents
 

@@ -1167,13 +1167,6 @@ bool TerrainMap::IsBlocked(TCoord tx, TCoord ty, byte bf)
 	return false;
 }
 
-int TerrainMap::GetTerrainType(TCoord tx, TCoord ty)
-{
-	Assert(tx >= 0 && tx < m_ctx && ty >= 0 && ty < m_cty);
-	int offMap = ty * m_ctx + tx;
-	return m_pbTerrain[offMap];
-}
-
 bool TerrainMap::GetFlags(int tx, int ty, byte *pbf)
 {
 	Assert(tx >= 0 && ty >= 0);

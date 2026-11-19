@@ -4,18 +4,11 @@ namespace wi {
 
 TBitmap *gaptbmScorches[4];
 UnitConsts *gapuntc[kutMax];
-int gnUnitCostMin = 32767;
-int gnUnitCostMax = -1;
 fix gfxMobileUnitArmorStrengthMin = itofx(511);
 fix gfxMobileUnitArmorStrengthMax = itofx(-1);
 fix gfxStructureArmorStrengthMin = itofx(511);
 fix gfxStructureArmorStrengthMax = itofx(-1);
-fix gfxInfantryDamageMin = itofx(511);
-fix gfxInfantryDamageMax = itofx(-1);
-fix gfxVehicleDamageMin = itofx(511);
-fix gfxVehicleDamageMax = itofx(-1);
-fix gfxStructureDamageMin = itofx(511);
-fix gfxStructureDamageMax = itofx(-1);
+int gnUnitCostMax = -1;
 TCoord gtcFiringRangeMin = 127;
 TCoord gtcFiringRangeMax = -1;
 WCoord gwcMoveDistPerUpdateMin = 32767;
@@ -78,7 +71,6 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 
 	if (pini->GetPropertyValue(szTemplate, "Cost", "%d", &puntc->nCost) != 1)
 		return false;
-	gnUnitCostMin = _min(gnUnitCostMin, puntc->nCost);
 	gnUnitCostMax = _max(gnUnitCostMax, puntc->nCost);
 
  	int csecTimeToBuild;
@@ -115,28 +107,9 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 	if (pini->GetPropertyValue(szTemplate, "FiringRate", "%d", &cmsFiringRate) == 1)
 		puntc->ctFiringRate = cmsFiringRate / 10;
 
-	fix fxDamagePerSec;
-	if (pini->GetPropertyValue(szTemplate, "InfantryDamage", "%d", &puntc->nInfantryDamage)) {
-		if (puntc->nInfantryDamage != 0) {
-			fxDamagePerSec = (fix)mulfx(itofx32(puntc->nInfantryDamage), divfx(itofx(1000), itofx(cmsFiringRate)));
-			gfxInfantryDamageMin = _min(gfxInfantryDamageMin, fxDamagePerSec);
-			gfxInfantryDamageMax = _max(gfxInfantryDamageMax, fxDamagePerSec);
-		}
-	}
-	if (pini->GetPropertyValue(szTemplate, "VehicleDamage", "%d", &puntc->nVehicleDamage)) {
-		if (puntc->nVehicleDamage != 0) {
-			fxDamagePerSec = (fix)mulfx(itofx32(puntc->nVehicleDamage), divfx(itofx(1000), itofx(cmsFiringRate)));
-			gfxVehicleDamageMin = _min(gfxVehicleDamageMin, fxDamagePerSec);
-			gfxVehicleDamageMax = _max(gfxVehicleDamageMax, fxDamagePerSec);
-		}
-	}
-	if (pini->GetPropertyValue(szTemplate, "StructureDamage", "%d", &puntc->nStructureDamage)) {
-		if (puntc->nStructureDamage != 0) {
-			fxDamagePerSec = (fix)mulfx(itofx32(puntc->nStructureDamage), divfx(itofx(1000), itofx(cmsFiringRate)));
-			gfxStructureDamageMin = _min(gfxStructureDamageMin, fxDamagePerSec);
-			gfxStructureDamageMax = _max(gfxStructureDamageMax, fxDamagePerSec);
-		}
-	}
+	pini->GetPropertyValue(szTemplate, "InfantryDamage", "%d", &puntc->nInfantryDamage);
+	pini->GetPropertyValue(szTemplate, "VehicleDamage", "%d", &puntc->nVehicleDamage);
+	pini->GetPropertyValue(szTemplate, "StructureDamage", "%d", &puntc->nStructureDamage);
 
 	pini->GetPropertyValue(szTemplate, "FiringRange", "%d", &puntc->tcFiringRange);
 	gtcFiringRangeMin = _min((int)gtcFiringRangeMin, puntc->tcFiringRange);
@@ -434,16 +407,6 @@ void UnitGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer)
 	if ((nLayer == knLayerDepthSorted && m_st != kstDying) || 
 			(nLayer == knLayerSurfaceDecal && m_st == kstDying)) {
 
-#ifdef DRAW_OCCUPIED_TILE_INDICATOR
-		{
-			WRect wrcT;
-			GetTilePaddedWRect(&wrcT);
-			Rect rcT;
-			rcT.FromWorldRect(&wrcT);
-			rcT.Offset(-xViewOrigin, -yViewOrigin);
-			DrawBorder(pbm, &rcT, 1, GetColor(kiclrWhite));
-		}
-#endif
 		Side side = m_pplr->GetSide();
 		if (m_ff & kfGobDrawFlashed)
 			side = (Side)-1;

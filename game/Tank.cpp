@@ -63,16 +63,6 @@ void TankGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer)
 {
 	if (nLayer == knLayerDepthSorted) {
 
-#ifdef DRAW_OCCUPIED_TILE_INDICATOR
-		{
-			WRect wrcT;
-			GetTilePaddedWRect(&wrcT);
-			Rect rcT;
-			rcT.FromWorldRect(&wrcT);
-			rcT.Offset(-xViewOrigin, -yViewOrigin);
-			DrawBorder(pbm, &rcT, 1, GetColor(kiclrWhite));
-		}
-#endif
 		Side side = m_pplr->GetSide();
 		if (m_ff & kfGobDrawFlashed)
 			side = (Side)-1;

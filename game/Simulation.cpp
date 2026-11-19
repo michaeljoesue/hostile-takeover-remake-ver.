@@ -5,9 +5,6 @@ namespace wi {
 
 CommandQueue gcmdq;
 
-#ifdef STATS_DISPLAY
-extern int gcBitmapsDrawn;
-#endif
 extern int gcMessagesPerUpdate;
 
 extern bool gfDragSelecting;
@@ -476,10 +473,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     // Process all queued commands
 
     int cmsg = pcmdq->GetCount();
-#ifdef STATS_DISPLAY
-    extern int gcbCommandsQueued;
-    gcbCommandsQueued += cmsg * sizeof(Message);
-#endif
     int i = 0;
     Message *pmsg = pcmdq->GetFirst();
     for (; i < cmsg; i++, pmsg++) {
@@ -742,9 +735,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
 
     FindVisibleGobs();
 
-#ifdef STATS_DISPLAY
-    gcBitmapsDrawn = 0;
-#endif
 
 #ifdef DRAW_PATHS
     if (gfDrawPaths) {
@@ -843,43 +833,7 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
 #endif
 
 
-#ifdef MARK_TILE_BOUNDARIES
-    {
-        Color clr = GetColor(kiclrWhite);
-        Size sizT;
-        ggame.GetPlayfieldSize(&sizT);
-        for (int y = -PcFromUwc(WcFrac(wyView)); y < sizT.cy; y += gcyTile) {
-            for (int x = -PcFromUwc(WcFrac(wxView)); x < sizT.cx; x += gcxTile) {
-                pbm->Fill(x, y, 2, 2, clr);
-            }
-        }
-    }
-#endif
 
-#ifdef MARK_OCCUPIED_TILES
-    {
-        Color clr = GetColor(kiclrWhite);
-        Size sizT;
-        ggame.GetPlayfieldSize(&sizT);
-        int ctxView = sizT.cx / gcxTile + 1;
-        int ctyView = sizT.cy / gcyTile + 1;
-        TerrainMap *ptrmap = m_plvl->GetTerrainMap();
-
-        int xView = PcFromWc(wxView);
-        int yView = PcFromWc(wyView);
-        TCoord txView = TcFromWc(wxView);
-        TCoord tyView = TcFromWc(wyView);
-        for (TCoord ty = tyView; ty < tyView + ctyView; ty++) {
-            for (TCoord tx = txView; tx < txView + ctxView; tx++) {
-                if (ptrmap->IsOccupied(tx, ty, 1, 1)) {
-                    int x = PcFromTc(tx) - xView;
-                    int y = PcFromTc(ty) - yView;
-                    pbm->Fill(x + gcxTile / 2 - 1, y + gcyTile / 2 - 1, 2, 2, clr);
-                }
-            }
-        }
-    }
-#endif
 
     pupd->SetViewOrigin(0, 0);
 

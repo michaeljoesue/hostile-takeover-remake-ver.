@@ -421,10 +421,6 @@ void TBitmap::BltTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, Side 
 	if (rcSrc.IsEmpty())
 		return;
 
-#ifdef STATS_DISPLAY
-	extern int gcBitmapsDrawn;
-	gcBitmapsDrawn++;
-#endif
 
 	byte *pbBits = pbmDst->GetBits();
 
@@ -524,10 +520,6 @@ void TBitmap::BltToScan(byte *pbDraw, int cx, int cy, DibBitmap *pbmDst,
 {
     // Clipping has already been performed
 
-#ifdef STATS_DISPLAY
-	extern int gcBitmapsDrawn;
-	gcBitmapsDrawn++;
-#endif
 
 	byte *pbBits = pbmDst->GetBits();
     Size sizT;

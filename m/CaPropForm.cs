@@ -110,9 +110,5 @@ namespace m
 		private void buttonOk_Click(object sender, System.EventArgs e) {
 			DialogResult = DialogResult.OK;
 		}
-
-		private void buttonCancel_Click(object sender, System.EventArgs e) {
-			DialogResult = DialogResult.Cancel;
-		}
 	}
 }

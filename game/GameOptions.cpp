@@ -12,12 +12,8 @@ bool gfDrawPaths = false;
 bool gfDrawLines = false;
 #endif
 
-#ifdef STATS_DISPLAY
-bool gfShowStats = false;
-#endif
 
 bool gfOvermindEnabled = true;
-bool gfSoundEnabled = true;
 
 #ifdef DEV_BUILD
 bool gfShowFPS = true;
@@ -855,11 +851,7 @@ bool TestOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 #endif
 
 	pcbox = (CheckBoxControl *)GetControlPtr(kidcShowStats);
-#ifdef STATS_DISPLAY
-	pcbox->SetChecked(gfShowStats);
-#else
 	pcbox->Show(false);
-#endif
 
 	SetControlChecked(kidcOvermind, gfOvermindEnabled);
 	SetControlChecked(kidcShowFPS, gfShowFPS);
@@ -919,11 +911,6 @@ void TestOptionsForm::OnControlSelected(word idc)
 		gsim.GetLevel()->GetFogMap()->RevealAll(gpupdSim);
 		break;
 
-#ifdef STATS_DISPLAY
-	case kidcShowStats:
-		gfShowStats = !gfShowStats;
-		break;
-#endif
 
 	case kidcShowFPS:
 		gfShowFPS = !gfShowFPS;

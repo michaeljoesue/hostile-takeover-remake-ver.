@@ -15,8 +15,6 @@ struct CompressionHeader // coh
 
 extern "C" word DecompressChunk(byte **ppbCompressed, byte *pbDecompressed,
         byte *pbCacheEnd, word cbMax);
-extern "C" void DecompressToMemory(byte *pbCompressed, byte *pbOut,
-        CompressionHeader *pcoh);
 
 } // namespace wi
 

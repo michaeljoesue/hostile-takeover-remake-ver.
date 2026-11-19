@@ -97,11 +97,4 @@ word DecompressChunk(byte **ppbCompressed, byte *pbDecompressed,
 	return pbDst - pbDecompressed;
 }
 
-void DecompressToMemory(byte *pbCompressed, byte *pbOut,
-        CompressionHeader *pcoh)
-{
-	byte *pbCompressedT = pbCompressed;
-    DecompressChunk(&pbCompressedT, pbOut, NULL, 0);
-}
-
 } // namespace wi

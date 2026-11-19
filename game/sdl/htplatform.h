@@ -45,22 +45,17 @@ typedef char TCHAR;
 #define chrUp chrPageUp
 #define chrDown chrPageDown
 
-#define    keyBitPower            0x0001        // Power key
 #define    keyBitPageUp        0x0002        // Page-up
 #define    keyBitPageDown        0x0004        // Page-down
 #define    keyBitHard1            0x0008        // App #1
 #define    keyBitHard2            0x0010        // App #2
 #define    keyBitHard3            0x0020        // App #3
 #define    keyBitHard4            0x0040        // App #4
-#define    keyBitCradle        0x0080        // Button on cradle
-#define    keyBitAntenna        0x0100        // Antenna "key" <chg 3-31-98 RM>
-#define    keyBitContrast        0x0200        // Contrast key
 
 // From PalmSG
 
 #define keyBitDpadLeft        0x01000000    // d-pad left
 #define keyBitDpadRight        0x02000000    // d-pad right
-#define keyBitDpadButton    0x04000000    // d-pad center button
 
 // From PalmSource
 
@@ -68,9 +63,7 @@ typedef char TCHAR;
 #define keyBitRockerDown        0x00020000
 #define keyBitRockerLeft        0x00040000
 #define keyBitRockerRight       0x00080000
-#define keyBitRockerCenter      0x00100000
 
-#define    keyBitsAll            0xFFFFFFFF    // all keys
 
 struct ModeInfo
 {
@@ -142,7 +135,6 @@ void HostDestroyWindow();
 
 class SoundDevice;
 SoundDevice *CreateSdlSoundDevice();
-void PrependDataDirectory(char *pszIn, char *pszOut);
 
 extern SdlPackFileReader gpakr;
 

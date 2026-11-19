@@ -7,38 +7,7 @@
 
 namespace wi {
 
-//#define INCL_RECORDOPENS
 
-#if defined(INCL_RECORDOPENS)
-void RecordOpen(char *pszApi, char *pszFile, dword dw)
-{
-	FILE *pfil = fopen("openlog.txt", "a+");
-	fseek(pfil, 0, SEEK_END);
-	fprintf(pfil, "0x%08lx: %s %s\n", dw, pszApi, pszFile);
-	fclose(pfil);
-}
-
-void RecordClose(dword dw)
-{
-	FILE *pfil = fopen("openlog.txt", "r+");
-	char sz[128];
-	while (true) {
-		long pos = ftell(pfil);
-		if (fgets(sz, sizeof(sz) - 1, pfil) == NULL)
-			break;
-		char szCompare[32];
-		sprintf(szCompare, "0x%08lx", dw);
-		if (strncmp(sz, szCompare, 10) == 0) {
-			fseek(pfil, pos, SEEK_SET);
-			char ch = 'x';
-			fwrite(&ch, 1, 1, pfil);
-			fclose(pfil);
-			return;
-		}
-	}
-	fclose(pfil);
-}
-#endif
 
 //
 // Reads packed files
@@ -103,18 +72,12 @@ File *PackFileReader::fopen(const char *pszFn, const char *pszMode)
 
 	prnfo->cOpen++;
 
-#if defined(INCL_RECORDOPENS)
-	RecordOpen("fopen", pszFn, (dword)pfil);
-#endif
 
 	return pfil;
 }
 
 int PackFileReader::fclose(File *pfil)
 {
-#if defined(INCL_RECORDOPENS)
-	RecordClose((dword)pfil);
-#endif
 
 	Assert(pfil->prnfo->cOpen > 0);
 	pfil->prnfo->cOpen--;
@@ -363,18 +326,12 @@ void *PackFileReader::MapFile(const char *pszFn, FileMap *pfmap, dword *pcb)
     }
 	prnfo->cOpen++;
 
-#if defined(INCL_RECORDOPENS)
-	RecordOpen("MapFile", pszFn, (dword)pfmap);
-#endif
 
 	return pb;
 }
 
 void PackFileReader::UnmapFile(FileMap *pfmap)
 {
-#if defined(INCL_RECORDOPENS)
-	RecordClose((dword)pfmap);
-#endif
 
 	Assert(pfmap->prnfo->cOpen > 0);
 	pfmap->prnfo->cOpen--;

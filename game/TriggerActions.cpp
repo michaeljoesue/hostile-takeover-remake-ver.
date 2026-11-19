@@ -138,23 +138,6 @@ bool Trigger::LoadAction(IniReader *pini, FindProp *pfind)
 		pactn = new SetUpgradesAction();
 		break;
 
-#ifdef UNDONE
-	case knMoveUnitTriggerAction:
-		pactn = new MoveUnitAction();
-		break;
-
-	case knSetPlayerControlsTriggerAction:
-		pactn = new SetPlayerControlsAction();
-		break;
-
-	case knPanViewAction:
-		pactn = new PanViewTriggerAction();
-		break;
-
-	case knTargetUnitTriggerAction:
-		pactn = new TargetUnitAction();
-		break;
-#endif
 
 	default:
 		Assert(false);

@@ -53,7 +53,6 @@ static AnimationData *s_panidVehicleExplosion;
 
 #define GetIdleCountdown() ((GetRandom() % 50) + 50)		// somewhere between 4 & 8 seconds
 
-const int kcFireCountdown = 6;	// 6 updates (~.5 secs)
 
 Path *MobileUnitGob::s_apathCached[kcPathsCache];
 int MobileUnitGob::s_cpathCached;

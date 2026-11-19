@@ -713,8 +713,6 @@ void BitmapControl::SetBitmap(HtBitmap *phtbm)
 // List Control
 //
 
-#define kcxyListBorder gcxyBorder
-#define kcxListIntMargin PcFromFc(2)
 #define kcyListLineSpace gcxyBorder
 
 TBitmap *ListControl::s_ptbmScrollUpUp;
@@ -1459,14 +1457,6 @@ void *ListControl::GetSelectedItemData()
 }
 
 // Return first selected item's ListItem pointer
-
-ListItem *ListControl::GetItem(int iItem)
-{
-	ListItem *pli = m_pliFirst;
-	for (int i = 0; pli != NULL && i < iItem; i++)
-		pli = pli->pliNext;
-	return iItem >= 0 ? pli : NULL;
-}
 
 ListItem *ListControl::GetSelectedItem()
 {

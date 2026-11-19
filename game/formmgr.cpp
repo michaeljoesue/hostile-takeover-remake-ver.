@@ -445,13 +445,7 @@ bool FormMgr::ScrollBits()
 
 	DibBitmap *pbmFront = gpdisp->GetFrontDib();
 	if (pbmFront->GetFlags() & kfDibWantScrolls) {
-#if defined(PALM)
-        // Change this over to DibBitmap::Scroll in the future
-		RotatedFrontDib *pbmScroll = (RotatedFrontDib *)pbmFront;
-		pbmScroll->ScrollBlt(&rcSrc, m_dxScrollAccumulate, m_dyScrollAccumulate);
-#else
         pbmFront->Scroll(&rcSrc, m_dxScrollAccumulate, m_dyScrollAccumulate);
-#endif
 		m_dxScrollAccumulate = 0;
 		m_dyScrollAccumulate = 0;
 		return true;
@@ -1113,23 +1107,5 @@ void MultiFormMgr::CheckSetRedrawDirty()
 	}
 }
 
-#ifdef STATS_DISPLAY
-int MultiFormMgr::GetUpdateRectCount()
-{
-	int c = 0;
-	for (int n = 0; n < m_cfrmm; n++) {
-		UpdateMap *pupd = m_apfrmm[n]->GetUpdateMap();
-		Size sizMap;
-		pupd->GetMapSize(&sizMap);
-		int cb = sizMap.cx * sizMap.cy;
-		bool *pfInvalid = pupd->GetInvalidMap();
-		while (cb-- != 0) {
-			if (*pfInvalid++)
-				c++;
-		}
-	}
-	return c;
-}
-#endif
 
 } // namespace wi

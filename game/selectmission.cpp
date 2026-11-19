@@ -4,7 +4,6 @@
 
 namespace wi {
 
-#define kcUnlockAhead 1
 #define kfItemLocked 0x8000
 
 SelectMissionForm::SelectMissionForm(MissionList *pml,

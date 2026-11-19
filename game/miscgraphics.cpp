@@ -1,7 +1,6 @@
 // This gets included in the windows build
 // Also gets included by ARMlet code
 
-#define SwapDword(x) ((((x)&0xFF)<<24) | (((x)&0xFF00)<<8) | (((x)&0xFF0000)>>8) | (((x)&0xFF000000)>>24))
 #define SwapWord(x) ((((x)&0xFF)<<8) | (((x)&0xFF00)>>8))
 
 void Shadow(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap)

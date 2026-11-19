@@ -10,11 +10,6 @@ TRect gtrcMapOpaque;
 
 // Handy dandy global flags used for enabling various test features
 
-#ifdef STATS_DISPLAY
-int gcBitmapsDrawn;
-extern bool gfShowStats;
-int gcbCommandsQueued;
-#endif
 int gcMessagesPerUpdate;
 
 extern bool gfShowFPS;
@@ -22,9 +17,6 @@ extern bool gfSuspendUpdates;
 extern bool gfSingleStep;
 
 short gcPaint = 0;
-#ifdef STATS_DISPLAY
-static short s_cUpdateRects = 0;
-#endif
 static fix s_cfxFPS = 0;
 static long s_tLastFPSUpdate = 0;
 
@@ -47,9 +39,6 @@ void NoteAlertLocation(Gob *pgob)
     gfLastAlertValid = true;
 }
 WRect gwrcSelection;
-#ifdef STATS_DISPLAY
-long gcPathScoresCalced = 0;
-#endif
 
 //
 // SimUIForm implementation
@@ -273,9 +262,6 @@ void SimUIForm::OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque)
 		pupd->InvalidateRect();
 #endif
 
-#if defined(DRAW_OCCUPIED_TILE_INDICATOR) || defined(MARK_TILE_BOUNDARIES) || defined(MARK_OCCUPIED_TILES)
-	pupd->InvalidateRect();
-#endif
 
 	// Invalidate move target
 
@@ -500,53 +486,7 @@ void SimUIForm::OnPaintControls(DibBitmap *pbm, UpdateMap *pupd)
 
 	// Draw stats
 
-#ifdef STATS_DISPLAY
-	if (gfShowStats) {
-		Font *pfnt = gapfnt[kifntDefault];
-		int cy = pfnt->GetHeight();
-		int y = cy;
-		char szT[80];
 
-		// Display useful info
-
-		// Count of active Gobs
-
-		int cpgob = 0;
-		for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT), cpgob++);
-		sprintf(szT, "active Gobs: %d", cpgob);
-		pfnt->DrawText(pbm, szT, 1, y);
-		y += cy;
-
-		// Count of visible sprites
-
-		sprintf(szT, "bitmaps drawn: %d", gcBitmapsDrawn);
-		pfnt->DrawText(pbm, szT, 1, y);
-		y += cy;
-
-		// Count of messages per update
-
-		sprintf(szT, "msgs/update: %d", gcMessagesPerUpdate);
-		pfnt->DrawText(pbm, szT, 1, y);
-		y += cy;
-
-		// Count of updates
-
-		sprintf(szT, "update count: %ld", gsim.GetUpdateCount());
-		pfnt->DrawText(pbm, szT, 1, y);
-		y += cy;
-
-		// Invalidate
-
-		Rect rcT = m_rc;
-		rcT.top = cy;
-		rcT.bottom = y;
-		InvalidateRect(&rcT);
-	}
-#endif
-
-#ifdef STATS_DISPLAY
-	s_cUpdateRects += gpmfrmm->GetUpdateRectCount();
-#endif
 }
 
 void SimUIForm::FrameComplete()
@@ -1279,13 +1219,6 @@ Gob *SimUIForm::HitTestGob(int x, int y, WCoord *pwx, WCoord *pwy)
     return NULL;
 }
 
-void SimUIForm::MoveOrAttackOrSelect(int x, int y, dword ff)
-{
-	WCoord wxTarget, wyTarget;
-    Gob *pgobHit = HitTestGob(x, y, &wxTarget, &wyTarget);
-    MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, ff);
-}
-
 // This routine is called in two situations.
 // 1. On pen down to select the unit tapped on (fSelectOnly == true)
 // 2. On pen up to attack the unit tapped on or to move to the location tapped on (fSelectOnly == false)
@@ -1313,37 +1246,6 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 				gsndm.PlayResponseSfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[pmunt->GetUnitType()])->sfxcMove));
 			}
 
-#ifdef RALLY_POINTS
-			// TOTAL HACK:
-            // If the player has HRC or VTS selected and they've tapped the
-            // ground set that point as the structure's rally point. Of course
-            // this should be visualized, etc. Ah, if only we had time for such
-            // things.
-
-			for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
-				if ((pgobT->GetFlags() & (kfGobStructure | kfGobSelected)) != (kfGobStructure | kfGobSelected))
-					continue;
-				BuilderGob *pbldr = (BuilderGob *)pgobT;
-
-				// We know that if an enemy structure is selected then a local player's
-				// structure can't also be selected.
-
-				if (pgobT->GetOwner() != gpplrLocal)
-					break;
-
-				// VTS or HRC?
-
-				if (!((1UL << pbldr->GetUnitType()) & (kumVehicleTransportStation | kumHumanResourceCenter)))
-					break;
-
-				pbldr->SetRallyPoint(TcFromWc(wxTarget), TcFromWc(wyTarget));
-				WCoord wxT = WcTrunc(wxTarget) + kwcTileHalf;
-				WCoord wyT = WcTrunc(wyTarget) + kwcTileHalf;
-				CreateAnimGob(wxT, wyT, kfAnmDeleteWhenDone | kfAnmSmokeFireLayer, NULL, g_panidMoveTarget);
-				ShowAlert("Rally point set");
-				break;
-			}
-#endif
 		}
 		return;
 	}
@@ -1970,7 +1872,6 @@ void MiniMapControl::OnPaint(DibBitmap *pbm)
 }
 
 //TUNE:
-#define kctMiniMapInvalidateRate 25
 
 void MiniMapControl::Update()
 {

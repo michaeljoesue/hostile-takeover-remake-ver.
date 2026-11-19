@@ -1220,9 +1220,6 @@ bool GobMgr::Init(TCoord ctx, TCoord cty, int cpgobMax)
 
 	m_pgidMap = pgidMap;
 
-#ifdef INCL_VALIDATEHEAP
-	gmmgr.Validate();
-#endif
 
 	return true;
 }
@@ -1400,9 +1397,6 @@ void GobMgr::AddGob(Gob *pgob, Gid gid)
 
 	TrackGobCounts(pgob, true);
 
-#ifdef INCL_VALIDATEHEAP
-	gmmgr.Validate();
-#endif
 }
 
 void GobMgr::RemoveGob(Gob *pgob)
@@ -1447,9 +1441,6 @@ void GobMgr::RemoveGob(Gob *pgob)
 
 	TrackGobCounts(pgob, false);
 
-#ifdef INCL_VALIDATEHEAP
-	gmmgr.Validate();
-#endif
 }
 
 void GobMgr::TrackGobCounts(Gob *pgob, bool fIncrement)
@@ -1588,30 +1579,8 @@ bool GobMgr::MoveGob(Gob *pgob, WCoord wxOld, WCoord wyOld, WCoord wxNew, WCoord
 		//*pgidT = pgob->m_gid;
 	}
 
-#ifdef INCL_VALIDATEHEAP
-	gmmgr.Validate();
-#endif
 
 	return true;
-}
-
-UnitGob *GobMgr::GetUnitGob(TCoord tx, TCoord ty)
-{
-	// Gets the unit gob at this spot. Checks shadowed gids too.
-
-	Gid gid = m_pgidMap[ty * m_ctx + tx];
-	while (true) {
-		if (gid == kgidNull)
-			return NULL;
-		Gob *pgob = GetGob(gid & ~kwfGidEndMarker, false);
-		if (pgob == NULL)
-			return NULL;
-		if (pgob->GetFlags() & kfGobUnit)
-			return (UnitGob *)pgob;
-		if (gid & kwfGidEndMarker)
-			return NULL;
-		gid = pgob->m_gidNext;
-	}
 }
 
 Gob *GobMgr::GetShadowGob(TCoord tx, TCoord ty)
@@ -2267,7 +2236,6 @@ void SortGobs(Gob **apgob, int cpgob)
 }
 
 
-const int kcpgobInRangeMax = 100;
 
 // Called by GobMgr::FindEnemyWithinRange to locate Gobs within a certain tile radius
 // of a Gob looking for a fight.

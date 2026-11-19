@@ -853,7 +853,6 @@ int FogMap::EdgeFadeAlpha(int d, int cpBand)
 }
 
 byte s_abGxTranslate[] = { 0, 2, 1, 1, 0, 0, 5, 4, 4, 3, 3, 8, 7, 7, 6, 6 };
-byte s_abGxInc[] = { 0, 2, 3, 4, 5, 5, 7, 8, 9, 10, 10, 12, 13, 14, 15, 15 };
 byte s_abGxDec[] = { 0, 0, 1, 2, 3, 4, 0, 6, 7, 8, 9, 0, 11, 12, 13, 14 };
 
 void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, byte *pbTrMap)

@@ -50,8 +50,6 @@ dword gcbDbMemAtStart;
 #define kcbChunkAllocSmall ((word)32 * 1024)
 #define kcbChunkTooSmall ((word)4 * 1024)
 
-#define kszDbMemMgr "HtDbMemMgr"
-#define kdwType 'temp'
 
 MemMgr::MemMgr()
 {
@@ -257,9 +255,6 @@ HandleTable *MemMgr::NewHandleTable()
 
 bool MemMgr::AllocHandleEntry(word *pher)
 {
-#ifdef INCL_VALIDATEHEAP
-	ValidateHandleTableFreeEntries();
-#endif
 
 	// First find a handle table with a free entry
 
@@ -291,19 +286,12 @@ bool MemMgr::AllocHandleEntry(word *pher)
 
 	*pher = GetHandleEntryRef(ihtab, ihe);
 
-#ifdef INCL_VALIDATEHEAP
-	phtab->ahe[ihe] = 0;
-	ValidateHandleTableFreeEntries();
-#endif
 
 	return true;
 }
 
 void MemMgr::FreeHandleEntry(word her)
 {
-#ifdef INCL_VALIDATEHEAP
-	ValidateHandleTableFreeEntries();
-#endif
 
 	int ihtab = GetHandleTableIndex(her);
 	int ihe = GetHandleEntryIndex(her);
@@ -316,9 +304,6 @@ void MemMgr::FreeHandleEntry(word her)
 	phtab->ahe[ihe] = (HandleEntry)phtab->iheFree;
 	phtab->iheFree = ihe;
 
-#ifdef INCL_VALIDATEHEAP
-	ValidateHandleTableFreeEntries();
-#endif
 }
 
 dword MemMgr::GetFreeSize(word *pcbLargestFree)
@@ -465,9 +450,6 @@ HMem MemMgr::AllocHandle(word cbAlloc, word wfHints)
 
 HMem MemMgr::AllocBlock(int iheap, MemHeader *pmhdr, MemHeader *pmhdrFreeLast, word cbBlock, word wfHints)
 {
-#ifdef INCL_VALIDATEHEAP
-	Validate();
-#endif
 
 	// First need to alloc a new handle. This can fail.
 
@@ -518,9 +500,6 @@ HMem MemMgr::AllocBlock(int iheap, MemHeader *pmhdr, MemHeader *pmhdrFreeLast, w
 
 	m_cbTotalFreeBlocks -= pmhdr->cbBlock;
 
-#ifdef INCL_VALIDATEHEAP
-	Validate();
-#endif
 
 	// We're done.
 
@@ -585,9 +564,6 @@ MemHeader *MemMgr::SplitFreeBlock(Heap *pheap, MemHeader *pmhdr, MemHeader *pmhd
 
 MemHeader *MemMgr::Compact(Heap *pheap, word cbBlock, MemHeader **ppmhdrFreeLast, word wfHints)
 {
-#ifdef INCL_VALIDATEHEAP
-	Validate();
-#endif
 
 	// We're here to see if a block at least as big as cbBlock can be created by heap compaction.
 
@@ -718,9 +694,6 @@ MemHeader *MemMgr::Compact(Heap *pheap, word cbBlock, MemHeader **ppmhdrFreeLast
 		pheap->wf |= kfHeapFullyCompacted | kfHeapLargestFreeBlockSizeValid;
 	}
 
-#ifdef INCL_VALIDATEHEAP
-	Validate();
-#endif
 
 	// Return what we found
 
@@ -729,10 +702,6 @@ MemHeader *MemMgr::Compact(Heap *pheap, word cbBlock, MemHeader **ppmhdrFreeLast
 
 void MemMgr::FreeHandle(HMem hmem)
 {
-#ifdef INCL_VALIDATEHEAP
-	ValidateHandle(hmem);
-	Validate();
-#endif
 
 	Heap *pheap = GetHeap(hmem);
 	MemHeader *pmhdr = GetMemHeader(hmem);
@@ -864,9 +833,6 @@ void MemMgr::FreeHandle(HMem hmem)
 
 	pheap->wf &= ~kfHeapFullyCompacted;
 
-#ifdef INCL_VALIDATEHEAP
-	Validate();
-#endif
 
 #ifdef INCL_FORCECOMPACTION
 	// Force compaction for validation purposes
@@ -878,9 +844,6 @@ void MemMgr::FreeHandle(HMem hmem)
 
 void MemMgr::SetLocked(HMem hmem)
 {
-#ifdef INCL_VALIDATEHEAP
-	ValidateHandle(hmem);
-#endif
 	// Set the locked bit
 
 	MemHeader *pmhdr = GetMemHeader(hmem);
@@ -892,9 +855,6 @@ void MemMgr::SetLocked(HMem hmem)
 
 void MemMgr::ClearLocked(HMem hmem)
 {
-#ifdef INCL_VALIDATEHEAP
-	ValidateHandle(hmem);
-#endif
 	// Clear the locked bit
 
 	MemHeader *pmhdr = GetMemHeader(hmem);
@@ -910,9 +870,6 @@ void MemMgr::ClearLocked(HMem hmem)
 
 void *MemMgr::GetPtr(HMem hmem)
 {
-#ifdef INCL_VALIDATEHEAP
-	ValidateHandle(hmem);
-#endif
 	MemHeader *pmhdr = GetMemHeader(hmem);
 	return (void *)(pmhdr + 1);
 }
@@ -928,9 +885,6 @@ void MemMgr::WriteHeader(Heap *pheap, MemHeader *pmhdrDst, MemHeader *pmhdrSrc, 
 
 void MemMgr::WriteHandle(HMem hmem, word ib, void *pvSrc, word cb)
 {
-#ifdef INCL_VALIDATEHEAP
-	ValidateHandle(hmem);
-#endif
 	MemHeader *pmhdr = GetMemHeader(hmem);
 	Assert(ib + cb <= pmhdr->cbBlock);
 	memcpy(((byte *)(pmhdr + 1)) + ib, pvSrc, cb);
@@ -965,132 +919,5 @@ void MemMgr::WritePtr(void *pvDst, word ib, void *pvSrc, word cb)
 	WriteHandle(hmem, ib + sizeof(HMem), pvSrc, cb);
 }
 
-#ifdef INCL_VALIDATEHEAP
-void MemMgr::Validate()
-{
-	// Make sure all free objects are on the free list
-
-	int iheap;
-	for (iheap = 0; iheap < m_cheap; iheap++) {
-		Heap *pheap = m_apheap[iheap];
-		MemHeader *pmhdr = (MemHeader *)pheap->pbHeap;
-		MemHeader *pmhdrHeapEnd = (MemHeader *)(pheap->pbHeap + pheap->cbHeap);
-		for (; pmhdr < pmhdrHeapEnd; pmhdr = GetNext(pmhdr)) {
-			if (IsFree(pmhdr)) {
-				MemHeader *pmhdrT = pheap->pmhdrFreeFirst;
-				for (; pmhdrT != NULL; pmhdrT = GetNextFree(pmhdrT)) {
-					Assert(IsFree(pmhdrT));
-					if (pmhdrT == pmhdr)
-						break;
-				}
-				Assert(pmhdrT != NULL);
-			}
-		}
-		Assert(pmhdr == pmhdrHeapEnd);
-	}
-
-	// Ensure all alloced objects have HandleEntries that are valid
-
-	for (iheap = 0; iheap < m_cheap; iheap++) {
-		Heap *pheap = m_apheap[iheap];
-		MemHeader *pmhdr = (MemHeader *)pheap->pbHeap;
-		MemHeader *pmhdrHeapEnd = (MemHeader *)(pheap->pbHeap + pheap->cbHeap);
-		for (; pmhdr < pmhdrHeapEnd; pmhdr = GetNext(pmhdr)) {
-			if (!IsFree(pmhdr)) {
-				int ihtab = GetHandleTableIndex(pmhdr->w);
-				int ihe = GetHandleEntryIndex(pmhdr->w);
-				Assert(ihtab < m_chtab);
-				word *pw = GetHandleEntryPtr(pmhdr->w);
-				Assert(*pw == (word)((byte *)pmhdr - pheap->pbHeap));
-			}
-		}
-		Assert(pmhdr == pmhdrHeapEnd);
-	}
-
-	// Ensure largest count / bit is valid, and that total count is valid
-
-	dword cbTotal = 0;
-	for (iheap = 0; iheap < m_cheap; iheap++) {
-		dword cbLargest = 0;
-		Heap *pheap = m_apheap[iheap];
-		MemHeader *pmhdr = (MemHeader *)pheap->pbHeap;
-		MemHeader *pmhdrHeapEnd = (MemHeader *)(pheap->pbHeap + pheap->cbHeap);
-		for (; pmhdr < pmhdrHeapEnd; pmhdr = GetNext(pmhdr)) {
-			if (!IsFree(pmhdr))
-				continue;
-			if (pmhdr->cbBlock > cbLargest)
-				cbLargest = pmhdr->cbBlock;
-			cbTotal += pmhdr->cbBlock;
-		}
-		Assert(pmhdr == pmhdrHeapEnd);
-		if (pheap->wf & kfHeapLargestFreeBlockSizeValid)
-			Assert(cbLargest == pheap->cbLargestFreeBlock);
-		Assert(cbLargest <= pheap->cbHeap);
-	}
-	Assert(cbTotal == m_cbTotalFreeBlocks);
-
-	// Ensure the compacted bit is valid. Meaning there are not two contiguous free blocks, and that
-	// there are no free blocks followed by unlocked blocks.
-
-	for (iheap = 0; iheap < m_cheap; iheap++) {
-		Heap *pheap = m_apheap[iheap];
-		if (!(pheap->wf & kfHeapFullyCompacted))
-			continue;
-		MemHeader *pmhdrLast = NULL;
-		MemHeader *pmhdr = (MemHeader *)pheap->pbHeap;
-		MemHeader *pmhdrHeapEnd = (MemHeader *)(pheap->pbHeap + pheap->cbHeap);
-		for (; pmhdr < pmhdrHeapEnd; pmhdr = GetNext(pmhdr)) {
-			if (pmhdrLast != NULL) {
-				if (IsFree(pmhdrLast) && IsFree(pmhdr))
-					Assert(false);
-				if (IsFree(pmhdrLast) && !IsLocked(pmhdr))
-					Assert(false);
-			}
-		}
-		Assert(pmhdr == pmhdrHeapEnd);
-	}
-
-	ValidateHandleTableFreeEntries();
-}
-
-void MemMgr::ValidateHandle(HMem hmem)
-{
-	Assert(hmem != 0);
-	HMemStruct *phms = (HMemStruct *)&hmem;
-	Assert(phms->iheap < m_cheap);
-	Assert(GetHandleTableIndex(phms->her) < m_chtab);
-	MemHeader *pmhdr = GetMemHeader(hmem);
-	Heap *pheap = GetHeap(hmem);
-	Assert((byte *)pmhdr >= pheap->pbHeap && ((byte *)GetNext(pmhdr)) <= pheap->pbHeap + pheap->cbHeap);
-	Assert((pmhdr->w & ~(kfMhdrBusy | kfMhdrLocked)) == (phms->her & ~(kfMhdrBusy | kfMhdrLocked)));
-}
-
-void MemMgr::ValidateHandleTableFreeEntries()
-{
-	for (int ihtab = 0; ihtab < m_chtab; ihtab++) {
-		// Make sure the free list is good
-
-		bool afVisited[kcHandlesPerTable];
-		memset(afVisited, 0, sizeof(afVisited));
-		HandleTable *phtab = m_aphtab[ihtab];
-		word iheFree = (word)phtab->iheFree;
-		while (iheFree != (word)-1) {
-			Assert(iheFree < ARRAYSIZE(phtab->ahe));
-			Assert(!afVisited[iheFree]);
-			afVisited[iheFree] = true;
-			iheFree = phtab->ahe[iheFree];
-		}
-
-		// Make sure the rest of them could be valid offsets (even)
-
-		for (int ihe = 0; ihe < ARRAYSIZE(phtab->ahe); ihe++) {
-			if (afVisited[ihe] == false)
-				Assert((phtab->ahe[ihe] & 1) == 0);
-		}
-	}
-
-
-}
-#endif
 
 } // namespace wi
