@@ -74,3 +74,6 @@ strip	Radar.anir	a 2	pics=radar/w	n=1	var=2
 strip	Research.anir	a 0	pics=research/h	n=52	var=0	cycle=66
 strip	Research.anir	a 1	pics=research/d	n=52	var=1	cycle=66
 strip	Research.anir	a 2	pics=research/w	n=1	var=2
+strip	CommandCenter.anir	a 0	pics=ccenter/h	n=52	var=0	cycle=66
+strip	CommandCenter.anir	a 1	pics=ccenter/d	n=52	var=1	cycle=66
+strip	CommandCenter.anir	a 2	pics=ccenter/w	n=1	var=2

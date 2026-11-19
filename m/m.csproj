@@ -177,6 +177,7 @@
     <EmbeddedResource Include="GobImages\Andy.png" />
     <EmbeddedResource Include="GobImages\Artillery.png" />
     <EmbeddedResource Include="GobImages\Fox.png" />
+    <EmbeddedResource Include="GobImages\CommandCenter.png" />
     <EmbeddedResource Include="GobImages\Galaxite1a.png" />
     <EmbeddedResource Include="GobImages\Galaxite1b.png" />
     <EmbeddedResource Include="GobImages\Galaxite1c.png" />

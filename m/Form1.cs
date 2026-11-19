@@ -430,7 +430,7 @@ namespace m
 			//
 			// menuItemSide6Properties
 			//
-			this.menuItemSide6Properties.Text = "Side &6 (Sky Blue)";
+			this.menuItemSide6Properties.Text = "Side &6 (Dodger Blue)";
 			this.menuItemSide6Properties.Click += new System.EventHandler(this.menuItemSide6Properties_Click);
 			// 
 			// menuItemMisc

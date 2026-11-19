@@ -109,6 +109,34 @@ namespace m {
 		}
 	}
 
+	// A building with no functions that missions place (the game draws it
+	// with the R&D Center's art)
+
+	[Serializable]
+	public class CommandCenter : Structure {
+		public CommandCenter(Side side, int tx, int ty) : base (side, tx, ty) {
+		}
+
+		public CommandCenter(string strName, string strValue, int txOrigin, int tyOrigin) :
+				base(strName, strValue, txOrigin, tyOrigin) {
+		}
+
+		public CommandCenter(SerializationInfo info, StreamingContext ctx) : base(info, ctx) {
+		}
+
+		public override int ctx {
+			get {
+				return 2;
+			}
+		}
+
+		public override int cty {
+			get {
+				return 2;
+			}
+		}
+	}
+
 	[Serializable]
 	public class ResearchCenter : Structure {
 		public ResearchCenter(Side side, int tx, int ty) : base (side, tx, ty) {

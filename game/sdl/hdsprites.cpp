@@ -121,6 +121,7 @@ struct HdPic {
     const byte *pbTeam;
     int cbTeam;
     HdTex atex[kcHdSides];
+    HdTex atexIcon[kcHdSides];  // made smaller, for a menu icon
 };
 
 struct HdPack {
@@ -155,6 +156,11 @@ struct HdItem {
     Rect rc;                    // game pixels it may cover (clipped to the playfield)
     int ibSnap;                 // its snapshot in s_vbSnap
     bool fClipped;              // rc is less than the whole picture
+    float scale;                // picture pixels per game pixel (the picture's own, or an icon's)
+    bool fIcon;                 // a menu icon (see HdRecordIcon)
+    bool fDim;                  // drawn darkened (an icon for something unavailable)
+    void *pvOwner;              // the control that drew the icon
+    std::vector<byte> vbSnap;   // an icon's snapshot (kept until its control repaints)
 };
 
 struct HdTrack {
@@ -180,6 +186,7 @@ static bool s_fEnabled = true;
 static std::map<std::string, HdPack *> s_mappack;
 static std::map<std::string, HdAnim *> s_mapanim;
 static std::vector<HdItem> s_vitem;
+static std::vector<HdItem> s_vitemIcon;     // menu icons: they stay until their menu repaints
 static std::vector<byte> s_vbSnap;
 static std::vector<byte> s_vbHdShadow;  // front pixels darkened by an HD building's shadow pass
 static std::vector<byte> s_vbHdCovered; // front pixels covered by opaque fog
@@ -404,9 +411,14 @@ HdBinding *HdBindAnimation(const char *pszAniName, AnimationData *panid) {
     return pbind;
 }
 
+void HdFreeBinding(HdBinding *pbind) {
+    delete pbind;
+}
+
 void HdToggle() {
     s_fEnabled = !s_fEnabled;
     s_vitem.clear();
+    s_vitemIcon.clear();
 }
 
 bool HdIsActive() {
@@ -737,6 +749,10 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
 
     HdItem itm;
     itm.ppic = ppic;
+    itm.scale = ppic->scale;
+    itm.fIcon = false;
+    itm.fDim = false;
+    itm.pvOwner = NULL;
     itm.side = side == (Side)-1 ? kiHdFlash : (side >= 0 && side < kcSides ? side : ksideNeutral);
     itm.x = x + ppic->x;
     itm.y = y + ppic->y + yTop;
@@ -770,6 +786,110 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
 }
 
 // --------------------------------------------------------------------------
+// Menu icons: a building's HD picture in a build menu cell, in place of its
+// classic icon. The menu doesn't repaint every frame, so its icons are kept
+// (and shown where the menu's pixels are still the ones they were drawn
+// over) until the control that drew them paints again.
+
+// The picture: a tower's turret turned toward the viewer, else the first
+// healthy picture of the animation's first HD strip
+
+static HdPic *IconPic(HdBinding *pbind, AnimationData *panid) {
+    if (pbind == NULL)
+        return NULL;
+    HdPic *ppicFirst = NULL;
+    for (int n = 0; n < (int)pbind->apstrip.size(); n++) {
+        HdStrip *pstrip = pbind->apstrip[n];
+        if (pstrip == NULL || pstrip->fNone || pstrip->var > 0 || pstrip->apic[0].empty())
+            continue;
+        if (strcmp(panid->GetStripName(n), "turret 06") == 0)
+            return pstrip->apic[0][0];
+        if (ppicFirst == NULL)
+            ppicFirst = pstrip->apic[0][0];
+    }
+    return ppicFirst;
+}
+
+// Is there an HD icon for this animation that can show over this bitmap
+// (a part of the back buffer)?
+
+bool HdHasIcon(HdBinding *pbind, AnimationData *panid, DibBitmap *pbm) {
+    if (!HdIsActive() || IconPic(pbind, panid) == NULL || gpdisp == NULL)
+        return false;
+    DibBitmap *pbmBack = gpdisp->GetBackDib();
+    return pbmBack != NULL && pbm->GetRowBytes() == pbmBack->GetRowBytes() &&
+            pbm->GetBits() >= pbmBack->GetBits();
+}
+
+void HdClearIcons(void *pvOwner) {
+    for (size_t n = 0; n < s_vitemIcon.size(); ) {
+        if (s_vitemIcon[n].pvOwner == pvOwner)
+            s_vitemIcon.erase(s_vitemIcon.begin() + n);
+        else
+            n++;
+    }
+}
+
+void HdRecordIcon(void *pvOwner, HdBinding *pbind, AnimationData *panid, DibBitmap *pbm,
+        const Rect *prc, Side side, bool fDim) {
+    if (!HdHasIcon(pbind, panid, pbm))
+        return;
+    HdPic *ppic = IconPic(pbind, panid);
+    DibBitmap *pbmBack = gpdisp->GetBackDib();
+    int cbRow = pbmBack->GetRowBytes();
+    int yTop = (int)((pbm->GetBits() - pbmBack->GetBits()) / cbRow);
+    Size sizDib;
+    pbm->GetSize(&sizDib);
+    Rect rc = *prc;
+    if (rc.left < 0) rc.left = 0;
+    if (rc.top < 0) rc.top = 0;
+    if (rc.right > sizDib.cx) rc.right = sizDib.cx;
+    if (rc.bottom > sizDib.cy) rc.bottom = sizDib.cy;
+    if (rc.IsEmpty())
+        return;
+
+    // Fit the picture in the cell, centered
+
+    float flFit = (float)ppic->cx / rc.Width();
+    float flFitY = (float)ppic->cy / rc.Height();
+    if (flFitY > flFit)
+        flFit = flFitY;
+    HdItem itm;
+    itm.ppic = ppic;
+    itm.scale = flFit;
+    itm.fIcon = true;
+    itm.fDim = fDim;
+    itm.pvOwner = pvOwner;
+    itm.fClipped = false;
+    itm.ibSnap = 0;
+    itm.side = side >= 0 && side < kcSides ? side : ksideNeutral;
+    itm.x = rc.left + (rc.Width() - ppic->cx / flFit) / 2;
+    itm.y = rc.top + (rc.Height() - ppic->cy / flFit) / 2 + yTop;
+
+    // Snapshot of the cell's pixels
+
+    itm.vbSnap.resize((size_t)rc.Width() * rc.Height());
+    byte *pbDib = pbm->GetBits();
+    for (int yT = rc.top; yT < rc.bottom; yT++)
+        memcpy(&itm.vbSnap[(size_t)(yT - rc.top) * rc.Width()], pbDib + yT * cbRow + rc.left, rc.Width());
+    rc.top += yTop;
+    rc.bottom += yTop;
+    itm.rc = rc;
+
+    // It replaces this control's icon drawn there before
+
+    for (size_t n = 0; n < s_vitemIcon.size(); ) {
+        HdItem *pitmT = &s_vitemIcon[n];
+        if (pitmT->pvOwner == pvOwner && pitmT->rc.left < rc.right && rc.left < pitmT->rc.right &&
+                pitmT->rc.top < rc.bottom && rc.top < pitmT->rc.bottom)
+            s_vitemIcon.erase(s_vitemIcon.begin() + n);
+        else
+            n++;
+    }
+    s_vitemIcon.push_back(itm);
+}
+
+// --------------------------------------------------------------------------
 // Display side
 
 // Team colour, as the classic art does it: the classic sprites paint team
@@ -784,7 +904,7 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
 static const int s_aiclrRampFirst[kcSides] = {
     kiclrNeutralSideFirst, kiclrBlueSideFirst, kiclrRedSideFirst,
     kiclrYellowSideFirst, kiclrCyanSideFirst, kiclrCrimsonSideFirst,
-    kiclrSkyBlueSideFirst
+    kiclrDodgerBlueSideFirst
 };
 
 static float Luma(float r, float g, float b) {
@@ -880,14 +1000,15 @@ static void Resample(const byte *pbSrc, int cxSrc, int cySrc, byte *pbDst, int c
     }
 }
 
-static HdTex *GetTexture(SDL_Renderer *prend, HdPic *ppic, int side, float flScale, const dword *palette) {
-    HdTex *ptex = &ppic->atex[side];
+static HdTex *GetTexture(SDL_Renderer *prend, HdPic *ppic, int side, float flScale, const dword *palette,
+        float scale, bool fIcon) {
+    HdTex *ptex = fIcon ? &ppic->atexIcon[side] : &ppic->atex[side];
 
     // Made for this window size (pictures are scaled down on the CPU, area
     // averaged, so they don't shimmer; larger than the painting they are
     // stretched by the GPU)
 
-    float flTarget = flScale / ppic->scale;
+    float flTarget = flScale / scale;
     if (flTarget > 1)
         flTarget = 1;
     if (ptex->ptex != NULL && fabsf(ptex->flScale - flScale) < 0.001f)
@@ -954,7 +1075,7 @@ bool HdHasItems() {
         s_fPaintPending = false;
         s_vitem.clear();
     }
-    return HdIsActive() && !s_vitem.empty();
+    return HdIsActive() && (!s_vitem.empty() || !s_vitemIcon.empty());
 }
 
 void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, const byte *pbFront,
@@ -1019,8 +1140,11 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
     }
 
     SDL_Texture *ptexScreen = SDL_GetRenderTarget(prend);
-    for (size_t n = 0; n < s_vitem.size(); n++) {
-        HdItem *pitm = &s_vitem[n];
+    // The playfield's pictures, then the menu icons over them
+
+    size_t citm = s_vitem.size() + s_vitemIcon.size();
+    for (size_t n = 0; n < citm; n++) {
+        HdItem *pitm = n < s_vitem.size() ? &s_vitem[n] : &s_vitemIcon[n - s_vitem.size()];
         Rect rc = pitm->rc;
         if (rc.right > cxFront) rc.right = cxFront;
         if (rc.bottom > cyFront) rc.bottom = cyFront;
@@ -1033,7 +1157,7 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
         // darkened again by the fog's soft edge
 
         s_vdwMask.resize((size_t)cx * cy);
-        const byte *pbSnap = &s_vbSnap[pitm->ibSnap];
+        const byte *pbSnap = pitm->fIcon ? &pitm->vbSnap[0] : &s_vbSnap[pitm->ibSnap];
         int cVisible = 0;
         bool fWhole = true;     // nothing covers it: no mask needed
         for (int y = 0; y < cy; y++) {
@@ -1044,7 +1168,7 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
                 byte b = pbFront[i];
                 byte s = pbS[x];
                 int nLight;
-                if (i < (int)s_vbHdCovered.size() && s_vbHdCovered[i] != 0) {
+                if (!pitm->fIcon && i < (int)s_vbHdCovered.size() && s_vbHdCovered[i] != 0) {
                     pdw[x] = 0;
                     fWhole = false;
                     continue;
@@ -1059,8 +1183,12 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
                     fWhole = false;
                     continue;
                 }
-                if (pdwTC != NULL && (pdwTC[i] >> 24) != 0 && pbUnder[i] == b)
+                if (pitm->fIcon) {
+                    if (pitm->fDim)
+                        nLight = nLight * 112 / 255;
+                } else if (pdwTC != NULL && (pdwTC[i] >> 24) != 0 && pbUnder[i] == b) {
                     nLight = nLight * (255 - (int)(pdwTC[i] >> 24)) / 255;
+                }
                 if (nLight != 255)
                     fWhole = false;
                 pdw[x] = 0xff000000 | (nLight << 16) | (nLight << 8) | nLight;
@@ -1069,13 +1197,13 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
         }
         if (cVisible == 0)
             continue;
-        HdTex *ptex = GetTexture(prend, pitm->ppic, pitm->side, flScale, palette);
+        HdTex *ptex = GetTexture(prend, pitm->ppic, pitm->side, flScale, palette, pitm->scale, pitm->fIcon);
         if (ptex == NULL)
             continue;
         if (fWhole && !pitm->fClipped && pitm->rc.left == rc.left && pitm->rc.top == rc.top &&
                 pitm->rc.right == rc.right && pitm->rc.bottom == rc.bottom) {
             SDL_FRect rcPic = { xOff + pitm->x * flScale, yOff + pitm->y * flScale,
-                    pitm->ppic->cx / pitm->ppic->scale * flScale, pitm->ppic->cy / pitm->ppic->scale * flScale };
+                    pitm->ppic->cx / pitm->scale * flScale, pitm->ppic->cy / pitm->scale * flScale };
             SDL_RenderTexture(prend, ptex->ptex, NULL, &rcPic);
             continue;
         }
@@ -1097,7 +1225,7 @@ void HdComposite(SDL_Renderer *prend, float flScale, float xOff, float yOff, con
         SDL_SetRenderDrawColor(prend, 0, 0, 0, 0);
         SDL_RenderFillRect(prend, &rcClear);
         SDL_FRect rcPic = { xOff + pitm->x * flScale - xW0, yOff + pitm->y * flScale - yW0,
-                pitm->ppic->cx / pitm->ppic->scale * flScale, pitm->ppic->cy / pitm->ppic->scale * flScale };
+                pitm->ppic->cx / pitm->scale * flScale, pitm->ppic->cy / pitm->scale * flScale };
         SDL_RenderTexture(prend, ptex->ptex, NULL, &rcPic);
         SDL_FRect rcMaskSrc = { 0, 0, (float)cx, (float)cy };
         SDL_FRect rcMaskDst = { xOff + rc.left * flScale - xW0, yOff + rc.top * flScale - yW0,

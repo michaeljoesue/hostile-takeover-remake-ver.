@@ -56,6 +56,9 @@
 // Walls: owned by a side (or neutral), destroyable, not built
 #define kutWall 23
 
-#define kutMax 24
+// Command Center: a building with no functions, placed by missions, not built
+#define kutCommandCenter 24
+
+#define kutMax 25
 
 #endif

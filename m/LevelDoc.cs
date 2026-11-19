@@ -1344,6 +1344,9 @@ namespace m {
 				case 39: // kgtWall
 					return new Wall(strName, strValue, Bounds.Left, Bounds.Top);
 
+				case 40: // kgtCommandCenter
+					return new CommandCenter(strName, strValue, Bounds.Left, Bounds.Top);
+
 				case 17: // kgtMediumTank
 					return new MediumTank(strName, strValue, Bounds.Left, Bounds.Top);
 

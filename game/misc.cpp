@@ -1217,11 +1217,11 @@ Color gaclr4bpp[] = {
 	0x0006, // spring green side 3
 	0x0007, // spring green side 4
 	0x0009, // side 6 color
-	0x0009, // sky blue side 0
-	0x000a, // sky blue side 1
-	0x000b, // sky blue side 2
-	0x000c, // sky blue side 3
-	0x000d, // sky blue side 4
+	0x0009, // dodger blue side 0
+	0x000a, // dodger blue side 1
+	0x000b, // dodger blue side 2
+	0x000c, // dodger blue side 3
+	0x000d, // dodger blue side 4
 };
 
 Color gaclr8bpp[] = {
@@ -1285,12 +1285,12 @@ Color gaclr8bpp[] = {
 	248,	// spring green side 2
 	249,	// spring green side 3
 	250,	// spring green side 4
-	241,	// side 6 color (sky blue, see the sky blue side ramp)
-	241,	// sky blue side 0 (terrain palettes reserve 241-245 for side 6)
-	242,	// sky blue side 1
-	243,	// sky blue side 2
-	244,	// sky blue side 3
-	245,	// sky blue side 4
+	241,	// side 6 color (dodger blue, see the dodger blue side ramp)
+	241,	// dodger blue side 0 (terrain palettes reserve 241-245 for side 6)
+	242,	// dodger blue side 1
+	243,	// dodger blue side 2
+	244,	// dodger blue side 3
+	245,	// dodger blue side 4
 };
 
 int gaiclrSide[kcSides] = { kiclrSideNeutral, kiclrSide1, kiclrSide2, kiclrSide3, kiclrSide4, kiclrSide5, kiclrSide6 };

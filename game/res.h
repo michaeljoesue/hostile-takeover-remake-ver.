@@ -106,6 +106,7 @@
 #define kgtFox 37
 #define kgtAndyShot 38
 #define kgtWall 39
+#define kgtCommandCenter 40
 
 #include "../mpshared/side.h"
 
@@ -433,13 +434,13 @@
 #define kiclr4SpringGreenSide 59
 #define kiclrSpringGreenSideLast 59
 #define kiclrSide6 60
-#define kiclrSkyBlueSideFirst 61
-#define kiclr0SkyBlueSide 61
-#define kiclr1SkyBlueSide 62
-#define kiclr2SkyBlueSide 63
-#define kiclr3SkyBlueSide 64
-#define kiclr4SkyBlueSide 65
-#define kiclrSkyBlueSideLast 65
+#define kiclrDodgerBlueSideFirst 61
+#define kiclr0DodgerBlueSide 61
+#define kiclr1DodgerBlueSide 62
+#define kiclr2DodgerBlueSide 63
+#define kiclr3DodgerBlueSide 64
+#define kiclr4DodgerBlueSide 65
+#define kiclrDodgerBlueSideLast 65
 
 // ARM code resource ids
 

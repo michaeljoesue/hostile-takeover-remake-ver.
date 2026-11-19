@@ -144,6 +144,7 @@ namespace m
 				flowPanel.Controls.Add(CreatePictureBox(new Headquarters(Side.sideNeutral, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Radar(Side.sideNeutral, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new ResearchCenter(Side.sideNeutral, 0, 0)));
+				flowPanel.Controls.Add(CreatePictureBox(new CommandCenter(Side.sideNeutral, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new VehicleTransportStation(Side.sideNeutral, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Reactor(Side.sideNeutral, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new HumanResourceCenter(Side.sideNeutral, 0, 0)));

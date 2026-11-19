@@ -1297,6 +1297,8 @@ public:
 			class Animation *pani = NULL);
 	int GetStripDelay(int nStrip);
 	int GetFrameDelay(int nStrip, int nFrame);
+	struct HdBinding *GetHdBinding() { return m_phdb; }
+	void BindHd(const char *pszHdName);
 
 private:
 	struct HdBinding *m_phdb;	// HD pictures for this animation (hdsprites.cpp)
@@ -1319,6 +1321,11 @@ void HdHoldAnimation(class Animation *pani, bool fHold);
 void HdNoteCovered(DibBitmap *pbm, int x, int y, int cx, int cy);
 void HdRecord(HdBinding *phdb, AnimationData *panid, int nStrip, int nFrame, DibBitmap *pbm,
 		int x, int y, Side side, class Animation *pani, const Rect *prcShadow);
+bool HdHasIcon(HdBinding *phdb, AnimationData *panid, DibBitmap *pbm);
+void HdFreeBinding(HdBinding *phdb);
+void HdRecordIcon(void *pvOwner, HdBinding *phdb, AnimationData *panid, DibBitmap *pbm,
+		const Rect *prc, Side side, bool fDim);
+void HdClearIcons(void *pvOwner);
 
 const word kfAniLoop = 0x0001;
 const word kfAniDone = 0x0002;
@@ -1649,6 +1656,7 @@ STARTLABEL(GobTypes)
     LABEL(kgtFox)
     LABEL(kgtAndyShot)
     LABEL(kgtWall)
+    LABEL(kgtCommandCenter)
 ENDLABEL(GobTypes)
 
 // Helper macros for sending messages
@@ -2865,6 +2873,8 @@ class BuildQueue;
 class BuildListControl : public ListControl // alc
 {
 public:
+	virtual ~BuildListControl();
+
 	// ListControl overrides
 
 	virtual bool Init(Form *pfrm, IniReader *pini, FindProp *pfind);
@@ -4601,10 +4611,11 @@ const UnitMask kumTowers = kumMachineGunTower | kumRocketTower;
 // against limits or hunted
 
 const UnitMask kumWall = 1L << kutWall;
+const UnitMask kumCommandCenter = 1L << kutCommandCenter;
 
 const UnitMask kumStructures = kumHumanResourceCenter | kumReactor | kumProcessor | kumHeadquarters |
 		kumResearchCenter | kumVehicleTransportStation | kumRadar | kumWarehouse | kumMachineGunTower |
-		kumRocketTower | kumReplicator;
+		kumRocketTower | kumReplicator | kumCommandCenter;
 
 // NOTE: we don't count the Replicator as a Builder so the BuildMgr won't start using it
 const UnitMask kumBuilder = kumHeadquarters | kumVehicleTransportStation | kumHumanResourceCenter;
@@ -6812,6 +6823,28 @@ public:
 private:
 	int CalcNeighbourMask();
 	void RedrawNeighbours();
+};
+
+// CommandCenterGob: a building with no functions (no menu, no power, not
+// repaired or sold, never built). Missions place it; it can be attacked and
+// destroyed like any building. Drawn with the R&D Center's art (its HD
+// pictures are the dish version).
+
+class CommandCenterGob : public StructGob
+{
+public:
+	CommandCenterGob();
+	static bool InitClass(IniReader *pini);
+	static void ExitClass();
+
+	// StructGob overrides
+
+	virtual void PopupMenu();
+	virtual bool IsTakeoverable(Player *pplr);
+
+	// StateMachine methods
+
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg);
 };
 
 // TowerGob

@@ -276,12 +276,13 @@ void Player::Init(Pid pid)
 
 // 12: one more unit type (walls). 11 has no wall count.
 
-#define knVerPlayerState 12
+#define knVerPlayerState 13
+#define knVerPlayerStateNoCommandCenter 12
 #define knVerPlayerStateNoWalls 11
 bool Player::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerPlayerState && nVer != knVerPlayerStateNoWalls)
+	if (nVer != knVerPlayerState && nVer != knVerPlayerStateNoCommandCenter && nVer != knVerPlayerStateNoWalls)
 		return false;
 	m_wfUpgrades = pstm->ReadWord();
 	m_side = pstm->ReadWord();
@@ -301,6 +302,8 @@ bool Player::LoadState(Stream *pstm)
 	memset(m_acut, 0, sizeof(m_acut));
 	if (nVer == knVerPlayerStateNoWalls)
 		pstm->Read(m_acut, sizeof(m_acut[0]) * kutWall);
+	else if (nVer == knVerPlayerStateNoCommandCenter)
+		pstm->Read(m_acut, sizeof(m_acut[0]) * kutCommandCenter);
 	else
 		pstm->Read(m_acut, sizeof(m_acut));
 	m_umAllowed = pstm->ReadDword();

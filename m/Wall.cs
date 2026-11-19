@@ -25,7 +25,7 @@ namespace m {
 			Color.FromArgb(232, 229, 0),
 			Color.FromArgb(0, 229, 232),
 			Color.FromArgb(220, 20, 60),
-			Color.FromArgb(0, 191, 255),
+			Color.FromArgb(30, 144, 255),
 		};
 
 		static private string[] s_astrBitmaps = {

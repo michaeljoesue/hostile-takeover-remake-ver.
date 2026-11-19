@@ -413,6 +413,23 @@ Animation=walls.anir
 TileDimensions=1,1
 Description=A section of wall. Walls block the way until they are destroyed. Units attack walls only when ordered to.
 
+[kgtCommandCenter]
+Name=Command Ctr.
+LongName=Command Center
+TimeToBuild=15
+Cost=750
+PowerDemand=0
+ArmorStrength=250
+UIBoundsLeft=-1
+UIBoundsTop=-1
+UIBoundsRight=33
+UIBoundsBottom=33
+SortOffset=30
+Animation=Research.anir
+HdAnimation=CommandCenter.anir
+TileDimensions=2,2
+Description=The Command Center coordinates the operation. It can't be built, repaired or sold.
+
 [kgtReplicator]
 Name=Replicator
 LongName=Replicator

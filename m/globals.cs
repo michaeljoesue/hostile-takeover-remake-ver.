@@ -322,12 +322,12 @@ namespace m {
 												  Color.FromArgb(61, 6, 17)
 											  },
 								  new Color[] {
-												  // side 6 (Sky Blue): #00BFFF, same as the game
-												  Color.FromArgb(0, 191, 255),
-												  Color.FromArgb(0, 161, 215),
-												  Color.FromArgb(0, 99, 132),
-												  Color.FromArgb(0, 76, 101),
-												  Color.FromArgb(0, 53, 70)
+												  // side 6 (Dodger Blue): #1E90FF, same as the game
+												  Color.FromArgb(30, 144, 255),
+												  Color.FromArgb(25, 122, 215),
+												  Color.FromArgb(16, 74, 132),
+												  Color.FromArgb(12, 57, 101),
+												  Color.FromArgb(8, 40, 70)
 											  },
 			};
 

@@ -1039,7 +1039,15 @@ void BuildListControl::OnPaint(DibBitmap *pbm)
 	DrawBorder(pbm, &rc, 1, GetColor(kiclrListBorder));
 	pbm->Fill(rc.left + 1, rc.top + 1, rc.Width() - 2, rc.Height() -2, GetColor(kiclrListBackground));
 
+	// The items draw their HD icons again
+
+	HdClearIcons(this);
 	ListControl::OnPaint(pbm);
+}
+
+BuildListControl::~BuildListControl()
+{
+	HdClearIcons(this);
 }
 
 void BuildListControl::DrawItem(DibBitmap *pbm, ListItem *pli, int x, int y, int cx, int cy)
@@ -1058,18 +1066,31 @@ void BuildListControl::DrawItem(DibBitmap *pbm, ListItem *pli, int x, int y, int
 	int nStrip = pli->Anim.nStrip;
 	int nFrame = pli->Anim.nFrame;
 
-	// Center the image within the item area
+	// A building with an HD picture shows that (drawn over the menu, see
+	// HdRecordIcon); otherwise the classic icon, centered in the item area
 
-	Rect rcAnim;
-	pli->Anim.panid->GetBounds(nStrip, nFrame, &rcAnim);
+	bool fHd = HdHasIcon(panid->GetHdBinding(), panid, pbm);
+	if (!fHd) {
+		Rect rcAnim;
+		pli->Anim.panid->GetBounds(nStrip, nFrame, &rcAnim);
 
-	int yOff = (cy - rcAnim.Height()) / 2;
-	int xOff = (cx - rcAnim.Width()) / 2;
+		int yOff = (cy - rcAnim.Height()) / 2;
+		int xOff = (cx - rcAnim.Width()) / 2;
 
-	panid->DrawFrame(nStrip, nFrame, pbm, x + xOff, y + yOff, gpplrLocal->GetSide());
+		panid->DrawFrame(nStrip, nFrame, pbm, x + xOff, y + yOff, gpplrLocal->GetSide());
+	}
 
 	if (pli->fDisabled)
 		pbm->Shadow(rc.left, rc.top, rc.Width(), rc.Height());
+
+	// Recorded before the build progress and count are drawn: they cover it
+
+	if (fHd) {
+		Rect rcIcon;
+		rcIcon.Set(x + 3, y + 3, x + cx - 3, y + cy - 3);
+		HdRecordIcon(this, panid->GetHdBinding(), panid, pbm, &rcIcon, gpplrLocal->GetSide(),
+				pli->fDisabled);
+	}
 
 	// if we have a builder pointer, draw building information
 

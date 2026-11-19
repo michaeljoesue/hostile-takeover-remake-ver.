@@ -188,8 +188,11 @@ namespace m
 
 		private void InitUnitTypesListBox() {
 			checkedListBox.Items.Clear();
-			for (int i = 0; i < (int)UnitType.kutMax; i++) 
+			for (int i = 0; i < (int)UnitType.kutMax; i++) {
+				if ((UnitType)i == UnitType.kutWall)
+					continue;
 				checkedListBox.Items.Add(new UnitTypeWrapper((UnitType)i), ((uint)m_um & (1 << i)) != 0);
+			}
 		}
 
 		private void buttonOK_Click(object sender, System.EventArgs e) {

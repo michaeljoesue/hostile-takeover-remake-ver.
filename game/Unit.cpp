@@ -133,6 +133,13 @@ bool UnitGob::InitClass(UnitConsts *puntc, IniReader *pini)
 		strcpy(puntc->szLongName, puntc->szName);
 
 	puntc->panid = LoadAnimationData(puntc->szAniName);
+
+	// Optional: the name its HD pictures go by, when it borrows another
+	// building's classic art (see data/hd/manifest.txt)
+
+	char szHdName[kcbFilename];
+	if (puntc->panid != NULL && pini->GetPropertyValue(szTemplate, "HdAnimation", "%s", szHdName) == 1)
+		puntc->panid->BindHd(szHdName);
 	Assert(puntc->panid != NULL);
 	if (puntc->panid == NULL)
 		return false;

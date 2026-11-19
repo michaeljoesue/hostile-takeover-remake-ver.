@@ -45,7 +45,7 @@ bool HqGob::InitClass(IniReader *pini)
 {
 	gbldcHq.gt = kgtHeadquarters;
 	gbldcHq.ut = kutHeadquarters;
-	gbldcHq.umCanBuild = kumStructures & ~(kumHeadquarters | kumReplicator);
+	gbldcHq.umCanBuild = kumStructures & ~(kumHeadquarters | kumReplicator | kumCommandCenter);
 	gbldcHq.wf |= kfUntcStructureBuilder;
 
 	// Preload the HQ's build form

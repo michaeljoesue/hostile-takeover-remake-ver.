@@ -61,6 +61,15 @@ bool AnimationData::Init(const char *pszAniName)
 	return true;
 }
 
+// Its HD pictures go by another name (a building drawing another one's
+// classic art with its own HD art)
+
+void AnimationData::BindHd(const char *pszHdName)
+{
+	HdFreeBinding(m_phdb);
+	m_phdb = HdBindAnimation(pszHdName, this);
+}
+
 // OPT: dynamically build an index of pointers to each StripData, FrameData if perf critical
 
 #define GetStripDataPtr(nStrip) ((StripData *)(((byte *)m_panih) + BigWord(m_panih->aoffStpd[nStrip])))

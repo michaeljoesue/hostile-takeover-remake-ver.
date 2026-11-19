@@ -219,7 +219,7 @@ namespace m {
 		[DisplayName("All Sides")] AllSides,
 		[DisplayName("Current Side")] CurrentSide,
 		[DisplayName("Side 5 (Crimson)")] Side5,
-		[DisplayName("Side 6 (Sky Blue)")] Side6
+		[DisplayName("Side 6 (Dodger Blue)")] Side6
 	};
 
 	[Serializable]
@@ -371,7 +371,7 @@ namespace m {
 			}
 		}
 
-		[System.ComponentModel.DisplayName("Side 6 (Sky Blue)")]
+		[System.ComponentModel.DisplayName("Side 6 (Dodger Blue)")]
 		public bool Side6 {
 			get {
 				return Af[(int)CaSide.Side6];
@@ -464,7 +464,13 @@ namespace m {
 		[DisplayName("Fox")]
 		kutFox,
 
-		kutMax = kutFox + 1,
+		// Walls aren't offered in unit type lists
+		[DisplayName("Wall")]
+		kutWall,
+		[DisplayName("Command Center")]
+		kutCommandCenter,
+
+		kutMax = kutCommandCenter + 1,
 	}
 
 	// WARNING: This enum must match exactly the one in ht.h
@@ -498,6 +504,7 @@ namespace m {
 		kumRadar = 1 << UnitType.kutRadar,
 		kumWarehouse = 1 << UnitType.kutWarehouse,
 		kumReplicator = 1 << UnitType.kutReplicator,
+		kumCommandCenter = 1 << UnitType.kutCommandCenter,
 
 		kumMachineGunTower = 1 << UnitType.kutMachineGunTower,
 		kumRocketTower = 1 << UnitType.kutRocketTower,
@@ -505,7 +512,7 @@ namespace m {
 
 		kumStructures = kumHumanResourceCenter | kumReactor | kumProcessor | kumHeadquarters |
 				kumResearchCenter | kumVehicleTransportStation | kumRadar | kumWarehouse | kumMachineGunTower | 
-				kumRocketTower,
+				kumRocketTower | kumCommandCenter,
 		kumFactories = kumHeadquarters | kumVehicleTransportStation | kumHumanResourceCenter,
 		kumAll = kumInfantry | kumVehicles | kumStructures,
 		kumNewAll = kumAll | kumAndy | kumFox | kumReplicator,
@@ -1060,7 +1067,9 @@ namespace m {
 			}
 		}
 
-		StringCollection GetUnitTypeNames() {
+		// The unit types offered, and their names (in the same order)
+
+		StringCollection GetUnitTypeNames(System.Collections.ArrayList alsUt) {
 			StringCollection strc = new StringCollection();
 			UnitMask um = UnitMask.kumNewAll;
 			uint umT = 1;
@@ -1068,6 +1077,7 @@ namespace m {
 				if (((uint)um & umT) != 0) {
 					UnitType ut = (UnitType)i;
 					strc.Add(Helper.GetDisplayName(typeof(UnitType), ut.ToString()));
+					alsUt.Add(ut);
 				}
 				umT <<= 1;
 			}
@@ -1076,13 +1086,14 @@ namespace m {
 		}
 
 		public override bool EditProperties() {
-			StringCollection strc = GetUnitTypeNames();
+			System.Collections.ArrayList alsUt = new System.Collections.ArrayList();
+			StringCollection strc = GetUnitTypeNames(alsUt);
 			string strName = m_ut != UnitType.kutNone ? Helper.GetDisplayName(typeof(UnitType), m_ut.ToString()) : "";
 			int n = PickListForm.DoModal("Unit Type", strName, strc);
 			if (n == -1)
 				return false;
 			LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));			
-			m_ut = (UnitType)n;
+			m_ut = (UnitType)alsUt[n];
 			m_fInit = true;
 			return true;
 		}

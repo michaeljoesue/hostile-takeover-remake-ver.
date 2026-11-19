@@ -208,12 +208,15 @@ def strip(anir, name, **kw):
     for k,v in kw.items(): s+='\t%s=%s'%(k,v)
     manifest.append(s)
 
-def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows_last, strips, sheet_obj=None, fitframe=(0,0), wreck_cell=None, cycle=None):
+def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows_last, strips, sheet_obj=None, fitframe=(0,0), wreck_cell=None, cycle=None, hd_name=None):
     """healthy pictures 0..n-1, damaged from damaged_start, last row wreck+icon.
     cycle: the pictures loop on their own, once in that many game updates,
     instead of following the classic frames (which are too few and too
-    quick for this much art)"""
+    quick for this much art).
+    hd_name: the name the game binds the pictures by, when it isn't the
+    classic animation's (a building drawn with another one's classic art)"""
     print(bld)
+    anir_classic=anir
     a=sheet(sheetname) if sheet_obj is None else sheet_obj
     H=seq(a,cw,ch,cols,0,healthy_n); D=seq(a,cw,ch,cols,damaged_start,healthy_n)
     last=last_row_wreck_icon(a,cw,ch,nrows_last,cols)
@@ -230,6 +233,8 @@ def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows
     for i,c in enumerate(H+D):
         if (c[:,:,3]>0).sum()==0: raise SystemExit('%s: picture %d is empty (wrong cell?)'%(bld,i))
     s0,s1,s2=strips
+    if hd_name:
+        anir=hd_name
     if cycle:
         strip(anir,s0,pics='%s/h'%bld,n=healthy_n,var=0,cycle=cycle)
         strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1,cycle=cycle)
@@ -237,7 +242,7 @@ def standard(bld, sheetname, cw, ch, cols, anir, healthy_n, damaged_start, nrows
         strip(anir,s0,pics='%s/h'%bld,n=healthy_n,var=0)
         # A damaged strip the classic art doesn't animate (one frame) still
         # plays all its pictures, looping at the healthy animation's speed
-        nfrm_d,_=strip_timing(anir,1); nfrm_h,cycle_h=strip_timing(anir,0)
+        nfrm_d,_=strip_timing(anir_classic,1); nfrm_h,cycle_h=strip_timing(anir_classic,0)
         if nfrm_d==1 and nfrm_h>1:
             strip(anir,s1,pics='%s/d'%bld,n=healthy_n,var=1,cycle=cycle_h)
         else:
@@ -390,13 +395,16 @@ JOBS=[
     # (52 healthy pictures fill 6.5 rows: the damaged ones start on row 7.)
     # The panel goes out and back in 66 updates (2.6 s)
     ('research', lambda: standard('research','research_panel.png',362,362,8,'Research.anir',52,56,13,('a 0','a 1','a 2'),wreck_cell=(4,13),cycle=66)),
+    # Command Center: the R&D Center's classic art and timing with the dish
+    # version of its HD art (the game binds it as CommandCenter.anir)
+    ('ccenter', lambda: standard('ccenter','research_dish.png',362,362,8,'Research.anir',52,56,13,('a 0','a 1','a 2'),wreck_cell=(4,13),cycle=66,hd_name='CommandCenter.anir')),
 ]
 
 # Every classic strip that must have HD pictures (a missing one draws the
 # classic art; checked after a full build)
 REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
     [('Reactor.anir',s) for s in ('spin 0','spin 1','spin 2')]+\
-    [(a,s) for a in ('Radar.anir','Research.anir','Warehouse.anir','VTS.anir') for s in ('a 0','a 1','a 2')]+\
+    [(a,s) for a in ('Radar.anir','Research.anir','CommandCenter.anir','Warehouse.anir','VTS.anir') for s in ('a 0','a 1','a 2')]+\
     [('VTS.anir',s) for s in ('b 0','b 1','b 2')]+\
     [('HRC.anir',s) for s in ('base 0','base 1','base 2','base2 0','base2 1','base2 2')]+\
     [('proc.anir',s) for s in ('base 0','base 1','base 2','door 0')]+\

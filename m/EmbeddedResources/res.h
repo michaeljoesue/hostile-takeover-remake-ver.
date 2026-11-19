@@ -105,6 +105,7 @@
 #define kgtFox 37
 #define kgtAndyShot 38
 #define kgtWall 39
+#define kgtCommandCenter 40
 
 //#include "../mpshared/side.h"
 
@@ -160,8 +161,9 @@
 #define kutReplicator 21
 #define kutFox 22
 #define kutWall 23
+#define kutCommandCenter 24
 
-#define kutMax 24
+#define kutMax 25
 
 
 // Startup form constants
@@ -712,12 +714,12 @@
 #define kiclr4SpringGreenSide 59
 #define kiclrSpringGreenSideLast 59
 #define kiclrSide6 60
-#define kiclrSkyBlueSideFirst 61
-#define kiclr0SkyBlueSide 61
-#define kiclr1SkyBlueSide 62
-#define kiclr2SkyBlueSide 63
-#define kiclr3SkyBlueSide 64
-#define kiclr4SkyBlueSide 65
-#define kiclrSkyBlueSideLast 65
+#define kiclrDodgerBlueSideFirst 61
+#define kiclr0DodgerBlueSide 61
+#define kiclr1DodgerBlueSide 62
+#define kiclr2DodgerBlueSide 63
+#define kiclr3DodgerBlueSide 64
+#define kiclr4DodgerBlueSide 65
+#define kiclrDodgerBlueSideLast 65
 #define knCaSideSide5 9
 #define knCaSideSide6 10	// after side 5, same reason

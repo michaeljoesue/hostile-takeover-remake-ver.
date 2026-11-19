@@ -90,8 +90,15 @@ The engine has been updated from its 2007 handheld roots:
   buildings have their own art. Buildings keep their place in the drawing
   order (units in front, selection boxes, health bars, smoke and the fog
   of war still cover them, the fog's soft edge included), and their
-  classic shadows. F9 switches between the HD art and the original
-  pictures. The pictures are in `data\hd` (see Game data).
+  classic shadows. The HQ's build menu shows the buildings' HD pictures
+  too, in the player's colour. F9 switches between the HD art and the
+  original pictures. The pictures are in `data\hd` (see Game data).
+- **Command Center.** A building for missions to place, for any side: it
+  has no functions (no menu, no power, it isn't repaired, sold or taken
+  over) and can't be built. It has the R&D Center's armour (250) and
+  classic art; its HD art is the R&D Center's dish version, turning at the
+  R&D Center's pace. Like any building it can be attacked and destroyed,
+  and it counts as a building in triggers.
 - **Walls are objects.** Each wall tile belongs to a side or is neutral
   (no one's), and can be damaged and destroyed: it then opens the way.
   Its picture joins the walls next to it, in its side's colour. Units
@@ -102,7 +109,7 @@ The engine has been updated from its 2007 handheld roots:
   but not repaired or sold. Walls in missions made before are neutral.
 - **Six sides.** Side 1 is ACME and side 2 is OMNI (both in their original
   colours, as are sides 3 and 4), and there are two new sides for missions
-  to use: side 5, Crimson (#DC143C), and side 6, Sky Blue (#00BFFF).
+  to use: side 5, Crimson (#DC143C), and side 6, Dodger Blue (#1E90FF).
   Allied sides share what they can see.
 - **Smarter units.** Pathfinding is a real A* search: units go around a
   lake instead of following its shore into dead ends, and paths are about
@@ -257,9 +264,11 @@ python tools\hd\build_hd.py
 Each sheet's pictures are fitted onto the classic frames (in
 `tools\hd\classic`), so a building covers the same ground and lines up with
 its shadow. The R&D Center uses the panel version of its sheet (the classic
-one turns a panel); the dish version is in `assets\hd` but unused. Build
-menu icons are still the classic ones. Without the `hd` folder the game
-draws the original pictures.
+one turns a panel); the dish version is the Command Center's (`ccenter`,
+bound as `CommandCenter.anir` through `HdAnimation` in GobTemplates). The
+build menu shows each building's first healthy picture (towers turned
+toward the viewer). Without the `hd` folder the game draws the original
+pictures.
 
 ### Fonts
 
@@ -364,9 +373,11 @@ Maps, sides and limits:
   258 tiles. Bounds, the part the game gets, can be up to 256x256 tiles.
   Maps wider or taller than 64 tiles get a mini map with 1 pixel per tile.
 - **Sides.** Side 1 (ACME), side 2 (OMNI), side 3, side 4,
-  side 5 (Crimson) and side 6 (Sky Blue). Settings > Side 5 (Crimson) and
-  Settings > Side 6 (Sky Blue) set them up; triggers, unit groups, units,
+  side 5 (Crimson) and side 6 (Dodger Blue). Settings > Side 5 (Crimson) and
+  Settings > Side 6 (Dodger Blue) set them up; triggers, unit groups, units,
   buildings and walls can use them like the others.
+- **Command Center.** In the gob panel next to the R&D Center; exported as
+  `kgtCommandCenter`, and offered in unit type lists.
 - **Walls.** Place walls from the gob panel. Each wall has a Side (pick it
   in the panel's side list before placing, or in the wall's properties;
   a coloured band shows it, none for neutral) and a Health (percent).

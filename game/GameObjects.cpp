@@ -143,6 +143,9 @@ Gob *CreateGob(GobType gt)
 
 	case kgtWall:
 		return new WallGob();
+
+	case kgtCommandCenter:
+		return new CommandCenterGob();
 	}
 
 	Assert("Unrecognized GobType %d", gt);
