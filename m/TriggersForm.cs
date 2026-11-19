@@ -38,15 +38,6 @@ namespace m
 			//
 			InitializeComponent();
 
-			if (!s_rcBounds.IsEmpty)
-				SetBounds(s_rcBounds.Left, s_rcBounds.Top, s_rcBounds.Width, s_rcBounds.Height, BoundsSpecified.All);
-			else {
-				// Centre on the monitor M is on
-				Control ctlParent = DocManager.GetFrameParent();
-				Rectangle rcScreen = ctlParent != null ? Screen.GetWorkingArea(ctlParent) : Screen.GetWorkingArea(this);
-				SetBounds(rcScreen.X + (rcScreen.Width - Bounds.Width) / 2, rcScreen.Y + (rcScreen.Height - Bounds.Height) / 2, 0, 0, BoundsSpecified.Location);
-			}
-
 			m_tgrm = tgrm;
 			InitSidesListBox(null);
 			InitTriggersListBox(null);
@@ -488,6 +479,22 @@ namespace m
 
 		private void listBoxTriggers_DoubleClick(object sender, System.EventArgs e) {
 			buttonModifyTrigger_Click(sender, e);
+		}
+
+		// The form is scaled to the screen's font size as it loads; the size it
+		// had when last closed is put back after that, or it would be scaled
+		// again and grow every time it is opened
+
+		protected override void OnLoad(System.EventArgs e) {
+			base.OnLoad(e);
+			if (!s_rcBounds.IsEmpty)
+				SetBounds(s_rcBounds.Left, s_rcBounds.Top, s_rcBounds.Width, s_rcBounds.Height, BoundsSpecified.All);
+			else {
+				// Centre on the monitor M is on
+				Control ctlParent = DocManager.GetFrameParent();
+				Rectangle rcScreen = ctlParent != null ? Screen.GetWorkingArea(ctlParent) : Screen.GetWorkingArea(this);
+				SetBounds(rcScreen.X + (rcScreen.Width - Bounds.Width) / 2, rcScreen.Y + (rcScreen.Height - Bounds.Height) / 2, 0, 0, BoundsSpecified.Location);
+			}
 		}
 
 		protected override void OnClosed(System.EventArgs e) {
