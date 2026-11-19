@@ -398,6 +398,9 @@ JOBS=[
     # Command Center: the R&D Center's classic art and timing with the dish
     # version of its HD art (the game binds it as CommandCenter.anir)
     ('ccenter', lambda: standard('ccenter','research_dish.png',362,362,8,'Research.anir',52,56,13,('a 0','a 1','a 2'),wreck_cell=(4,13),cycle=66,hd_name='CommandCenter.anir')),
+    # R&D Center upgrade menu icons: the upgraded buildings' healthy pictures
+    # (HRC + VTS 02 and 04, from the hrcvts job's packs)
+    ('upgrades', lambda: (strip('upgrades.anir','hrc1',pics='hrc2/h',n=1), strip('upgrades.anir','vts1',pics='vts2/h',n=1))),
 ]
 
 # Every classic strip that must have HD pictures (a missing one draws the
@@ -409,7 +412,8 @@ REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
     [('HRC.anir',s) for s in ('base 0','base 1','base 2','base2 0','base2 1','base2 2')]+\
     [('proc.anir',s) for s in ('base 0','base 1','base 2','door 0')]+\
     [(t,s) for t in ('mtower.anir','rtower.anir') for s in ['base 0','base 1','base 2']+['turret %02d'%d for d in range(16)]]+\
-    [('walls.anir','a'),('walls.anir','b')]
+    [('walls.anir','a'),('walls.anir','b')]+\
+    [('upgrades.anir','hrc1'),('upgrades.anir','vts1')]
 
 def check_manifest():
     have=set(tuple(l.split('\t')[1:3]) for l in manifest)

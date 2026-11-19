@@ -794,15 +794,23 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
 // The picture: a tower's turret turned toward the viewer, else the first
 // healthy picture of the animation's first HD strip
 
-static HdPic *IconPic(HdBinding *pbind, AnimationData *panid) {
+// The icon strip's own picture when the manifest gives one (the upgrade
+// icons); else a building's healthy picture, a tower facing the viewer
+
+static HdPic *IconPic(HdBinding *pbind, AnimationData *panid, int nStrip) {
     if (pbind == NULL)
         return NULL;
+    if (nStrip >= 0 && nStrip < (int)pbind->apstrip.size()) {
+        HdStrip *pstrip = pbind->apstrip[nStrip];
+        if (pstrip != NULL && !pstrip->fNone && !pstrip->apic[0].empty() && pstrip->apic[0][0] != NULL)
+            return pstrip->apic[0][0];
+    }
     HdPic *ppicFirst = NULL;
     for (int n = 0; n < (int)pbind->apstrip.size(); n++) {
         HdStrip *pstrip = pbind->apstrip[n];
         if (pstrip == NULL || pstrip->fNone || pstrip->var > 0 || pstrip->apic[0].empty())
             continue;
-        if (strcmp(panid->GetStripName(n), "turret 06") == 0)
+        if (strcmp(panid->GetStripName(n), "turret 00") == 0)
             return pstrip->apic[0][0];
         if (ppicFirst == NULL)
             ppicFirst = pstrip->apic[0][0];
@@ -813,8 +821,8 @@ static HdPic *IconPic(HdBinding *pbind, AnimationData *panid) {
 // Is there an HD icon for this animation that can show over this bitmap
 // (a part of the back buffer)?
 
-bool HdHasIcon(HdBinding *pbind, AnimationData *panid, DibBitmap *pbm) {
-    if (!HdIsActive() || IconPic(pbind, panid) == NULL || gpdisp == NULL)
+bool HdHasIcon(HdBinding *pbind, AnimationData *panid, int nStrip, DibBitmap *pbm) {
+    if (!HdIsActive() || IconPic(pbind, panid, nStrip) == NULL || gpdisp == NULL)
         return false;
     DibBitmap *pbmBack = gpdisp->GetBackDib();
     return pbmBack != NULL && pbm->GetRowBytes() == pbmBack->GetRowBytes() &&
@@ -830,11 +838,11 @@ void HdClearIcons(void *pvOwner) {
     }
 }
 
-void HdRecordIcon(void *pvOwner, HdBinding *pbind, AnimationData *panid, DibBitmap *pbm,
+void HdRecordIcon(void *pvOwner, HdBinding *pbind, AnimationData *panid, int nStrip, DibBitmap *pbm,
         const Rect *prc, Side side, bool fDim) {
-    if (!HdHasIcon(pbind, panid, pbm))
+    if (!HdHasIcon(pbind, panid, nStrip, pbm))
         return;
-    HdPic *ppic = IconPic(pbind, panid);
+    HdPic *ppic = IconPic(pbind, panid, nStrip);
     DibBitmap *pbmBack = gpdisp->GetBackDib();
     int cbRow = pbmBack->GetRowBytes();
     int yTop = (int)((pbm->GetBits() - pbmBack->GetBits()) / cbRow);

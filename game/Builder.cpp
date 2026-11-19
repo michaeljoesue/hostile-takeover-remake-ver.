@@ -1066,10 +1066,10 @@ void BuildListControl::DrawItem(DibBitmap *pbm, ListItem *pli, int x, int y, int
 	int nStrip = pli->Anim.nStrip;
 	int nFrame = pli->Anim.nFrame;
 
-	// A building with an HD picture shows that (drawn over the menu, see
+	// A building or upgrade with an HD picture shows that (drawn over the menu, see
 	// HdRecordIcon); otherwise the classic icon, centered in the item area
 
-	bool fHd = HdHasIcon(panid->GetHdBinding(), panid, pbm);
+	bool fHd = HdHasIcon(panid->GetHdBinding(), panid, nStrip, pbm);
 	if (!fHd) {
 		Rect rcAnim;
 		pli->Anim.panid->GetBounds(nStrip, nFrame, &rcAnim);
@@ -1088,7 +1088,7 @@ void BuildListControl::DrawItem(DibBitmap *pbm, ListItem *pli, int x, int y, int
 	if (fHd) {
 		Rect rcIcon;
 		rcIcon.Set(x + 3, y + 3, x + cx - 3, y + cy - 3);
-		HdRecordIcon(this, panid->GetHdBinding(), panid, pbm, &rcIcon, gpplrLocal->GetSide(),
+		HdRecordIcon(this, panid->GetHdBinding(), panid, nStrip, pbm, &rcIcon, gpplrLocal->GetSide(),
 				pli->fDisabled);
 	}
 

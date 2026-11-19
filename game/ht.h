@@ -1321,9 +1321,9 @@ void HdHoldAnimation(class Animation *pani, bool fHold);
 void HdNoteCovered(DibBitmap *pbm, int x, int y, int cx, int cy);
 void HdRecord(HdBinding *phdb, AnimationData *panid, int nStrip, int nFrame, DibBitmap *pbm,
 		int x, int y, Side side, class Animation *pani, const Rect *prcShadow);
-bool HdHasIcon(HdBinding *phdb, AnimationData *panid, DibBitmap *pbm);
+bool HdHasIcon(HdBinding *phdb, AnimationData *panid, int nStrip, DibBitmap *pbm);
 void HdFreeBinding(HdBinding *phdb);
-void HdRecordIcon(void *pvOwner, HdBinding *phdb, AnimationData *panid, DibBitmap *pbm,
+void HdRecordIcon(void *pvOwner, HdBinding *phdb, AnimationData *panid, int nStrip, DibBitmap *pbm,
 		const Rect *prc, Side side, bool fDim);
 void HdClearIcons(void *pvOwner);
 

@@ -77,3 +77,5 @@ strip	Research.anir	a 2	pics=research/w	n=1	var=2
 strip	CommandCenter.anir	a 0	pics=ccenter/h	n=52	var=0	cycle=66
 strip	CommandCenter.anir	a 1	pics=ccenter/d	n=52	var=1	cycle=66
 strip	CommandCenter.anir	a 2	pics=ccenter/w	n=1	var=2
+strip	upgrades.anir	hrc1	pics=hrc2/h	n=1
+strip	upgrades.anir	vts1	pics=vts2/h	n=1
