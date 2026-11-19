@@ -156,6 +156,7 @@ MobileUnitGob::MobileUnitGob(MobileUnitConsts *pmuntc) : UnitGob(pmuntc)
 	m_gidChaseFailed = kgidNull;
 	m_cupdChaseFailed = 0;
 	m_cupdGuardReturn = -1000000;
+	m_cupdRunAway = -1000000;
 
 	// Just to be clear this Unit or its nearby allies hasn't been hit for awhile
 
@@ -978,6 +979,105 @@ bool MobileUnitGob::IsAttackPointWithinFiringRangeOfTarget(UnitGob *puntTarget)
 	return IsTargetWithinRange(&wptAttack, puntTarget, m_pmuntc->tcFiringRange);
 }
 
+// Coward: move a few tiles away from the assailant, keeping any action
+// (it carries on once the unit is clear). The player's Cowards only run
+// when standing idle, so they don't drop the player's own orders.
+
+const TCoord ktcRunAwayDist = 4;		// how far a Coward runs
+const TCoord ktcRunAwayNotice = 8;		// shots further away are ignored
+const long kcupdRunAwayRetry = 12;		// about a second between runs
+
+void MobileUnitGob::RunAwayFrom(Gid gidAssailant)
+{
+	if (!(m_ff & kfGobActive) || m_st == kstDying)
+		return;
+	if (GetType() == kgtGalaxMiner)
+		return;	// miners have their own job (and a Processor to hide in)
+	if (!(m_pplr->GetFlags() & kfPlrComputer) && m_st != kstGuard)
+		return;
+	if (gsim.GetUpdateCount() - m_cupdRunAway < kcupdRunAwayRetry)
+		return;
+	Gob *pgobAssailant = ggobm.GetGob(gidAssailant);
+	if (pgobAssailant == NULL)
+		return;
+	TCoord txFrom = TcFromWc(m_wx);
+	TCoord tyFrom = TcFromWc(m_wy);
+	if (CalcRange(txFrom, tyFrom, pgobAssailant) > ktcRunAwayNotice)
+		return;
+
+	// Away from the assailant, or as close to that as the terrain allows:
+	// try the straight-away direction first, then the ones beside it
+
+	WPoint wptAssailant;
+	pgobAssailant->GetCenter(&wptAssailant);
+	int dx = m_wx - wptAssailant.wx;
+	int dy = m_wy - wptAssailant.wy;
+	if (dx == 0 && dy == 0)
+		dy = 1;
+	Direction dirAway = CalcDir(dx, dy);
+
+	TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
+	TCoord ctx = ptrmap->GetWidth();
+	TCoord cty = ptrmap->GetHeight();
+	static const int s_anTurn[] = { 0, 1, -1, 2, -2 };
+	TCoord txBest = -1, tyBest = -1;
+	int nRangeBest = 0;
+	for (int i = 0; i < ARRAYSIZE(s_anTurn); i++) {
+		Direction dir = (Direction)((dirAway + s_anTurn[i] + 8) % 8);
+		TCoord tx = txFrom;
+		TCoord ty = tyFrom;
+		TCoord txOk = -1, tyOk = -1;
+		for (TCoord tc = 1; tc <= ktcRunAwayDist; tc++) {
+			TCoord txT = tx + g_mpDirToDx[dir];
+			TCoord tyT = ty + g_mpDirToDy[dir];
+			if (txT < 0 || tyT < 0 || txT >= ctx || tyT >= cty)
+				break;
+			if (ptrmap->IsBlocked(txT, tyT, kbfStructure))
+				break;
+			tx = txT;
+			ty = tyT;
+			if (GetMobileUnitAt(tx, ty) == NULL && !IsTileReserved(tx, ty)) {
+				txOk = tx;
+				tyOk = ty;
+			}
+		}
+		if (txOk < 0)
+			continue;
+		int nRange = CalcRange(txOk, tyOk, pgobAssailant);
+		if (nRange > nRangeBest) {
+			nRangeBest = nRange;
+			txBest = txOk;
+			tyBest = tyOk;
+		}
+
+		// Straight away (or nearly) and far enough: good
+		if (i <= 2 && (abs(txOk - txFrom) >= 2 || abs(tyOk - tyFrom) >= 2))
+			break;
+	}
+	if (txBest < 0 || nRangeBest <= CalcRange(txFrom, tyFrom, pgobAssailant))
+		return;
+	m_cupdRunAway = gsim.GetUpdateCount();
+
+	WCoord wxDst = WcFromTc(txBest) + kwcTileHalf;
+	WCoord wyDst = WcFromTc(tyBest) + kwcTileHalf;
+	Message msgT;
+	memset(&msgT, 0, sizeof(msgT));
+	msgT.mid = kmidMoveCommand;
+	msgT.smidSender = kgidNull;
+	msgT.smidReceiver = m_gid;
+	msgT.MoveCommand.wptTarget.wx = wxDst;
+	msgT.MoveCommand.wptTarget.wy = wyDst;
+	msgT.MoveCommand.gidTarget = kgidNull;
+	msgT.MoveCommand.wptTargetCenter.wx = wxDst;
+	msgT.MoveCommand.wptTargetCenter.wy = wyDst;
+	gcmdq.Enqueue(&msgT);
+
+	// An action (guard, move, ...) resumes when the unit gets there
+
+	if (m_mua != kmuaNone)
+		m_fMovingAside = true;
+}
+
 // TUNE:
 
 const TCoord ktcVicinity = 5;
@@ -1196,10 +1296,12 @@ lbAttackParams:
 			ShowDamageIndicator();
 
 lbHitNoDamage:
-			// UNDONE: knAggressivenessCoward
-			if (m_wfMunt & kfMuntRunAwayWhenHit) {
+			// Cowards run away from whoever is shooting (at them or at
+			// an ally nearby)
 
-			
+			if (m_wfMunt & kfMuntRunAwayWhenHit) {
+				RunAwayFrom(pmsg->Hit.gidAssailant);
+
 			// If we're supposed to return fire and we know who fired at us...
 
 			} else if ((m_wfMunt & kfMuntReturnFire) && pmsg->Hit.gidAssailant != kgidNull) {

@@ -383,6 +383,11 @@ Maps, sides and limits:
   side, 64 switches or 64 areas, or more scenery objects (600) and units
   and buildings placed on the map (1600) than the game has room for. The
   last two grow with the map like the game's limits.
+- **Cowards run.** Units set to the Coward aggressiveness now run a few
+  tiles away from whoever shoots at them or at an ally next to them (the
+  game never did this, so Coward was the same as Pacifist). They keep their
+  action and carry on with it once clear; the player's Cowards only run
+  when standing idle, not while following an order. Miners don't run.
 - **Guard actions keep their ground.** Computer units with the Guard or
   Guard Vicinity action (unit or unit group) guard the spot where they
   start it: they only go after enemies inside their guard range of that
