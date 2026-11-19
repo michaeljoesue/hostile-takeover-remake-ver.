@@ -407,9 +407,9 @@ Maps, sides and limits:
   everything the selected one has, named "<name> copy". The group list
   shows long names whole (it scrolls sideways; hover for the full name),
   and so do the pick lists of triggers and actions.
-- **Picking on the map.** Clicking picks units, buildings and other objects
-  before areas, and areas before templates (roads and other terrain
-  pieces), whatever was placed last.
+- **Picking on the map.** Clicking picks areas first, then units, buildings
+  and other objects, then templates (roads and other terrain pieces),
+  whatever was placed last.
 - **Unit group time limits.** Wait, Attack, Guard, Guard Vicinity and the
   new actions below take a number of seconds or Unlimited (set Unlimited
   to True in the action's properties): with no limit the group keeps at

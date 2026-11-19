@@ -466,20 +466,20 @@ namespace m {
 		}
 
 		public IMapItem HitTest(int x, int y, Size sizTile, TemplateDoc tmpd, LayerFlags lyrf) {
-			// Objects (units, buildings, scenery, walls, Galaxite) come first,
-			// then areas, then templates (roads and other terrain pieces), so a
+			// Areas come first, then objects (units, buildings, scenery, walls,
+			// Galaxite), then templates (roads and other terrain pieces), so a
 			// unit standing on a road is picked before the road whatever was
 			// placed last. Within each, the one on top is first.
 
 			for (int nPass = 0; nPass < 3; nPass++) {
 				for (int i = m_alsmi.Count - 1; i >= 0; i--) {
 					IMapItem mi = (IMapItem)m_alsmi[i];
-					int nPassItem = mi is Tile ? 2 : (mi is Area ? 1 : 0);
+					int nPassItem = mi is Tile ? 2 : (mi is Area ? 0 : 1);
 					if (nPassItem != nPass)
 						continue;
-					if (nPass == 0 && (lyrf & LayerFlags.Gobs) == 0)
+					if (nPass == 0 && (lyrf & LayerFlags.Areas) == 0)
 						break;
-					if (nPass == 1 && (lyrf & LayerFlags.Areas) == 0)
+					if (nPass == 1 && (lyrf & LayerFlags.Gobs) == 0)
 						break;
 					if (nPass == 2 && (lyrf & LayerFlags.Templates) == 0)
 						break;
