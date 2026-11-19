@@ -428,7 +428,7 @@ SortOffset=30
 Animation=Research.anir
 HdAnimation=CommandCenter.anir
 TileDimensions=2,2
-Description=The Command Center coordinates the operation. It can't be built or sold, but it can be repaired.
+Description=The Command Center coordinates the operation. It can't be built or sold, but it can be repaired and captured.
 
 [kgtReplicator]
 Name=Replicator

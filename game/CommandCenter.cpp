@@ -8,8 +8,8 @@ namespace wi {
 // A building with no functions: no power, nothing built or researched, and
 // it can't be built either: missions place it. Its menu only repairs it (by
 // the player, or the auto repair of the player or a computer player); it
-// isn't sold or taken over. It can be attacked and destroyed like any
-// building. It is drawn with the R&D Center's classic art; its HD pictures
+// isn't sold. Like any building it can be attacked and destroyed, and a
+// Corporate Raider can capture it. It is drawn with the R&D Center's classic art; its HD pictures
 // are the dish version of the R&D Center's (HdAnimation in GobTemplates).
 //
 
@@ -48,11 +48,6 @@ void CommandCenterGob::InitMenu(Form *pfrm)
 	ButtonControl *pbtn = (ButtonControl *)pfrm->GetControlPtr(kidcSelfDestruct);
 	if (pbtn != NULL)
 		pbtn->Enable(false);
-}
-
-bool CommandCenterGob::IsTakeoverable(Player *pplr)
-{
-	return false;
 }
 
 int CommandCenterGob::ProcessStateMachineMessage(State st, Message *pmsg)
