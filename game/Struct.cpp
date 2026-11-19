@@ -763,6 +763,12 @@ void StructGob::OnPowerLowHigh()
 void StructGob::Repair(bool fOn)
 {
 	if (fOn) {
+		// Walls and the Command Center are never repaired (nor by the
+		// auto repair or a trigger)
+
+		if (GetType() == kgtWall || GetType() == kgtCommandCenter)
+			return;
+
 		// If already at max health, don't waste any more time
 
 		if (m_fxHealth == m_pstruc->GetArmorStrength())
