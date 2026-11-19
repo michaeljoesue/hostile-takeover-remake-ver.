@@ -5947,7 +5947,6 @@ private:
 	bool IsWithinGuardPostRange(Gob *pgob);
 	bool CanEngageFromGuard(UnitGob *puntTarget);
 	bool ReturnToGuardPost();
-	void RunAwayFrom(Gid gidAssailant);
 	bool PendOrProcessCommand(Message *pmsg, State stNew);
 	bool PendOrProcessAction(Message *pmsg, State stNew, MobileUnitAction mua);
 	bool IsTargetInRange();
@@ -6018,7 +6017,6 @@ public:
 public:
 #endif
 	long m_cupdGuardReturn;		// when we last headed back to the guard post (not saved)
-	long m_cupdRunAway;			// when a Coward last ran off (not saved)
 	bool m_fMovingAside;		// moving aside for another unit; resume m_msgAction after
 	word m_nSeqMoveAside;
 	Path *m_ppathUnit;

@@ -398,24 +398,18 @@ Maps, sides and limits:
   don't go after neutral units or buildings on their own; they attack them
   only when ordered to (an Attack, Hunt or Attack In Area action, or a
   trigger).
-- **Cowards run.** Units set to the Coward aggressiveness now run a few
-  tiles away from whoever shoots at them or at an ally next to them (the
-  game never did this, so Coward was the same as Pacifist). They keep their
-  action and carry on with it once clear; the player's Cowards only run
-  when standing idle, not while following an order. Miners don't run.
 - **Guard actions keep their ground.** Computer units with the Guard or
   Guard Vicinity action (unit or unit group) guard the spot where they
   start it: they chase enemies that back off, but only up to 3 tiles past
   what they watch from that spot (their firing range for Guard, five tiles
-  for Guard Vicinity), and go back to it when the fight is over.
+  for Guard Vicinity), and go back to it when the fight is over. Guard Area
+  units go after any enemy in the area they can reach; ones they can't
+  reach no longer freeze them.
 - **Create Random Unit Group of Side.** A new trigger action: like Create
   Random Unit Group, but picks only among the random groups belonging to
   the chosen side(s). Create Random Unit Group still picks from every
   side's random groups, so with several computer sides use this one to keep
   each side's random attacks its own.
-- **Guard Area unit action removed.** M no longer offers it; units that had
-  it get Guard Vicinity when the level is opened. (Levels already compiled
-  with it still play as before.)
 - **Comments and the group Set Switch action removed.** M no longer offers
   Comment conditions and actions, or Set Switch among unit group actions
   (triggers set switches). Ones already in a level stay, and can be edited

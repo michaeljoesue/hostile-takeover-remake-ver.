@@ -17,8 +17,9 @@ namespace m
 				cab = new GuardVicinityUnitAction();
 				break;
 
-			case 2: // knGuardAreaUnitAction (removed: becomes Guard Vicinity)
-				return new GuardVicinityUnitAction();
+			case 2: // knGuardAreaUnitAction
+				cab = new GuardAreaUnitAction();
+				break;
 
 			case 3: // knMoveUnitAction
 				cab = new MoveUnitAction();
@@ -1492,11 +1493,7 @@ namespace m
 		}
 	}
 
-	// Removed: no longer offered. Kept only so levels that used it still
-	// load; MobileUnit turns it into Guard Vicinity.
-
 	[Serializable]
-	[System.ComponentModel.Browsable(false)]
 	[DisplayName("Guard Area")]
 	[Description("Guard a specific area. Any enemies entering the area willl be attacked. " +
 			"If the enemy is destroyed the unit will sit idle until another enemy enters the area.")]
