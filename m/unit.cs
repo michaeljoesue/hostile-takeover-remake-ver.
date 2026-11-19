@@ -258,6 +258,12 @@ namespace m {
 			} catch (SerializationException) {
 				m_cab = new GuardUnitAction();
 			}
+
+			// The Guard Area unit action was removed: Guard Vicinity is the
+			// nearest
+
+			if (m_cab is GuardAreaUnitAction)
+				m_cab = new GuardVicinityUnitAction();
 			Init();
 		}
 
@@ -269,6 +275,8 @@ namespace m {
 			if (m.Groups["cab"] != null) {
 				m_cab = UnitActionLoader.LoadIni(m.Groups["cab"].Value);
 			}
+			if (m_cab is GuardAreaUnitAction)
+				m_cab = new GuardVicinityUnitAction();
 		}
 
 		public override Ini.Property GetIniProperty(int txOrigin, int tyOrigin) {

@@ -390,11 +390,12 @@ Maps, sides and limits:
   when standing idle, not while following an order. Miners don't run.
 - **Guard actions keep their ground.** Computer units with the Guard or
   Guard Vicinity action (unit or unit group) guard the spot where they
-  start it: they only go after enemies inside their guard range of that
-  spot (their firing range for Guard, about five tiles for Guard Vicinity)
-  and go back to it when the fight is over. Guard Area units go after any
-  enemy in the area they can reach; ones they can't reach no longer
-  freeze them.
+  start it: they chase enemies that back off, but only up to 3 tiles past
+  what they watch from that spot (their firing range for Guard, five tiles
+  for Guard Vicinity), and go back to it when the fight is over.
+- **Guard Area unit action removed.** M no longer offers it; units that had
+  it get Guard Vicinity when the level is opened. (Levels already compiled
+  with it still play as before.)
 - **Unit group time limits.** Wait, Attack, Guard, Guard Vicinity and the
   new actions below take a number of seconds or Unlimited (set Unlimited
   to True in the action's properties): with no limit the group keeps at

@@ -71,6 +71,11 @@ namespace m
 			foreach (Type type in atype) {
 				string strName = type.ToString();
 				if (strName.EndsWith(strEndsWith)) {
+					// Removed actions stay loadable but aren't offered
+
+					object[] aobj = type.GetCustomAttributes(typeof(System.ComponentModel.BrowsableAttribute), false);
+					if (aobj.Length != 0 && !((System.ComponentModel.BrowsableAttribute)aobj[0]).Browsable)
+						continue;
 					alsType.Add(type);
 					string strDisplayName = Helper.GetDisplayName(type);
 					if (strDisplayName == null) {

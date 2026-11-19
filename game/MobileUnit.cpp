@@ -1081,6 +1081,7 @@ void MobileUnitGob::RunAwayFrom(Gid gidAssailant)
 // TUNE:
 
 const TCoord ktcVicinity = 5;
+const TCoord ktcGuardChase = 3;		// a guard post's range reaches this much past what the unit watches
 const long kcupdAggressivenessBoost = 63; // 5 seconds
 const long kcupdGuardReturnRetry = 24; // ~2 seconds
 
@@ -1104,11 +1105,16 @@ bool MobileUnitGob::HasGuardPost()
 	return tx >= 0 && ty >= 0 && tx < ptrmap->GetWidth() && ty < ptrmap->GetHeight();
 }
 
+// How far from the post a guarding unit goes after enemies: a little past
+// what it watches (its firing range for Guard, ktcVicinity for Guard
+// Vicinity), so it chases an enemy that backs off but doesn't follow it
+// across the map
+
 TCoord MobileUnitGob::GetGuardRange()
 {
 	if (m_mua == kmuaGuardVicinity)
-		return ktcVicinity;
-	return m_pmuntc->tcFiringRange;
+		return ktcVicinity + ktcGuardChase;
+	return m_pmuntc->tcFiringRange + ktcGuardChase;
 }
 
 // Is the gob within guard range of the post?
@@ -1600,6 +1606,7 @@ lbHitNoDamage:
 							(m_mua == kmuaAttack && m_gidTarget == m_msgAction.AttackCommand.gidTarget) ||
 							(m_mua == kmuaGuardArea && ggobm.IsGobWithinArea(puntTarget, m_msgAction.GuardAreaCommand.nArea)) ||
 							(m_mua == kmuaGuardVicinity || m_mua == kmuaHuntEnemies) ||
+							(m_mua == kmuaGuard && HasGuardPost()) ||
 							IsHumanOrGodControlled()) && IsAttackPointWithinFiringRangeOfTarget(puntTarget) &&
 							(!HasGuardPost() || IsWithinGuardPostRange(puntTarget)) &&
 							!(m_gidTarget == m_gidChaseFailed && gsim.GetUpdateCount() - m_cupdChaseFailed < kcupdChaseRetry)) {
@@ -1729,14 +1736,16 @@ lbHitNoDamage:
 					// If we're trying to guard an expanded radius and the enemy has left it let it go.
 
 					} else if (m_mua == kmuaGuardVicinity) {
-						if (!IsGobWithinRange(pgobTarget, ktcVicinity) && gsim.GetUpdateCount() - m_cupdLastHitOrNearbyAllyHit > kcupdAggressivenessBoost) {
+						if (!HasGuardPost() && !IsGobWithinRange(pgobTarget, ktcVicinity) && gsim.GetUpdateCount() - m_cupdLastHitOrNearbyAllyHit > kcupdAggressivenessBoost) {
 							SetState(kstGuard);
 							return knHandled;
 						}
 
-					// These are inherently chase modes. Stick with it.
+					// These are inherently chase modes (a guard post's range
+				// was checked above). Stick with it.
 
-					} else if (m_mua == kmuaHuntEnemies || m_mua == kmuaAttack) {
+					} else if (m_mua == kmuaHuntEnemies || m_mua == kmuaAttack ||
+							(m_mua == kmuaGuard && HasGuardPost())) {
 
 					// If we're not acting under an aggressiveness boost anymore drop back to the
 					// prior action or Guard
