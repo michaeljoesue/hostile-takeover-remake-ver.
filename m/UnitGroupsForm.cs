@@ -28,6 +28,7 @@ namespace m
 		private System.Windows.Forms.Button buttonNewUnitGroup;
 		private System.Windows.Forms.Button buttonDeleteUnitGroup;
 		private System.Windows.Forms.Button buttonRenameUnitGroup;
+		private System.Windows.Forms.Button buttonCopyUnitGroup;
 		private System.Windows.Forms.ListBox listBoxUnits;
 		private System.Windows.Forms.Button buttonDeleteUnits;
 		private System.Windows.Forms.Button buttonNewUnits;
@@ -109,6 +110,7 @@ namespace m
 			this.buttonNewUnitGroup = new System.Windows.Forms.Button();
 			this.buttonDeleteUnitGroup = new System.Windows.Forms.Button();
 			this.buttonRenameUnitGroup = new System.Windows.Forms.Button();
+			this.buttonCopyUnitGroup = new System.Windows.Forms.Button();
 			this.listViewUnitGroups = new System.Windows.Forms.ListView();
 			this.label1 = new System.Windows.Forms.Label();
 			this.comboBoxSide = new System.Windows.Forms.ComboBox();
@@ -266,7 +268,7 @@ namespace m
 			// 
 			// buttonNewUnitGroup
 			// 
-			this.buttonNewUnitGroup.Location = new System.Drawing.Point(16, 424);
+			this.buttonNewUnitGroup.Location = new System.Drawing.Point(16, 392);
 			this.buttonNewUnitGroup.Name = "buttonNewUnitGroup";
 			this.buttonNewUnitGroup.TabIndex = 7;
 			this.buttonNewUnitGroup.Text = "New...";
@@ -283,6 +285,14 @@ namespace m
 			this.buttonRenameUnitGroup.TabIndex = 10;
 			this.buttonRenameUnitGroup.Text = "Rename...";
 			this.buttonRenameUnitGroup.Click += new System.EventHandler(this.buttonRenameUnitGroup_Click);
+			//
+			// buttonCopyUnitGroup
+			//
+			this.buttonCopyUnitGroup.Location = new System.Drawing.Point(16, 424);
+			this.buttonCopyUnitGroup.Name = "buttonCopyUnitGroup";
+			this.buttonCopyUnitGroup.TabIndex = 11;
+			this.buttonCopyUnitGroup.Text = "Copy";
+			this.buttonCopyUnitGroup.Click += new System.EventHandler(this.buttonCopyUnitGroup_Click);
 			this.buttonDeleteUnitGroup.Name = "buttonDeleteUnitGroup";
 			this.buttonDeleteUnitGroup.TabIndex = 8;
 			this.buttonDeleteUnitGroup.Text = "Delete";
@@ -297,7 +307,7 @@ namespace m
 			this.listViewUnitGroups.Location = new System.Drawing.Point(8, 8);
 			this.listViewUnitGroups.MultiSelect = false;
 			this.listViewUnitGroups.Name = "listViewUnitGroups";
-			this.listViewUnitGroups.Size = new System.Drawing.Size(136, 408);
+			this.listViewUnitGroups.Size = new System.Drawing.Size(136, 376);
 			this.listViewUnitGroups.Sorting = System.Windows.Forms.SortOrder.None;
 			this.listViewUnitGroups.TabIndex = 9;
 			// One column scrolling down (the List view wraps into columns
@@ -305,6 +315,9 @@ namespace m
 			this.listViewUnitGroups.View = System.Windows.Forms.View.Details;
 			this.listViewUnitGroups.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
 			this.listViewUnitGroups.Columns.Add("Name", 108, System.Windows.Forms.HorizontalAlignment.Left);
+			// Long names: the column grows to fit (the list scrolls sideways)
+			// and hovering shows the whole name
+			this.listViewUnitGroups.ShowItemToolTips = true;
 			this.listViewUnitGroups.AfterLabelEdit += new System.Windows.Forms.LabelEditEventHandler(this.listViewUnitGroups_AfterLabelEdit);
 			this.listViewUnitGroups.DoubleClick += new System.EventHandler(this.buttonRenameUnitGroup_Click);
 			this.listViewUnitGroups.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listViewUnitGroups_KeyDown);
@@ -454,6 +467,7 @@ namespace m
 																		  this.listViewUnitGroups,
 																		  this.buttonDeleteUnitGroup,
 																		  this.buttonRenameUnitGroup,
+																		  this.buttonCopyUnitGroup,
 																		  this.buttonNewUnitGroup,
 																		  this.groupBox2,
 																		  this.buttonClose,
@@ -574,14 +588,29 @@ namespace m
 			foreach (UnitGroup ug in aug) {
 				ListViewItem lvi = new ListViewItem(ug.Name);
 				lvi.Tag = ug;
+				lvi.ToolTipText = ug.Name;
 				if (fFirst) {
 					lvi.Selected = true;
 					fFirst = false;
 				}
 				listViewUnitGroups.Items.Add(lvi);
 			}
+			FitUnitGroupsColumn();
 			EnableActionButtons();
 			EnableUnitsButtons();
+		}
+
+		// The name column is as wide as the longest name, at least the list's
+		// width, so no name is cut short
+
+		void FitUnitGroupsColumn() {
+			int cx = listViewUnitGroups.ClientSize.Width - 4;
+			foreach (ListViewItem lvi in listViewUnitGroups.Items) {
+				int cxT = TextRenderer.MeasureText(lvi.Text, listViewUnitGroups.Font).Width + 12;
+				if (cxT > cx)
+					cx = cxT;
+			}
+			listViewUnitGroups.Columns[0].Width = cx;
 		}
 
 		private void listViewUnitGroups_AfterLabelEdit(object sender, System.Windows.Forms.LabelEditEventArgs e) {
@@ -643,6 +672,35 @@ namespace m
 			m_ugm.AddUnitGroup(new UnitGroup("group" + i));
 			InitUnitGroupsListBox();
 			SelectUnitGroup("group" + i);
+		}
+
+		// Copy: a new group with everything the selected one has (side,
+		// aggressiveness, options, units and actions), named "<name> copy"
+
+		private void buttonCopyUnitGroup_Click(object sender, System.EventArgs e) {
+			if (listViewUnitGroups.SelectedItems.Count == 0)
+				return;
+			UnitGroup ug = (UnitGroup)listViewUnitGroups.SelectedItems[0].Tag;
+			// Copying a copy makes "<name> copy 2", not "<name> copy copy"
+			string strBase = System.Text.RegularExpressions.Regex.Replace(ug.Name, @" copy( \d+)?$", "") + " copy";
+			string strName = strBase;
+			for (int n = 2; ; n++) {
+				bool fUsed = false;
+				foreach (UnitGroup ugT in m_ugm.GetUnitGroupList()) {
+					if (String.Compare(ugT.Name, strName, true) == 0) {
+						fUsed = true;
+						break;
+					}
+				}
+				if (!fUsed)
+					break;
+				strName = strBase + " " + n;
+			}
+			UnitGroup ugNew = ug.Clone();
+			ugNew.Name = strName;
+			m_ugm.AddUnitGroup(ugNew);
+			InitUnitGroupsListBox();
+			SelectUnitGroup(strName);
 		}
 
 		private void SelectUnitGroup(string str) {

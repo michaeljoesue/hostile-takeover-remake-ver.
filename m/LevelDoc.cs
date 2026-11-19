@@ -466,20 +466,25 @@ namespace m {
 		}
 
 		public IMapItem HitTest(int x, int y, Size sizTile, TemplateDoc tmpd, LayerFlags lyrf) {
-			// MapItems on top are first
-			for (int i = m_alsmi.Count - 1; i >= 0; i--) {
-				IMapItem mi = (IMapItem)m_alsmi[i];
-				if (mi.HitTest(x, y, sizTile, tmpd)) {
-					if (mi is Area) {
-						if ((lyrf & LayerFlags.Areas) != 0)
-							return mi;
-					} else if (mi is Tile) {
-						if ((lyrf & LayerFlags.Templates) != 0)
-							return mi;
-					} else {
-						if ((lyrf & LayerFlags.Gobs) != 0)
-							return mi;
-					}
+			// Objects (units, buildings, scenery, walls, Galaxite) come first,
+			// then areas, then templates (roads and other terrain pieces), so a
+			// unit standing on a road is picked before the road whatever was
+			// placed last. Within each, the one on top is first.
+
+			for (int nPass = 0; nPass < 3; nPass++) {
+				for (int i = m_alsmi.Count - 1; i >= 0; i--) {
+					IMapItem mi = (IMapItem)m_alsmi[i];
+					int nPassItem = mi is Tile ? 2 : (mi is Area ? 1 : 0);
+					if (nPassItem != nPass)
+						continue;
+					if (nPass == 0 && (lyrf & LayerFlags.Gobs) == 0)
+						break;
+					if (nPass == 1 && (lyrf & LayerFlags.Areas) == 0)
+						break;
+					if (nPass == 2 && (lyrf & LayerFlags.Templates) == 0)
+						break;
+					if (mi.HitTest(x, y, sizTile, tmpd))
+						return mi;
 				}
 			}
 			return null;
@@ -766,8 +771,8 @@ namespace m {
 				if (mi is Area)
 					cAreas++;
 			}
-			// Matches the game (kcAreasMax), raised in 2.0
-			int cAreasMax = 64;
+			// Matches the game (kcAreasMax): 32 in 1.x, then 64, now 256
+			int cAreasMax = 256;
 			if (cAreas > cAreasMax) {
 				dgt(this, ValidateError.Error, 0, 0, null, String.Format("Max areas is {0}, this mission has {1}", cAreasMax, cAreas));
 				cError++;

@@ -791,6 +791,16 @@ int UnitGob::ScoreTarget(UnitGob *puntTarget, TCoord tc)
 	return nScore;
 }
 
+// The computer leaves the neutral side alone unless ordered to attack it
+// (an Attack action or a unit group's attack): its units and towers don't
+// pick neutral targets on their own
+
+bool UnitGob::IgnoresOnItsOwn(UnitGob *puntTarget)
+{
+	return puntTarget->GetSide() == ksideNeutral && m_pplr != NULL &&
+			(m_pplr->GetFlags() & kfPlrComputer) != 0;
+}
+
 UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 {
 	if (m_ff & kfGobNoEnemiesNearby)
@@ -817,6 +827,8 @@ UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 			cEmpty++;
 			continue;
 		}
+		if (IgnoresOnItsOwn(puntEnemyNearby))
+			continue;
 		TCoord tc = CalcRange(txThis, tyThis, puntEnemyNearby);
 		if (tc > tcRange)
 			continue;

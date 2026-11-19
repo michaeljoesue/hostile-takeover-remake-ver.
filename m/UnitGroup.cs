@@ -151,7 +151,7 @@ namespace m {
 			ug.m_fSpawn = m_fSpawn;
 			ug.m_fCreateAtLevelLoad = m_fCreateAtLevelLoad;
 			ug.m_fReplaceDestroyedGroup = m_fReplaceDestroyedGroup;
-			ug.m_strSpawnArea = (string)m_strSpawnArea.Clone();
+			ug.m_strSpawnArea = m_strSpawnArea;	// strings don't change (and a new group has none)
 			ug.m_nHealth = m_nHealth;
 			foreach (UnitTypeAndCount utc in UnitTypeAndCounts)
 				ug.UnitTypeAndCounts.Add(utc.Clone());

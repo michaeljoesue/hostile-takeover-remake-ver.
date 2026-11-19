@@ -568,6 +568,8 @@ UnitGob *MobileUnitGob::FindEnemyStructureNearby(TCoord tcRange, Gob *pgobFrom)
 				UnitGob *punt = (UnitGob *)pgob;
 				if (IsAlly(punt->GetSide()) || GetDamageTo(punt) <= 0)
 					continue;
+				if (IgnoresOnItsOwn(punt))
+					continue;
 
 				// Only buildings with weapons (defence towers)
 

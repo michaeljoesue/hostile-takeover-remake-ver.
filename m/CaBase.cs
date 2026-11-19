@@ -681,7 +681,11 @@ namespace m
 		}
 	}
 
+	// Removed: no longer offered. Kept so levels that have them still load
+	// (and they can be deleted).
+
 	[Serializable]
+	[System.ComponentModel.Browsable(false)]
 	[DisplayName("Comment")]
 	[Description("Use this to comment your conditions. It has no in-game effect.")]
 	public class CommentCondition : CaBase {
@@ -985,7 +989,11 @@ namespace m
 		}
 	}
 
+	// Removed: no longer offered. Kept so levels that have them still load
+	// (and they can be deleted).
+
 	[Serializable]
+	[System.ComponentModel.Browsable(false)]
 	[DisplayName("Comment")]
 	[Description("Use this to comment your actions. It has no in-game effect.")]
 	public class CommentTriggerAction : CaBase {
@@ -1268,7 +1276,11 @@ namespace m
 	// Unit Group Actions
 	//
 
+	// Removed: no longer offered (triggers set switches). Kept so levels
+	// that use it still load and play.
+
 	[Serializable]
+	[System.ComponentModel.Browsable(false)]
 	[DisplayName("Set Switch")]
 	[Description("Switch names can be anything (including spaces, etc) but ARE case sensitive. That is, setting " +
 		 "a switch named \"Whatever\" and testing \"whatever\" won't work.")]
@@ -1329,7 +1341,11 @@ namespace m
 		}
 	}
 
+	// Removed: no longer offered. Kept so levels that have them still load
+	// (and they can be deleted).
+
 	[Serializable]
+	[System.ComponentModel.Browsable(false)]
 	[DisplayName("Comment")]
 	[Description("Use this to comment your actions. It has no in-game effect.")]
 	public class CommentUnitGroupAction : CaBase {

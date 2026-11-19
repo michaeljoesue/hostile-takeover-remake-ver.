@@ -21,9 +21,9 @@ namespace m {
 		static private Color[] s_aclrSide = {
 			Color.FromArgb(116, 116, 116),
 			Color.FromArgb(0, 116, 232),
-			Color.FromArgb(255, 51, 51),
+			Color.FromArgb(232, 32, 0),
 			Color.FromArgb(232, 229, 0),
-			Color.FromArgb(0, 255, 127),
+			Color.FromArgb(0, 229, 232),
 			Color.FromArgb(220, 20, 60),
 			Color.FromArgb(0, 191, 255),
 		};

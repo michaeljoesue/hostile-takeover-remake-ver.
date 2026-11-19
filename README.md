@@ -100,10 +100,9 @@ The engine has been updated from its 2007 handheld roots:
   attacked only when ordered to
   (right-click, or Ctrl+right-click on your own). Walls can be selected
   but not repaired or sold. Walls in missions made before are neutral.
-- **Six sides.** Side 1 is ACME and side 2 is OMNI (now bright red,
-  #FF3333). Side 4 is Spring Green (#00FF7F), and there are two new sides
-  for missions to use: side 5, Crimson (#DC143C), and side 6, Sky Blue
-  (#00BFFF).
+- **Six sides.** Side 1 is ACME and side 2 is OMNI (both in their original
+  colours, as are sides 3 and 4), and there are two new sides for missions
+  to use: side 5, Crimson (#DC143C), and side 6, Sky Blue (#00BFFF).
   Allied sides share what they can see.
 - **Smarter units.** Pathfinding is a real A* search: units go around a
   lake instead of following its shore into dead ends, and paths are about
@@ -364,7 +363,7 @@ Maps, sides and limits:
   Map Width and Map Height under Map Size set the editing area, from 16 to
   258 tiles. Bounds, the part the game gets, can be up to 256x256 tiles.
   Maps wider or taller than 64 tiles get a mini map with 1 pixel per tile.
-- **Sides.** Side 1 (ACME), side 2 (OMNI), side 3, side 4 (Spring Green),
+- **Sides.** Side 1 (ACME), side 2 (OMNI), side 3, side 4,
   side 5 (Crimson) and side 6 (Sky Blue). Settings > Side 5 (Crimson) and
   Settings > Side 6 (Sky Blue) set them up; triggers, unit groups, units,
   buildings and walls can use them like the others.
@@ -380,9 +379,13 @@ Maps, sides and limits:
   Galaxite that's left, and only to 60% of its starting size.
 - **Limits.** M no longer stops a mission for exceeding the old limits. It
   only reports what the game itself can't handle: more than 1024 triggers per
-  side, 64 switches or 64 areas, or more scenery objects (600) and units
+  side, 64 switches or 256 areas, or more scenery objects (600) and units
   and buildings placed on the map (1600) than the game has room for. The
   last two grow with the map like the game's limits.
+- **The computer leaves the neutral side alone.** Computer units and towers
+  don't go after neutral units or buildings on their own; they attack them
+  only when ordered to (an Attack, Hunt or Attack In Area action, or a
+  trigger).
 - **Cowards run.** Units set to the Coward aggressiveness now run a few
   tiles away from whoever shoots at them or at an ally next to them (the
   game never did this, so Coward was the same as Pacifist). They keep their
@@ -396,6 +399,17 @@ Maps, sides and limits:
 - **Guard Area unit action removed.** M no longer offers it; units that had
   it get Guard Vicinity when the level is opened. (Levels already compiled
   with it still play as before.)
+- **Comments and the group Set Switch action removed.** M no longer offers
+  Comment conditions and actions, or Set Switch among unit group actions
+  (triggers set switches). Ones already in a level stay, and can be edited
+  or deleted.
+- **Copy unit groups.** Unit Groups > Copy makes a new group with
+  everything the selected one has, named "<name> copy". The group list
+  shows long names whole (it scrolls sideways; hover for the full name),
+  and so do the pick lists of triggers and actions.
+- **Picking on the map.** Clicking picks units, buildings and other objects
+  before areas, and areas before templates (roads and other terrain
+  pieces), whatever was placed last.
 - **Unit group time limits.** Wait, Attack, Guard, Guard Vicinity and the
   new actions below take a number of seconds or Unlimited (set Unlimited
   to True in the action's properties): with no limit the group keeps at

@@ -71,10 +71,12 @@ namespace m
 			foreach (Type type in atype) {
 				string strName = type.ToString();
 				if (strName.EndsWith(strEndsWith)) {
-					// Removed actions stay loadable but aren't offered
+					// Removed conditions and actions stay loadable but aren't
+					// offered (except to modify one that's already there)
 
 					object[] aobj = type.GetCustomAttributes(typeof(System.ComponentModel.BrowsableAttribute), false);
-					if (aobj.Length != 0 && !((System.ComponentModel.BrowsableAttribute)aobj[0]).Browsable)
+					if (aobj.Length != 0 && !((System.ComponentModel.BrowsableAttribute)aobj[0]).Browsable &&
+							(cab == null || cab.GetType() != type))
 						continue;
 					alsType.Add(type);
 					string strDisplayName = Helper.GetDisplayName(type);

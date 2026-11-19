@@ -31,6 +31,25 @@ namespace m
 			//
 			// TODO: Add any constructor code after InitializeComponent call
 			//
+			// Long names (unit groups, areas): the window widens to fit the
+			// longest one, up to a limit, past which the list scrolls sideways
+
+			int cxText = 0;
+			foreach (string str in strc) {
+				int cxT = TextRenderer.MeasureText(str, listBox1.Font).Width;
+				if (cxT > cxText)
+					cxText = cxT;
+			}
+			int cxGrow = Math.Min(cxText + 24, 600) - listBox1.Width;
+			if (cxGrow > 0) {
+				ClientSize = new System.Drawing.Size(ClientSize.Width + cxGrow, ClientSize.Height);
+				listBox1.Width += cxGrow;
+				buttonOk.Left += cxGrow / 2;
+				buttonCancel.Left += cxGrow / 2;
+			}
+			listBox1.HorizontalScrollbar = true;
+			listBox1.HorizontalExtent = cxText + 8;
+
 			listBox1.DataSource = strc;
 			listBox1.SelectedIndex = strCurrent == "" ? -1 : strc.IndexOf(strCurrent);
 			Text = strTitle;

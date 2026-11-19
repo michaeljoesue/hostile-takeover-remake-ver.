@@ -5195,14 +5195,52 @@ Gob *CreateGob(GobType gt);
 const Gid kgidNull = (Gid)-1;
 const word kwfGidEndMarker = 0x8000;
 
-// AreaMask; one bit per area, 64 areas max (was 32)
+// AreaMask; one bit per area, 256 areas max (was 32, then 64)
 
-#define kcAreasMax 64
+#define kcAreasMax 256
 #define knAreaLastDiscovery -1
-#if kcAreasMax > 64
-#error AreaMask holds 64 areas max
-#endif
-typedef unsigned long long AreaMask;
+
+struct AreaMask
+{
+	enum { kcWords = (kcAreasMax + 63) / 64 };
+	unsigned long long aw[kcWords];
+
+	AreaMask() { Clear(); }
+	AreaMask(int n) { Assert(n == 0); Clear(); }	// 0: no areas
+	void Clear() { for (int i = 0; i < kcWords; i++) aw[i] = 0; }
+	void Set(int nArea) { aw[nArea >> 6] |= 1ULL << (nArea & 63); }
+	bool Test(int nArea) const { return (aw[nArea >> 6] & (1ULL << (nArea & 63))) != 0; }
+	bool IsEmpty() const {
+		for (int i = 0; i < kcWords; i++)
+			if (aw[i] != 0)
+				return false;
+		return true;
+	}
+	AreaMask &operator|=(const AreaMask &am) {
+		for (int i = 0; i < kcWords; i++)
+			aw[i] |= am.aw[i];
+		return *this;
+	}
+	AreaMask operator&(const AreaMask &am) const {
+		AreaMask amT;
+		for (int i = 0; i < kcWords; i++)
+			amT.aw[i] = aw[i] & am.aw[i];
+		return amT;
+	}
+	AreaMask operator~() const {
+		AreaMask amT;
+		for (int i = 0; i < kcWords; i++)
+			amT.aw[i] = ~aw[i];
+		return amT;
+	}
+	bool operator==(const AreaMask &am) const {
+		for (int i = 0; i < kcWords; i++)
+			if (aw[i] != am.aw[i])
+				return false;
+		return true;
+	}
+	bool operator!=(const AreaMask &am) const { return !(*this == am); }
+};
 
 struct AreaEntry // are
 {
@@ -5666,6 +5704,7 @@ protected:
 	void RememberEnemyNearby(Gid gidEnemy);
 	TCoord CalcRange(TCoord tx, TCoord ty, Gob *pgob);
 	virtual UnitGob *FindEnemyNearby(TCoord tc);
+	bool IgnoresOnItsOwn(UnitGob *puntTarget);
 	void NotifyEnemyNearby();
 
 	union {

@@ -12,6 +12,7 @@ namespace m
 	public class TriggerPropForm : System.Windows.Forms.Form
 	{
 		Trigger m_tgr;
+		bool m_fInitSides;	// setting the side checks: not the user's clicks
 		private System.Windows.Forms.TabControl tabControl1;
 		private System.Windows.Forms.TabPage tabPageConditions;
 		private System.Windows.Forms.TabPage tabPageActions;
@@ -365,8 +366,13 @@ namespace m
 		#endregion
 
 		void InitSidesListBox() {
-			for (int n = 0; n < checkedListBoxSides.Items.Count; n++) {
-				checkedListBoxSides.SetItemChecked(n, (m_tgr.Sides & (1 << n)) != 0);
+			m_fInitSides = true;
+			try {
+				for (int n = 0; n < checkedListBoxSides.Items.Count; n++) {
+					checkedListBoxSides.SetItemChecked(n, (m_tgr.Sides & (1 << n)) != 0);
+				}
+			} finally {
+				m_fInitSides = false;
 			}
 		}
 
@@ -443,6 +449,11 @@ namespace m
 		}
 
 		private void checkedListBoxSides_ItemCheck(object sender, System.Windows.Forms.ItemCheckEventArgs e) {
+			// Only the user's checks change the trigger's sides (the list
+			// re-checking itself when shown again must not clear them)
+
+			if (m_fInitSides)
+				return;
 			if (e.CurrentValue == CheckState.Unchecked && e.NewValue == CheckState.Checked) {
 				m_tgr.Sides |= (1 << e.Index);
 			}
@@ -584,7 +595,15 @@ namespace m
 			// Have to do this initialization here because the sides checked
 			// list box will get unchecked before display if we don't.
 
-			checkedListBoxSides.DataSource = Helper.GetDisplayNames(typeof(Side));
+			// Plain items, not a DataSource: a bound CheckedListBox loses its
+			// checks when its tab is hidden and shown again, which cleared the
+			// trigger's sides ("Trigger not initialized correctly")
+
+			m_fInitSides = true;
+			checkedListBoxSides.Items.Clear();
+			foreach (string strSide in Helper.GetDisplayNames(typeof(Side)))
+				checkedListBoxSides.Items.Add(strSide);
+			m_fInitSides = false;
 			InitSidesListBox();
 		}
 	}

@@ -1702,23 +1702,21 @@ AreaMask GobMgr::CalcAreaMask(TCoord tx, TCoord ty)
 	AreaMask am = 0;
 	for (int nArea = 0; nArea < m_car; nArea++) {
 		if (m_aar[nArea].trc.PtIn(tx, ty)) {
-			am |= ((AreaMask)1 << nArea);
+			am.Set(nArea);
 		}
 	}
 	return am;
 }
 
 // Only called when there is a AreaMask change (rare).
-// I have this in assembly (from pocketchess) if needed.
 
 int GobMgr::GetAreasFromMask(AreaMask am, int *pnArea)
 {
 	int cArea = 0;
-	for (int n = 0; n < kcAreasMax && am != 0; n++) {
-		if (am & ((AreaMask)1 << n)) {
+	for (int n = 0; n < m_car; n++) {
+		if (am.Test(n)) {
 			*pnArea++ = n;
 			cArea++;
-			am &= (am - 1);
 		}
 	}
 	return cArea;
@@ -1729,10 +1727,10 @@ void GobMgr::MoveGobBetweenAreas(Gid gid, AreaMask amOld, AreaMask amNew)
 	if (amOld == amNew)
 		return;
 	AreaMask amRemove = amOld & ~amNew;
-	if (amRemove != 0)
+	if (!amRemove.IsEmpty())
 		RemoveGobFromAreas(gid, amRemove);
 	AreaMask amAdd = amNew & ~amOld;
-	if (amAdd != 0)
+	if (!amAdd.IsEmpty())
 		AddGobToAreas(gid, amAdd);
 }
 

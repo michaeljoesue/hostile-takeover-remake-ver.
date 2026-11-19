@@ -81,7 +81,11 @@ namespace m
 			return 0;
 		}
 
-		public int BonusSortKey {
+		// Not a property to edit (kept out of the property grid): it keeps
+		// areas that share a name, loaded from a .lvl, in their original order
+		// on export, since the game numbers areas by that order
+
+		internal int BonusSortKey {
 			get {
 				return m_nBonusSortKey;
 			}

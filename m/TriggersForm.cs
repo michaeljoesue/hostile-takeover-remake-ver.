@@ -305,12 +305,34 @@ namespace m
 					}
 				}
 			}
-			listBoxSides.SelectedIndex = Array.IndexOf(aside, sideSelected);
+			// The side shown before can be gone (its last trigger deleted or
+			// moved to another side): show the first one then
+
+			int nSel = Array.IndexOf(aside, sideSelected);
+			listBoxSides.SelectedIndex = nSel >= 0 ? nSel : 0;
 		}
+
+		// The side listed at the selection, or the first side with triggers.
+		// The list can briefly hold other sides than the triggers have (while
+		// it is rebuilt), so go by the item, not the index alone.
 
 		Side GetSideSelected() {
 			Side[] aside = m_tgrm.GetTriggerSides();
-			return aside[listBoxSides.SelectedIndex];
+			int n = listBoxSides.SelectedIndex;
+			if (n >= 0 && n < listBoxSides.Items.Count) {
+				Side side = ((NameSide)listBoxSides.Items[n]).side;
+				if (Array.IndexOf(aside, side) >= 0)
+					return side;
+			}
+			return aside.Length != 0 ? aside[0] : Side.side1;
+		}
+
+		// The trigger listed at n, or null if the list is out of step
+
+		Trigger GetTriggerAt(int n) {
+			if (n < 0 || n >= listBoxTriggers.Items.Count)
+				return null;
+			return listBoxTriggers.Items[n] as Trigger;
 		}
 
 		void InitTriggersListBox(Trigger tgrSelect) {
@@ -344,35 +366,31 @@ namespace m
 		}
 
 		private void buttonModifyTrigger_Click(object sender, System.EventArgs e) {
-			int n = listBoxTriggers.SelectedIndex;
-			if (n < 0)
+			Trigger tgrOld = GetTriggerAt(listBoxTriggers.SelectedIndex);
+			if (tgrOld == null)
 				return;
-			Trigger[] atgr = m_tgrm.GetTriggerList(GetSideSelected());
-			Trigger tgr = atgr[n].Clone();
+			Trigger tgr = tgrOld.Clone();
 			TriggerPropForm frm = new TriggerPropForm(tgr);
 			if (frm.ShowDialog() == DialogResult.OK) {
-				m_tgrm.ModifyTrigger(atgr[n], tgr);
+				m_tgrm.ModifyTrigger(tgrOld, tgr);
 				InitSidesListBox(tgr);
 				InitTriggersListBox(tgr);
 			}
 		}
 
 		private void listBoxTriggers_MeasureItem(object sender, System.Windows.Forms.MeasureItemEventArgs e) {
-			Trigger[] atgr = m_tgrm.GetTriggerList(GetSideSelected());
-			int n = e.Index;
-			Trigger tgr = atgr[n];
+			Trigger tgr = GetTriggerAt(e.Index);
+			if (tgr == null)
+				return;
 			int cy = (tgr.Actions.Count + tgr.Conditions.Count + 2) * listBoxTriggers.Font.Height + 4;
 			// BUGBUG: listbox seems to have a problem with item heights > 255
 			e.ItemHeight = Math.Min(cy, 255);
 		}
 
 		private void listBoxTriggers_DrawItem(object sender, System.Windows.Forms.DrawItemEventArgs e) {
-			int n = e.Index;
-			if (n == -1)
+			Trigger trg = GetTriggerAt(e.Index);
+			if (trg == null)
 				return;
-
-			Trigger[] atgr = m_tgrm.GetTriggerList(GetSideSelected());
-			Trigger trg = atgr[n];
 			Color clr = (e.State & DrawItemState.Selected) != 0 ? Color.FromArgb(178, 180, 191) : Color.White;
 			e.Graphics.FillRectangle(new SolidBrush(clr), e.Bounds.Left + 2, e.Bounds.Top + 2, e.Bounds.Width - 4, e.Bounds.Height - 4);
 			int y = e.Bounds.Top + 2;
@@ -382,33 +400,42 @@ namespace m
 			e.Graphics.DrawString("CONDITIONS:", e.Font, br, x, y);
 			y += cyFont;
 			foreach (CaBase cab in trg.Conditions) {
-				e.Graphics.DrawString(" - " + cab.ToString(), e.Font, br, x, y);
+				e.Graphics.DrawString(" - " + CaText(cab), e.Font, br, x, y);
 				y += cyFont;
 			}
 			e.Graphics.DrawString("ACTIONS:", e.Font, br, x, y);
 			y += cyFont;
 			foreach (CaBase cab in trg.Actions) {
-				e.Graphics.DrawString(" - " + cab.ToString(), e.Font, br, x, y);
+				e.Graphics.DrawString(" - " + CaText(cab), e.Font, br, x, y);
 				y += cyFont;
 			}
 		}
 
+		// A condition or action whose text can't be made (eg it names
+		// something since deleted) is listed as such instead of stopping M
+
+		static string CaText(CaBase cab) {
+			try {
+				return cab.ToString();
+			} catch (Exception ex) {
+				return "(" + cab.GetType().Name + ": " + ex.Message + ")";
+			}
+		}
+
 		private void buttonCopyTrigger_Click(object sender, System.EventArgs e) {
-			int n = listBoxTriggers.SelectedIndex;
-			if (n < 0)
+			Trigger tgrOld = GetTriggerAt(listBoxTriggers.SelectedIndex);
+			if (tgrOld == null)
 				return;
-			Trigger[] atgr = m_tgrm.GetTriggerList(GetSideSelected());
-			Trigger tgr = atgr[n].Clone();
+			Trigger tgr = tgrOld.Clone();
 			m_tgrm.AddTrigger(tgr);
 			InitTriggersListBox(tgr);
 		}
 
 		private void buttonDeleteTrigger_Click(object sender, System.EventArgs e) {
-			int n = listBoxTriggers.SelectedIndex;
-			if (n < 0)
+			Trigger tgrOld = GetTriggerAt(listBoxTriggers.SelectedIndex);
+			if (tgrOld == null)
 				return;
-			Trigger[] atgr = m_tgrm.GetTriggerList(GetSideSelected());
-			m_tgrm.RemoveTrigger(atgr[n]);
+			m_tgrm.RemoveTrigger(tgrOld);
 			InitSidesListBox(null);
 			InitTriggersListBox(null);
 		}
@@ -423,20 +450,20 @@ namespace m
 
 		private void buttonMoveUpTrigger_Click(object sender, System.EventArgs e) {
 			int n = listBoxTriggers.SelectedIndex;
-			if (n <= 0)
+			Trigger tgr = GetTriggerAt(n);
+			if (n <= 0 || tgr == null)
 				return;
-			Trigger[] atgr = m_tgrm.GetTriggerList(GetSideSelected());
-			m_tgrm.MoveUpTrigger(GetSideSelected(), atgr[n]);
-			InitTriggersListBox(atgr[n]);
+			m_tgrm.MoveUpTrigger(GetSideSelected(), tgr);
+			InitTriggersListBox(tgr);
 		}
 
 		private void buttonMoveDownTrigger_Click(object sender, System.EventArgs e) {
 			int n = listBoxTriggers.SelectedIndex;
-			if (n < 0 || n >= listBoxTriggers.Items.Count - 1)
+			Trigger tgr = GetTriggerAt(n);
+			if (tgr == null || n >= listBoxTriggers.Items.Count - 1)
 				return;
-			Trigger[] atgr = m_tgrm.GetTriggerList(GetSideSelected());
-			m_tgrm.MoveDownTrigger(GetSideSelected(), atgr[n]);
-			InitTriggersListBox(atgr[n]);
+			m_tgrm.MoveDownTrigger(GetSideSelected(), tgr);
+			InitTriggersListBox(tgr);
 		}
 
 		void EnableButtons() {
@@ -446,7 +473,7 @@ namespace m
 			buttonCopyTrigger.Enabled = fSelected;
 			buttonDeleteTrigger.Enabled = fSelected;
 			buttonMoveUpTrigger.Enabled = (n > 0);
-			buttonMoveDownTrigger.Enabled = (n < listBoxTriggers.Items.Count - 1);
+			buttonMoveDownTrigger.Enabled = fSelected && (n < listBoxTriggers.Items.Count - 1);
 			buttonLoadTriggers.Enabled = false; // (listBoxTriggers.Items.Count != 0);
 			buttonSaveTriggers.Enabled = false; // (listBoxTriggers.Items.Count != 0);
 		}
