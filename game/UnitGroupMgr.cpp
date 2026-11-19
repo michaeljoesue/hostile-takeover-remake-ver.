@@ -1305,6 +1305,7 @@ bool GuardUnitGroupAction::Perform(UnitGroup *pug)
 			// so we must reinitialize it.
 
 			msgT.mid = kmidGuardAction;
+			msgT.GuardCommand.wPostSet = 0;
 
 			msgT.smidReceiver = pmunt->GetId();
 			gsmm.SendMsg(&msgT);
@@ -1440,6 +1441,7 @@ bool GuardVicinityUnitGroupAction::Perform(UnitGroup *pug)
 			// so we must reinitialize it.
 
 			msgT.mid = kmidGuardVicinityAction;
+			msgT.GuardCommand.wPostSet = 0;
 
 			msgT.smidReceiver = pmunt->GetId();
 			gsmm.SendMsg(&msgT);

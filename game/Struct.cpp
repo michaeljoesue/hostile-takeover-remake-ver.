@@ -843,12 +843,16 @@ void StructGob::SetHealth(fix fxHealth)
 	if (m_ff & kfGobBeingBuilt)
 		return;
 
-	if (m_fxHealth * 2 < m_pstruc->GetArmorStrength()) {
-		if (m_ani.GetStrip() != 1)
-			StartAnimation(&m_ani, 1, 0, m_ani.GetFlags());
-	} else {
-		if (m_ani.GetStrip() != 0)
-			StartAnimation(&m_ani, 0, 0, m_ani.GetFlags());
+	// Healthy strip 0, damaged strip 1. Switching keeps the animation's
+	// place (a running animation carries on instead of jumping back to its
+	// first frame)
+
+	int nStrip = m_fxHealth * 2 < m_pstruc->GetArmorStrength() ? 1 : 0;
+	if (m_ani.GetStrip() != nStrip) {
+		int nFrame = m_ani.GetFrame();
+		if (nFrame >= m_ani.GetAnimationData()->GetFrameCount(nStrip))
+			nFrame = 0;
+		StartAnimation(&m_ani, nStrip, nFrame, m_ani.GetFlags());
 	}
 }
 

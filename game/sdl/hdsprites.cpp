@@ -169,6 +169,7 @@ struct HdTrack {
     bool fRunning;              // seen stepping forward by itself
     double tLast;               // when last drawn
     double tCycle;              // own clock of a picture loop (cycle=)
+    double cycle;               // the loop's length, for a strip change
 
     int cFrameSeen;
 };
@@ -566,6 +567,18 @@ static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame
     double t = SimTime();
     std::map<Animation *, HdTrack>::iterator it = s_maptrack.find(pani);
     if (it == s_maptrack.end() || it->second.nStrip != nStrip) {
+        // A strip change of the same animation (a building turning from
+        // healthy to damaged or back) carries on from the same point of the
+        // loop instead of starting it again
+
+        double tCycle = 0;
+        double tLast = t;
+        if (it != s_maptrack.end()) {
+            tLast = it->second.tLast;
+            if (it->second.cycle > 0 && pstrip->cycle > 0)
+                tCycle = it->second.tCycle / it->second.cycle * pstrip->cycle;
+        }
+
         HdTrack trk;
         trk.nStrip = nStrip;
         trk.nFrame = nFrame;
@@ -576,8 +589,9 @@ static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame
         trk.nDir = 0;
         trk.nLastDir = 0;
         trk.fRunning = false;
-        trk.tLast = t;
-        trk.tCycle = 0;
+        trk.tLast = tLast;
+        trk.tCycle = tCycle;
+        trk.cycle = pstrip->cycle;
         trk.cFrameSeen = s_cFrame;
         it = s_maptrack.insert(std::make_pair(pani, trk)).first;
         it->second = trk;

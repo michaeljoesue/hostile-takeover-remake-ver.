@@ -1693,15 +1693,18 @@ AreaMask GobMgr::CalcAreaMask(TCoord tx, TCoord ty, int ctx, int cty)
 
 AreaMask GobMgr::CalcAreaMask(TCoord tx, TCoord ty)
 {
-	if (gsim.GetLevel()->GetTerrainMap()->GetTerrainType(tx, ty) != kttArea)
-		return 0;
+	// The rects decide. The terrain map's area marks are only made on open
+	// terrain when the level is exported, so a tile under an area can be
+	// unmarked (eg a level whose terrain map was made before
+	// the area was added); trusting them left units in such tiles outside
+	// the area.
+
 	AreaMask am = 0;
 	for (int nArea = 0; nArea < m_car; nArea++) {
 		if (m_aar[nArea].trc.PtIn(tx, ty)) {
 			am |= ((AreaMask)1 << nArea);
 		}
 	}
-	Assert(am != 0);
 	return am;
 }
 

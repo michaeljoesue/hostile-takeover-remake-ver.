@@ -67,7 +67,8 @@ The engine has been updated from its 2007 handheld roots:
 - **Sound groups.** Options > Sound has a volume for each group, relative
   to the main volume: Interface (button and menu clicks, selecting a
   building), Battle & Base (shots, explosions, hits, units dying, plus
-  credits counting, building repairs and miners unloading), Unit Voices
+  credits counting, building repairs, miners unloading and a Dominion
+  deploying), Unit Voices
   (units replying to you) and Announcements (buildings' build and ready
   sounds, new build options, alerts, win / lose).
 - **HD buildings.** Every building, defence tower and wall is drawn with
@@ -382,6 +383,13 @@ Maps, sides and limits:
   side, 64 switches or 64 areas, or more scenery objects (600) and units
   and buildings placed on the map (1600) than the game has room for. The
   last two grow with the map like the game's limits.
+- **Guard actions keep their ground.** Computer units with the Guard or
+  Guard Vicinity action (unit or unit group) guard the spot where they
+  start it: they only go after enemies inside their guard range of that
+  spot (their firing range for Guard, about five tiles for Guard Vicinity)
+  and go back to it when the fight is over. Guard Area units go after any
+  enemy in the area they can reach; ones they can't reach no longer
+  freeze them.
 - **Unit group time limits.** Wait, Attack, Guard, Guard Vicinity and the
   new actions below take a number of seconds or Unlimited (set Unlimited
   to True in the action's properties): with no limit the group keeps at

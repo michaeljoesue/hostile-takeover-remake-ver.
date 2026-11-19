@@ -143,7 +143,8 @@ void SoundMgr::PlayResponseSfx(Sfx sfx)
 }
 
 // Base sounds that go with the battlefield group: credits counting up and
-// down, building repair (start / stop) and miners unloading Galaxite
+// down, building repair (start / stop), miners unloading Galaxite and the
+// Dominion deploying
 
 static bool IsBaseSfx(Sfx sfx)
 {
@@ -173,6 +174,7 @@ static bool IsBaseSfx(Sfx sfx)
 	case ksfxRocketTowerAbortRepair:
 	case ksfxVehicleTransportStationRepair:
 	case ksfxVehicleTransportStationAbortRepair:
+	case ksfxMobileHeadquartersDeploy:
 		return true;
 	}
 	return false;
@@ -180,7 +182,8 @@ static bool IsBaseSfx(Sfx sfx)
 
 // Sound groups (Options > Sound):
 //   Interface     - button and menu clicks, selecting a building
-//   Battle & Base - fighting (PlaySfxAt) plus credits, repairs, unloading
+//   Battle & Base - fighting (PlaySfxAt) plus credits, repairs, unloading,
+//                   deploying
 //   Unit Voices   - units replying to the player (PlayResponseSfx)
 //   Announcements - everything else: buildings' build / ready
 //                   sounds, new options, alerts, win / lose

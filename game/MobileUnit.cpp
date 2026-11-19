@@ -155,6 +155,7 @@ MobileUnitGob::MobileUnitGob(MobileUnitConsts *pmuntc) : UnitGob(pmuntc)
 	m_itptBest = 0;
 	m_gidChaseFailed = kgidNull;
 	m_cupdChaseFailed = 0;
+	m_cupdGuardReturn = -1000000;
 
 	// Just to be clear this Unit or its nearby allies hasn't been hit for awhile
 
@@ -406,6 +407,11 @@ void MobileUnitGob::PerformAction(char *szAction)
 		break;
 
 	case knGuardUnitAction:
+		// Computer units guard the spot they start on (and go back to it
+		// after a fight). The player's units are left free.
+
+		if (m_pplr->GetFlags() & kfPlrComputer)
+			SendGuardAction(m_gid);
 		break;
 
 	case knGuardVicinityUnitAction:
@@ -909,6 +915,17 @@ bool MobileUnitGob::PendOrProcessAction(Message *pmsg, State stNew, MobileUnitAc
 		m_mua = mua;
 		m_gidTarget = kgidNull;
 		m_msgAction = *pmsg;
+
+		// A computer unit starting a Guard / Guard Vicinity action guards
+		// the spot it is on. The post travels with the action message so
+		// resuming the action after a fight keeps the same post.
+
+		if ((mua == kmuaGuard || mua == kmuaGuardVicinity) &&
+				m_msgAction.GuardCommand.wPostSet != kwGuardPostSet) {
+			m_msgAction.GuardCommand.wPostSet = kwGuardPostSet;
+			m_msgAction.GuardCommand.wptPost.wx = WcTrunc(m_wx) + kwcTileHalf;
+			m_msgAction.GuardCommand.wptPost.wy = WcTrunc(m_wy) + kwcTileHalf;
+		}
 		SetState(stNew);
 		return true;
 	}
@@ -965,6 +982,85 @@ bool MobileUnitGob::IsAttackPointWithinFiringRangeOfTarget(UnitGob *puntTarget)
 
 const TCoord ktcVicinity = 5;
 const long kcupdAggressivenessBoost = 63; // 5 seconds
+const long kcupdGuardReturnRetry = 24; // ~2 seconds
+
+// Guard / Guard Vicinity posts. Only computer units keep one: they stay
+// within their guard range of it, and go back to it when the fight is over.
+
+bool MobileUnitGob::HasGuardPost()
+{
+	if (m_mua != kmuaGuard && m_mua != kmuaGuardVicinity)
+		return false;
+	if (m_msgAction.GuardCommand.wPostSet != kwGuardPostSet)
+		return false;
+	if (!(m_pplr->GetFlags() & kfPlrComputer))
+		return false;
+
+	// Saved games from before posts carry whatever was in the message
+
+	TCoord tx = TcFromWc(m_msgAction.GuardCommand.wptPost.wx);
+	TCoord ty = TcFromWc(m_msgAction.GuardCommand.wptPost.wy);
+	TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
+	return tx >= 0 && ty >= 0 && tx < ptrmap->GetWidth() && ty < ptrmap->GetHeight();
+}
+
+TCoord MobileUnitGob::GetGuardRange()
+{
+	if (m_mua == kmuaGuardVicinity)
+		return ktcVicinity;
+	return m_pmuntc->tcFiringRange;
+}
+
+// Is the gob within guard range of the post?
+
+bool MobileUnitGob::IsWithinGuardPostRange(Gob *pgob)
+{
+	TCoord tx = TcFromWc(m_msgAction.GuardCommand.wptPost.wx);
+	TCoord ty = TcFromWc(m_msgAction.GuardCommand.wptPost.wy);
+	return CalcRange(tx, ty, pgob) <= GetGuardRange();
+}
+
+// May a guarding unit take on this target? It can always shoot what is in
+// range, but it only moves for targets inside its guard range (with a post).
+
+bool MobileUnitGob::CanEngageFromGuard(UnitGob *puntTarget)
+{
+	if (IsGobWithinRange(puntTarget, m_pmuntc->tcFiringRange))
+		return true;
+
+	// The way to it failed a moment ago: leave it (else Guard -> Attack ->
+	// Guard every update, the unit frozen in place)
+
+	if (puntTarget->GetId() == m_gidChaseFailed && gsim.GetUpdateCount() - m_cupdChaseFailed < kcupdChaseRetry)
+		return false;
+	return !HasGuardPost() || IsWithinGuardPostRange(puntTarget);
+}
+
+// Head back to the guard post if away from it. Returns true if moving.
+
+bool MobileUnitGob::ReturnToGuardPost()
+{
+	if (!HasGuardPost())
+		return false;
+	WPoint wptPost = m_msgAction.GuardCommand.wptPost;
+	if (CalcRange(TcFromWc(wptPost.wx), TcFromWc(wptPost.wy), this) <= 1)
+		return false;
+
+	// Don't keep trying every update if the way back is blocked
+
+	if (gsim.GetUpdateCount() - m_cupdGuardReturn < kcupdGuardReturnRetry)
+		return false;
+	m_cupdGuardReturn = gsim.GetUpdateCount();
+
+	m_gidForceTarget = kgidNull;
+	m_wptTarget = wptPost;
+	m_wptTargetCenter = wptPost;
+	m_tcTargetRadius = 1;
+	m_wcMoveDistPerUpdate = m_pmuntc->GetMoveDistPerUpdate();
+	SetState(kstMove);
+	return true;
+}
+
 
 int MobileUnitGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
@@ -1170,6 +1266,11 @@ lbHitNoDamage:
 
 			m_gidForceTarget = kgidNull;
 
+			// Away from the guard post? Don't sleep through heading back
+
+			if (HasGuardPost())
+				m_unvl.MinSkip();
+
 			// Next Shift+right-click order, if any
 
 			StartQueuedOrder();
@@ -1203,6 +1304,11 @@ lbHitNoDamage:
 				else
 					tcSightRange = m_pmuntc->tcFiringRange;
 				UnitGob *puntTarget = FindEnemyNearby(tcSightRange);
+
+				// Guarding a post: leave enemies outside the guard range alone
+
+				if (puntTarget != NULL && !CanEngageFromGuard(puntTarget))
+					puntTarget = NULL;
 				if (puntTarget != NULL) {
 					if (m_pplr->GetFlags() & kfPlrComputer) {
 						puntTarget->GetAttackPoint(&m_wptTarget);
@@ -1247,6 +1353,11 @@ lbHitNoDamage:
 					m_gidTarget = kgidNull;
 				}
 			}
+
+			// Nothing to fight: back to the guard post
+
+			if (!(m_wfMunt & kfMuntFiring) && ReturnToGuardPost())
+				return knHandled;
 
 			// Animate (idle or firing)
 
@@ -1388,6 +1499,7 @@ lbHitNoDamage:
 							(m_mua == kmuaGuardArea && ggobm.IsGobWithinArea(puntTarget, m_msgAction.GuardAreaCommand.nArea)) ||
 							(m_mua == kmuaGuardVicinity || m_mua == kmuaHuntEnemies) ||
 							IsHumanOrGodControlled()) && IsAttackPointWithinFiringRangeOfTarget(puntTarget) &&
+							(!HasGuardPost() || IsWithinGuardPostRange(puntTarget)) &&
 							!(m_gidTarget == m_gidChaseFailed && gsim.GetUpdateCount() - m_cupdChaseFailed < kcupdChaseRetry)) {
 							
 						SetStatePendingFireComplete(kstChase);
@@ -1492,6 +1604,14 @@ lbHitNoDamage:
 
 				if (IsGobWithinRange(pgobTarget, m_pmuntc->tcFiringRange)) {
 					SetState(kstAttack);
+					return knHandled;
+
+				// Guarding a post and the enemy has left the guard range: let
+				// it go (the guard action takes the unit back to its post)
+
+				} else if (HasGuardPost() && !IsWithinGuardPostRange(pgobTarget)) {
+					m_gidTarget = kgidNull;
+					gsmm.SendMsg(&m_msgAction);
 					return knHandled;
 
 				} else if (!(m_wfMunt & kfMuntChaseEnemies) && !IsHumanOrGodControlled()) {
@@ -3456,10 +3576,23 @@ UnitGob *MobileUnitGob::FindValidTargetInArea(int nArea)
 		Gob *puntTarget = ggobm.EnumGobsInArea(&enm, m_msgAction.GuardAreaCommand.nArea, ~m_pplr->GetAllies(), kumMobileUnits);
 		if (puntTarget == NULL)
 			return NULL;
-		if (IsValidTarget(puntTarget)) {
-			Assert(puntTarget->GetFlags() & kfGobUnit);
-			return (UnitGob *)puntTarget;
+		if (!IsValidTarget(puntTarget))
+			continue;
+		Assert(puntTarget->GetFlags() & kfGobUnit);
+		UnitGob *punt = (UnitGob *)puntTarget;
+
+		// Skip enemies the unit can't go after (out of reach, or the way to
+		// them failed a moment ago) unless it can shoot them from here.
+		// Taking them on anyway sent the unit from Guard to Attack and
+		// straight back every update, frozen in place.
+
+		if (!IsGobWithinRange(punt, m_pmuntc->tcFiringRange)) {
+			if ((m_wfMunt & kfMuntStayPut) || !IsAttackPointWithinFiringRangeOfTarget(punt))
+				continue;
+			if (punt->GetId() == m_gidChaseFailed && gsim.GetUpdateCount() - m_cupdChaseFailed < kcupdChaseRetry)
+				continue;
 		}
+		return punt;
 	}
 }
 

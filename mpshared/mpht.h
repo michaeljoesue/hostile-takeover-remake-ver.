@@ -153,6 +153,14 @@ struct Message // msg
 			word wDummy;
 		} GuardAreaCommand;
 
+		// Guard and Guard Vicinity: the spot the unit guards, filled in by
+		// the unit when it starts the action (wPostSet == kwGuardPostSet)
+
+		struct {
+			word wPostSet;
+			WPoint wptPost;
+		} GuardCommand;
+
 		struct {
 			UnitMask um;
 		} HuntEnemiesCommand;
