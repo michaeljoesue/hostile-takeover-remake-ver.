@@ -5,9 +5,10 @@ namespace wi {
 //
 // CommandCenterGob implementation
 //
-// A building with no functions: no menu (it isn't repaired or sold), no
-// power, nothing built or researched, and it can't be built either:
-// missions place it. It can be selected and attacked and destroyed like any
+// A building with no functions: no power, nothing built or researched, and
+// it can't be built either: missions place it. Its menu only repairs it (by
+// the player, or the auto repair of the player or a computer player); it
+// isn't sold or taken over. It can be attacked and destroyed like any
 // building. It is drawn with the R&D Center's classic art; its HD pictures
 // are the dish version of the R&D Center's (HdAnimation in GobTemplates).
 //
@@ -39,10 +40,14 @@ CommandCenterGob::CommandCenterGob() : StructGob(&gConsts)
 {
 }
 
-// No menu: nothing to order, and it isn't repaired or sold
+// The building menu, Repair only (Sell is greyed out)
 
-void CommandCenterGob::PopupMenu()
+void CommandCenterGob::InitMenu(Form *pfrm)
 {
+	StructGob::InitMenu(pfrm);
+	ButtonControl *pbtn = (ButtonControl *)pfrm->GetControlPtr(kidcSelfDestruct);
+	if (pbtn != NULL)
+		pbtn->Enable(false);
 }
 
 bool CommandCenterGob::IsTakeoverable(Player *pplr)
@@ -53,9 +58,7 @@ bool CommandCenterGob::IsTakeoverable(Player *pplr)
 int CommandCenterGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
 BeginStateMachine
-	// Not repaired or sold
-
-	OnMsg(kmidRepairCommand)
+	// Not sold
 
 	OnMsg(kmidSelfDestructCommand)
 

@@ -94,8 +94,9 @@ The engine has been updated from its 2007 handheld roots:
   too, in the player's colour. F9 switches between the HD art and the
   original pictures. The pictures are in `data\hd` (see Game data).
 - **Command Center.** A building for missions to place, for any side: it
-  has no functions (no menu, no power, it isn't repaired, sold or taken
-  over) and can't be built. It has the R&D Center's armour (250) and
+  has no functions (no power, it isn't sold or taken over) and can't be
+  built; its menu only repairs it, and the player's and computer players'
+  auto repair repair it too. It has the R&D Center's armour (250) and
   classic art; its HD art is the R&D Center's dish version, turning at the
   R&D Center's pace. Like any building it can be attacked and destroyed,
   and it counts as a building in triggers.

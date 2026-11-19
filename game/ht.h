@@ -6825,9 +6825,9 @@ private:
 	void RedrawNeighbours();
 };
 
-// CommandCenterGob: a building with no functions (no menu, no power, not
-// repaired or sold, never built). Missions place it; it can be attacked and
-// destroyed like any building. Drawn with the R&D Center's art (its HD
+// CommandCenterGob: a building with no functions (no power, not sold, never
+// built; its menu only repairs it). Missions place it; it can be attacked
+// and destroyed like any building. Drawn with the R&D Center's art (its HD
 // pictures are the dish version).
 
 class CommandCenterGob : public StructGob
@@ -6839,7 +6839,7 @@ public:
 
 	// StructGob overrides
 
-	virtual void PopupMenu();
+	virtual void InitMenu(Form *pfrm);
 	virtual bool IsTakeoverable(Player *pplr);
 
 	// StateMachine methods

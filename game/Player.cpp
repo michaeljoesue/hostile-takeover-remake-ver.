@@ -620,9 +620,9 @@ void Player::Repair(bool fOn)
 
 		StructGob *pstru = (StructGob *)pgobT;
 
-		// Walls and the Command Center aren't repaired
+		// Walls aren't repaired
 
-		if (pstru->GetType() == kgtWall || pstru->GetType() == kgtCommandCenter)
+		if (pstru->GetType() == kgtWall)
 			continue;
 
 		if (fOn) {
