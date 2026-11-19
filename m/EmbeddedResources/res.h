@@ -657,6 +657,7 @@
 #define knShowAlertTriggerAction 34
 #define knSetAllowedUpgradesTriggerAction 35
 #define knSetUpgradesTriggerAction 36
+#define knCreateRandomUnitGroupOfSideTriggerAction 37
 
 // UnitGroupActions
 

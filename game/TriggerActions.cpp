@@ -70,6 +70,10 @@ bool Trigger::LoadAction(IniReader *pini, FindProp *pfind)
 		pactn = new CreateRandomUnitGroupAction();
 		break;
 
+	case knCreateRandomUnitGroupOfSideTriggerAction:
+		pactn = new CreateRandomUnitGroupOfSideAction();
+		break;
+
 	case knStartCountdownTimerTriggerAction:
 		pactn = new StartCountdownAction();
 		break;
@@ -596,6 +600,25 @@ bool CreateRandomUnitGroupAction::Init(char *psz)
 bool CreateRandomUnitGroupAction::Perform(Trigger *ptgr, Side side)
 {
 	gsim.GetLevel()->GetUnitGroupMgr()->ActivateRandomUnitGroup();
+	return true;
+}
+
+// CreateRandomUnitGroupOfSideAction
+
+bool CreateRandomUnitGroupOfSideAction::Init(char *psz)
+{
+	int nCaSideMask;
+	if (!ParseNumber(&psz, &nCaSideMask))
+		return false;
+	m_wfCaSideMask = nCaSideMask;
+	return true;
+}
+
+bool CreateRandomUnitGroupOfSideAction::Perform(Trigger *ptgr, Side side)
+{
+	SideMask sidm = GetSideMaskFromCaSideMask(side, m_wfCaSideMask);
+	if (sidm != 0)
+		gsim.GetLevel()->GetUnitGroupMgr()->ActivateRandomUnitGroup(sidm);
 	return true;
 }
 

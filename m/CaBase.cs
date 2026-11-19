@@ -350,6 +350,10 @@ namespace m
 			case 36: // knSetUpgradesTriggerAction
 				cab = new SetUpgradesTriggerAction();
 				break;
+
+			case 37: // knCreateRandomUnitGroupOfSideTriggerAction
+				cab = new CreateRandomUnitGroupOfSideTriggerAction();
+				break;
 			}
 			if (cab != null) {
 				cab.FromSaveString(strValue);
@@ -1030,6 +1034,22 @@ namespace m
 		}
 		public CreateRandomUnitGroupTriggerAction() {
 			m_acat = new CaType[0];
+		}
+	}
+
+	[Serializable]
+	[DisplayName("Create Random Unit Group of Side")]
+	[Description("Create a random pre-defined Unit Group belonging to the given " +
+		 "side(s) and send it on its way according to its intrinsic actions. The " +
+		 "Unit Group is selected from amongst that side's groups with the " +
+		 "\"Random\" box checked. Useful when several computer sides have random " +
+		 "groups: Create Random Unit Group picks from all sides' groups.")]
+	public class CreateRandomUnitGroupOfSideTriggerAction : CaBase {
+		override public string GetString() {
+			return "Create a random Unit Group of $1";
+		}
+		public CreateRandomUnitGroupOfSideTriggerAction() {
+			m_acat = new CaType[] { new CaTypeSide() };
 		}
 	}
 

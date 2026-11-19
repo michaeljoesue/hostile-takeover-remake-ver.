@@ -3738,6 +3738,19 @@ public:
 	virtual bool Perform(Trigger *ptgr, Side side);
 };
 
+// Create Random Unit Group of Side: one of the random groups belonging to
+// the given side(s)
+
+class CreateRandomUnitGroupOfSideAction : public TriggerAction
+{
+public:
+	virtual bool Init(char *psz);
+	virtual bool Perform(Trigger *ptgr, Side side);
+
+private:
+	word m_wfCaSideMask;
+};
+
 // Start Countdown Action
 
 class StartCountdownAction : public TriggerAction
@@ -4147,7 +4160,7 @@ public:
 	void Exit();
 	void Update();
 	void ActivateUnitGroup(int iug);
-	void ActivateRandomUnitGroup();
+	void ActivateRandomUnitGroup(SideMask sidm = 0);
 	bool CreateAtLevelLoadGroups();
 	UnitGroup *GetUnitGroup(Gid gid);
 	UnitGroup *GetUnitGroupByIndex(int iug) {

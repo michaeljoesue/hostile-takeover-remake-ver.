@@ -220,3 +220,9 @@ class SetUpgradesTriggerAction(Action):
         self.sidemask = int(args[0])
         self.upgrademask = int(args[1])
         Action.__init__(self, txt)
+
+class CreateRandomUnitGroupOfSideTriggerAction(Action):
+    def __init__(self, txt):
+        args = txt.split(',')
+        self.sidemask = int(args[0])
+        Action.__init__(self, txt)

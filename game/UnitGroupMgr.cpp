@@ -88,8 +88,19 @@ void UnitGroupMgr::ActivateUnitGroup(int iug)
 // Rob expects random groups to be activated in a fashion that is
 // not truly random. The idea is that groups should activate randomly
 // but not repeat until all have been activated (aka shuffle)
+//
+// sidm limits the choice to the random groups of those sides (Create
+// Random Unit Group of Side); 0 means all random groups
 
-void UnitGroupMgr::ActivateRandomUnitGroup()
+static bool IsGroupOfSides(UnitGroup *pug, SideMask sidm)
+{
+	if (sidm == 0)
+		return true;
+	Player *pplr = pug->GetOwner();
+	return pplr != NULL && (GetSideMask(pplr->GetSide()) & sidm) != 0;
+}
+
+void UnitGroupMgr::ActivateRandomUnitGroup(SideMask sidm)
 {
 	// Figure out how many inactive random groups there are
 
@@ -97,7 +108,7 @@ void UnitGroupMgr::ActivateRandomUnitGroup()
 	UnitGroup *pug = m_aug;
 	for (iug = 0; iug < m_cug; iug++, pug++) {
 		word wf = pug->GetFlags();
-		if ((wf & (kfUgActive | kfUgRandomGroup)) == kfUgRandomGroup) {
+		if ((wf & (kfUgActive | kfUgRandomGroup)) == kfUgRandomGroup && IsGroupOfSides(pug, sidm)) {
 			if (wf & kfUgNotRecentlyActivated)
 				cugNotRecentlyActive++;
 			cug++;
@@ -113,7 +124,7 @@ void UnitGroupMgr::ActivateRandomUnitGroup()
 		pug = m_aug;
 		for (iug = 0; iug < m_cug; iug++, pug++) {
 			word wf = pug->GetFlags();
-			if ((wf & (kfUgActive | kfUgRandomGroup)) == kfUgRandomGroup)
+			if ((wf & (kfUgActive | kfUgRandomGroup)) == kfUgRandomGroup && IsGroupOfSides(pug, sidm))
 				pug->SetFlags(wf | kfUgNotRecentlyActivated);
 		}
 	} else {
@@ -128,7 +139,8 @@ void UnitGroupMgr::ActivateRandomUnitGroup()
 
 	pug = m_aug;
 	for (iug = 0; true; pug++) {
-		if ((pug->GetFlags() & (kfUgActive | kfUgRandomGroup | kfUgNotRecentlyActivated)) == (kfUgRandomGroup | kfUgNotRecentlyActivated)) {
+		if ((pug->GetFlags() & (kfUgActive | kfUgRandomGroup | kfUgNotRecentlyActivated)) == (kfUgRandomGroup | kfUgNotRecentlyActivated) &&
+				IsGroupOfSides(pug, sidm)) {
 			if (iug == cug) {
 				pug->Activate();
 				return;

@@ -408,6 +408,11 @@ Maps, sides and limits:
   start it: they chase enemies that back off, but only up to 3 tiles past
   what they watch from that spot (their firing range for Guard, five tiles
   for Guard Vicinity), and go back to it when the fight is over.
+- **Create Random Unit Group of Side.** A new trigger action: like Create
+  Random Unit Group, but picks only among the random groups belonging to
+  the chosen side(s). Create Random Unit Group still picks from every
+  side's random groups, so with several computer sides use this one to keep
+  each side's random attacks its own.
 - **Guard Area unit action removed.** M no longer offers it; units that had
   it get Guard Vicinity when the level is opened. (Levels already compiled
   with it still play as before.)

@@ -68,7 +68,8 @@ class Trigger:
             33 : lambda t: action.SetPvarTextTriggerAction(t),
             34 : lambda t: action.ShowAlertTriggerAction(t),
             35 : lambda t: action.SetAllowedUpgradesTriggerAction(t),
-            36 : lambda t: action.SetUpgradesTriggerAction(t)
+            36 : lambda t: action.SetUpgradesTriggerAction(t),
+            37 : lambda t: action.CreateRandomUnitGroupOfSideTriggerAction(t)
         }[int(txt.split(',')[0])](','.join(txt.split(',')[1:]))
         self.actions.append(a)
 
