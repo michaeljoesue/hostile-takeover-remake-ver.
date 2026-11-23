@@ -108,6 +108,27 @@ def team_mask(rgba):
     t=(w_h*w_s*w_v*a)
     return (t*255).astype(np.uint8)
 
+def vehicle_team_mask(rgba):
+    """The vehicle sheets' paint is a greyer steel blue than the buildings'
+    (saturation mostly 0.17..0.33, hue 185..240), so team_mask caught it
+    only in part: the paint came out mottled, blended half way between the
+    side's colour and the sheet's blue (purple on red, green on yellow).
+    Nothing else on the vehicles is near that hue (the hulls are tan, the
+    metal neutral grey, the Hydra's nose cone magenta), so a wider hue
+    window and a much lower saturation floor take the paint whole."""
+    a=rgba[:,:,3]>0
+    rgb=rgba[:,:,:3].astype(np.float32)/255
+    mx=rgb.max(2); mn=rgb.min(2); d=mx-mn
+    s=np.where(mx>0,d/np.maximum(mx,1e-6),0)
+    r,g,b=rgb[:,:,0],rgb[:,:,1],rgb[:,:,2]
+    hr=((g-b)/np.maximum(d,1e-6))%6; hg=(b-r)/np.maximum(d,1e-6)+2; hb=(r-g)/np.maximum(d,1e-6)+4
+    h=np.where(mx==r,hr,np.where(mx==g,hg,hb))*60
+    h=np.where(d>1e-6,h,0)
+    w_h=np.clip(1-np.maximum(0,np.abs(h-215)-37)/12,0,1)
+    w_s=np.clip((s-0.05)/0.07,0,1)
+    w_v=np.clip((mx-0.06)/0.08,0,1)
+    return (w_h*w_s*w_v*a*255).astype(np.uint8)
+
 def crop(rgba):
     al=rgba[:,:,3]
     ys,xs=np.nonzero(al)
@@ -119,7 +140,7 @@ def save_pic(name, rgba, gx, gy, S, team=True):
     """rgba: HD cell; (gx,gy): game coords (rel. to draw point) of the cell's top-left; S: HD px per game px"""
     c,x0,y0=crop(rgba)
     pack,pic=name.split('/')
-    t=team_mask(c) if team else None
+    t=(team(c) if callable(team) else team_mask(c)) if team else None
     if t is not None and t.max()==0: t=None
     PACKS.setdefault(pack,[]).append((pic, gx+x0/S, gy+y0/S, S, c, t))
 
@@ -381,7 +402,7 @@ def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,1
     gx,gy,S=placement(classic_mask(anir,0,0),anir,bodies[0])
     for d in range(8):
         if (bodies[d][:,:,3]>0).sum()==0: raise SystemExit('%s: body %d is empty'%(name,d))
-        save_pic('%s/b%d_000'%(name,d),bodies[d],gx,gy,S)
+        save_pic('%s/b%d_000'%(name,d),bodies[d],gx,gy,S,team=vehicle_team_mask)
         strip(anir,'base %d'%d,pics='%s/b%d_'%(name,d),n=1)
         preview('%s_b%d'%(name,d),anir,d,0,bodies[d],gx,gy,S)
     # The turret sheet is rendered with the same camera as the body sheet
@@ -398,7 +419,7 @@ def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,1
     for d in range(16):
         dx,dy=tsh[d]
         for k in range(turret_rows):
-            save_pic('%s/t%02d_%03d'%(name,d,k),cell(T,c,c,d,k),tgx-dx/S,tgy-dy/S,TS)
+            save_pic('%s/t%02d_%03d'%(name,d,k),cell(T,c,c,d,k),tgx-dx/S,tgy-dy/S,TS,team=vehicle_team_mask)
         strip(anir,'fire %02d'%d,pics='%s/t%02d_'%(name,d),n=turret_rows,blend=0)
         preview('%s_t%02d'%(name,d),anir,8+d,0,cell(T,c,c,d,0),tgx-dx/S,tgy-dy/S,TS)
     # icon: body and turret composed in HD pixels (game coords * S)
@@ -413,7 +434,7 @@ def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,1
     canvas=Image.new('RGBA',(R-L,Bt-Tp))
     canvas.alpha_composite(Image.fromarray(bc),(-L,-Tp))
     canvas.alpha_composite(Image.fromarray(tc),(ox-L,oy-Tp))
-    save_pic('%s/icon000'%name,np.array(canvas),gx+L/S,gy+Tp/S,S)
+    save_pic('%s/icon000'%name,np.array(canvas),gx+L/S,gy+Tp/S,S,team=vehicle_team_mask)
     strip(anir,'icon',pics='%s/icon'%name,n=1)
 
 def walls():
