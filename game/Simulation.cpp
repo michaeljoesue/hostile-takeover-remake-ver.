@@ -951,8 +951,14 @@ void Simulation::GetViewPos(WCoord *pwx, WCoord *pwy)
 
 bool Simulation::HitTest(Enum *penm, WCoord wx, WCoord wy, word wf, Gob **ppgob)
 {
+    // First call: gather what's on screen. Later calls carry on from there
+    // (m_pvNext must change, or every call started over at the first gob:
+    // a caller that skips a gob, as the hover label does for one in fog,
+    // got it back forever and the game stopped responding)
+
     if (penm->m_pvNext == (void *)kEnmFirst) {
         FindVisibleGobs();
+        penm->m_pvNext = NULL;
         penm->m_dwUser = 0;
     }
 
