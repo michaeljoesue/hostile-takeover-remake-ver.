@@ -545,12 +545,27 @@ def balance_paint(a, what):
     out[:,:,:3]=np.clip(a[:,:,:3].astype(np.float32)*f[:,:,None]+0.5,0,255).astype(np.uint8)
     return out
 
+# Size. Each vehicle is scaled to fit the classic sprite facing up, but the
+# classic side views were drawn shorter than a model looks from the side,
+# so some HD vehicles came out bigger than the originals side on (Hydra
+# +22%, Liberator +14%, Bullpup +13%, Dominion +12% in area). Those are
+# shrunk a little about the cell's centre (the model's axis), so up and
+# side views together match the originals.
+VEHICLE_SIZE={'hydra':0.93,'liberator':0.96,'bullpup':0.96,'dominion':0.96}
+def resize_placement(name, c, gx, gy, S):
+    f=VEHICLE_SIZE.get(name,1.0)
+    if f==1.0: return gx,gy,S
+    S2=S/f; m=c/2.0
+    print('  scaled to %.0f%%'%(f*100))
+    return gx+m/S-m/S2, gy+m/S-m/S2, S2
+
 def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,12), recoil=True):
     print(name)
     B=sheet(body_sheet); T=sheet(turret_sheet)
     B=balance_paint(B,'body'); T=balance_paint(T,'turret')
     bodies=[cell(B,c,c,d,0) for d in range(8)]
     gx,gy,S=placement(classic_mask(anir,0,0),anir,bodies[0])
+    gx,gy,S=resize_placement(name,c,gx,gy,S)
     for d in range(8):
         if (bodies[d][:,:,3]>0).sum()==0: raise SystemExit('%s: body %d is empty'%(name,d))
         save_pic('%s/b%d_000'%(name,d),bodies[d],gx,gy,S,team=vehicle_team_mask)
@@ -613,6 +628,7 @@ def bullpup():
     print(name)
     A=balance_paint(sheet('bullpup.png'),'miner')
     gx,gy,S=placement(classic_mask(anir,0,0),anir,cell(A,c,c,0,0))
+    gx,gy,S=resize_placement(name,c,gx,gy,S)
     for d in range(8):
         save_pic('%s/r%d_000'%(name,d),cell(A,c,c,d,0),gx,gy,S,team=vehicle_team_mask)
         strip(anir,'run %d'%d,pics='%s/r%d_'%(name,d),n=1)
@@ -637,6 +653,7 @@ def dominion():
     print(name)
     A=balance_paint(sheet('dominion.png'),'body')
     gx,gy,S=placement(classic_mask(anir,0,0),anir,cell(A,c,c,0,0))
+    gx,gy,S=resize_placement(name,c,gx,gy,S)
     for d in range(8):
         save_pic('%s/r%d_000'%(name,d),cell(A,c,c,d,0),gx,gy,S,team=vehicle_team_mask)
         strip(anir,'run %d'%d,pics='%s/r%d_'%(name,d),n=1)
