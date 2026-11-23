@@ -18,7 +18,7 @@ Needs Python 3 with numpy, Pillow and qoi (pip install numpy pillow qoi).
     python tools/hd/build_hd.py [--out data/hd] [--preview DIR] [--only NAME]
 """
 
-import argparse, os, re, struct, sys
+import argparse, math, os, re, struct, sys
 import numpy as np
 from PIL import Image, ImageFilter
 import qoi
@@ -395,6 +395,89 @@ def tower(t, anir):
 # the turret sheet takes the body's placement (see below). The build menu icon is the body and
 # turret together, facing west like the classic icon.
 
+# Recoil. The artist's firing pictures show the muzzle flash but the
+# barrels stay put; the classic sprites pull the barrel that fired back
+# into the turret and let it run out again (the Liberator's two barrels in
+# turn). Each firing picture gets that: the thin barrels in front of the
+# turret's axis are found in the picture at rest, the one whose muzzle is
+# nearest the flash slides back along the facing (by a share of its length
+# that follows how much flash the picture has: full at the shot, less as it
+# dies away), under the turret, which hides what slides into it.
+from scipy import ndimage as _ndi
+def _opened(a, k=9):
+    m=Image.fromarray(((a>128)*255).astype(np.uint8))
+    return np.array(m.filter(ImageFilter.MinFilter(k)).filter(ImageFilter.MaxFilter(k)))>128
+def _shift(img, dx, dy):
+    """shift rgba by float offset (bilinear via PIL affine)"""
+    im=Image.fromarray(img)
+    return np.array(im.transform(im.size, Image.AFFINE, (1,0,-dx,0,1,-dy), resample=Image.BILINEAR))
+
+def add_recoil(cells, P, deg, frac=0.3, maxamp=None, lateral=0.12, k=None):
+    """cells: list of rgba frames for one direction, cells[0] at rest.
+    Returns new frames: in each firing frame the barrel that fired slides
+    back along the turret's facing, by frac of its length scaled by how
+    much flash the frame has."""
+    rest=cells[0]; c=rest.shape[0]
+    a=rest[:,:,3]
+    th=math.radians(deg); u=np.array([math.sin(th),-math.cos(th)])
+    yy,xx=np.mgrid[0:c,0:c]
+    rx=xx-P[0]; ry=yy-P[1]
+    t=rx*u[0]+ry*u[1]; lat=-rx*u[1]+ry*u[0]
+    body=_opened(a, k or (int(c*0.06)|1))
+    barrel=(a>40)&~body&(t>0)&(np.abs(lat)<lateral*c)
+    # barrels: connected components
+    lab,n=_ndi.label(barrel)
+    # one barrel = the pieces along one line (bands on a barrel split it)
+    groups=[]
+    for i in range(1,n+1):
+        m=lab==i
+        if m.sum()<20: continue
+        lm=lat[m].mean()
+        for g in groups:
+            if abs(g[0]-lm)<0.025*c: g[1]|=m; break
+        else: groups.append([lm,m])
+    comps=[]
+    for lm,m in groups:
+        tl=t[m]; comps.append((m, tl.max(), tl.min(), (xx[m][np.argmax(tl)], yy[m][np.argmax(tl)])))
+    if not comps: return cells, 0
+    rest_rgb=rest.astype(np.int32)
+    flash=[]
+    for f in cells[1:]:
+        d=(np.abs(f.astype(np.int32)-rest_rgb).sum(2)>60)&(f[:,:,3]>60)&~body
+        flash.append(d)
+    fa=[d.sum() for d in flash]; fmax=max(fa) if fa and max(fa)>0 else 1
+    out=[rest]
+    for k,f in enumerate(cells[1:]):
+        d=flash[k]
+        if d.sum()==0: out.append(f); continue
+        fy,fx=np.nonzero(d); fc=np.array([fx.mean(),fy.mean()])
+        # the barrel whose muzzle is nearest the flash
+        m,tmax,tmin,tip=min(comps,key=lambda cc: np.hypot(cc[3][0]-fc[0],cc[3][1]-fc[1]))
+        L=tmax-max(tmin,0)
+        amp=frac*L*(d.sum()/fmax)
+        if maxamp: amp=min(amp,maxamp)
+        # barrel layer from the rest frame, slid back
+        bl=np.zeros_like(rest); bl[m]=rest[m]
+        bl=_shift(bl,-u[0]*amp,-u[1]*amp)
+        # frame without that barrel (where the flash isn't)
+        g=f.copy()
+        mm=np.array(Image.fromarray((m*255).astype(np.uint8)).filter(ImageFilter.MaxFilter(3)))>0
+        mm&=~d
+        g[mm,3]=0
+        # slid barrel under the rest of the frame (the body hides what slides in)
+        base=Image.fromarray(bl); base.alpha_composite(Image.fromarray(g))
+        out.append(np.array(base))
+    return out, len(comps)
+
+def recoil_sheet(T, c, ndirs, rows, P_of):
+    out=T.copy()
+    for d in range(ndirs):
+        cells=[cell(T,c,c,d,k) for k in range(rows)]
+        new,_=add_recoil(cells,P_of(d,cells[0]),360.0/ndirs*d)
+        for k in range(1,rows):
+            out[k*c:(k+1)*c, d*c:(d+1)*c]=new[k]
+    return out
+
 def turret_orbit(T, c):
     """How far (HD px) each of the 16 turret pictures' middle is off the
     turret's axis: the middles (the turret without its thin barrel, an
@@ -462,7 +545,7 @@ def balance_paint(a, what):
     out[:,:,:3]=np.clip(a[:,:,:3].astype(np.float32)*f[:,:,None]+0.5,0,255).astype(np.uint8)
     return out
 
-def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,12)):
+def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,12), recoil=True):
     print(name)
     B=sheet(body_sheet); T=sheet(turret_sheet)
     B=balance_paint(B,'body'); T=balance_paint(T,'turret')
@@ -484,6 +567,11 @@ def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,1
     # middle stays on the axis: it turns in place on its socket.
     tgx,tgy,TS=gx,gy,S
     tsh=turret_orbit(T,c)
+    if recoil:
+        def axis(d,rest):
+            o=_opened(rest[:,:,3],int(c*0.06)|1); ys,xs=np.nonzero(o)
+            return (xs.mean()-tsh[d][0], ys.mean()-tsh[d][1])
+        T=recoil_sheet(T,c,16,turret_rows,axis)
     for d in range(16):
         dx,dy=tsh[d]
         for k in range(turret_rows):
@@ -562,6 +650,10 @@ def cyclops():
     name,anir,c='cyclops','artillery.anir',344
     print(name)
     A=balance_paint(sheet('cyclops.png'),'gun')
+    def axis(d,rest):
+        o=_opened(rest[:,:,3],int(c*0.06)|1); ys,xs=np.nonzero(o)
+        return (xs.mean(), ys.mean())
+    A=recoil_sheet(A,c,8,3,axis)
     gx,gy,S=placement(classic_mask(anir,8,0),anir,cell(A,c,c,0,0))
     for d in range(8):
         for k in range(3):
@@ -639,7 +731,7 @@ JOBS=[
     # Eagle (machine gun vehicle): 9 turret rows, its 9 classic firing frames
     ('eagle', lambda: vehicle('eagle','tmac.anir','eagle_body.png','eagle_turret.png',176,9)),
     # Hydra (rocket vehicle): 3 turret rows (at rest, firing, after)
-    ('hydra', lambda: vehicle('hydra','troc.anir','hydra_body.png','hydra_turret.png',216,3)),
+    ('hydra', lambda: vehicle('hydra','troc.anir','hydra_body.png','hydra_turret.png',216,3,recoil=False)),
     # Liberator (medium tank): the Hydra's chassis; 5 turret rows, its 5
     # classic firing frames (at rest, then the two barrels in turn)
     # Cyclops (artillery): one sheet, the whole gun turns
