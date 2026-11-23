@@ -346,9 +346,9 @@ def tower(t, anir):
 # Vehicles: a body in 8 directions (one row, clockwise from north, as the
 # classic 'base 0'..'base 7') and a turret in 16 directions (columns, as
 # 'fire 00'..'fire 15') with a row per classic firing frame (row 0 at
-# rest). Each sheet is fitted once (body: 'base 0'; turret: 'fire 00'
-# frame 0) and keeps that placement in every direction: the artist turned
-# the model about the same point. The build menu icon is the body and
+# rest). The body sheet is fitted once ('base 0') and keeps that placement
+# in every direction (the artist turned the model about the same point);
+# the turret sheet takes the body's placement (see below). The build menu icon is the body and
 # turret together, facing west like the classic icon.
 
 def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,12)):
@@ -361,8 +361,12 @@ def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,1
         save_pic('%s/b%d_000'%(name,d),bodies[d],gx,gy,S)
         strip(anir,'base %d'%d,pics='%s/b%d_'%(name,d),n=1)
         preview('%s_b%d'%(name,d),anir,d,0,bodies[d],gx,gy,S)
-    # the turret sheet is drawn at the body's scale: fit only its place
-    tgx,tgy,TS=placement(classic_mask(anir,8,0),anir,cell(T,c,c,0,0),S_fixed=S)
+    # The turret sheet is rendered with the same camera as the body sheet
+    # (same cell size, the model at the same spot in its cell), so a turret
+    # cell laid on the body cell sits on the body's mount. The classic
+    # turret is drawn at the body's special point, (0,0) for these
+    # vehicles: the turret pictures get the body's placement.
+    tgx,tgy,TS=gx,gy,S
     for d in range(16):
         for k in range(turret_rows):
             save_pic('%s/t%02d_%03d'%(name,d,k),cell(T,c,c,d,k),tgx,tgy,TS)
