@@ -37,6 +37,9 @@ namespace m
 		private System.Windows.Forms.Button buttonMoveDownAction;
 		private System.Windows.Forms.CheckedListBox checkedListBoxSides;
 		private System.Windows.Forms.TabPage tabPageSides;
+		private System.Windows.Forms.GroupBox groupBoxMatch;
+		private System.Windows.Forms.RadioButton radioButtonAll;
+		private System.Windows.Forms.RadioButton radioButtonAny;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -54,6 +57,10 @@ namespace m
 			//
 
 			m_tgr = tgr;
+			if (m_tgr.AnyCondition)
+				radioButtonAny.Checked = true;
+			else
+				radioButtonAll.Checked = true;
 			InitConditionsListBox(-1);
 			InitActionsListBox(-1);
 		}
@@ -93,6 +100,9 @@ namespace m
 			this.label2 = new System.Windows.Forms.Label();
 			this.checkedListBoxConditions = new System.Windows.Forms.CheckedListBox();
 			this.buttonMoveDownCondition = new System.Windows.Forms.Button();
+			this.groupBoxMatch = new System.Windows.Forms.GroupBox();
+			this.radioButtonAll = new System.Windows.Forms.RadioButton();
+			this.radioButtonAny = new System.Windows.Forms.RadioButton();
 			this.tabPageActions = new System.Windows.Forms.TabPage();
 			this.buttonMoveUpAction = new System.Windows.Forms.Button();
 			this.buttonDeleteAction = new System.Windows.Forms.Button();
@@ -162,12 +172,43 @@ namespace m
 																							this.buttonNewCondition,
 																							this.label2,
 																							this.checkedListBoxConditions,
-																							this.buttonMoveDownCondition});
+																							this.buttonMoveDownCondition,
+																							this.groupBoxMatch});
 			this.tabPageConditions.Location = new System.Drawing.Point(4, 22);
 			this.tabPageConditions.Name = "tabPageConditions";
 			this.tabPageConditions.Size = new System.Drawing.Size(472, 358);
 			this.tabPageConditions.TabIndex = 1;
 			this.tabPageConditions.Text = "Conditions";
+			//
+			// groupBoxMatch: AND / OR
+			//
+			this.groupBoxMatch.Controls.AddRange(new System.Windows.Forms.Control[] {
+																						this.radioButtonAll,
+																						this.radioButtonAny});
+			this.groupBoxMatch.Location = new System.Drawing.Point(376, 176);
+			this.groupBoxMatch.Name = "groupBoxMatch";
+			this.groupBoxMatch.Size = new System.Drawing.Size(88, 76);
+			this.groupBoxMatch.TabIndex = 8;
+			this.groupBoxMatch.TabStop = false;
+			this.groupBoxMatch.Text = "Fire when";
+			//
+			// radioButtonAll
+			//
+			this.radioButtonAll.Location = new System.Drawing.Point(8, 20);
+			this.radioButtonAll.Name = "radioButtonAll";
+			this.radioButtonAll.Size = new System.Drawing.Size(76, 24);
+			this.radioButtonAll.TabIndex = 0;
+			this.radioButtonAll.Text = "All (AND)";
+			this.radioButtonAll.CheckedChanged += new System.EventHandler(this.radioButtonMatch_CheckedChanged);
+			//
+			// radioButtonAny
+			//
+			this.radioButtonAny.Location = new System.Drawing.Point(8, 46);
+			this.radioButtonAny.Name = "radioButtonAny";
+			this.radioButtonAny.Size = new System.Drawing.Size(76, 24);
+			this.radioButtonAny.TabIndex = 1;
+			this.radioButtonAny.Text = "Any (OR)";
+			this.radioButtonAny.CheckedChanged += new System.EventHandler(this.radioButtonMatch_CheckedChanged);
 			// 
 			// buttonMoveUpCondition
 			// 
@@ -434,6 +475,13 @@ namespace m
 				m_tgr.Actions[n] = cab;
 				InitActionsListBox(n);
 			}
+		}
+
+		// All (AND) / Any (OR) of the conditions
+
+		private void radioButtonMatch_CheckedChanged(object sender, System.EventArgs e) {
+			if (m_tgr != null)
+				m_tgr.AnyCondition = radioButtonAny.Checked;
 		}
 
 		private void buttonOk_Click(object sender, System.EventArgs e) {

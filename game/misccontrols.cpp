@@ -134,13 +134,24 @@ void ButtonControl::OnPaint(DibBitmap *pbm)
 	if (m_ptbmDown != NULL && m_ptbmUp != NULL) {
 		// Draw up / down image (if present)
 
+		// The building menu buttons (Build, Repair, Sell, ...) show the
+		// white box under the mouse like every other button, around their
+		// normal picture; their 'down' pictures are only a pressed look
+
+		bool fHoverBox = fSelected && (m_wf & kfCtlUseSide1Colors) && !(m_wf & kfCtlDisabled);
+
 		TBitmap *ptbm;
 		if (m_wf & kfCtlDisabled)
 			ptbm = m_ptbmDisabled;
 		else
-			ptbm = fSelected ? m_ptbmDown : m_ptbmUp;
+			ptbm = fSelected && !fHoverBox ? m_ptbmDown : m_ptbmUp;
 
 		ptbm->BltTo(pbm, m_rc.left + rcForm.left, m_rc.top + rcForm.top, m_wf & kfCtlUseSide1Colors ? kside1 : ksideNeutral);
+		if (fHoverBox) {
+			Rect rcBox = m_rc;
+			rcBox.Offset(rcForm.left, rcForm.top);
+			DrawBorder(pbm, &rcBox, 1, GetColor(kiclrWhite));
+		}
 
 		// Center the text (if present)
 

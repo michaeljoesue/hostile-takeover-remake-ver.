@@ -388,7 +388,7 @@ namespace m
 			int x = e.Bounds.Left + 2;
 			int cyFont = e.Font.Height;
 			Brush br = new SolidBrush(e.ForeColor);
-			e.Graphics.DrawString("CONDITIONS:", e.Font, br, x, y);
+			e.Graphics.DrawString(trg.AnyCondition ? "CONDITIONS (any one):" : "CONDITIONS:", e.Font, br, x, y);
 			y += cyFont;
 			foreach (CaBase cab in trg.Conditions) {
 				e.Graphics.DrawString(" - " + CaText(cab), e.Font, br, x, y);

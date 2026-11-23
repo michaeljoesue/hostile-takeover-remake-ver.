@@ -138,7 +138,7 @@ void UnitGroupMgr::ActivateRandomUnitGroup(SideMask sidm)
 	// Search back through again to find the picked group
 
 	pug = m_aug;
-	for (iug = 0; true; pug++) {
+	for (iug = 0; pug < &m_aug[m_cug]; pug++) {
 		if ((pug->GetFlags() & (kfUgActive | kfUgRandomGroup | kfUgNotRecentlyActivated)) == (kfUgRandomGroup | kfUgNotRecentlyActivated) &&
 				IsGroupOfSides(pug, sidm)) {
 			if (iug == cug) {
@@ -148,10 +148,6 @@ void UnitGroupMgr::ActivateRandomUnitGroup(SideMask sidm)
 			iug++;
 		}
 	}
-
-	// Activate it
-
-	pug->Activate();
 }
 
 // OPT: this doesn't need to be called every Simulation::Update
@@ -705,7 +701,14 @@ void UnitGroup::Update()
 			m_pactnLast = NULL;	// clear out 'in-progress' action
 			pactnNext = pactnNext->m_pactnNext;
 		}
-	} while (m_wf & kfUgLoopForever);
+
+		// Looping forever: start over at the next update. (Starting over
+		// right away hung the game when none of the actions take any time,
+		// e.g. only Set Switch or Mine.)
+
+		if (m_wf & kfUgLoopForever)
+			return;
+	} while (false);
 
 	// All actions done, deactivate the group unless we have to keep it around
 	// for "Recreate if destroyed", i.e., it is a kfUgReplaceGroup
@@ -1656,8 +1659,19 @@ bool ProtectAreaUnitGroupAction::Perform(UnitGroup *pug)
 			m_nPhase = 0;
 			return true;
 		}
-		if (!IsGroupIdle(pug))
-			return false;
+
+		// Wait until every unit has stopped or is in the area. (Waiting for
+		// all of them to stop kept the group on its way, only shooting what
+		// was in range, for as long as there was fighting at the area.)
+
+		{
+			UnitListEntry *pule = pug->GetUnitList();
+			for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+				UnitGob *punt = (UnitGob *)ggobm.GetGob(pule->gid);
+				if (punt != NULL && !punt->IsIdle() && !ggobm.IsGobWithinArea(punt, m_nArea))
+					return false;
+			}
+		}
 
 		// There: guard it (attack enemies that come into it)
 

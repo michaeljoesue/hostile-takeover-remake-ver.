@@ -191,7 +191,7 @@ Modern RTS controls:
 | | |
 |---|---|
 | Left-click | Select a unit or building (enemies too, to look at them). Clicking one of your buildings also opens its menu. Clicking the ground deselects. |
-| Buttons | Every button (menus, dialogs, the unit and building menus) shows its highlighted box while the mouse is over it and acts the moment you click it |
+| Buttons | Every button (menus, dialogs, the unit and building menus) shows its highlighted (white) box while the mouse is over it and acts the moment you click it |
 | Unit and building menus | Left-click a button to choose it. Right-click anywhere closes the menu. The Sell / Abort "Are you sure?" box works the same way (right-click answers No) and can't be dragged |
 | Build menus | The selection box and the info follow the mouse. Buildings: left-click starts placing it. Units: left-click orders one, right-click on it cancels one from the queue. Right-click anywhere else closes the menu |
 | Placing a building | After you click a building in the menu, it follows the mouse: left-click puts it down (white tiles: it fits; red: it doesn't), right-click or Esc cancels |
@@ -224,6 +224,13 @@ its fog fades smoothly.
 - Alt+Enter or F11 switches between fullscreen and a window; numpad + and -
   change the game speed. F9 switches between the HD buildings and the
   original pictures.
+
+If the game crashes, or stops answering Windows ("Not responding") for 10
+seconds, it adds a report to `HostileTakeover-report.txt` next to
+`HostileTakeover.exe`: what happened and the call stack as addresses in
+that build of the game. Send that file along when reporting it; with the
+same build, `addr2line -f -C -e HostileTakeover.exe <address>` (or a
+symbol lookup with `nm -C`) turns the addresses into function names.
 
 Saved games, settings and mission progress are stored in
 `%APPDATA%\Spiffcode\HostileTakeover`. If you quit during a mission, it is
@@ -405,15 +412,31 @@ Maps, sides and limits:
   for Guard Vicinity), and go back to it when the fight is over. Guard Area
   units go after any enemy in the area they can reach; ones they can't
   reach no longer freeze them.
+- **Trigger conditions: All (AND) or Any (OR).** On a trigger's Conditions
+  tab, "Fire when" chooses whether every condition must be true (as
+  always) or any one of them is enough. The trigger list shows
+  "CONDITIONS (any one):" for the second kind. In the level file it is an
+  `M=1` line after the trigger's `T=` line (no line: All).
+- **Reorder a unit group's units.** The up and down arrows beside the unit
+  group's Units list move the selected unit type up or down.
+- **Guard Area holds its ground, but fights back.** A Guard Area unit chases
+  an enemy that leaves its area only while that enemy (or one near a
+  friend) is shooting at it, instead of standing there taking fire from
+  just outside the area. Protect Area hands its units the Guard Area order
+  as soon as each one has stopped or is inside the area (before, it waited
+  for every unit to stand idle, so while there was fighting at the area the
+  group only shot what was in range).
+- **Looping unit groups can't hang the game.** A "loop forever" group starts
+  its actions over at the next update; before, a group whose actions all
+  finish at once (Set Switch, Mine) started over again and again within one
+  update and the game stopped responding.
 - **Create Random Unit Group of Side.** A new trigger action: like Create
   Random Unit Group, but picks only among the random groups belonging to
   the chosen side(s). Create Random Unit Group still picks from every
   side's random groups, so with several computer sides use this one to keep
   each side's random attacks its own.
-- **Comments and the group Set Switch action removed.** M no longer offers
-  Comment conditions and actions, or Set Switch among unit group actions
-  (triggers set switches). Ones already in a level stay, and can be edited
-  or deleted.
+- **Comments removed.** M no longer offers Comment conditions and actions.
+  Ones already in a level stay, and can be edited or deleted.
 - **Copy unit groups.** Unit Groups > Copy makes a new group with
   everything the selected one has, named "<name> copy". The group list
   shows long names whole (it scrolls sideways; hover for the full name),

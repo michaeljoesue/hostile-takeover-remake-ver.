@@ -3938,6 +3938,7 @@ private:
 	TriggerAction *m_pactn;
 	TriggerAction *m_apactnLast[kcSides];
 	bool m_afArmed[kcSides];
+	bool m_fAnyCondition;	// true: any one condition fires it (OR); false: all of them (AND)
 
 };
 

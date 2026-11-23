@@ -252,6 +252,7 @@ Trigger::Trigger()
 {
 	m_pcdn = NULL;
 	m_pactn = NULL;
+	m_fAnyCondition = false;
 	memset(m_apactnLast, 0, sizeof(m_apactnLast));
 	memset(m_afArmed, 1, sizeof(m_afArmed));
 }
@@ -343,6 +344,8 @@ bool Trigger::Init(IniReader *pini, FindProp *pfind)
 	// 'T' means start of new trigger
 	// 'C' means condition
 	// 'A' means action
+	// 'M' means how the conditions combine: M=1 any one of them (OR),
+	//     M=0 or no M all of them (AND)
 
 	char szProp[16];
 	FindProp findLast;
@@ -363,6 +366,15 @@ bool Trigger::Init(IniReader *pini, FindProp *pfind)
 		case 'A':
 			if (!LoadAction(pini, pfind))
 				return false;
+			break;
+
+		case 'M':
+			{
+				int nAny = 0;
+				if (pini->GetPropertyValue(pfind, "%d", &nAny) != 1)
+					return false;
+				m_fAnyCondition = nAny != 0;
+			}
 			break;
 
 		default:
@@ -391,11 +403,24 @@ void Trigger::Execute(Side side, bool fForce)
 			if (!m_afArmed[side])
 				return;
 
-			// It's armed so we check conditions. Return if any condition is not true.
+			// It's armed so we check conditions. All of them must be true
+			// (AND), or with m_fAnyCondition any one of them (OR).
 
-			for (Condition *pcdn = m_pcdn; pcdn != NULL; pcdn = pcdn->m_pcdnNext) {
-				if (!pcdn->IsTrue(side))
+			if (m_fAnyCondition) {
+				bool fAny = false;
+				for (Condition *pcdn = m_pcdn; pcdn != NULL; pcdn = pcdn->m_pcdnNext) {
+					if (pcdn->IsTrue(side)) {
+						fAny = true;
+						break;
+					}
+				}
+				if (!fAny)
 					return;
+			} else {
+				for (Condition *pcdn = m_pcdn; pcdn != NULL; pcdn = pcdn->m_pcdnNext) {
+					if (!pcdn->IsTrue(side))
+						return;
+				}
 			}
 		}
 

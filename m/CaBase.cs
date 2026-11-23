@@ -1297,11 +1297,7 @@ namespace m
 	// Unit Group Actions
 	//
 
-	// Removed: no longer offered (triggers set switches). Kept so levels
-	// that use it still load and play.
-
 	[Serializable]
-	[System.ComponentModel.Browsable(false)]
 	[DisplayName("Set Switch")]
 	[Description("Switch names can be anything (including spaces, etc) but ARE case sensitive. That is, setting " +
 		 "a switch named \"Whatever\" and testing \"whatever\" won't work.")]

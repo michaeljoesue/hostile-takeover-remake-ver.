@@ -4,10 +4,14 @@
 #include "game/ht.h"
 #include "game/sdl/sdleventserver.h"
 #include "base/thread.h"
+#include "game/sdl/diag.h"
 #include <SDL3/SDL_main.h>
 
 int main(int argc, char *argv[])
 {
+    // Crash and hang reports
+    wi::DiagInit();
+
     // The game runs on this thread. SDL events wake up its message queue.
     base::Thread *main_thread = new base::Thread(new wi::SdlEventServer());
 

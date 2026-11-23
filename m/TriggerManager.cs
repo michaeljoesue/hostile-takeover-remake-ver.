@@ -314,6 +314,10 @@ namespace m
 					m_alsTriggers.Add(tgrCurrent);
 					continue;
 				}
+				if (prop.Name == "M") {
+					tgrCurrent.AnyCondition = prop.Value.Trim() != "0";
+					continue;
+				}
 				if (prop.Name == "C") {
 					tgrCurrent.Conditions.Add(TriggerConditionLoader.LoadIni(prop.Value));
 					continue;

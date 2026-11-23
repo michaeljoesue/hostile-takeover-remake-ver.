@@ -48,6 +48,8 @@ namespace m
 		private System.Windows.Forms.TextBox textBoxHealth;
 		private System.Windows.Forms.Button buttonAddUnit;
 		private System.Windows.Forms.Button buttonSubtractUnit;
+		private System.Windows.Forms.Button buttonMoveUpUnit;
+		private System.Windows.Forms.Button buttonMoveDownUnit;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -126,6 +128,8 @@ namespace m
 			this.textBoxHealth = new System.Windows.Forms.TextBox();
 			this.buttonAddUnit = new System.Windows.Forms.Button();
 			this.buttonSubtractUnit = new System.Windows.Forms.Button();
+			this.buttonMoveUpUnit = new System.Windows.Forms.Button();
+			this.buttonMoveDownUnit = new System.Windows.Forms.Button();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.SuspendLayout();
@@ -232,7 +236,9 @@ namespace m
 																					this.buttonDeleteUnits,
 																					this.buttonNewUnits,
 																					this.listBoxUnits,
-																					this.buttonSubtractUnit});
+																					this.buttonSubtractUnit,
+																					this.buttonMoveUpUnit,
+																					this.buttonMoveDownUnit});
 			this.groupBox2.Location = new System.Drawing.Point(152, 104);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(488, 128);
@@ -262,7 +268,7 @@ namespace m
 			this.listBoxUnits.ItemHeight = 16;
 			this.listBoxUnits.Location = new System.Drawing.Point(8, 16);
 			this.listBoxUnits.Name = "listBoxUnits";
-			this.listBoxUnits.Size = new System.Drawing.Size(384, 100);
+			this.listBoxUnits.Size = new System.Drawing.Size(352, 100);
 			this.listBoxUnits.TabIndex = 0;
 			this.listBoxUnits.SelectedIndexChanged += new System.EventHandler(this.listBoxUnits_SelectedIndexChanged);
 			// 
@@ -445,6 +451,24 @@ namespace m
 			this.buttonSubtractUnit.TabIndex = 3;
 			this.buttonSubtractUnit.Text = "–";
 			this.buttonSubtractUnit.Click += new System.EventHandler(this.buttonSubtractUnit_Click);
+			//
+			// buttonMoveUpUnit
+			//
+			this.buttonMoveUpUnit.Location = new System.Drawing.Point(366, 32);
+			this.buttonMoveUpUnit.Name = "buttonMoveUpUnit";
+			this.buttonMoveUpUnit.Size = new System.Drawing.Size(24, 23);
+			this.buttonMoveUpUnit.TabIndex = 5;
+			this.buttonMoveUpUnit.Text = "\u25B2";
+			this.buttonMoveUpUnit.Click += new System.EventHandler(this.buttonMoveUpUnit_Click);
+			//
+			// buttonMoveDownUnit
+			//
+			this.buttonMoveDownUnit.Location = new System.Drawing.Point(366, 64);
+			this.buttonMoveDownUnit.Name = "buttonMoveDownUnit";
+			this.buttonMoveDownUnit.Size = new System.Drawing.Size(24, 23);
+			this.buttonMoveDownUnit.TabIndex = 6;
+			this.buttonMoveDownUnit.Text = "\u25BC";
+			this.buttonMoveDownUnit.Click += new System.EventHandler(this.buttonMoveDownUnit_Click);
 			// 
 			// UnitGroupsForm
 			// 
@@ -768,6 +792,31 @@ namespace m
 			bool fItemSelected = (n >= 0);
 			buttonNewUnits.Enabled = m_ugSelected != null;
 			buttonDeleteUnits.Enabled = fItemSelected;
+			buttonMoveUpUnit.Enabled = n > 0;
+			buttonMoveDownUnit.Enabled = fItemSelected && n < listBoxUnits.Items.Count - 1;
+		}
+
+		// Move the selected unit type up or down the list (the order the
+		// group's units are listed, built and spawned in)
+
+		void MoveUnit(int nDelta) {
+			int n = listBoxUnits.SelectedIndex;
+			int nNew = n + nDelta;
+			if (m_ugSelected == null || n < 0 || nNew < 0 || nNew >= m_ugSelected.UnitTypeAndCounts.Count)
+				return;
+			object utc = m_ugSelected.UnitTypeAndCounts[n];
+			m_ugSelected.UnitTypeAndCounts.RemoveAt(n);
+			m_ugSelected.UnitTypeAndCounts.Insert(nNew, utc);
+			m_ugm.SetModified();
+			InitUnitsListBox(nNew);
+		}
+
+		private void buttonMoveUpUnit_Click(object sender, System.EventArgs e) {
+			MoveUnit(-1);
+		}
+
+		private void buttonMoveDownUnit_Click(object sender, System.EventArgs e) {
+			MoveUnit(1);
 		}
 
 		private void buttonNewUnits_Click(object sender, System.EventArgs e) {

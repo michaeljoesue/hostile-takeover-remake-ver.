@@ -9,6 +9,12 @@ namespace m {
 		ArrayList m_alsConditions;
 		ArrayList m_alsActions;
 
+		// True: the trigger fires when any one condition is true (OR);
+		// false: when all of them are (AND, as always before)
+
+		[System.Runtime.Serialization.OptionalField]
+		bool m_fAnyCondition;
+
 		public Trigger() {
 			m_nfSides = 0;
 			m_alsConditions = new ArrayList();
@@ -31,6 +37,7 @@ namespace m {
 		public virtual Trigger Clone() {
 			Trigger tgr = new Trigger();
 			tgr.Sides = Sides;
+			tgr.AnyCondition = AnyCondition;
 			foreach (CaBase cab in Conditions)
 				tgr.Conditions.Add(cab.Clone());
 			foreach (CaBase cab in Actions)
@@ -95,6 +102,15 @@ namespace m {
 			}
 		}
 
+		public bool AnyCondition {
+			get {
+				return m_fAnyCondition;
+			}
+			set {
+				m_fAnyCondition = value;
+			}
+		}
+
 		public int Sides {
 			get {
 				return m_nfSides;
@@ -105,7 +121,11 @@ namespace m {
 		}
 
 		public void AddIniProperties(Ini.Section sec) {
-			// Save conditions & actions
+			// Save how the conditions combine (only when it's OR, so levels
+			// without it stay as they were), then conditions & actions
+
+			if (m_fAnyCondition)
+				sec.Add(new Ini.Property("M", "1"));
 
 			foreach (CaBase cab in m_alsConditions) {
 				if (!(cab is CommentCondition))

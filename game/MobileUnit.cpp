@@ -1624,10 +1624,13 @@ lbHitNoDamage:
 
 				} else if (!(m_wfMunt & kfMuntChaseEnemies) && !IsHumanOrGodControlled()) {
 
-					// If we're trying to guard an area and the enemy has left it let it go.
+					// If we're trying to guard an area and the enemy has left it let it go,
+					// unless it's shooting at us or a friend nearby (else the unit
+					// stands there taking fire from just outside the area)
 
 					if (m_mua == kmuaGuardArea) {
-						if (!ggobm.IsGobWithinArea(pgobTarget, m_msgAction.GuardAreaCommand.nArea)) {
+						if (!ggobm.IsGobWithinArea(pgobTarget, m_msgAction.GuardAreaCommand.nArea) &&
+								gsim.GetUpdateCount() - m_cupdLastHitOrNearbyAllyHit > kcupdAggressivenessBoost) {
 							SetState(kstGuard);
 							return knHandled;
 						}

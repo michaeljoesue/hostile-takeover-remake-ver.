@@ -5,6 +5,7 @@
 #include "base/thread.h"
 #include "base/eventserver.h"
 #include "game/sdl/sysmessages.h"
+#include "game/sdl/diag.h"
 #include <SDL3/SDL.h>
 
 namespace wi {
@@ -30,6 +31,9 @@ public:
 
         wait_ = true;
         while (wait_) {
+            // The game is answering Windows (see diag.cpp)
+            DiagHeartbeat();
+
             // This pumps native events
             SDL_PumpEvents();
 
