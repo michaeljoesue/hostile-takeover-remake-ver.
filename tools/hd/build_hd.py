@@ -395,9 +395,53 @@ def turret_orbit(T, c):
         out.append((co*rx-si*ry, si*rx+co*ry))
     return out
 
+# The game recolours the team paint by its brightness on the classic blue
+# ramp (95, 79, 51, 39, 26 luma). Each sheet's paint came out brighter or
+# darker than the others' (median luma 75 to 96, much of it above the
+# brightest shade, where the side's colour is only scaled up) and with its
+# own spread of shading, so a side's colour looked different from vehicle
+# to vehicle: the Hydra's launcher came out dark and dull next to its
+# bright pods. Each sheet's paint brightness is matched, quantile by
+# quantile, to one common spread: all the vehicle sheets' paint pooled,
+# scaled so its upper quartile (the lit faces, the colour the eye reads)
+# sits just above the brightest shade.
+PAINT_SHEETS=['broadsword_body.png','broadsword_turret.png','eagle_body.png','eagle_turret.png',
+    'hydra_body.png','hydra_turret.png','liberator_body.png','liberator_turret.png']
+PAINT_UPPER=100.0
+_paint_ref=[]
+def paint_luma(a):
+    m=vehicle_team_mask(a).astype(np.float32)/255
+    l=a[:,:,:3].astype(np.float32)@np.array([0.299,0.587,0.114],np.float32)
+    return m,l
+def paint_reference():
+    if not _paint_ref:
+        qs=np.linspace(0,100,101)
+        tabs=[]
+        for f in PAINT_SHEETS:
+            m,l=paint_luma(sheet(f)); tabs.append(np.percentile(l[m>0.5],qs))
+        ref=np.mean(tabs,0)
+        ref*=PAINT_UPPER/np.interp(75,qs,ref)
+        _paint_ref.append(ref)
+    return _paint_ref[0]
+def balance_paint(a, what):
+    m,l=paint_luma(a)
+    sel=m>0.5
+    if sel.sum()==0: return a
+    qs=np.linspace(0,100,101)
+    src=np.percentile(l[sel],qs)
+    src=np.maximum.accumulate(src+np.arange(101)*1e-4)
+    lnew=np.interp(l,src,paint_reference())
+    k=np.where(l>0.5,lnew/np.maximum(l,0.5),1)
+    print('  %s paint median luma %.0f -> %.0f'%(what,np.median(l[sel]),np.median(lnew[sel])))
+    f=1+(k-1)*m
+    out=a.copy()
+    out[:,:,:3]=np.clip(a[:,:,:3].astype(np.float32)*f[:,:,None]+0.5,0,255).astype(np.uint8)
+    return out
+
 def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,12)):
     print(name)
     B=sheet(body_sheet); T=sheet(turret_sheet)
+    B=balance_paint(B,'body'); T=balance_paint(T,'turret')
     bodies=[cell(B,c,c,d,0) for d in range(8)]
     gx,gy,S=placement(classic_mask(anir,0,0),anir,bodies[0])
     for d in range(8):
