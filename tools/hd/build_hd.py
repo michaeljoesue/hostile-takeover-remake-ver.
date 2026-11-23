@@ -20,7 +20,7 @@ Needs Python 3 with numpy, Pillow and qoi (pip install numpy pillow qoi).
 
 import argparse, os, re, struct, sys
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 import qoi
 
 ROOT=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -351,6 +351,29 @@ def tower(t, anir):
 # the turret sheet takes the body's placement (see below). The build menu icon is the body and
 # turret together, facing west like the classic icon.
 
+def turret_orbit(T, c):
+    """How far (HD px) each of the 16 turret pictures' middle is off the
+    turret's axis: the middles (the turret without its thin barrel, an
+    opening of the mask) are fitted to P + R(22.5 d) r, a point turning
+    about the axis P; returns R(22.5 d) r for each direction"""
+    import math
+    M=[]; y=[]
+    for d in range(16):
+        a=(cell(T,c,c,d,0)[:,:,3]>128).astype(np.uint8)*255
+        o=np.array(Image.fromarray(a).filter(ImageFilter.MinFilter(9)).filter(ImageFilter.MaxFilter(9)))>128
+        if o.sum()==0: o=a>0
+        ys,xs=np.nonzero(o)
+        t=math.radians(22.5*d); co,si=math.cos(t),math.sin(t)
+        M.append([1,0,co,-si]); y.append(xs.mean())
+        M.append([0,1,si,co]); y.append(ys.mean())
+    px,py,rx,ry=np.linalg.lstsq(np.array(M,float),np.array(y,float),rcond=None)[0]
+    print('  turret axis %.1f,%.1f, middle %.1f HD px off it'%(px,py,math.hypot(rx,ry)))
+    out=[]
+    for d in range(16):
+        t=math.radians(22.5*d); co,si=math.cos(t),math.sin(t)
+        out.append((co*rx-si*ry, si*rx+co*ry))
+    return out
+
 def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,12)):
     print(name)
     B=sheet(body_sheet); T=sheet(turret_sheet)
@@ -362,21 +385,28 @@ def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,1
         strip(anir,'base %d'%d,pics='%s/b%d_'%(name,d),n=1)
         preview('%s_b%d'%(name,d),anir,d,0,bodies[d],gx,gy,S)
     # The turret sheet is rendered with the same camera as the body sheet
-    # (same cell size, the model at the same spot in its cell), so a turret
-    # cell laid on the body cell sits on the body's mount. The classic
-    # turret is drawn at the body's special point, (0,0) for these
-    # vehicles: the turret pictures get the body's placement.
+    # (same cell size, the model at the same spot in its cell): the bodies
+    # turn about the cell centre, where their turret socket is, and the
+    # turret pictures get the body's placement (the classic turret is drawn
+    # at the body's special point, (0,0) for these vehicles). But a turret
+    # model need not turn about its own middle: the Hydra's launcher sits
+    # 7-8 HD px off its axis, so it swung round the hull as it turned and sat
+    # on the nose or the tail. Each turret picture is moved so the turret's
+    # middle stays on the axis: it turns in place on its socket.
     tgx,tgy,TS=gx,gy,S
+    tsh=turret_orbit(T,c)
     for d in range(16):
+        dx,dy=tsh[d]
         for k in range(turret_rows):
-            save_pic('%s/t%02d_%03d'%(name,d,k),cell(T,c,c,d,k),tgx,tgy,TS)
+            save_pic('%s/t%02d_%03d'%(name,d,k),cell(T,c,c,d,k),tgx-dx/S,tgy-dy/S,TS)
         strip(anir,'fire %02d'%d,pics='%s/t%02d_'%(name,d),n=turret_rows,blend=0)
-        preview('%s_t%02d'%(name,d),anir,8+d,0,cell(T,c,c,d,0),tgx,tgy,TS)
+        preview('%s_t%02d'%(name,d),anir,8+d,0,cell(T,c,c,d,0),tgx-dx/S,tgy-dy/S,TS)
     # icon: body and turret composed in HD pixels (game coords * S)
     db,dt=icon_dirs
     bc=bodies[db]; tc=cell(T,c,c,dt,0)
     if abs(TS-S)>0.05*S:
         print('  turret scale %.2f differs from the body\'s %.2f'%(TS,S))
+    tgx-=tsh[dt][0]/S; tgy-=tsh[dt][1]/S
     tc=np.array(Image.fromarray(tc).resize((max(1,int(round(tc.shape[1]*S/TS))),max(1,int(round(tc.shape[0]*S/TS)))),Image.LANCZOS))
     ox=int(round((tgx-gx)*S)); oy=int(round((tgy-gy)*S))
     L=min(0,ox); Tp=min(0,oy); R=max(bc.shape[1],ox+tc.shape[1]); Bt=max(bc.shape[0],oy+tc.shape[0])
