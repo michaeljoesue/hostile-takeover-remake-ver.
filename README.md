@@ -261,7 +261,7 @@ keeping everything else. It only needs Python and the CMake build (for
 ### HD buildings and vehicles
 
 The HD pictures of the buildings, towers, walls and vehicles (so far the
-Broadsword and the Eagle) are in `data\hd`
+Broadsword, the Eagle and the Hydra) are in `data\hd`
 (`manifest.txt` and one `.hdp` pack per building or vehicle), copied next to the game
 by the build. They are made from the artist's sheets in `assets\hd` by:
 
@@ -281,7 +281,7 @@ pictures.
 
 A vehicle has two sheets: its body in 8 directions (one row, clockwise from
 north) and its turret in 16 directions with a row per classic firing frame
-(row 0 at rest; the Broadsword has 3 rows, the Eagle 9). Body and turret are
+(row 0 at rest; the Broadsword and the Hydra have 3 rows, the Eagle 9). Body and turret are
 fitted once and drawn at the same scale in every direction; the VTS build
 menu shows them together facing west.
 

@@ -129,3 +129,28 @@ strip	tmac.anir	fire 13	pics=eagle/t13_	n=9	blend=0
 strip	tmac.anir	fire 14	pics=eagle/t14_	n=9	blend=0
 strip	tmac.anir	fire 15	pics=eagle/t15_	n=9	blend=0
 strip	tmac.anir	icon	pics=eagle/icon	n=1
+strip	troc.anir	base 0	pics=hydra/b0_	n=1
+strip	troc.anir	base 1	pics=hydra/b1_	n=1
+strip	troc.anir	base 2	pics=hydra/b2_	n=1
+strip	troc.anir	base 3	pics=hydra/b3_	n=1
+strip	troc.anir	base 4	pics=hydra/b4_	n=1
+strip	troc.anir	base 5	pics=hydra/b5_	n=1
+strip	troc.anir	base 6	pics=hydra/b6_	n=1
+strip	troc.anir	base 7	pics=hydra/b7_	n=1
+strip	troc.anir	fire 00	pics=hydra/t00_	n=3	blend=0
+strip	troc.anir	fire 01	pics=hydra/t01_	n=3	blend=0
+strip	troc.anir	fire 02	pics=hydra/t02_	n=3	blend=0
+strip	troc.anir	fire 03	pics=hydra/t03_	n=3	blend=0
+strip	troc.anir	fire 04	pics=hydra/t04_	n=3	blend=0
+strip	troc.anir	fire 05	pics=hydra/t05_	n=3	blend=0
+strip	troc.anir	fire 06	pics=hydra/t06_	n=3	blend=0
+strip	troc.anir	fire 07	pics=hydra/t07_	n=3	blend=0
+strip	troc.anir	fire 08	pics=hydra/t08_	n=3	blend=0
+strip	troc.anir	fire 09	pics=hydra/t09_	n=3	blend=0
+strip	troc.anir	fire 10	pics=hydra/t10_	n=3	blend=0
+strip	troc.anir	fire 11	pics=hydra/t11_	n=3	blend=0
+strip	troc.anir	fire 12	pics=hydra/t12_	n=3	blend=0
+strip	troc.anir	fire 13	pics=hydra/t13_	n=3	blend=0
+strip	troc.anir	fire 14	pics=hydra/t14_	n=3	blend=0
+strip	troc.anir	fire 15	pics=hydra/t15_	n=3	blend=0
+strip	troc.anir	icon	pics=hydra/icon	n=1
