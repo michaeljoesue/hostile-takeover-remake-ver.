@@ -317,15 +317,38 @@ def proc():
     gx,gy,S=placement(classic_mask('proc.anir',0,0),'proc.anir',H[OPEN])
     pos={'h':(gx,gy),'d':moved(gx,gy,S,H[OPEN],D[OPEN],name='proc damaged')}
     wgx,wgy=moved(gx,gy,S,H[OPEN],W,base=True,name='proc wreck')
+    # The miner backing into the bay is drawn between the building and the
+    # door overlay, so the overlay must also hold what stands in front of
+    # the bay: the arch over the doorway (the classic overlay is the arch
+    # with the door in it). The arch is the building's pixels under the
+    # classic open-door frame, less the doorway (where any door picture
+    # differs from the open one), so the miner shows through the doorway
+    # and goes under the arch.
+    from PIL import ImageFilter as _IF
+    si=strip_index('proc.anir','door 0')
+    cm5,(l5,t5)=classic_mask('proc.anir',si,5)
     for nm,L in (('h',H),('d',D)):
         base=L[OPEN]
         px,py=pos[nm]
         save_pic('proc/%s000'%nm,base,px,py,S)
         bf=base.astype(np.float32)
-        for i,c in enumerate(L):
+        ws=[]
+        for c in L:
             cf=c.astype(np.float32)
             diff=np.abs(cf[:,:,:3]-bf[:,:,:3]).max(2)+np.abs(cf[:,:,3]-bf[:,:,3])
-            w=np.clip((diff-12)/28,0,1)
+            ws.append(np.clip((diff-12)/28,0,1))
+        doorway=np.max(ws,0)
+        doorway=np.array(Image.fromarray((doorway*255).astype(np.uint8)).filter(_IF.MaxFilter(5)).filter(_IF.GaussianBlur(1.5))).astype(np.float32)/255
+        hh,ww=base.shape[:2]
+        vv,uu=np.mgrid[0:hh,0:ww]
+        gxs=np.floor(px+(uu+0.5)/S-l5).astype(int); gys=np.floor(py+(vv+0.5)/S-t5).astype(int)
+        ok=(gxs>=0)&(gys>=0)&(gxs<cm5.shape[1])&(gys<cm5.shape[0])
+        arch=np.zeros((hh,ww),np.float32)
+        arch[ok]=cm5[gys[ok],gxs[ok]]
+        arch=np.array(Image.fromarray((arch*255).astype(np.uint8)).filter(_IF.GaussianBlur(S/3))).astype(np.float32)/255
+        arch=np.clip(arch*2-0.5,0,1)*(1-doorway)
+        for i,c in enumerate(L):
+            w=np.maximum(ws[i],arch)
             ov=c.copy(); ov[:,:,3]=(c[:,:,3]*w).astype(np.uint8)
             if ov[:,:,3].max()<16: ov[:,:,3]=0; ov[0,0,3]=1
             save_pic('proc/%sdoor%03d'%(nm,i),ov,px,py,S)
@@ -406,7 +429,8 @@ def turret_orbit(T, c):
 # scaled so its upper quartile (the lit faces, the colour the eye reads)
 # sits just above the brightest shade.
 PAINT_SHEETS=['broadsword_body.png','broadsword_turret.png','eagle_body.png','eagle_turret.png',
-    'hydra_body.png','hydra_turret.png','liberator_body.png','liberator_turret.png','cyclops.png']
+    'hydra_body.png','hydra_turret.png','liberator_body.png','liberator_turret.png','cyclops.png',
+    'bullpup.png','bullpup_proc.png','dominion.png']
 PAINT_UPPER=100.0
 _paint_ref=[]
 def paint_luma(a):
@@ -466,20 +490,7 @@ def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,1
             save_pic('%s/t%02d_%03d'%(name,d,k),cell(T,c,c,d,k),tgx-dx/S,tgy-dy/S,TS,team=vehicle_team_mask)
         strip(anir,'fire %02d'%d,pics='%s/t%02d_'%(name,d),n=turret_rows,blend=0)
         preview('%s_t%02d'%(name,d),anir,8+d,0,cell(T,c,c,d,0),tgx-dx/S,tgy-dy/S,TS)
-    # icon: body and turret composed in HD pixels (game coords * S)
-    db,dt=icon_dirs
-    bc=bodies[db]; tc=cell(T,c,c,dt,0)
-    if abs(TS-S)>0.05*S:
-        print('  turret scale %.2f differs from the body\'s %.2f'%(TS,S))
-    tgx-=tsh[dt][0]/S; tgy-=tsh[dt][1]/S
-    tc=np.array(Image.fromarray(tc).resize((max(1,int(round(tc.shape[1]*S/TS))),max(1,int(round(tc.shape[0]*S/TS)))),Image.LANCZOS))
-    ox=int(round((tgx-gx)*S)); oy=int(round((tgy-gy)*S))
-    L=min(0,ox); Tp=min(0,oy); R=max(bc.shape[1],ox+tc.shape[1]); Bt=max(bc.shape[0],oy+tc.shape[0])
-    canvas=Image.new('RGBA',(R-L,Bt-Tp))
-    canvas.alpha_composite(Image.fromarray(bc),(-L,-Tp))
-    canvas.alpha_composite(Image.fromarray(tc),(ox-L,oy-Tp))
-    save_pic('%s/icon000'%name,np.array(canvas),gx+L/S,gy+Tp/S,S,team=vehicle_team_mask)
-    strip(anir,'icon',pics='%s/icon'%name,n=1)
+    artist_icon(name,anir)
 
 def weathered_team_mask(rgba):
     """The Cyclops' paint is weathered: its blue plates are flecked with
@@ -488,6 +499,61 @@ def weathered_team_mask(rgba):
     m=Image.fromarray(vehicle_team_mask(rgba))
     m=m.filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.MinFilter(7)).filter(ImageFilter.GaussianBlur(1.2))
     return np.minimum(np.array(m),(rgba[:,:,3]>0)*255).astype(np.uint8)
+
+def strip_index(anir, name):
+    for l in open(os.path.join(CLASSIC,'%s.txt'%anir)):
+        m=re.match(r"strip (\d+) '(.*)'",l)
+        if m and m.group(2)==name: return int(m.group(1))
+    raise SystemExit('%s has no strip %s'%(anir,name))
+
+def artist_icon(name, anir, team=None):
+    """The artist's own build icon (assets/hd/icons/<name>.png, 128 px),
+    fitted over the classic icon (place and scale)"""
+    im=balance_paint(sheet('icons/%s.png'%name),'icon')
+    gx,gy,S=placement(classic_mask(anir,strip_index(anir,'icon'),0),anir,im)
+    save_pic('%s/icon000'%name,im,gx,gy,S,team=team or vehicle_team_mask)
+    strip(anir,'icon',pics='%s/icon'%name,n=1)
+
+def bullpup():
+    """Bullpup (miner.anir): 8 directions, no turret. Its vacuum (vacuum.anir,
+    drawn at the miner's spot in the miner's direction, 4 frames) is rendered
+    with the same camera, so it gets the miner's placement. The miner the
+    Processor draws backing in and out of its bay (proc.anir 'miner 0': the
+    miner facing out, then turning) is a 192 px pair, fitted at the miner's
+    scale."""
+    name,anir,c='bullpup','miner.anir',176
+    print(name)
+    A=balance_paint(sheet('bullpup.png'),'miner')
+    gx,gy,S=placement(classic_mask(anir,0,0),anir,cell(A,c,c,0,0))
+    for d in range(8):
+        save_pic('%s/r%d_000'%(name,d),cell(A,c,c,d,0),gx,gy,S,team=vehicle_team_mask)
+        strip(anir,'run %d'%d,pics='%s/r%d_'%(name,d),n=1)
+        preview('%s_r%d'%(name,d),anir,d,0,cell(A,c,c,d,0),gx,gy,S)
+    artist_icon(name,anir)
+    Vc=sheet('bullpup_vacuum.png')
+    for d in range(8):
+        for k in range(4):
+            save_pic('%s/v%d_%03d'%(name,d,k),cell(Vc,c,c,d,k),gx,gy,S,team=False)
+        strip('vacuum.anir','a %d'%d,pics='%s/v%d_'%(name,d),n=4,blend=0)
+    P=balance_paint(sheet('bullpup_proc.png'),'in the processor')
+    si=strip_index('proc.anir','miner 0')
+    for k in range(2):
+        px,py,_=placement(classic_mask('proc.anir',si,k),'proc.anir',cell(P,192,192,k,0),S_fixed=S)
+        save_pic('%s/p%03d'%(name,k),cell(P,192,192,k,0),px,py,S,team=vehicle_team_mask)
+        preview('%s_p%d'%(name,k),'proc.anir',si,k,cell(P,192,192,k,0),px,py,S)
+    strip('proc.anir','miner 0',pics='%s/p'%name,n=2,blend=0)
+
+def dominion():
+    """Dominion (mobilehq.anir): 8 directions, no turret"""
+    name,anir,c='dominion','mobilehq.anir',208
+    print(name)
+    A=balance_paint(sheet('dominion.png'),'body')
+    gx,gy,S=placement(classic_mask(anir,0,0),anir,cell(A,c,c,0,0))
+    for d in range(8):
+        save_pic('%s/r%d_000'%(name,d),cell(A,c,c,d,0),gx,gy,S,team=vehicle_team_mask)
+        strip(anir,'run %d'%d,pics='%s/r%d_'%(name,d),n=1)
+        preview('%s_r%d'%(name,d),anir,d,0,cell(A,c,c,d,0),gx,gy,S)
+    artist_icon(name,anir)
 
 def cyclops():
     """Cyclops (artillery.anir): no turret, the whole gun turns. The sheet:
@@ -504,9 +570,7 @@ def cyclops():
         strip(anir,'fire %d'%d,pics='%s/f%d_'%(name,d),n=3,blend=0)
         strip(anir,'move %d'%d,pics='%s/m%d_'%(name,d),n=1)
         preview('%s_m%d'%(name,d),anir,8+d,0,cell(A,c,c,d,0),gx,gy,S)
-    # icon: facing east, as the classic one
-    save_pic('%s/icon000'%name,cell(A,c,c,2,0),gx,gy,S,team=weathered_team_mask)
-    strip(anir,'icon',pics='%s/icon'%name,n=1)
+    artist_icon(name,anir,team=weathered_team_mask)
 
 def walls():
     print('walls'); a=sheet('walls.png'); cw=ch=112
@@ -580,6 +644,10 @@ JOBS=[
     # classic firing frames (at rest, then the two barrels in turn)
     # Cyclops (artillery): one sheet, the whole gun turns
     ('cyclops', cyclops),
+    # Bullpup (miner), its vacuum, and the miner the Processor draws
+    ('bullpup', bullpup),
+    # Dominion (mobile HQ)
+    ('dominion', dominion),
     ('liberator', lambda: vehicle('liberator','mtank.anir','liberator_body.png','liberator_turret.png',272,5)),
 ]
 
@@ -595,7 +663,9 @@ REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
     [('walls.anir','a'),('walls.anir','b')]+\
     [('upgrades.anir','hrc1'),('upgrades.anir','vts1')]+\
     [(a,s) for a in ('ltank.anir','tmac.anir','troc.anir','mtank.anir') for s in ['base %d'%d for d in range(8)]+['fire %02d'%d for d in range(16)]+['icon']]+\
-    [('artillery.anir',s) for s in ['fire %d'%d for d in range(8)]+['move %d'%d for d in range(8)]+['icon']]
+    [('artillery.anir',s) for s in ['fire %d'%d for d in range(8)]+['move %d'%d for d in range(8)]+['icon']]+\
+    [(a,s) for a in ('miner.anir','mobilehq.anir') for s in ['run %d'%d for d in range(8)]+['icon']]+\
+    [('vacuum.anir','a %d'%d) for d in range(8)]+[('proc.anir','miner 0')]
 
 def check_manifest():
     have=set(tuple(l.split('\t')[1:3]) for l in manifest)

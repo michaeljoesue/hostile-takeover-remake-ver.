@@ -48,7 +48,28 @@ ProcessorGob::ProcessorGob() : StructGob(&gConsts)
 	StartAnimation(&m_aniOverlay, 3, 0, 0);
 	m_gidMiner = kgidNull;
 	m_wptFakeMiner.wx = kwxInvalid;
+	m_cupdFakeMinerMoved = -1;
 	m_fProcessingAnimationInProgress = false;
+}
+
+// The miner backing into the bay and out again moves a 16th of a tile per
+// update. With smooth motion it is drawn part way between its place before
+// that update and after it, like the units, instead of jumping each update.
+
+void ProcessorGob::MoveFakeMiner(WCoord dwy)
+{
+	m_wyFakeMinerPrev = m_wptFakeMiner.wy;
+	m_wptFakeMiner.wy += dwy;
+	m_cupdFakeMinerMoved = gsim.GetUpdateCount();
+	MarkRedraw();
+}
+
+WCoord ProcessorGob::GetFakeMinerDrawY()
+{
+	if (m_cupdFakeMinerMoved != gsim.GetUpdateCount() || !gsim.IsSmoothMotionActive())
+		return m_wptFakeMiner.wy;
+	int nAlpha = gsim.GetInterpolationAlpha();
+	return (WCoord)(m_wyFakeMinerPrev + (m_wptFakeMiner.wy - m_wyFakeMinerPrev) * nAlpha / 256);
 }
 
 #define knVerProcessorGobState 2
@@ -172,10 +193,13 @@ void ProcessorGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nL
 			// Draw fake miner if it is meant to be
 
 			if (m_wptFakeMiner.wx != kwxInvalid) {
-				int ifrm = m_wptFakeMiner.wy < m_wy + kwcTile ? 1 : 0;
+				WCoord wyMiner = GetFakeMinerDrawY();
+				int ifrm = wyMiner < m_wy + kwcTile ? 1 : 0;
 				int xMiner = PcFromUwc(m_wptFakeMiner.wx) - xViewOrigin;
-				int yMiner = PcFromWc(m_wptFakeMiner.wy) - yViewOrigin;
+				int yMiner = PcFromWc(wyMiner) - yViewOrigin;
+				HdSetSubPixel(m_wptFakeMiner.wx, wyMiner);
 				m_pstruc->panid->DrawFrame(4, ifrm, pbm, xMiner, yMiner, side);
+				HdClearSubPixel();
 			}
 
 			if (m_ff & kfGobDrawFlashed)
@@ -400,8 +424,7 @@ lbError:
 			}
 
 			if (m_wptFakeMiner.wy > m_wy + WcFromTile16ths(15)) {
-				m_wptFakeMiner.wy -= kwcTile16th;
-				MarkRedraw();
+				MoveFakeMiner(-kwcTile16th);
 			} else {
 				SetState(kstProcessorTakeGalaxite);
 			}
@@ -521,8 +544,7 @@ lbError:
 			}
 
 			if (m_wptFakeMiner.wy < wptDst.wy) {
-				m_wptFakeMiner.wy += kwcTile16th;
-				MarkRedraw();
+				MoveFakeMiner(kwcTile16th);
 			} else {
 				SetState(kstIdle);
 			}

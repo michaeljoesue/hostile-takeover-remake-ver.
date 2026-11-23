@@ -702,6 +702,23 @@ static int PickPic(HdStrip *pstrip, AnimationData *panid, int nStrip, int nFrame
     return (ptrk->picFrom + (int)(cSteps * p)) % n;
 }
 
+float gflHdSubX, gflHdSubY;
+
+// The world coordinate's exact place in game pixels, less the whole pixel
+// the game draws it at
+
+static float SubPixel(WCoord wc) {
+    if (wc < 0 || wc >= kwcMax)
+        return 0;
+    float fl = (float)wc * gcxTile / kwcTile - PcFromWc(wc);
+    return fl < -1 ? -1 : (fl > 1 ? 1 : fl);
+}
+
+void HdSetSubPixel(WCoord wx, WCoord wy) {
+    gflHdSubX = SubPixel(wx);
+    gflHdSubY = SubPixel(wy);
+}
+
 void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, DibBitmap *pbm,
         int x, int y, Side side, Animation *pani, const Rect *prcShadow) {
     HdStrip *pstrip = pbind->apstrip[nStrip];
@@ -757,13 +774,15 @@ void HdRecord(HdBinding *pbind, AnimationData *panid, int nStrip, int nFrame, Di
     itm.pvOwner = NULL;
     itm.pctl = NULL;
     itm.side = side == (Side)-1 ? kiHdFlash : (side >= 0 && side < kcSides ? side : ksideNeutral);
-    itm.x = x + ppic->x;
-    itm.y = y + ppic->y + yTop;
+    float xPic = x + ppic->x + gflHdSubX;
+    float yPic = y + ppic->y + gflHdSubY;
+    itm.x = xPic;
+    itm.y = yPic + yTop;
     Rect rc;
-    rc.left = (int)floorf(x + ppic->x);
-    rc.top = (int)floorf(y + ppic->y);
-    rc.right = (int)ceilf(x + ppic->x + ppic->cx / ppic->scale);
-    rc.bottom = (int)ceilf(y + ppic->y + ppic->cy / ppic->scale);
+    rc.left = (int)floorf(xPic);
+    rc.top = (int)floorf(yPic);
+    rc.right = (int)ceilf(xPic + ppic->cx / ppic->scale);
+    rc.bottom = (int)ceilf(yPic + ppic->cy / ppic->scale);
     itm.fClipped = rc.left < 0 || rc.top < 0 || rc.right > sizDib.cx || rc.bottom > sizDib.cy;
     if (rc.left < 0) rc.left = 0;
     if (rc.top < 0) rc.top = 0;

@@ -171,6 +171,33 @@ strip	artillery.anir	move 6	pics=cyclops/m6_	n=1
 strip	artillery.anir	fire 7	pics=cyclops/f7_	n=3	blend=0
 strip	artillery.anir	move 7	pics=cyclops/m7_	n=1
 strip	artillery.anir	icon	pics=cyclops/icon	n=1
+strip	miner.anir	run 0	pics=bullpup/r0_	n=1
+strip	miner.anir	run 1	pics=bullpup/r1_	n=1
+strip	miner.anir	run 2	pics=bullpup/r2_	n=1
+strip	miner.anir	run 3	pics=bullpup/r3_	n=1
+strip	miner.anir	run 4	pics=bullpup/r4_	n=1
+strip	miner.anir	run 5	pics=bullpup/r5_	n=1
+strip	miner.anir	run 6	pics=bullpup/r6_	n=1
+strip	miner.anir	run 7	pics=bullpup/r7_	n=1
+strip	miner.anir	icon	pics=bullpup/icon	n=1
+strip	vacuum.anir	a 0	pics=bullpup/v0_	n=4	blend=0
+strip	vacuum.anir	a 1	pics=bullpup/v1_	n=4	blend=0
+strip	vacuum.anir	a 2	pics=bullpup/v2_	n=4	blend=0
+strip	vacuum.anir	a 3	pics=bullpup/v3_	n=4	blend=0
+strip	vacuum.anir	a 4	pics=bullpup/v4_	n=4	blend=0
+strip	vacuum.anir	a 5	pics=bullpup/v5_	n=4	blend=0
+strip	vacuum.anir	a 6	pics=bullpup/v6_	n=4	blend=0
+strip	vacuum.anir	a 7	pics=bullpup/v7_	n=4	blend=0
+strip	proc.anir	miner 0	pics=bullpup/p	n=2	blend=0
+strip	mobilehq.anir	run 0	pics=dominion/r0_	n=1
+strip	mobilehq.anir	run 1	pics=dominion/r1_	n=1
+strip	mobilehq.anir	run 2	pics=dominion/r2_	n=1
+strip	mobilehq.anir	run 3	pics=dominion/r3_	n=1
+strip	mobilehq.anir	run 4	pics=dominion/r4_	n=1
+strip	mobilehq.anir	run 5	pics=dominion/r5_	n=1
+strip	mobilehq.anir	run 6	pics=dominion/r6_	n=1
+strip	mobilehq.anir	run 7	pics=dominion/r7_	n=1
+strip	mobilehq.anir	icon	pics=dominion/icon	n=1
 strip	mtank.anir	base 0	pics=liberator/b0_	n=1
 strip	mtank.anir	base 1	pics=liberator/b1_	n=1
 strip	mtank.anir	base 2	pics=liberator/b2_	n=1

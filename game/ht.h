@@ -1319,6 +1319,11 @@ void HdBeginFrame();
 void HdPaintStart();
 void HdHoldAnimation(class Animation *pani, bool fHold);
 void HdNoteCovered(DibBitmap *pbm, int x, int y, int cx, int cy);
+// Sub-pixel offset (game pixels, -1..1) added to the HD pictures recorded
+// while set: smooth motion draws moving things between whole game pixels
+extern float gflHdSubX, gflHdSubY;
+void HdSetSubPixel(WCoord wx, WCoord wy);
+inline void HdClearSubPixel() { gflHdSubX = gflHdSubY = 0; }
 void HdRecord(HdBinding *phdb, AnimationData *panid, int nStrip, int nFrame, DibBitmap *pbm,
 		int x, int y, Side side, class Animation *pani, const Rect *prcShadow);
 bool HdHasIcon(HdBinding *phdb, AnimationData *panid, int nStrip, DibBitmap *pbm);
@@ -6513,6 +6518,10 @@ private:
 	Animation m_aniOverlay;
 	Gid m_gidMiner;
 	WPoint m_wptFakeMiner;
+	WCoord m_wyFakeMinerPrev;	// before the update that last moved it (smooth motion; not saved)
+	long m_cupdFakeMinerMoved;	// that update
+	void MoveFakeMiner(WCoord dwy);
+	WCoord GetFakeMinerDrawY();
 	bool m_fProcessingAnimationInProgress;
 	bool m_fDoorMoving;
 };

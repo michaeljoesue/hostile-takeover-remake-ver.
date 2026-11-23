@@ -800,7 +800,22 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
                 // If gob is painting on this layer then paint
 
                 if (ff & ffLayerT) {
+                    // Moving (drawn part way): its HD pictures go between
+                    // whole game pixels too
+
+                    bool fSub = false;
+                    for (int i = 0; i < cgobInterpolated; i++) {
+                        if (s_apgobInterpolated[i] == pgobT) {
+                            WPoint wpt;
+                            pgobT->GetPosition(&wpt);
+                            HdSetSubPixel(wpt.wx, wpt.wy);
+                            fSub = true;
+                            break;
+                        }
+                    }
                     pgobT->Draw(pbm, xView, yView, nLayer);
+                    if (fSub)
+                        HdClearSubPixel();
 
                 }
             }

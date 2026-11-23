@@ -1,0 +1,22 @@
+strip 0 'run 0' frames 1 delay 0
+  frame 0 bounds -19 -15 17 21 hold 0 special 0 0
+strip 1 'run 1' frames 1 delay 0
+  frame 0 bounds -20 -16 20 17 hold 0 special 0 0
+strip 2 'run 2' frames 1 delay 0
+  frame 0 bounds -21 -12 19 15 hold 0 special 0 0
+strip 3 'run 3' frames 1 delay 0
+  frame 0 bounds -20 -16 19 20 hold 0 special 0 0
+strip 4 'run 4' frames 1 delay 0
+  frame 0 bounds -17 -19 16 20 hold 0 special 0 0
+strip 5 'run 5' frames 1 delay 0
+  frame 0 bounds -20 -17 19 19 hold 0 special 0 0
+strip 6 'run 6' frames 1 delay 0
+  frame 0 bounds -20 -13 19 16 hold 0 special 0 0
+strip 7 'run 7' frames 1 delay 0
+  frame 0 bounds -21 -17 18 16 hold 0 special 0 0
+strip 8 'icon' frames 1 delay 0
+  frame 0 bounds -2 0 28 20 hold 0 special 0 0
+strip 9 'help' frames 1 delay 0
+  frame 0 bounds -19 -19 14 20 hold 0 special 0 0
+strip 10 'highlight' frames 1 delay 0
+  frame 0 bounds -14 -14 11 15 hold 0 special 0 0
