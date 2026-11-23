@@ -79,3 +79,53 @@ strip	CommandCenter.anir	a 1	pics=ccenter/d	n=52	var=1	cycle=66
 strip	CommandCenter.anir	a 2	pics=ccenter/w	n=1	var=2
 strip	upgrades.anir	hrc1	pics=hrc2/h	n=1
 strip	upgrades.anir	vts1	pics=vts2/h	n=1
+strip	ltank.anir	base 0	pics=broadsword/b0_	n=1
+strip	ltank.anir	base 1	pics=broadsword/b1_	n=1
+strip	ltank.anir	base 2	pics=broadsword/b2_	n=1
+strip	ltank.anir	base 3	pics=broadsword/b3_	n=1
+strip	ltank.anir	base 4	pics=broadsword/b4_	n=1
+strip	ltank.anir	base 5	pics=broadsword/b5_	n=1
+strip	ltank.anir	base 6	pics=broadsword/b6_	n=1
+strip	ltank.anir	base 7	pics=broadsword/b7_	n=1
+strip	ltank.anir	fire 00	pics=broadsword/t00_	n=3	blend=0
+strip	ltank.anir	fire 01	pics=broadsword/t01_	n=3	blend=0
+strip	ltank.anir	fire 02	pics=broadsword/t02_	n=3	blend=0
+strip	ltank.anir	fire 03	pics=broadsword/t03_	n=3	blend=0
+strip	ltank.anir	fire 04	pics=broadsword/t04_	n=3	blend=0
+strip	ltank.anir	fire 05	pics=broadsword/t05_	n=3	blend=0
+strip	ltank.anir	fire 06	pics=broadsword/t06_	n=3	blend=0
+strip	ltank.anir	fire 07	pics=broadsword/t07_	n=3	blend=0
+strip	ltank.anir	fire 08	pics=broadsword/t08_	n=3	blend=0
+strip	ltank.anir	fire 09	pics=broadsword/t09_	n=3	blend=0
+strip	ltank.anir	fire 10	pics=broadsword/t10_	n=3	blend=0
+strip	ltank.anir	fire 11	pics=broadsword/t11_	n=3	blend=0
+strip	ltank.anir	fire 12	pics=broadsword/t12_	n=3	blend=0
+strip	ltank.anir	fire 13	pics=broadsword/t13_	n=3	blend=0
+strip	ltank.anir	fire 14	pics=broadsword/t14_	n=3	blend=0
+strip	ltank.anir	fire 15	pics=broadsword/t15_	n=3	blend=0
+strip	ltank.anir	icon	pics=broadsword/icon	n=1
+strip	tmac.anir	base 0	pics=eagle/b0_	n=1
+strip	tmac.anir	base 1	pics=eagle/b1_	n=1
+strip	tmac.anir	base 2	pics=eagle/b2_	n=1
+strip	tmac.anir	base 3	pics=eagle/b3_	n=1
+strip	tmac.anir	base 4	pics=eagle/b4_	n=1
+strip	tmac.anir	base 5	pics=eagle/b5_	n=1
+strip	tmac.anir	base 6	pics=eagle/b6_	n=1
+strip	tmac.anir	base 7	pics=eagle/b7_	n=1
+strip	tmac.anir	fire 00	pics=eagle/t00_	n=9	blend=0
+strip	tmac.anir	fire 01	pics=eagle/t01_	n=9	blend=0
+strip	tmac.anir	fire 02	pics=eagle/t02_	n=9	blend=0
+strip	tmac.anir	fire 03	pics=eagle/t03_	n=9	blend=0
+strip	tmac.anir	fire 04	pics=eagle/t04_	n=9	blend=0
+strip	tmac.anir	fire 05	pics=eagle/t05_	n=9	blend=0
+strip	tmac.anir	fire 06	pics=eagle/t06_	n=9	blend=0
+strip	tmac.anir	fire 07	pics=eagle/t07_	n=9	blend=0
+strip	tmac.anir	fire 08	pics=eagle/t08_	n=9	blend=0
+strip	tmac.anir	fire 09	pics=eagle/t09_	n=9	blend=0
+strip	tmac.anir	fire 10	pics=eagle/t10_	n=9	blend=0
+strip	tmac.anir	fire 11	pics=eagle/t11_	n=9	blend=0
+strip	tmac.anir	fire 12	pics=eagle/t12_	n=9	blend=0
+strip	tmac.anir	fire 13	pics=eagle/t13_	n=9	blend=0
+strip	tmac.anir	fire 14	pics=eagle/t14_	n=9	blend=0
+strip	tmac.anir	fire 15	pics=eagle/t15_	n=9	blend=0
+strip	tmac.anir	icon	pics=eagle/icon	n=1

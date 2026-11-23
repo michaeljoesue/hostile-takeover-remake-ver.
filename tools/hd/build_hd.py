@@ -129,10 +129,14 @@ def last_row_wreck_icon(a,cw,ch,row,cols):
     cells.sort(key=lambda t:-(t[1][:,:,3]>0).sum())
     return [x for c,x in cells]  # biggest first: wreck(s)..., icon last
 
-def placement(cm_strip, anir, rgba0, origin=None):
-    """fit HD cell rgba0 onto classic frame mask; returns (gx,gy,S) for the cell top-left in draw-point coords"""
+def placement(cm_strip, anir, rgba0, origin=None, S_fixed=None):
+    """fit HD cell rgba0 onto classic frame mask; returns (gx,gy,S) for the cell top-left in draw-point coords.
+    S_fixed: only find the place, at this scale"""
     cm,(l,t)=cm_strip
-    r=fit(cm, rgba0[:,:,3])
+    if S_fixed is None:
+        r=fit(cm, rgba0[:,:,3])
+    else:
+        r=fit(cm, rgba0[:,:,3], smin=S_fixed, smax=S_fixed+0.001)
     S=(r['sx']+r['sy'])/2
     gx=l - r['ox']/S; gy=t - r['oy']/S
     print('  fit %s iou %.3f S %.3f'%(anir,r['iou'],S))
@@ -339,6 +343,45 @@ def tower(t, anir):
     # preview: composite classic frame vs HD
     previews.append((t,Image.fromarray(np.concatenate([np.array(Image.fromarray((m*255).astype(np.uint8)).resize((int(m.shape[1]*S),int(m.shape[0]*S)))) [:,:,None].repeat(4,2)],1))))
 
+# Vehicles: a body in 8 directions (one row, clockwise from north, as the
+# classic 'base 0'..'base 7') and a turret in 16 directions (columns, as
+# 'fire 00'..'fire 15') with a row per classic firing frame (row 0 at
+# rest). Each sheet is fitted once (body: 'base 0'; turret: 'fire 00'
+# frame 0) and keeps that placement in every direction: the artist turned
+# the model about the same point. The build menu icon is the body and
+# turret together, facing west like the classic icon.
+
+def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,12)):
+    print(name)
+    B=sheet(body_sheet); T=sheet(turret_sheet)
+    bodies=[cell(B,c,c,d,0) for d in range(8)]
+    gx,gy,S=placement(classic_mask(anir,0,0),anir,bodies[0])
+    for d in range(8):
+        if (bodies[d][:,:,3]>0).sum()==0: raise SystemExit('%s: body %d is empty'%(name,d))
+        save_pic('%s/b%d_000'%(name,d),bodies[d],gx,gy,S)
+        strip(anir,'base %d'%d,pics='%s/b%d_'%(name,d),n=1)
+        preview('%s_b%d'%(name,d),anir,d,0,bodies[d],gx,gy,S)
+    # the turret sheet is drawn at the body's scale: fit only its place
+    tgx,tgy,TS=placement(classic_mask(anir,8,0),anir,cell(T,c,c,0,0),S_fixed=S)
+    for d in range(16):
+        for k in range(turret_rows):
+            save_pic('%s/t%02d_%03d'%(name,d,k),cell(T,c,c,d,k),tgx,tgy,TS)
+        strip(anir,'fire %02d'%d,pics='%s/t%02d_'%(name,d),n=turret_rows,blend=0)
+        preview('%s_t%02d'%(name,d),anir,8+d,0,cell(T,c,c,d,0),tgx,tgy,TS)
+    # icon: body and turret composed in HD pixels (game coords * S)
+    db,dt=icon_dirs
+    bc=bodies[db]; tc=cell(T,c,c,dt,0)
+    if abs(TS-S)>0.05*S:
+        print('  turret scale %.2f differs from the body\'s %.2f'%(TS,S))
+    tc=np.array(Image.fromarray(tc).resize((max(1,int(round(tc.shape[1]*S/TS))),max(1,int(round(tc.shape[0]*S/TS)))),Image.LANCZOS))
+    ox=int(round((tgx-gx)*S)); oy=int(round((tgy-gy)*S))
+    L=min(0,ox); Tp=min(0,oy); R=max(bc.shape[1],ox+tc.shape[1]); Bt=max(bc.shape[0],oy+tc.shape[0])
+    canvas=Image.new('RGBA',(R-L,Bt-Tp))
+    canvas.alpha_composite(Image.fromarray(bc),(-L,-Tp))
+    canvas.alpha_composite(Image.fromarray(tc),(ox-L,oy-Tp))
+    save_pic('%s/icon000'%name,np.array(canvas),gx+L/S,gy+Tp/S,S)
+    strip(anir,'icon',pics='%s/icon'%name,n=1)
+
 def walls():
     print('walls'); a=sheet('walls.png'); cw=ch=112
     # the sheet's tiles are 96 px with an 8 px margin in each 112 px cell:
@@ -401,6 +444,10 @@ JOBS=[
     # R&D Center upgrade menu icons: the upgraded buildings' healthy pictures
     # (HRC + VTS 02 and 04, from the hrcvts job's packs)
     ('upgrades', lambda: (strip('upgrades.anir','hrc1',pics='hrc2/h',n=1), strip('upgrades.anir','vts1',pics='vts2/h',n=1))),
+    # Broadsword (light tank): 3 turret rows (at rest, firing, after)
+    ('broadsword', lambda: vehicle('broadsword','ltank.anir','broadsword_body.png','broadsword_turret.png',208,3)),
+    # Eagle (machine gun vehicle): 9 turret rows, its 9 classic firing frames
+    ('eagle', lambda: vehicle('eagle','tmac.anir','eagle_body.png','eagle_turret.png',176,9)),
 ]
 
 # Every classic strip that must have HD pictures (a missing one draws the
@@ -413,7 +460,8 @@ REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
     [('proc.anir',s) for s in ('base 0','base 1','base 2','door 0')]+\
     [(t,s) for t in ('mtower.anir','rtower.anir') for s in ['base 0','base 1','base 2']+['turret %02d'%d for d in range(16)]]+\
     [('walls.anir','a'),('walls.anir','b')]+\
-    [('upgrades.anir','hrc1'),('upgrades.anir','vts1')]
+    [('upgrades.anir','hrc1'),('upgrades.anir','vts1')]+\
+    [(a,s) for a in ('ltank.anir','tmac.anir') for s in ['base %d'%d for d in range(8)]+['fire %02d'%d for d in range(16)]+['icon']]
 
 def check_manifest():
     have=set(tuple(l.split('\t')[1:3]) for l in manifest)

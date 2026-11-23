@@ -258,10 +258,11 @@ This recompiles those files and replaces them in `game\htdata832.pdb`,
 keeping everything else. It only needs Python and the CMake build (for
 `inicrunch.exe`), not the .NET tools.
 
-### HD buildings
+### HD buildings and vehicles
 
-The HD pictures of the buildings, towers and walls are in `data\hd`
-(`manifest.txt` and one `.hdp` pack per building), copied next to the game
+The HD pictures of the buildings, towers, walls and vehicles (so far the
+Broadsword and the Eagle) are in `data\hd`
+(`manifest.txt` and one `.hdp` pack per building or vehicle), copied next to the game
 by the build. They are made from the artist's sheets in `assets\hd` by:
 
 ```bat
@@ -277,6 +278,12 @@ bound as `CommandCenter.anir` through `HdAnimation` in GobTemplates). The
 build menu shows each building's first healthy picture (towers turned
 toward the viewer). Without the `hd` folder the game draws the original
 pictures.
+
+A vehicle has two sheets: its body in 8 directions (one row, clockwise from
+north) and its turret in 16 directions with a row per classic firing frame
+(row 0 at rest; the Broadsword has 3 rows, the Eagle 9). Body and turret are
+fitted once and drawn at the same scale in every direction; the VTS build
+menu shows them together facing west.
 
 ### Fonts
 
