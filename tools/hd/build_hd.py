@@ -406,7 +406,7 @@ def turret_orbit(T, c):
 # scaled so its upper quartile (the lit faces, the colour the eye reads)
 # sits just above the brightest shade.
 PAINT_SHEETS=['broadsword_body.png','broadsword_turret.png','eagle_body.png','eagle_turret.png',
-    'hydra_body.png','hydra_turret.png','liberator_body.png','liberator_turret.png']
+    'hydra_body.png','hydra_turret.png','liberator_body.png','liberator_turret.png','cyclops.png']
 PAINT_UPPER=100.0
 _paint_ref=[]
 def paint_luma(a):
@@ -481,6 +481,33 @@ def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,1
     save_pic('%s/icon000'%name,np.array(canvas),gx+L/S,gy+Tp/S,S,team=vehicle_team_mask)
     strip(anir,'icon',pics='%s/icon'%name,n=1)
 
+def weathered_team_mask(rgba):
+    """The Cyclops' paint is weathered: its blue plates are flecked with
+    brown grime and rivets, so the paint mask came out speckled. The mask
+    is closed (gaps a few px wide inside painted areas filled) and softened."""
+    m=Image.fromarray(vehicle_team_mask(rgba))
+    m=m.filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.MinFilter(7)).filter(ImageFilter.GaussianBlur(1.2))
+    return np.minimum(np.array(m),(rgba[:,:,3]>0)*255).astype(np.uint8)
+
+def cyclops():
+    """Cyclops (artillery.anir): no turret, the whole gun turns. The sheet:
+    8 directions across, 3 rows down (at rest, firing, after), the classic
+    'fire d' strips' 3 frames; 'move d' is the one at-rest frame."""
+    name,anir,c='cyclops','artillery.anir',344
+    print(name)
+    A=balance_paint(sheet('cyclops.png'),'gun')
+    gx,gy,S=placement(classic_mask(anir,8,0),anir,cell(A,c,c,0,0))
+    for d in range(8):
+        for k in range(3):
+            save_pic('%s/f%d_%03d'%(name,d,k),cell(A,c,c,d,k),gx,gy,S,team=weathered_team_mask)
+        save_pic('%s/m%d_000'%(name,d),cell(A,c,c,d,0),gx,gy,S,team=weathered_team_mask)
+        strip(anir,'fire %d'%d,pics='%s/f%d_'%(name,d),n=3,blend=0)
+        strip(anir,'move %d'%d,pics='%s/m%d_'%(name,d),n=1)
+        preview('%s_m%d'%(name,d),anir,8+d,0,cell(A,c,c,d,0),gx,gy,S)
+    # icon: facing east, as the classic one
+    save_pic('%s/icon000'%name,cell(A,c,c,2,0),gx,gy,S,team=weathered_team_mask)
+    strip(anir,'icon',pics='%s/icon'%name,n=1)
+
 def walls():
     print('walls'); a=sheet('walls.png'); cw=ch=112
     # the sheet's tiles are 96 px with an 8 px margin in each 112 px cell:
@@ -551,6 +578,8 @@ JOBS=[
     ('hydra', lambda: vehicle('hydra','troc.anir','hydra_body.png','hydra_turret.png',216,3)),
     # Liberator (medium tank): the Hydra's chassis; 5 turret rows, its 5
     # classic firing frames (at rest, then the two barrels in turn)
+    # Cyclops (artillery): one sheet, the whole gun turns
+    ('cyclops', cyclops),
     ('liberator', lambda: vehicle('liberator','mtank.anir','liberator_body.png','liberator_turret.png',272,5)),
 ]
 
@@ -565,7 +594,8 @@ REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
     [(t,s) for t in ('mtower.anir','rtower.anir') for s in ['base 0','base 1','base 2']+['turret %02d'%d for d in range(16)]]+\
     [('walls.anir','a'),('walls.anir','b')]+\
     [('upgrades.anir','hrc1'),('upgrades.anir','vts1')]+\
-    [(a,s) for a in ('ltank.anir','tmac.anir','troc.anir','mtank.anir') for s in ['base %d'%d for d in range(8)]+['fire %02d'%d for d in range(16)]+['icon']]
+    [(a,s) for a in ('ltank.anir','tmac.anir','troc.anir','mtank.anir') for s in ['base %d'%d for d in range(8)]+['fire %02d'%d for d in range(16)]+['icon']]+\
+    [('artillery.anir',s) for s in ['fire %d'%d for d in range(8)]+['move %d'%d for d in range(8)]+['icon']]
 
 def check_manifest():
     have=set(tuple(l.split('\t')[1:3]) for l in manifest)

@@ -1,0 +1,54 @@
+strip 0 'fire 0' frames 3 delay 0
+  frame 0 bounds -16 -24 15 27 hold 0 special 0 0
+  frame 1 bounds -16 -39 15 26 hold 0 special 0 -39
+  frame 2 bounds -16 -40 16 27 hold 0 special 0 0
+strip 1 'fire 1' frames 3 delay 0
+  frame 0 bounds -24 -23 15 21 hold 0 special 0 0
+  frame 1 bounds -24 -31 23 21 hold 0 special 17 -28
+  frame 2 bounds -24 -43 31 21 hold 0 special 0 0
+strip 2 'fire 2' frames 3 delay 0
+  frame 0 bounds -20 -9 29 20 hold 0 special 0 0
+  frame 1 bounds -20 -11 43 20 hold 0 special 39 -3
+  frame 2 bounds -20 -17 47 20 hold 0 special 0 0
+strip 3 'fire 3' frames 3 delay 0
+  frame 0 bounds -15 -17 25 28 hold 0 special 0 0
+  frame 1 bounds -15 -17 34 34 hold 0 special 31 29
+  frame 2 bounds -15 -17 40 43 hold 0 special 0 0
+strip 4 'fire 4' frames 3 delay 0
+  frame 0 bounds -19 -21 16 30 hold 0 special 0 0
+  frame 1 bounds -19 -21 16 42 hold 0 special 0 36
+  frame 2 bounds -19 -21 16 46 hold 0 special 0 0
+strip 5 'fire 5' frames 3 delay 0
+  frame 0 bounds -27 -17 18 30 hold 0 special 0 0
+  frame 1 bounds -39 -17 18 35 hold 0 special -32 24
+  frame 2 bounds -40 -17 19 44 hold 0 special 0 0
+strip 6 'fire 6' frames 3 delay 0
+  frame 0 bounds -24 -11 25 18 hold 0 special 0 0
+  frame 1 bounds -40 -13 25 19 hold 0 special -36 -5
+  frame 2 bounds -41 -15 26 21 hold 0 special 0 0
+strip 7 'fire 7' frames 3 delay 0
+  frame 0 bounds -23 -20 20 19 hold 0 special 0 0
+  frame 1 bounds -35 -31 20 18 hold 0 special -28 -28
+  frame 2 bounds -41 -36 20 19 hold 0 special 0 0
+strip 8 'move 0' frames 1 delay 0
+  frame 0 bounds -16 -24 15 27 hold 0 special 0 0
+strip 9 'move 1' frames 1 delay 0
+  frame 0 bounds -24 -23 15 21 hold 0 special 0 0
+strip 10 'move 2' frames 1 delay 0
+  frame 0 bounds -20 -9 29 20 hold 0 special 0 0
+strip 11 'move 3' frames 1 delay 0
+  frame 0 bounds -15 -17 25 28 hold 0 special 0 0
+strip 12 'move 4' frames 1 delay 0
+  frame 0 bounds -19 -21 16 30 hold 0 special 0 0
+strip 13 'move 5' frames 1 delay 0
+  frame 0 bounds -27 -17 18 30 hold 0 special 0 0
+strip 14 'move 6' frames 1 delay 0
+  frame 0 bounds -24 -11 25 18 hold 0 special 0 0
+strip 15 'move 7' frames 1 delay 0
+  frame 0 bounds -23 -20 20 19 hold 0 special 0 0
+strip 16 'icon' frames 1 delay 0
+  frame 0 bounds -2 3 35 25 hold 0 special 0 0
+strip 17 'help' frames 1 delay 0
+  frame 0 bounds -20 -21 20 24 hold 0 special 0 0
+strip 18 'highlight' frames 1 delay 0
+  frame 0 bounds -15 -16 15 18 hold 0 special 0 0

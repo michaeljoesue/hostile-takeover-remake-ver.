@@ -154,6 +154,23 @@ strip	troc.anir	fire 13	pics=hydra/t13_	n=3	blend=0
 strip	troc.anir	fire 14	pics=hydra/t14_	n=3	blend=0
 strip	troc.anir	fire 15	pics=hydra/t15_	n=3	blend=0
 strip	troc.anir	icon	pics=hydra/icon	n=1
+strip	artillery.anir	fire 0	pics=cyclops/f0_	n=3	blend=0
+strip	artillery.anir	move 0	pics=cyclops/m0_	n=1
+strip	artillery.anir	fire 1	pics=cyclops/f1_	n=3	blend=0
+strip	artillery.anir	move 1	pics=cyclops/m1_	n=1
+strip	artillery.anir	fire 2	pics=cyclops/f2_	n=3	blend=0
+strip	artillery.anir	move 2	pics=cyclops/m2_	n=1
+strip	artillery.anir	fire 3	pics=cyclops/f3_	n=3	blend=0
+strip	artillery.anir	move 3	pics=cyclops/m3_	n=1
+strip	artillery.anir	fire 4	pics=cyclops/f4_	n=3	blend=0
+strip	artillery.anir	move 4	pics=cyclops/m4_	n=1
+strip	artillery.anir	fire 5	pics=cyclops/f5_	n=3	blend=0
+strip	artillery.anir	move 5	pics=cyclops/m5_	n=1
+strip	artillery.anir	fire 6	pics=cyclops/f6_	n=3	blend=0
+strip	artillery.anir	move 6	pics=cyclops/m6_	n=1
+strip	artillery.anir	fire 7	pics=cyclops/f7_	n=3	blend=0
+strip	artillery.anir	move 7	pics=cyclops/m7_	n=1
+strip	artillery.anir	icon	pics=cyclops/icon	n=1
 strip	mtank.anir	base 0	pics=liberator/b0_	n=1
 strip	mtank.anir	base 1	pics=liberator/b1_	n=1
 strip	mtank.anir	base 2	pics=liberator/b2_	n=1
