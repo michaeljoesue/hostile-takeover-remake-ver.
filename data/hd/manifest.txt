@@ -154,3 +154,28 @@ strip	troc.anir	fire 13	pics=hydra/t13_	n=3	blend=0
 strip	troc.anir	fire 14	pics=hydra/t14_	n=3	blend=0
 strip	troc.anir	fire 15	pics=hydra/t15_	n=3	blend=0
 strip	troc.anir	icon	pics=hydra/icon	n=1
+strip	mtank.anir	base 0	pics=liberator/b0_	n=1
+strip	mtank.anir	base 1	pics=liberator/b1_	n=1
+strip	mtank.anir	base 2	pics=liberator/b2_	n=1
+strip	mtank.anir	base 3	pics=liberator/b3_	n=1
+strip	mtank.anir	base 4	pics=liberator/b4_	n=1
+strip	mtank.anir	base 5	pics=liberator/b5_	n=1
+strip	mtank.anir	base 6	pics=liberator/b6_	n=1
+strip	mtank.anir	base 7	pics=liberator/b7_	n=1
+strip	mtank.anir	fire 00	pics=liberator/t00_	n=5	blend=0
+strip	mtank.anir	fire 01	pics=liberator/t01_	n=5	blend=0
+strip	mtank.anir	fire 02	pics=liberator/t02_	n=5	blend=0
+strip	mtank.anir	fire 03	pics=liberator/t03_	n=5	blend=0
+strip	mtank.anir	fire 04	pics=liberator/t04_	n=5	blend=0
+strip	mtank.anir	fire 05	pics=liberator/t05_	n=5	blend=0
+strip	mtank.anir	fire 06	pics=liberator/t06_	n=5	blend=0
+strip	mtank.anir	fire 07	pics=liberator/t07_	n=5	blend=0
+strip	mtank.anir	fire 08	pics=liberator/t08_	n=5	blend=0
+strip	mtank.anir	fire 09	pics=liberator/t09_	n=5	blend=0
+strip	mtank.anir	fire 10	pics=liberator/t10_	n=5	blend=0
+strip	mtank.anir	fire 11	pics=liberator/t11_	n=5	blend=0
+strip	mtank.anir	fire 12	pics=liberator/t12_	n=5	blend=0
+strip	mtank.anir	fire 13	pics=liberator/t13_	n=5	blend=0
+strip	mtank.anir	fire 14	pics=liberator/t14_	n=5	blend=0
+strip	mtank.anir	fire 15	pics=liberator/t15_	n=5	blend=0
+strip	mtank.anir	icon	pics=liberator/icon	n=1

@@ -505,6 +505,9 @@ JOBS=[
     ('eagle', lambda: vehicle('eagle','tmac.anir','eagle_body.png','eagle_turret.png',176,9)),
     # Hydra (rocket vehicle): 3 turret rows (at rest, firing, after)
     ('hydra', lambda: vehicle('hydra','troc.anir','hydra_body.png','hydra_turret.png',216,3)),
+    # Liberator (medium tank): the Hydra's chassis; 5 turret rows, its 5
+    # classic firing frames (at rest, then the two barrels in turn)
+    ('liberator', lambda: vehicle('liberator','mtank.anir','liberator_body.png','liberator_turret.png',272,5)),
 ]
 
 # Every classic strip that must have HD pictures (a missing one draws the
@@ -518,7 +521,7 @@ REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
     [(t,s) for t in ('mtower.anir','rtower.anir') for s in ['base 0','base 1','base 2']+['turret %02d'%d for d in range(16)]]+\
     [('walls.anir','a'),('walls.anir','b')]+\
     [('upgrades.anir','hrc1'),('upgrades.anir','vts1')]+\
-    [(a,s) for a in ('ltank.anir','tmac.anir','troc.anir') for s in ['base %d'%d for d in range(8)]+['fire %02d'%d for d in range(16)]+['icon']]
+    [(a,s) for a in ('ltank.anir','tmac.anir','troc.anir','mtank.anir') for s in ['base %d'%d for d in range(8)]+['fire %02d'%d for d in range(16)]+['icon']]
 
 def check_manifest():
     have=set(tuple(l.split('\t')[1:3]) for l in manifest)

@@ -1,0 +1,118 @@
+strip 0 'base 0' frames 1 delay 0
+  frame 0 bounds -17 -21 15 20 hold 0 special 0 0
+strip 1 'base 1' frames 1 delay 0
+  frame 0 bounds -19 -19 21 21 hold 0 special 0 0
+strip 2 'base 2' frames 1 delay 0
+  frame 0 bounds -19 -12 20 19 hold 0 special 0 0
+strip 3 'base 3' frames 1 delay 0
+  frame 0 bounds -17 -13 23 24 hold 0 special 0 0
+strip 4 'base 4' frames 1 delay 0
+  frame 0 bounds -16 -19 15 24 hold 0 special 0 0
+strip 5 'base 5' frames 1 delay 0
+  frame 0 bounds -20 -15 21 22 hold 0 special 0 0
+strip 6 'base 6' frames 1 delay 0
+  frame 0 bounds -17 -12 22 19 hold 0 special 0 0
+strip 7 'base 7' frames 1 delay 0
+  frame 0 bounds -23 -19 18 21 hold 0 special 0 0
+strip 8 'fire 00' frames 5 delay 0
+  frame 0 bounds -9 -17 7 14 hold 0 special 0 0
+  frame 1 bounds -11 -27 6 13 hold 0 special -4 -21
+  frame 2 bounds -15 -28 6 13 hold 0 special -4 -28
+  frame 3 bounds -9 -27 14 13 hold 0 special 4 -24
+  frame 4 bounds -9 -28 15 13 hold 0 special 4 -28
+strip 9 'fire 01' frames 5 delay 0
+  frame 0 bounds -9 -15 12 13 hold 0 special 0 0
+  frame 1 bounds -9 -23 12 13 hold 0 special 5 -19
+  frame 2 bounds -9 -25 12 14 hold 0 special 8 -24
+  frame 3 bounds -9 -25 16 14 hold 0 special 13 -17
+  frame 4 bounds -9 -25 18 14 hold 0 special 16 -25
+strip 10 'fire 02' frames 5 delay 0
+  frame 0 bounds -9 -13 16 10 hold 0 special 0 0
+  frame 1 bounds -9 -20 19 9 hold 0 special 15 -19
+  frame 2 bounds -9 -24 22 9 hold 0 special 19 -23
+  frame 3 bounds -9 -27 24 9 hold 0 special 19 -15
+  frame 4 bounds -9 -20 26 9 hold 0 special 24 -20
+strip 11 'fire 03' frames 5 delay 0
+  frame 0 bounds -11 -11 16 9 hold 0 special 0 0
+  frame 1 bounds -11 -15 18 9 hold 0 special 16 -13
+  frame 2 bounds -11 -17 22 10 hold 0 special 21 -16
+  frame 3 bounds -11 -20 26 9 hold 0 special 21 -8
+  frame 4 bounds -11 -13 26 10 hold 0 special 25 -11
+strip 12 'fire 04' frames 5 delay 0
+  frame 0 bounds -12 -5 19 10 hold 0 special 0 0
+  frame 1 bounds -12 -11 27 9 hold 0 special 24 -4
+  frame 2 bounds -12 -15 33 9 hold 0 special 29 -4
+  frame 3 bounds -12 -13 35 15 hold 0 special 27 1
+  frame 4 bounds -12 -7 35 13 hold 0 special 32 1
+strip 13 'fire 05' frames 5 delay 0
+  frame 0 bounds -12 -7 19 13 hold 0 special 0 0
+  frame 1 bounds -12 -7 31 13 hold 0 special 28 7
+  frame 2 bounds -12 -7 35 17 hold 0 special 33 11
+  frame 3 bounds -12 -7 37 18 hold 0 special 23 12
+  frame 4 bounds -12 -7 36 20 hold 0 special 32 15
+strip 14 'fire 06' frames 5 delay 0
+  frame 0 bounds -11 -9 17 15 hold 0 special 0 0
+  frame 1 bounds -11 -9 25 18 hold 0 special 23 13
+  frame 2 bounds -11 -9 30 24 hold 0 special 27 19
+  frame 3 bounds -11 -9 22 26 hold 0 special 17 19
+  frame 4 bounds -11 -9 30 26 hold 0 special 23 23
+strip 15 'fire 07' frames 5 delay 0
+  frame 0 bounds -9 -11 12 18 hold 0 special 0 0
+  frame 1 bounds -9 -11 19 24 hold 0 special 15 21
+  frame 2 bounds -9 -11 24 32 hold 0 special 17 27
+  frame 3 bounds -9 -11 20 30 hold 0 special 8 24
+  frame 4 bounds -9 -11 16 36 hold 0 special 11 29
+strip 16 'fire 08' frames 5 delay 0
+  frame 0 bounds -8 -11 7 20 hold 0 special 0 0
+  frame 1 bounds -8 -11 12 30 hold 0 special 4 29
+  frame 2 bounds -8 -11 16 36 hold 0 special 4 35
+  frame 3 bounds -12 -11 7 37 hold 0 special -4 25
+  frame 4 bounds -15 -11 6 37 hold 0 special -4 35
+strip 17 'fire 09' frames 5 delay 0
+  frame 0 bounds -11 -11 9 20 hold 0 special 0 0
+  frame 1 bounds -11 -11 9 22 hold 0 special -7 21
+  frame 2 bounds -11 -11 9 32 hold 0 special -9 29
+  frame 3 bounds -16 -11 9 34 hold 0 special -11 20
+  frame 4 bounds -17 -11 10 33 hold 0 special -13 28
+strip 18 'fire 10' frames 5 delay 0
+  frame 0 bounds -15 -8 12 19 hold 0 special 0 0
+  frame 1 bounds -21 -8 12 24 hold 0 special -16 20
+  frame 2 bounds -27 -8 12 29 hold 0 special -21 25
+  frame 3 bounds -28 -8 12 32 hold 0 special -19 13
+  frame 4 bounds -32 -8 12 25 hold 0 special -24 19
+strip 19 'fire 11' frames 5 delay 0
+  frame 0 bounds -17 -5 12 16 hold 0 special 0 0
+  frame 1 bounds -23 -5 12 20 hold 0 special -19 13
+  frame 2 bounds -29 -5 12 24 hold 0 special -23 16
+  frame 3 bounds -27 -5 12 22 hold 0 special -21 8
+  frame 4 bounds -32 -5 12 19 hold 0 special -28 12
+strip 20 'fire 12' frames 5 delay 0
+  frame 0 bounds -19 -4 12 9 hold 0 special 0 0
+  frame 1 bounds -25 -4 12 12 hold 0 special -24 4
+  frame 2 bounds -35 -4 12 13 hold 0 special -32 4
+  frame 3 bounds -36 -8 12 11 hold 0 special -24 -3
+  frame 4 bounds -33 -9 12 10 hold 0 special -29 -3
+strip 21 'fire 13' frames 5 delay 0
+  frame 0 bounds -15 -9 12 11 hold 0 special 0 0
+  frame 1 bounds -21 -9 12 11 hold 0 special -19 -8
+  frame 2 bounds -24 -11 12 10 hold 0 special -21 -9
+  frame 3 bounds -27 -12 12 11 hold 0 special -16 -12
+  frame 4 bounds -21 -15 12 10 hold 0 special -20 -15
+strip 22 'fire 14' frames 5 delay 0
+  frame 0 bounds -13 -12 11 12 hold 0 special 0 0
+  frame 1 bounds -19 -12 10 12 hold 0 special -17 -12
+  frame 2 bounds -24 -16 11 12 hold 0 special -21 -16
+  frame 3 bounds -25 -20 11 12 hold 0 special -11 -16
+  frame 4 bounds -19 -21 10 12 hold 0 special -15 -20
+strip 23 'fire 15' frames 5 delay 0
+  frame 0 bounds -12 -15 8 13 hold 0 special 0 0
+  frame 1 bounds -16 -20 8 13 hold 0 special -12 -19
+  frame 2 bounds -23 -24 8 13 hold 0 special -15 -24
+  frame 3 bounds -12 -21 8 14 hold 0 special -4 -20
+  frame 4 bounds -12 -28 8 13 hold 0 special -5 -25
+strip 24 'icon' frames 1 delay 0
+  frame 0 bounds 0 0 29 23 hold 0 special 0 0
+strip 25 'help' frames 1 delay 0
+  frame 0 bounds -19 -13 22 18 hold 0 special 0 0
+strip 26 'highlight' frames 1 delay 0
+  frame 0 bounds -14 -10 16 13 hold 0 special 0 0
