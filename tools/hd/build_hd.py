@@ -613,22 +613,45 @@ def bullpup():
     print(name)
     A=balance_paint(sheet('bullpup.png'),'miner')
     gx,gy,S=placement(classic_mask(anir,0,0),anir,cell(A,c,c,0,0))
+    # Each direction on its own: the classic directions are drawn at
+    # different sizes (side on 15-20% smaller than up and down), so one
+    # scale left the HD miner too big side on and a little small and low
+    # facing down. Each direction is scaled to the classic frame's area,
+    # about the cell's centre, and its outline set on the classic one.
+    pl=[]
     for d in range(8):
-        save_pic('%s/r%d_000'%(name,d),cell(A,c,c,d,0),gx,gy,S,team=vehicle_team_mask)
+        cc=cell(A,c,c,d,0)
+        cm,(l,t)=classic_mask(anir,d,0); cy,cx=np.nonzero(cm)
+        hy,hx=np.nonzero(cc[:,:,3]>128)
+        f=(len(hx)/S/S/len(cx))**0.5
+        Sd=S*f; m=c/2.0
+        dx_=gx+m/S-m/Sd; dy_=gy+m/S-m/Sd
+        dx_+=(l+(cx.min()+cx.max()+1)/2.0)-(dx_+(hx.min()+hx.max()+1)/2.0/Sd)
+        dy_+=(t+(cy.min()+cy.max()+1)/2.0)-(dy_+(hy.min()+hy.max()+1)/2.0/Sd)
+        print('  facing %d: %.0f%%, moved to %.1f,%.1f'%(d,100/f,dx_-gx,dy_-gy))
+        pl.append((dx_,dy_,Sd))
+    for d in range(8):
+        px,py,Sd=pl[d]
+        save_pic('%s/r%d_000'%(name,d),cell(A,c,c,d,0),px,py,Sd,team=vehicle_team_mask)
         strip(anir,'run %d'%d,pics='%s/r%d_'%(name,d),n=1)
-        preview('%s_r%d'%(name,d),anir,d,0,cell(A,c,c,d,0),gx,gy,S)
+        preview('%s_r%d'%(name,d),anir,d,0,cell(A,c,c,d,0),px,py,Sd)
     artist_icon(name,anir)
+    # the vacuum is rendered with the miner's camera: the miner's placement
+    # for each direction
     Vc=sheet('bullpup_vacuum.png')
     for d in range(8):
+        px,py,Sd=pl[d]
         for k in range(4):
-            save_pic('%s/v%d_%03d'%(name,d,k),cell(Vc,c,c,d,k),gx,gy,S,team=False)
+            save_pic('%s/v%d_%03d'%(name,d,k),cell(Vc,c,c,d,k),px,py,Sd,team=False)
         strip('vacuum.anir','a %d'%d,pics='%s/v%d_'%(name,d),n=4,blend=0)
+    # backing into the Processor it faces down: that direction's scale
+    S4=pl[4][2]
     P=balance_paint(sheet('bullpup_proc.png'),'in the processor')
     si=strip_index('proc.anir','miner 0')
     for k in range(2):
-        px,py,_=placement(classic_mask('proc.anir',si,k),'proc.anir',cell(P,192,192,k,0),S_fixed=S)
-        save_pic('%s/p%03d'%(name,k),cell(P,192,192,k,0),px,py,S,team=vehicle_team_mask)
-        preview('%s_p%d'%(name,k),'proc.anir',si,k,cell(P,192,192,k,0),px,py,S)
+        px,py,_=placement(classic_mask('proc.anir',si,k),'proc.anir',cell(P,192,192,k,0),S_fixed=S4)
+        save_pic('%s/p%03d'%(name,k),cell(P,192,192,k,0),px,py,S4,team=vehicle_team_mask)
+        preview('%s_p%d'%(name,k),'proc.anir',si,k,cell(P,192,192,k,0),px,py,S4)
     strip('proc.anir','miner 0',pics='%s/p'%name,n=2,blend=0)
 
 def dominion():
