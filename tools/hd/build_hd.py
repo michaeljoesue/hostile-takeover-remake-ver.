@@ -643,6 +643,18 @@ def dominion():
         preview('%s_r%d'%(name,d),anir,d,0,cell(A,c,c,d,0),gx,gy,S)
     artist_icon(name,anir)
 
+# Size. Each vehicle is scaled to fit its classic sprite facing up; the
+# Cyclops came out 8% smaller than the original on average over its 8
+# directions (24% at one diagonal, where the classic barrel is long), so it
+# is drawn a little bigger, about the cell's centre (the gun's axis).
+VEHICLE_SIZE={'cyclops':1.04}
+def resize_placement(name, c, gx, gy, S):
+    f=VEHICLE_SIZE.get(name,1.0)
+    if f==1.0: return gx,gy,S
+    S2=S/f; m=c/2.0
+    print('  scaled to %.0f%%'%(f*100))
+    return gx+m/S-m/S2, gy+m/S-m/S2, S2
+
 def cyclops():
     """Cyclops (artillery.anir): no turret, the whole gun turns. The sheet:
     8 directions across, 3 rows down (at rest, firing, after), the classic
@@ -655,6 +667,7 @@ def cyclops():
         return (xs.mean(), ys.mean())
     A=recoil_sheet(A,c,8,3,axis)
     gx,gy,S=placement(classic_mask(anir,8,0),anir,cell(A,c,c,0,0))
+    gx,gy,S=resize_placement(name,c,gx,gy,S)
     for d in range(8):
         for k in range(3):
             save_pic('%s/f%d_%03d'%(name,d,k),cell(A,c,c,d,k),gx,gy,S,team=weathered_team_mask)
