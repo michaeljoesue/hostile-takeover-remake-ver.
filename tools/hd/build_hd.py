@@ -637,6 +637,21 @@ def proc_doorway_middle():
         _doorway.append(gx+(xs.min()+xs.max())/2.0/S)
     return _doorway[0]
 
+def register(ref, rx, ry, im, S, r=24):
+    """Where (game px) to put picture im so it lies best on picture ref,
+    drawn at rx,ry: the whole HD px shift within r that overlaps their
+    shapes most (both at scale S)"""
+    a=ref[:,:,3]>128; b=im[:,:,3]>128
+    H=max(a.shape[0],b.shape[0])+2*r; W=max(a.shape[1],b.shape[1])+2*r
+    A_=np.zeros((H,W),bool); A_[r:r+a.shape[0],r:r+a.shape[1]]=a
+    best=None
+    for dy in range(-r,r+1):
+        for dx in range(-r,r+1):
+            B_=np.zeros((H,W),bool); B_[r+dy:r+dy+b.shape[0],r+dx:r+dx+b.shape[1]]=b
+            iou=(A_&B_).sum()/max(1,(A_|B_).sum())
+            if best is None or iou>best[0]: best=(iou,dx,dy)
+    return rx+best[1]/S, ry+best[2]/S
+
 def bullpup():
     """Bullpup (miner.anir): 8 directions, no turret. Its vacuum (vacuum.anir,
     drawn at the miner's spot in the miner's direction, 4 frames) is rendered
@@ -666,12 +681,19 @@ def bullpup():
     P=balance_paint(sheet('bullpup_proc.png'),'in the processor')
     si=strip_index('proc.anir','miner 0')
     dmid=proc_doorway_middle()
+    # The two pictures are laid by matching them to the miner the game
+    # hands over (facing down, run 4) and to each other, not each to its
+    # classic frame: the classic second frame sits 3 px lower than the
+    # first, so the HD miner dropped 3 px as it backed in (and 0.6 px at
+    # the hand-over), where the HD pictures are the same miner barely tilted
     pl=[]
+    prev=(cell(A,c,c,4,0),gx,gy)
     for k in range(2):
         cc=cell(P,192,192,k,0)
-        px,py,_=placement(classic_mask('proc.anir',si,k),'proc.anir',cc,S_fixed=S)
+        px,py=register(prev[0],prev[1],prev[2],cc,S)
         ys,xs=np.nonzero(cc[:,:,3]>128)
         pl.append((cc,px,py,px+(xs.min()+xs.max())/2.0/S))
+        prev=(cc,px,py)
     # the miner's spot: the middle of the Processor's second tile
     slide=dmid-(PROC_MINER_X+np.mean([m for _,_,_,m in pl]))
     print('  slid %.1f game px to the middle of the bay'%slide)

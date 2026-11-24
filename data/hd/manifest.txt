@@ -188,7 +188,7 @@ strip	vacuum.anir	a 4	pics=bullpup/v4_	n=4	blend=0
 strip	vacuum.anir	a 5	pics=bullpup/v5_	n=4	blend=0
 strip	vacuum.anir	a 6	pics=bullpup/v6_	n=4	blend=0
 strip	vacuum.anir	a 7	pics=bullpup/v7_	n=4	blend=0
-strip	proc.anir	miner 0	pics=bullpup/p	n=2	blend=0	slide=-3.00
+strip	proc.anir	miner 0	pics=bullpup/p	n=2	blend=0	slide=-2.79
 strip	mobilehq.anir	run 0	pics=dominion/r0_	n=1
 strip	mobilehq.anir	run 1	pics=dominion/r1_	n=1
 strip	mobilehq.anir	run 2	pics=dominion/r2_	n=1
