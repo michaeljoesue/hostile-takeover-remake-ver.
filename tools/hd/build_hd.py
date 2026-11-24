@@ -602,6 +602,41 @@ def artist_icon(name, anir, team=None):
     save_pic('%s/icon000'%name,im,gx,gy,S,team=team or vehicle_team_mask)
     strip(anir,'icon',pics='%s/icon'%name,n=1)
 
+# Where the miner backs into the Processor: the fake miner is drawn at the
+# middle of the building's second tile (48 game px in from its left)
+PROC_MINER_X=48.0
+_doorway=[]
+def proc_doorway_middle():
+    """The middle (game px from the Processor's draw point) of the HD bay's
+    doorway: where any door picture differs from the open one"""
+    if not _doorway:
+        a=sheet('proc.png'); cw=ch=296
+        H=seq(a,cw,ch,6,0,36); OPEN=20
+        gx,gy,S=placement(classic_mask('proc.anir',0,0),'proc.anir',H[OPEN])
+        base=H[OPEN].astype(np.float32)
+        door=np.zeros(base.shape[:2],bool)
+        for c in H:
+            cf=c.astype(np.float32)
+            door|=(np.abs(cf[:,:,:3]-base[:,:,:3]).max(2)+np.abs(cf[:,:,3]-base[:,:,3]))>40
+        ys,xs=np.nonzero(door)
+        _doorway.append(gx+(xs.min()+xs.max()+1)/2.0/S)
+    return _doorway[0]
+
+def register(ref, rx, ry, im, S, r=24):
+    """Where (game px) to put picture im so it lies best on picture ref,
+    drawn at rx,ry: the whole HD px shift within r that overlaps their
+    shapes most (both at scale S)"""
+    a=ref[:,:,3]>128; b=im[:,:,3]>128
+    H=max(a.shape[0],b.shape[0])+2*r; W=max(a.shape[1],b.shape[1])+2*r
+    A_=np.zeros((H,W),bool); A_[r:r+a.shape[0],r:r+a.shape[1]]=a
+    best=None
+    for dy in range(-r,r+1):
+        for dx in range(-r,r+1):
+            B_=np.zeros((H,W),bool); B_[r+dy:r+dy+b.shape[0],r+dx:r+dx+b.shape[1]]=b
+            iou=(A_&B_).sum()/max(1,(A_|B_).sum())
+            if best is None or iou>best[0]: best=(iou,dx,dy)
+    return rx+best[1]/S, ry+best[2]/S
+
 def bullpup():
     """Bullpup (miner.anir): 8 directions, no turret. Its vacuum (vacuum.anir,
     drawn at the miner's spot in the miner's direction, 4 frames) is rendered
@@ -644,15 +679,32 @@ def bullpup():
         for k in range(4):
             save_pic('%s/v%d_%03d'%(name,d,k),cell(Vc,c,c,d,k),px,py,Sd,team=False)
         strip('vacuum.anir','a %d'%d,pics='%s/v%d_'%(name,d),n=4,blend=0)
-    # backing into the Processor it faces down: that direction's scale
-    S4=pl[4][2]
+    # Backing into the Processor. It faces down: that direction's scale.
+    # The two pictures are laid by matching shapes, the first on the miner
+    # the game hands over (run 4), the second on the first: each fitted to
+    # its own classic frame, the miner hopped up 1 px at the hand-over and
+    # dropped 2 px between the pictures. The game draws this miner at the
+    # middle of the Processor's second tile, a little right of the middle
+    # of the HD bay: the pictures are moved to the bay's middle, and the
+    # game eases the miner across as it backs in (slide, ProcessorGob::Draw)
+    px4,py4,S4=pl[4]
     P=balance_paint(sheet('bullpup_proc.png'),'in the processor')
     si=strip_index('proc.anir','miner 0')
+    dmid=proc_doorway_middle()
+    pp=[]
+    prev=(cell(A,c,c,4,0),px4,py4)
     for k in range(2):
-        px,py,_=placement(classic_mask('proc.anir',si,k),'proc.anir',cell(P,192,192,k,0),S_fixed=S4)
-        save_pic('%s/p%03d'%(name,k),cell(P,192,192,k,0),px,py,S4,team=vehicle_team_mask)
-        preview('%s_p%d'%(name,k),'proc.anir',si,k,cell(P,192,192,k,0),px,py,S4)
-    strip('proc.anir','miner 0',pics='%s/p'%name,n=2,blend=0)
+        cc=cell(P,192,192,k,0)
+        px,py=register(prev[0],prev[1],prev[2],cc,S4)
+        ys,xs=np.nonzero(cc[:,:,3]>128)
+        pp.append((cc,px,py,px+(xs.min()+xs.max()+1)/2.0/S4))
+        prev=(cc,px,py)
+    slide=dmid-(PROC_MINER_X+np.mean([m for _,_,_,m in pp]))
+    print('  slid %.1f game px to the middle of the bay'%slide)
+    for k,(cc,px,py,_) in enumerate(pp):
+        save_pic('%s/p%03d'%(name,k),cc,px+slide,py,S4,team=vehicle_team_mask)
+        preview('%s_p%d'%(name,k),'proc.anir',si,k,cc,px+slide,py,S4)
+    strip('proc.anir','miner 0',pics='%s/p'%name,n=2,blend=0,slide='%.2f'%slide)
 
 def dominion():
     """Dominion (mobilehq.anir): 8 directions, no turret"""
