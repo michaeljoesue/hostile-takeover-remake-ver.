@@ -48,7 +48,6 @@ ProcessorGob::ProcessorGob() : StructGob(&gConsts)
 	StartAnimation(&m_aniOverlay, 3, 0, 0);
 	m_gidMiner = kgidNull;
 	m_wptFakeMiner.wx = kwxInvalid;
-	m_wyFakeMinerStart = 0;	// set when a miner is handed over
 	m_cupdFakeMinerMoved = -1;
 	m_fProcessingAnimationInProgress = false;
 }
@@ -84,7 +83,6 @@ bool ProcessorGob::LoadState(Stream *pstm)
 	m_wptFakeMiner.wy = pstm->ReadCoord();
 	m_fProcessingAnimationInProgress = pstm->ReadByte() != 0 ? true : false;
 	m_fDoorMoving = pstm->ReadByte() != 0 ? true : false;
-	m_wyFakeMinerStart = m_wy + WcFromTile16ths(40);	// the miner's spot below the bay
 	m_aniOverlay.LoadState(pstm);
 	return StructGob::LoadState(pstm);
 }
@@ -199,24 +197,8 @@ void ProcessorGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nL
 				int ifrm = wyMiner < m_wy + kwcTile ? 1 : 0;
 				int xMiner = PcFromUwc(m_wptFakeMiner.wx) - xViewOrigin;
 				int yMiner = PcFromWc(wyMiner) - yViewOrigin;
-				// HD: the miner eases from the miner's own place to the
-				// middle of the HD bay (the strip's slide) as it backs in,
-				// and casts no shadow: it is going in under the arch, and
-				// the classic shadow falls in blocks on the HD building
-
 				HdSetSubPixel(m_wptFakeMiner.wx, wyMiner);
-				AnimationData *panid = m_pstruc->panid;
-				if (HdWantsStrip(panid->GetHdBinding(), 4, pbm)) {
-					WCoord wyEnd = m_wy + WcFromTile16ths(15);
-					int nSpan = m_wyFakeMinerStart - wyEnd;
-					float p = nSpan > 0 ? (float)(m_wyFakeMinerStart - wyMiner) / nSpan : 1.0f;
-					if (p < 0) p = 0;
-					if (p > 1) p = 1;
-					gflHdSubX += HdGetSlide(panid->GetHdBinding(), 4) * (p - 1);
-					gfHdNoShadow = true;
-				}
-				panid->DrawFrame(4, ifrm, pbm, xMiner, yMiner, side);
-				gfHdNoShadow = false;
+				m_pstruc->panid->DrawFrame(4, ifrm, pbm, xMiner, yMiner, side);
 				HdClearSubPixel();
 			}
 
@@ -377,7 +359,6 @@ BeginStateMachine
 
 				m_gidMiner = pmnr->GetId();
 				pmnr->GetCenter(&m_wptFakeMiner);
-				m_wyFakeMinerStart = m_wptFakeMiner.wy;
 				m_wptFakeMiner.wy = m_wy + WcFromTile16ths(15);
 				pmnr->Hide(true);
 
@@ -420,7 +401,6 @@ lbError:
 			MinerGob *pgobMiner = (MinerGob *)ggobm.GetGob(m_gidMiner, false);
 			if (pgobMiner != NULL) {
 				pgobMiner->GetCenter(&m_wptFakeMiner);
-				m_wyFakeMinerStart = m_wptFakeMiner.wy;
 				pgobMiner->Select(false);
 				StartAnimation(&m_aniOverlay, 3, 0, 0);
 				m_fDoorMoving = false;

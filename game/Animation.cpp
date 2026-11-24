@@ -198,7 +198,7 @@ void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int
 					byte bNew = pbNew[xT];
 					if (bNew == bOld)
 						continue;
-					if (!gfHdNoShadow && gmpiclriclrShadow != NULL && bNew == gmpiclriclrShadow[bOld]) {
+					if (gmpiclriclrShadow != NULL && bNew == gmpiclriclrShadow[bOld]) {
 						int xP = rc.left + xT;
 						if (xP < rcShadow.left) rcShadow.left = xP;
 						if (xP + 1 > rcShadow.right) rcShadow.right = xP + 1;
@@ -221,8 +221,6 @@ void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int
 	if (pfrmd->ibm != 255)
 		m_ptbm->BltTo(pfrmd->ibm, pbm, x - pfrmd->xOrigin, y - pfrmd->yOrigin, side, prcSrc);
 }
-
-bool gfHdNoShadow;
 
 int AnimationData::GetStripIndex(const char *pszStripName)
 {

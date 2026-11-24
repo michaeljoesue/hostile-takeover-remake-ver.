@@ -1314,8 +1314,6 @@ struct HdBinding;
 HdBinding *HdBindAnimation(const char *pszAniName, AnimationData *panid);
 bool HdIsActive();
 bool HdWantsStrip(HdBinding *phdb, int nStrip, DibBitmap *pbm);
-float HdGetSlide(HdBinding *phdb, int nStrip);
-extern bool gfHdNoShadow;	// the next HD frames drawn keep no classic shadow
 bool HdWantsRedraw();
 void HdBeginFrame();
 void HdPaintStart();
@@ -6520,7 +6518,6 @@ private:
 	Animation m_aniOverlay;
 	Gid m_gidMiner;
 	WPoint m_wptFakeMiner;
-	WCoord m_wyFakeMinerStart;	// where it was handed over from the miner (not saved)
 	WCoord m_wyFakeMinerPrev;	// before the update that last moved it (smooth motion; not saved)
 	long m_cupdFakeMinerMoved;	// that update
 	void MoveFakeMiner(WCoord dwy);

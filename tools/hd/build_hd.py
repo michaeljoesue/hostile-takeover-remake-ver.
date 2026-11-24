@@ -545,27 +545,12 @@ def balance_paint(a, what):
     out[:,:,:3]=np.clip(a[:,:,:3].astype(np.float32)*f[:,:,None]+0.5,0,255).astype(np.uint8)
     return out
 
-# Size. Each vehicle is scaled to fit the classic sprite facing up, but the
-# classic side views were drawn shorter than a model looks from the side,
-# so some HD vehicles came out bigger than the originals side on (Hydra
-# +22%, Liberator +14%, Bullpup +13%, Dominion +12% in area). Those are
-# shrunk a little about the cell's centre (the model's axis), so up and
-# side views together match the originals.
-VEHICLE_SIZE={'hydra':0.93,'liberator':0.96,'bullpup':0.96,'dominion':0.96}
-def resize_placement(name, c, gx, gy, S):
-    f=VEHICLE_SIZE.get(name,1.0)
-    if f==1.0: return gx,gy,S
-    S2=S/f; m=c/2.0
-    print('  scaled to %.0f%%'%(f*100))
-    return gx+m/S-m/S2, gy+m/S-m/S2, S2
-
 def vehicle(name, anir, body_sheet, turret_sheet, c, turret_rows, icon_dirs=(6,12), recoil=True):
     print(name)
     B=sheet(body_sheet); T=sheet(turret_sheet)
     B=balance_paint(B,'body'); T=balance_paint(T,'turret')
     bodies=[cell(B,c,c,d,0) for d in range(8)]
     gx,gy,S=placement(classic_mask(anir,0,0),anir,bodies[0])
-    gx,gy,S=resize_placement(name,c,gx,gy,S)
     for d in range(8):
         if (bodies[d][:,:,3]>0).sum()==0: raise SystemExit('%s: body %d is empty'%(name,d))
         save_pic('%s/b%d_000'%(name,d),bodies[d],gx,gy,S,team=vehicle_team_mask)
@@ -617,41 +602,6 @@ def artist_icon(name, anir, team=None):
     save_pic('%s/icon000'%name,im,gx,gy,S,team=team or vehicle_team_mask)
     strip(anir,'icon',pics='%s/icon'%name,n=1)
 
-# Where the miner backs into the Processor: the fake miner is drawn at the
-# middle of the building's second tile (48 game px in from its left)
-PROC_MINER_X=48.0
-_doorway=[]
-def proc_doorway_middle():
-    """The middle (game px from the Processor's draw point) of the HD bay's
-    doorway: where any door picture differs from the open one"""
-    if not _doorway:
-        a=sheet('proc.png'); cw=ch=296
-        H=seq(a,cw,ch,6,0,36); OPEN=20
-        gx,gy,S=placement(classic_mask('proc.anir',0,0),'proc.anir',H[OPEN])
-        base=H[OPEN].astype(np.float32)
-        door=np.zeros(base.shape[:2],bool)
-        for c in H:
-            cf=c.astype(np.float32)
-            door|=(np.abs(cf[:,:,:3]-base[:,:,:3]).max(2)+np.abs(cf[:,:,3]-base[:,:,3]))>40
-        ys,xs=np.nonzero(door)
-        _doorway.append(gx+(xs.min()+xs.max())/2.0/S)
-    return _doorway[0]
-
-def register(ref, rx, ry, im, S, r=24):
-    """Where (game px) to put picture im so it lies best on picture ref,
-    drawn at rx,ry: the whole HD px shift within r that overlaps their
-    shapes most (both at scale S)"""
-    a=ref[:,:,3]>128; b=im[:,:,3]>128
-    H=max(a.shape[0],b.shape[0])+2*r; W=max(a.shape[1],b.shape[1])+2*r
-    A_=np.zeros((H,W),bool); A_[r:r+a.shape[0],r:r+a.shape[1]]=a
-    best=None
-    for dy in range(-r,r+1):
-        for dx in range(-r,r+1):
-            B_=np.zeros((H,W),bool); B_[r+dy:r+dy+b.shape[0],r+dx:r+dx+b.shape[1]]=b
-            iou=(A_&B_).sum()/max(1,(A_|B_).sum())
-            if best is None or iou>best[0]: best=(iou,dx,dy)
-    return rx+best[1]/S, ry+best[2]/S
-
 def bullpup():
     """Bullpup (miner.anir): 8 directions, no turret. Its vacuum (vacuum.anir,
     drawn at the miner's spot in the miner's direction, 4 frames) is rendered
@@ -663,7 +613,6 @@ def bullpup():
     print(name)
     A=balance_paint(sheet('bullpup.png'),'miner')
     gx,gy,S=placement(classic_mask(anir,0,0),anir,cell(A,c,c,0,0))
-    gx,gy,S=resize_placement(name,c,gx,gy,S)
     for d in range(8):
         save_pic('%s/r%d_000'%(name,d),cell(A,c,c,d,0),gx,gy,S,team=vehicle_team_mask)
         strip(anir,'run %d'%d,pics='%s/r%d_'%(name,d),n=1)
@@ -674,33 +623,13 @@ def bullpup():
         for k in range(4):
             save_pic('%s/v%d_%03d'%(name,d,k),cell(Vc,c,c,d,k),gx,gy,S,team=False)
         strip('vacuum.anir','a %d'%d,pics='%s/v%d_'%(name,d),n=4,blend=0)
-    # The Processor draws this miner at the miner's own spot, which is a
-    # little off the middle of the HD bay: the pictures are moved to the
-    # bay's middle, and the game eases the miner across as it backs in
-    # (slide = how far, see ProcessorGob::Draw)
     P=balance_paint(sheet('bullpup_proc.png'),'in the processor')
     si=strip_index('proc.anir','miner 0')
-    dmid=proc_doorway_middle()
-    # The two pictures are laid by matching them to the miner the game
-    # hands over (facing down, run 4) and to each other, not each to its
-    # classic frame: the classic second frame sits 3 px lower than the
-    # first, so the HD miner dropped 3 px as it backed in (and 0.6 px at
-    # the hand-over), where the HD pictures are the same miner barely tilted
-    pl=[]
-    prev=(cell(A,c,c,4,0),gx,gy)
     for k in range(2):
-        cc=cell(P,192,192,k,0)
-        px,py=register(prev[0],prev[1],prev[2],cc,S)
-        ys,xs=np.nonzero(cc[:,:,3]>128)
-        pl.append((cc,px,py,px+(xs.min()+xs.max())/2.0/S))
-        prev=(cc,px,py)
-    # the miner's spot: the middle of the Processor's second tile
-    slide=dmid-(PROC_MINER_X+np.mean([m for _,_,_,m in pl]))
-    print('  slid %.1f game px to the middle of the bay'%slide)
-    for k,(cc,px,py,_) in enumerate(pl):
-        save_pic('%s/p%03d'%(name,k),cc,px+slide,py,S,team=vehicle_team_mask)
-        preview('%s_p%d'%(name,k),'proc.anir',si,k,cc,px+slide,py,S)
-    strip('proc.anir','miner 0',pics='%s/p'%name,n=2,blend=0,slide='%.2f'%slide)
+        px,py,_=placement(classic_mask('proc.anir',si,k),'proc.anir',cell(P,192,192,k,0),S_fixed=S)
+        save_pic('%s/p%03d'%(name,k),cell(P,192,192,k,0),px,py,S,team=vehicle_team_mask)
+        preview('%s_p%d'%(name,k),'proc.anir',si,k,cell(P,192,192,k,0),px,py,S)
+    strip('proc.anir','miner 0',pics='%s/p'%name,n=2,blend=0)
 
 def dominion():
     """Dominion (mobilehq.anir): 8 directions, no turret"""
@@ -708,7 +637,6 @@ def dominion():
     print(name)
     A=balance_paint(sheet('dominion.png'),'body')
     gx,gy,S=placement(classic_mask(anir,0,0),anir,cell(A,c,c,0,0))
-    gx,gy,S=resize_placement(name,c,gx,gy,S)
     for d in range(8):
         save_pic('%s/r%d_000'%(name,d),cell(A,c,c,d,0),gx,gy,S,team=vehicle_team_mask)
         strip(anir,'run %d'%d,pics='%s/r%d_'%(name,d),n=1)

@@ -139,7 +139,6 @@ struct HdStrip {
     bool fNone;
     int cycle;                  // > 0: one classic frame; the pictures loop every this many updates
     int cupdMotion;             // updates a step of the animation takes (-1: not worked out yet)
-    float slide;                // game px the pictures are drawn right of the classic frame's place (see HdGetSlide)
     std::vector<int> amap, abmap;
 };
 
@@ -324,7 +323,6 @@ static void LoadManifest() {
             pstrip->fVariantPics = false;
             pstrip->cycle = 0;
             pstrip->cupdMotion = -1;
-            pstrip->slide = 0;
             std::string strPics;
             for (size_t k = 3; k < astr.size(); k++) {
                 size_t iEq = astr[k].find('=');
@@ -338,7 +336,6 @@ static void LoadManifest() {
                 else if (strKey == "blend") pstrip->fBlend = atoi(strVal.c_str()) != 0;
                 else if (strKey == "none") pstrip->fNone = atoi(strVal.c_str()) != 0;
                 else if (strKey == "cycle") pstrip->cycle = atoi(strVal.c_str());
-                else if (strKey == "slide") pstrip->slide = (float)atof(strVal.c_str());
                 else if (strKey == "map") ParseList(strVal, &pstrip->amap);
                 else if (strKey == "bmap") ParseList(strVal, &pstrip->abmap);
             }
@@ -439,16 +436,6 @@ bool HdWantsStrip(HdBinding *pbind, int nStrip, DibBitmap *pbm) {
     // Only on the playfield (not menus or forms)
 
     return gpfrmmSim != NULL && pbm == gpfrmmSim->GetDib();
-}
-
-// How far right (game px) the strip's HD pictures sit of where the classic
-// frames are drawn, for a drawer that eases between the two (the miner the
-// Processor draws backing into a bay that is a little off its classic place)
-
-float HdGetSlide(HdBinding *pbind, int nStrip) {
-    if (pbind == NULL || nStrip < 0 || nStrip >= (int)pbind->apstrip.size() || pbind->apstrip[nStrip] == NULL)
-        return 0;
-    return pbind->apstrip[nStrip]->slide;
 }
 
 bool HdWantsRedraw() {
