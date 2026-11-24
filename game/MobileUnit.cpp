@@ -3300,11 +3300,15 @@ bool MobileUnitGob::AcceptMoveAsideRequest(Direction dir)
 	// step aside is sent directly (SetTarget would clear the order) and the
 	// order resumes when the step is done
 
+	// The step aside is marked as sent by the unit itself, so a unit that
+	// tells player orders from its own moves (a miner keeps mining after
+	// one) can tell it apart
+
 	if (m_mua != kmuaNone) {
 		Message msgT;
 		memset(&msgT, 0, sizeof(msgT));
 		msgT.mid = kmidMoveCommand;
-		msgT.smidSender = kgidNull;
+		msgT.smidSender = m_gid;
 		msgT.smidReceiver = m_gid;
 		msgT.MoveCommand.wptTarget.wx = wxDst;
 		msgT.MoveCommand.wptTarget.wy = wyDst;
@@ -3316,7 +3320,17 @@ bool MobileUnitGob::AcceptMoveAsideRequest(Direction dir)
 		return true;
 	}
 
-	MobileUnitGob::SetTarget(kgidNull, WcFromTc(txTo) + kwcTileHalf, WcFromTc(tyTo) + kwcTileHalf);
+	Message msgT;
+	memset(&msgT, 0, sizeof(msgT));
+	msgT.mid = kmidMoveCommand;
+	msgT.smidSender = m_gid;
+	msgT.smidReceiver = m_gid;
+	msgT.MoveCommand.wptTarget.wx = wxDst;
+	msgT.MoveCommand.wptTarget.wy = wyDst;
+	msgT.MoveCommand.gidTarget = kgidNull;
+	msgT.MoveCommand.wptTargetCenter.wx = wxDst;
+	msgT.MoveCommand.wptTargetCenter.wy = wyDst;
+	gcmdq.Enqueue(&msgT);
 	return true;
 }
 

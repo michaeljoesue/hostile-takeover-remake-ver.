@@ -157,6 +157,7 @@ void MinerGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer
 // Selected miners right-clicked on one of the player's Processors unload
 // there
 
+
 void MinerGob::DeliverTo(Gid gidProcessor)
 {
 	Message msg;
@@ -405,6 +406,12 @@ int MinerGob::ProcessStateMachineMessage(State st, Message *pmsg)
 
 	switch (pmsg->mid) {
 	case kmidMoveCommand:
+		// Stepping aside for another unit (sent by the miner itself) is not
+		// an order: the miner goes back to mining or delivering after it
+
+		if (pmsg->smidSender == m_gid)
+			break;
+		// fall through
 	case kmidAttackMoveCommand:
 	case kmidStopCommand:
 	case kmidMoveAction:
