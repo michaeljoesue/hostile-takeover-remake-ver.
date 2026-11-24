@@ -447,7 +447,6 @@ void Player::SetUpgrades(word wfUpgrades)
 			continue;
 		if ((pgob->GetFlags() & (kfGobActive | kfGobUnit)) == (kfGobActive | kfGobUnit)) {
 			UnitGob *punt = (UnitGob *)pgob;
-			MobileUnitBuilderConsts *pmubc = (MobileUnitBuilderConsts *)punt->GetConsts();
 			switch (punt->GetType()) {
 			case kgtVehicleTransportStation:
 				if (wfChange & kfUpgradeVtsInProgress)

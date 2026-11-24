@@ -393,7 +393,6 @@ void FogMap::Reveal(TCoord txMap, TCoord tyMap, RevealPattern *prvlp, UpdateMap 
 	int cbNextDst = m_ctxMap - ctx;
 	byte *pbDst = &m_pbMap[ty * m_ctxMap + tx];
 	byte *pbSrc = &prvlp->ab[tyPattern * prvlp->ctx + txPattern];
-	bool fChanged = false;
 	for (int tyT = ty; tyT < ty + cty; tyT++) {
 		for (int txT = tx; txT < tx + ctx; txT++) {
 			byte bDst = *pbDst;
@@ -671,11 +670,6 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 
 	Size siz;
 	pbm->GetSize(&siz);
-	Rect rcDib;
-	rcDib.left = 0;
-	rcDib.top = 0;
-	rcDib.right = siz.cx;
-	rcDib.bottom = siz.cy;
 
 	int tx = xMap / gcxTile;
 	int ty = yMap / gcyTile;
@@ -693,7 +687,6 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 	int cfInvalidNextScan = sizMap.cx - ctx;
 	Assert(sizMap.cx >= ctx && sizMap.cy >= cty);
 
-	byte *pbDib = pbm->GetBits();
 	byte *pbMapT = &m_pbMap[ty * m_ctxMap + tx];
 	int cbNextScan = m_ctxMap - ctx;
 	int xTile = tx * gcxTile - xMap;
@@ -859,11 +852,6 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 {
 	Size siz;
 	pbm->GetSize(&siz);
-	Rect rcDib;
-	rcDib.left = 0;
-	rcDib.top = 0;
-	rcDib.right = siz.cx;
-	rcDib.bottom = siz.cy;
 
 	int tx = xMap / gcxTile;
 	int ty = yMap / gcyTile;
@@ -873,7 +861,6 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 	int cty = (siz.cy + (gcyTile - 1)) / gcyTile + 1;
 	if (ty + cty > m_ctyMap)
 		cty = m_ctyMap - ty;
-	byte *pbDib = pbm->GetBits();
 	byte *pbMapT = &m_pbMap[ty * m_ctxMap + tx];
 	int cbNextScan = m_ctxMap - ctx;
 	int xTile = tx * gcxTile - xMap;
@@ -885,7 +872,6 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 	pupd->GetMapSize(&sizMap);
 	int cfInvalidNextScan = sizMap.cx - ctx;
 	Assert(sizMap.cx >= ctx && sizMap.cy >= cty);
-	int nServiceSfx = 0;
 
 	for (int tyT = ty; tyT < ty + cty; tyT++) {
 		for (int txT = tx; txT < tx + ctx; txT++, pbMapT++) {

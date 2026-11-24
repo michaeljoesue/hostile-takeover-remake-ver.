@@ -697,7 +697,6 @@ bool TerrainMap::IsLineOccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoor
 
 	TCoord txT = txFrom;
 	TCoord tyT = tyFrom;
-	int nStep = 0;
 	int dc = 0;
 	while (true) {
 		if (dx > dy) {
@@ -763,7 +762,6 @@ bool TerrainMap::FindFirstUnoccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, 
 	if (txFrom == txTo && tyFrom == tyTo)
 		return false;
 
-	int nStep = 0;
 	int dc = 0;
 	while (true) {
 		if (dx > dy) {
@@ -831,7 +829,6 @@ bool TerrainMap::FindLastUnoccupied(TCoord txFrom, TCoord tyFrom, TCoord txTo, T
 	if (txFrom == txTo && tyFrom == tyTo)
 		return true;
 
-	int nStep = 0;
 	int dc = 0;
 	while (true) {
 		if (dx > dy) {

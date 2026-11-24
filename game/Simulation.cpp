@@ -723,8 +723,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
 
     short xView = PcFromUwc(m_wxView) & 0xfffe;
     short yView = PcFromUwc(m_wyView) & 0xfffe;
-    WCoord wxView = WcFromUpc(xView);
-    WCoord wyView = WcFromUpc(yView);
 
     //
     // Normal full-size map (not mini-map)
@@ -789,7 +787,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
     for (int nLayer = knLayerSurfaceDecal; nLayer <= knLayerEnd; nLayer++, ffLayerT <<= 1) {
         if (!(ffLayerT & ffLayers))
             continue;
-        int cT = 0;
         for (ppgobT = m_apgobVisible; ppgobT < ppgobStop; ppgobT++) {
             Gob *pgobT = *ppgobT;
             dword ff = pgobT->GetFlags();

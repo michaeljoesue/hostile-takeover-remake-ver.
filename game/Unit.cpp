@@ -996,7 +996,6 @@ void UnitGob::NotifyNearbyAlliesOfHit(Gid gidAssailant)
 			// Any MobileGob allies around?
 
 			Side side = m_pplr->GetSide();
-			bool fPreped = false;
 			for (Gid gid = ggobm.GetFirstGid(txT, tyT); gid != kgidNull; gid = ggobm.GetNextGid(gid)) {
 
 				// Don't notify self!

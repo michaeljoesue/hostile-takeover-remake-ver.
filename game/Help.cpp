@@ -282,7 +282,6 @@ void HelpControl::GetSubRects(Rect *prcInterior, Rect *prcScrollPos)
 
 bool HelpControl::Layout(dword nchStart, bool fLargeFont, DibBitmap *pbm, ChunkProc pfn, void *pv)
 {
-	bool fDone = false;
 	dword nchBuffer = nchStart;
 	int	cLines = 0;
 	int cyCurrent = 0;
@@ -667,7 +666,6 @@ int HelpControl::FindPrevPosition(int nchFrom, int cyAmount, bool *pfLargeFont)
 		// Find prev heading <h1> in buffer that when formatted forward from 
 		// gives us a vertical size greater than the desired page amount
 
-		bool fDone = false;
 		for (int i = cchRead - 1; i >= 0; i--) {
 			if (strncmp(&szT[i], "<H1>", 4) == 0) {
 				fph.cySpan = 0;

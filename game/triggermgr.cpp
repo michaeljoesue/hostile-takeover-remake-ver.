@@ -578,7 +578,7 @@ void CountdownTimer::UpdateString()
 
 	int cMins = m_secs / 60;
 	int cSecs = m_secs % 60;
-	int cBytes = sprintf(szTemp, "%s%d:%s%d", cMins > 9 ? "" : "0", cMins, cSecs > 9 ? "" : "0", cSecs);
+	sprintf(szTemp, "%s%d:%s%d", cMins > 9 ? "" : "0", cMins, cSecs > 9 ? "" : "0", cSecs);
 
 	sprintf(szT, m_szFormat, szTemp);
 	LabelControl *plbl = (LabelControl *)ggame.GetSimUIForm()->GetControlPtr(kidcCountdown);

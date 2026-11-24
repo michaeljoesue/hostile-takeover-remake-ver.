@@ -78,7 +78,6 @@ void Ecom(int nCharFrom, int nCharTo, char *pszMessage, int nBackground, bool fM
 	if (nBackground == knSmallLargeTypeSmallTop) {
 		Rect rc;
 		pfrm->GetRect(&rc);
-		Font *pfnt = gapfnt[kifntDefault];
 		rc.Offset(0, -rc.top);
 		pfrm->SetRect(&rc);
 	} else if (nBackground == knSmallLargeTypeSmallBottom) {
@@ -529,7 +528,7 @@ void EcomTextControl::DrawText(DibBitmap *pbm, Font *pfnt, char *psz, int x, int
 			if (cch >= cchSpeech) 
 				cch = cchSpeech;
 			cchSpeech -= cch;
-			int iret = pfnt->DrawText(pbm, pszStart, x, y, cch, &dwiclr);
+			pfnt->DrawText(pbm, pszStart, x, y, cch, &dwiclr);
 
 			// cch does not include the whitespace char being used
 			// to break the line!

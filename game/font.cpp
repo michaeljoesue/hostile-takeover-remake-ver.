@@ -123,7 +123,6 @@ int Font::CalcMultilineHeight(char *psz, int cxMultiline)
 	int cy = 0;
 	char *pszNext = psz;
 	while (pszNext != NULL) {
-		char *pszStart = pszNext;
 		CalcBreak(cxMultiline, &pszNext);
 		cy += BigWord(m_pfnth->cy) - m_nLineOverlap;
 	}

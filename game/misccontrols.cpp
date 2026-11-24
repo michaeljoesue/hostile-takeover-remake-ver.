@@ -200,7 +200,6 @@ void ButtonControl::OnPaint(DibBitmap *pbm)
 		if (m_szLabel[0] != 0) {
 			Font *pfnt = gapfnt[m_nfnt];
 			int cx = pfnt->GetTextExtent(m_szLabel);
-			int cy = pfnt->GetHeight();
 			int x = m_rc.left + (m_rc.Width() - cx + 1) / 2;
 			int y = m_rc.top + ((sizMid.cy - gapfnt[m_nfnt]->GetHeight() + 1) / 2);
 			gapfnt[m_nfnt]->DrawText(pbm, m_szLabel, x + rcForm.left, y + rcForm.top);
@@ -365,7 +364,6 @@ void CheckBoxControl::SetText(char *psz)
 	Size siz;
 	s_ptbmOnUp->GetSize(&siz);
 	Font *pfnt = gapfnt[m_ifnt];
-	int cx = pfnt->GetTextExtent(m_szLabel);
 	m_rc.right = m_rc.left + siz.cx + pfnt->GetTextExtent(m_szLabel);
 	m_rc.bottom = m_rc.top + pfnt->GetHeight();
 	Invalidate();

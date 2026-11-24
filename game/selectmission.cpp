@@ -112,7 +112,6 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
 
     int ailiFirstIncomplete[kmtUnknown + 1];
     memset(ailiFirstIncomplete, 0xff, sizeof(ailiFirstIncomplete));
-    int iliLastCompleteStory = -1;
     int iliSelectSpecial = -1;
     MissionType mtSelectSpecial = kmtUnknown;
 
@@ -156,14 +155,6 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
         if (ailiFirstIncomplete[md.mt] == -1) {
             if (!gpcptm->IsComplete(&miid)) {
                 ailiFirstIncomplete[md.mt] = plstc->GetCount() - 1;
-            }
-        }
-
-        // Track the last complete for story missions, for mission unlocking
-
-        if (md.mt == kmtStory) {
-            if (gpcptm->IsComplete(&miid)) {
-                iliLastCompleteStory = plstc->GetCount() - 1;
             }
         }
 

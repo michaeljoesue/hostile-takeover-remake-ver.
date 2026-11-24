@@ -1264,13 +1264,6 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 		return;
 	}
 
-
-	// God mode is allowed only if gfGodMode is on
-
-	bool fGodMode = false;
-	if (gfGodMode)
-		fGodMode = true;
-
 	// Selection?
 
 	if (IsSelectionCommand(pgobHit)) {
@@ -1343,7 +1336,6 @@ bool SimUIForm::IsSelectionCommand(Gob *pgobHit)
 
 	bool fOwnSelection = false;
 	bool fSelection = true;
-	Side sideHit = pgobHit->GetSide();
 	for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
 		if ((pgobT->GetFlags() & (kfGobUnit | kfGobSelected)) != (kfGobUnit | kfGobSelected))
 			continue;

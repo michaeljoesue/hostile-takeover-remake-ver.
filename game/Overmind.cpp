@@ -231,7 +231,9 @@ BeginStateMachine
 			if (ggobm.IsBelowLimit(knLimitMobileUnit, m_pplr)) {
 				// Search the Gob list for a same-side Builder that doesn't have any commands pending
 
+#ifdef STRESS
 				bool fBuilt = false;
+#endif
 				for (Gob *pgobBuilder = ggobm.GetFirstGob(); pgobBuilder != NULL; pgobBuilder = ggobm.GetNextGob(pgobBuilder)) {
 					if (pgobBuilder->GetOwner() != m_pplr)
 						continue;
@@ -243,7 +245,9 @@ BeginStateMachine
 						continue;
 
 					pbld->Build(utBuildee);
+#ifdef STRESS
 					fBuilt = true;
+#endif
 					break;
 				}
 

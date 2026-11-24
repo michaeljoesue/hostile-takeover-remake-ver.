@@ -962,7 +962,6 @@ bool MoveUnitGroupAction::Perform(UnitGroup *pug)
 
 	if (!m_fWaiting) {
 		TRect trc;
-		Level *plvl = gsim.GetLevel();
 		ggobm.GetAreaRect(m_nArea, &trc, pug->GetOwner()->GetSide());
 
 		// Figure out min speed
