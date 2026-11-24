@@ -1497,17 +1497,6 @@ static void SendGroupMove(UnitGroup *pug, int nArea)
 	}
 }
 
-static bool IsGroupIdle(UnitGroup *pug)
-{
-	UnitListEntry *pule = pug->GetUnitList();
-	for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
-		UnitGob *punt = (UnitGob *)ggobm.GetGob(pule->gid);
-		if (punt != NULL && !punt->IsIdle())
-			return false;
-	}
-	return true;
-}
-
 // ProtectGroupUnitGroupAction
 
 #define knVerProtectGroupUnitGroupActionState 1

@@ -18,7 +18,7 @@ Needs Python 3 with numpy, Pillow and qoi (pip install numpy pillow qoi).
     python tools/hd/build_hd.py [--out data/hd] [--preview DIR] [--only NAME]
 """
 
-import argparse, math, os, re, struct, sys
+import argparse, math, os, re, struct
 import numpy as np
 from PIL import Image, ImageFilter
 import qoi
@@ -170,9 +170,7 @@ def classic_mask(anir,strip,frame):
 def preview(name, anir, strip, frame, rgba, gx, gy, S):
     im=Image.fromarray(classic(anir,strip,frame)); b=bounds(anir,strip,frame)
     # canvas in game coords *S
-    cl=Image.new('RGBA',(int(im.width*S),int(im.height*S)))
     big=im.resize((int(im.width*S),int(im.height*S)),Image.NEAREST)
-    W=max(big.width, int((gx-b[0])*S)+rgba.shape[1])+int(abs(gx-b[0])*S)+10
     canvas=Image.new('RGBA',(big.width*3+40, max(big.height,rgba.shape[0])+int(abs(gy-b[1])*S)+40),(40,90,40,255))
     canvas.paste(big,(0,20),big)
     h=Image.fromarray(rgba)
@@ -299,7 +297,6 @@ def hrcvts():
             ('vts','VTS.anir',('a 0','a 1','a 2')),('vts2','VTS.anir',('b 0','b 1','b 2'))]):
         print(bld)
         cs=[cell(a,cw,ch,c,row) for c in range(3)]
-        si=[0,0,0]
         # classic strip indexes
         idx={'base 0':0,'base 1':1,'base 2':2,'base2 0':3,'base2 1':4,'base2 2':5,'a 0':0,'a 1':1,'a 2':2,'b 0':3,'b 1':4,'b 2':5}
         gx,gy,S=placement(classic_mask(anir,idx[names[0]],0),anir,cs[0])
