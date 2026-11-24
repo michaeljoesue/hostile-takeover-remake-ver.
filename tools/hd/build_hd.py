@@ -643,11 +643,15 @@ def dominion():
         preview('%s_r%d'%(name,d),anir,d,0,cell(A,c,c,d,0),gx,gy,S)
     artist_icon(name,anir)
 
-# Size. Each vehicle is scaled to fit its classic sprite facing up; the
-# Cyclops came out 8% smaller than the original on average over its 8
-# directions (24% at one diagonal, where the classic barrel is long), so it
-# is drawn a little bigger, about the cell's centre (the gun's axis).
-VEHICLE_SIZE={'cyclops':1.04}
+# Size. Each vehicle is scaled to fit its classic sprite facing up. The
+# classic Cyclops's three downward views are drawn about 30% bigger than
+# its others, and facing down is how it sits at rest, so the HD one looked
+# small (23% less area facing down). It is drawn 10% bigger, about the
+# cell's centre (the gun's axis), and moved to sit where the classic one
+# sits facing down (VEHICLE_ALIGN: the direction whose classic frame it is
+# lined up with).
+VEHICLE_SIZE={'cyclops':1.10}
+VEHICLE_ALIGN={'cyclops':4}
 def resize_placement(name, c, gx, gy, S):
     f=VEHICLE_SIZE.get(name,1.0)
     if f==1.0: return gx,gy,S
@@ -668,6 +672,16 @@ def cyclops():
     A=recoil_sheet(A,c,8,3,axis)
     gx,gy,S=placement(classic_mask(anir,8,0),anir,cell(A,c,c,0,0))
     gx,gy,S=resize_placement(name,c,gx,gy,S)
+    if name in VEHICLE_ALIGN:
+        # line the scaled picture up with the classic frame, the middles
+        # of their outlines
+        d=VEHICLE_ALIGN[name]
+        cm,(l,t)=classic_mask(anir,8+d,0); cy,cx=np.nonzero(cm)
+        hy,hx=np.nonzero(cell(A,c,c,d,0)[:,:,3]>128)
+        dx=(l+(cx.min()+cx.max()+1)/2.0)-(gx+(hx.min()+hx.max()+1)/2.0/S)
+        dy=(t+(cy.min()+cy.max()+1)/2.0)-(gy+(hy.min()+hy.max()+1)/2.0/S)
+        print('  moved %.1f,%.1f game px to sit on the classic frame facing %d'%(dx,dy,d))
+        gx+=dx; gy+=dy
     for d in range(8):
         for k in range(3):
             save_pic('%s/f%d_%03d'%(name,d,k),cell(A,c,c,d,k),gx,gy,S,team=weathered_team_mask)
