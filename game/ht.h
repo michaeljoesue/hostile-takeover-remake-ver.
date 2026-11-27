@@ -1315,6 +1315,8 @@ HdBinding *HdBindAnimation(const char *pszAniName, AnimationData *panid);
 bool HdIsActive();
 bool HdWantsStrip(HdBinding *phdb, int nStrip, DibBitmap *pbm);
 float HdGetSlide(HdBinding *phdb, int nStrip);
+bool HdStripNoShadow(HdBinding *phdb, int nStrip);
+bool HdGetFirePoint(HdBinding *phdb, int nStrip, Point *ppt);
 extern bool gfHdNoShadow;	// the next HD frames drawn keep no classic shadow
 bool HdWantsRedraw();
 void HdBeginFrame();
@@ -1384,6 +1386,8 @@ public:
 	void GetSpecialPoint(Point *pptSpecial, int nFrame = -1) {
 		if (nFrame < 0)
 			nFrame = m_nFrame;
+		if (HdGetFirePoint(m_panid->GetHdBinding(), m_nStrip, pptSpecial))
+			return;
 		m_panid->GetSpecialPoint(m_nStrip, nFrame, pptSpecial);
 	}
 

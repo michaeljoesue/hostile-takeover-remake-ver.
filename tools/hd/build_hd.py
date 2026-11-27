@@ -861,39 +861,83 @@ REQUIRED=[('sri.anir','%s %d'%(k,d)) for k in ('idle','jog','fire') for d in ran
     [(a,s) for a in ('miner.anir','mobilehq.anir') for s in ['run %d'%d for d in range(8)]+['icon']]+\
     [('vacuum.anir','a %d'%d) for d in range(8)]+[('proc.anir','miner 0')]
 
+# The guard's ground: the artist's cells stand him on the line 32 px below
+# their middle, 8 px below his spot in the classic 24 px tile art, which the
+# data build scales up 4/3 to the game's 32 px tiles (acrunch -scale): the
+# cells are 4x the 24 px art, so 3x the game's pixels
+GUARD_GROUND=104
+GUARD_ART=4.0/3     # game px per 24 px tile art px
+# Classic guards are 16.4 px tall in the 24 px art, the artist's 17.6 at
+# 4x: drawn a little smaller (about the feet), he is the classic size
+GUARD_SCALE=0.935
+
+def guard_shadow(rgba, ground=GUARD_GROUND):
+    """The guard with his own soft shadow on the ground behind him, the way
+    the classic frames lay it (down and to the left, about a fifth of his
+    height long): his outline laid flat from the ground line, blurred, at
+    the darkness of the classic shadow."""
+    from PIL import ImageFilter
+    al=Image.fromarray(rgba[:,:,3])
+    # shadow pixel (xs,ys) shows the body pixel h above the ground with
+    # xs=x-0.33h, ys=ground-0.12h
+    k=1/0.12
+    sh=al.transform(al.size, Image.AFFINE, (1,-0.33*k,0.33*k*ground, 0,k,ground-k*ground), resample=Image.BILINEAR)
+    sh=np.array(sh.filter(ImageFilter.GaussianBlur(2.5))).astype(np.float32)*0.6
+    out=np.zeros_like(rgba); out[:,:,3]=np.clip(sh,0,255).astype(np.uint8)
+    # the guard over his shadow
+    fa=rgba[:,:,3:4].astype(np.float32)/255; ba=out[:,:,3:4].astype(np.float32)/255
+    oa=fa+ba*(1-fa)
+    rgb=(rgba[:,:,:3]*fa)/np.maximum(oa,1e-6)
+    res=np.concatenate([rgb,oa*255],axis=2)
+    return np.clip(res+0.5,0,255).astype(np.uint8)
+
 def security_guard():
     """Security Guard (sri.anir): the artist's 144 px cells at 4x, eight
-    directions in columns N to NW, frames down the rows. The cell's middle
-    (72,72) is the guard's spot. Standing: 8 pictures a direction, played as
-    one loop over the classic 4, 6 or 8 frames (with their pause); walking
-    6, firing 5 (the muzzle flash drawn in) and dying 9, one a classic
-    frame. No team masks came with the art: the uniform is the only blue,
-    so the vehicles' paint mask takes it whole, and its brightness is
-    matched to the vehicles' paint like theirs."""
-    name,anir,c,S='guard','sri.anir',144,4.0
+    directions in columns N to NW, frames down the rows, standing on the
+    ground line 32 px below the cell's middle (the guard's spot). Drawn
+    GUARD_SCALE smaller about his feet, he is the classic guard's size.
+    Standing: 8 pictures a direction, played as one loop over the classic 4,
+    6 or 8 frames (with their pause); walking 6, firing 5 (the muzzle flash
+    drawn in) and dying 9, one a classic frame. Each picture carries its
+    own soft shadow, so the classic one isn't drawn under it. No team masks
+    came with the art: the uniform is the only blue, so the vehicles' paint
+    mask takes it whole, and its brightness is matched to the vehicles'
+    paint like theirs. The shot leaves the HD muzzle flash (the artist's
+    flash sheet, frame 1), not the classic firing point."""
+    name,anir,c=('guard','sri.anir',144)
     print(name)
-    g=-c/2.0/S
+    S=4.0/GUARD_ART/GUARD_SCALE
+    ground=8*GUARD_ART                   # game px below his spot
+    gx,gy=-c/2.0/S, ground-GUARD_GROUND/S     # the cell's top-left, game px from his spot
+    def place(px,py):                    # a cell pixel -> game px from his spot
+        return (px-c/2.0)/S, ground+(py-GUARD_GROUND)/S
+    F=sheet('guard_flash.png')
     for key,f,rows,strips in (('i','guard_idle.png',8,'idle'),('j','guard_jog.png',6,'jog'),('f','guard_fire.png',5,'fire')):
         A=balance_paint(sheet(f),strips)
         for d in range(8):
             for k in range(rows):
-                save_pic('%s/%s%d_%03d'%(name,key,d,k),cell(A,c,c,d,k),g,g,S,team=vehicle_team_mask)
-            if strips=='idle':
-                strip(anir,'idle %d'%d,pics='%s/i%d_'%(name,d),n=rows)
-            else:
-                strip(anir,'%s %d'%(strips,d),pics='%s/%s%d_'%(name,key,d),n=rows,blend=0)
+                save_pic('%s/%s%d_%03d'%(name,key,d,k),guard_shadow(cell(A,c,c,d,k)),gx,gy,S,team=vehicle_team_mask)
+            kw=dict(pics='%s/%s%d_'%(name,key,d),n=rows,noshadow=1)
+            if strips!='idle': kw['blend']=0
+            if strips=='fire':
+                fa=cell(F,c,c,d,1)[:,:,3].astype(np.float64)
+                ys,xs=np.nonzero(fa>0); w=fa[ys,xs]
+                fx,fy=place((xs*w).sum()/w.sum()+0.5,(ys*w).sum()/w.sum()+0.5)
+                kw['fire']='%.2f,%.2f'%(fx,fy)
+            strip(anir,'%s %d'%(strips,d),**kw)
     D=balance_paint(sheet('guard_die.png'),'die')
     for k in range(9):
-        save_pic('%s/d_%03d'%(name,k),cell(D,c,c,0,k),g,g,S,team=vehicle_team_mask)
-    strip(anir,'die 3',pics='%s/d_'%name,n=9,blend=0)
+        save_pic('%s/d_%03d'%(name,k),guard_shadow(cell(D,c,c,0,k)),gx,gy,S,team=vehicle_team_mask)
+    strip(anir,'die 3',pics='%s/d_'%name,n=9,blend=0,noshadow=1)
     # The build and help icons are classic frames drawn at another spot:
     # firing SE frame 0 and standing E frame 1 (classic origins (4,0) and
-    # (8,9) against (9,8) and (8,9))
-    strip(anir,'icon',pics='%s/icon'%name,n=1)
+    # (8,9) against (9,8) and (8,9) in the 24 px art); no shadow there, as in
+    # the classic icons
     A=balance_paint(sheet('guard_fire.png'),'icon')
-    save_pic('%s/icon000'%name,cell(A,c,c,3,0),g+5,g+8,S,team=vehicle_team_mask)
+    save_pic('%s/icon000'%name,cell(A,c,c,3,0),gx+5*GUARD_ART,gy+8*GUARD_ART,S,team=vehicle_team_mask)
+    strip(anir,'icon',pics='%s/icon'%name,n=1)
     A=balance_paint(sheet('guard_idle.png'),'help')
-    save_pic('%s/help000'%name,cell(A,c,c,2,1),g,g,S,team=vehicle_team_mask)
+    save_pic('%s/help000'%name,cell(A,c,c,2,1),gx,gy,S,team=vehicle_team_mask)
     strip(anir,'help',pics='%s/help'%name,n=1)
 
 def check_manifest():

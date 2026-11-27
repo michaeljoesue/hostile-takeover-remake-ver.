@@ -140,6 +140,9 @@ struct HdStrip {
     int cycle;                  // > 0: one classic frame; the pictures loop every this many updates
     int cupdMotion;             // updates a step of the animation takes (-1: not worked out yet)
     float slide;                // game px the pictures are drawn right of the classic frame's place (see HdGetSlide)
+    bool fNoShadow;             // the pictures carry their own shadow: the classic frame's isn't drawn
+    bool fFire;                 // the pictures fire from (xFire, yFire), not the classic firing point
+    float xFire, yFire;         // game px from the unit's place (see HdGetFirePoint)
     std::vector<int> amap, abmap;
 };
 
@@ -325,6 +328,9 @@ static void LoadManifest() {
             pstrip->cycle = 0;
             pstrip->cupdMotion = -1;
             pstrip->slide = 0;
+            pstrip->fNoShadow = false;
+            pstrip->fFire = false;
+            pstrip->xFire = pstrip->yFire = 0;
             std::string strPics;
             for (size_t k = 3; k < astr.size(); k++) {
                 size_t iEq = astr[k].find('=');
@@ -339,6 +345,15 @@ static void LoadManifest() {
                 else if (strKey == "none") pstrip->fNone = atoi(strVal.c_str()) != 0;
                 else if (strKey == "cycle") pstrip->cycle = atoi(strVal.c_str());
                 else if (strKey == "slide") pstrip->slide = (float)atof(strVal.c_str());
+                else if (strKey == "noshadow") pstrip->fNoShadow = atoi(strVal.c_str()) != 0;
+                else if (strKey == "fire") {
+                    float xF, yF;
+                    if (sscanf(strVal.c_str(), "%f,%f", &xF, &yF) == 2) {
+                        pstrip->fFire = true;
+                        pstrip->xFire = xF;
+                        pstrip->yFire = yF;
+                    }
+                }
                 else if (strKey == "map") ParseList(strVal, &pstrip->amap);
                 else if (strKey == "bmap") ParseList(strVal, &pstrip->abmap);
             }
@@ -449,6 +464,29 @@ float HdGetSlide(HdBinding *pbind, int nStrip) {
     if (pbind == NULL || nStrip < 0 || nStrip >= (int)pbind->apstrip.size() || pbind->apstrip[nStrip] == NULL)
         return 0;
     return pbind->apstrip[nStrip]->slide;
+}
+
+// Whether the strip's HD pictures draw their own shadow, so the classic
+// frame's shadow is left out under them
+
+bool HdStripNoShadow(HdBinding *pbind, int nStrip) {
+    if (pbind == NULL || nStrip < 0 || nStrip >= (int)pbind->apstrip.size() || pbind->apstrip[nStrip] == NULL)
+        return false;
+    return pbind->apstrip[nStrip]->fNoShadow;
+}
+
+// Where a unit drawn with the strip's HD pictures fires from (game px from
+// the unit's place), when the HD gun's muzzle isn't where the classic frame's
+// was: the shot then leaves the HD muzzle flash. False with HD off.
+
+bool HdGetFirePoint(HdBinding *pbind, int nStrip, Point *ppt) {
+    if (!HdIsActive() || pbind == NULL || nStrip < 0 || nStrip >= (int)pbind->apstrip.size() ||
+            pbind->apstrip[nStrip] == NULL || !pbind->apstrip[nStrip]->fFire)
+        return false;
+    HdStrip *pstrip = pbind->apstrip[nStrip];
+    ppt->x = (int)floorf(pstrip->xFire + 0.5f);
+    ppt->y = (int)floorf(pstrip->yFire + 0.5f);
+    return true;
 }
 
 bool HdWantsRedraw() {

@@ -189,6 +189,7 @@ void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int
 				m_ptbm->BltTo(pfrmd->ibm2, pbm, x - pfrmd->xOrigin2, y - pfrmd->yOrigin2, side, NULL);
 			if (pfrmd->ibm != 255)
 				m_ptbm->BltTo(pfrmd->ibm, pbm, x - pfrmd->xOrigin, y - pfrmd->yOrigin, side, NULL);
+			bool fNoShadow = gfHdNoShadow || HdStripNoShadow(m_phdb, nStrip);
 			rcShadow.Set(rc.right, rc.bottom, rc.left, rc.top);
 			for (int yT = rc.top; yT < rc.bottom; yT++) {
 				byte *pbOld = s_pbSave + (yT - rc.top) * cx;
@@ -198,7 +199,7 @@ void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int
 					byte bNew = pbNew[xT];
 					if (bNew == bOld)
 						continue;
-					if (!gfHdNoShadow && gmpiclriclrShadow != NULL && bNew == gmpiclriclrShadow[bOld]) {
+					if (!fNoShadow && gmpiclriclrShadow != NULL && bNew == gmpiclriclrShadow[bOld]) {
 						int xP = rc.left + xT;
 						if (xP < rcShadow.left) rcShadow.left = xP;
 						if (xP + 1 > rcShadow.right) rcShadow.right = xP + 1;
