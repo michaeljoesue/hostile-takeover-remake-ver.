@@ -871,26 +871,6 @@ GUARD_ART=4.0/3     # game px per 24 px tile art px
 # 4x: drawn a little smaller (about the feet), he is the classic size
 GUARD_SCALE=0.935
 
-def guard_shadow(rgba, ground=GUARD_GROUND):
-    """The guard with his own soft shadow on the ground behind him, the way
-    the classic frames lay it (down and to the left, about a fifth of his
-    height long): his outline laid flat from the ground line, blurred, at
-    the darkness of the classic shadow."""
-    from PIL import ImageFilter
-    al=Image.fromarray(rgba[:,:,3])
-    # shadow pixel (xs,ys) shows the body pixel h above the ground with
-    # xs=x-0.33h, ys=ground-0.12h
-    k=1/0.12
-    sh=al.transform(al.size, Image.AFFINE, (1,-0.33*k,0.33*k*ground, 0,k,ground-k*ground), resample=Image.BILINEAR)
-    sh=np.array(sh.filter(ImageFilter.GaussianBlur(2.5))).astype(np.float32)*0.6
-    out=np.zeros_like(rgba); out[:,:,3]=np.clip(sh,0,255).astype(np.uint8)
-    # the guard over his shadow
-    fa=rgba[:,:,3:4].astype(np.float32)/255; ba=out[:,:,3:4].astype(np.float32)/255
-    oa=fa+ba*(1-fa)
-    rgb=(rgba[:,:,:3]*fa)/np.maximum(oa,1e-6)
-    res=np.concatenate([rgb,oa*255],axis=2)
-    return np.clip(res+0.5,0,255).astype(np.uint8)
-
 def security_guard():
     """Security Guard (sri.anir): the artist's 144 px cells at 4x, eight
     directions in columns N to NW, frames down the rows, standing on the
@@ -898,8 +878,8 @@ def security_guard():
     GUARD_SCALE smaller about his feet, he is the classic guard's size.
     Standing: 8 pictures a direction, played as one loop over the classic 4,
     6 or 8 frames (with their pause); walking 6, firing 5 (the muzzle flash
-    drawn in) and dying 9, one a classic frame. Each picture carries its
-    own soft shadow, so the classic one isn't drawn under it. No team masks
+    drawn in) and dying 9, one a classic frame. The shadow is the classic
+    frame's, as for the vehicles. No team masks
     came with the art: the uniform is the only blue, so the vehicles' paint
     mask takes it whole, and its brightness is matched to the vehicles'
     paint like theirs. The shot leaves the HD muzzle flash (the artist's
@@ -916,8 +896,8 @@ def security_guard():
         A=balance_paint(sheet(f),strips)
         for d in range(8):
             for k in range(rows):
-                save_pic('%s/%s%d_%03d'%(name,key,d,k),guard_shadow(cell(A,c,c,d,k)),gx,gy,S,team=vehicle_team_mask)
-            kw=dict(pics='%s/%s%d_'%(name,key,d),n=rows,noshadow=1)
+                save_pic('%s/%s%d_%03d'%(name,key,d,k),cell(A,c,c,d,k),gx,gy,S,team=vehicle_team_mask)
+            kw=dict(pics='%s/%s%d_'%(name,key,d),n=rows)
             if strips!='idle': kw['blend']=0
             if strips=='fire':
                 fa=cell(F,c,c,d,1)[:,:,3].astype(np.float64)
@@ -927,12 +907,11 @@ def security_guard():
             strip(anir,'%s %d'%(strips,d),**kw)
     D=balance_paint(sheet('guard_die.png'),'die')
     for k in range(9):
-        save_pic('%s/d_%03d'%(name,k),guard_shadow(cell(D,c,c,0,k)),gx,gy,S,team=vehicle_team_mask)
-    strip(anir,'die 3',pics='%s/d_'%name,n=9,blend=0,noshadow=1)
+        save_pic('%s/d_%03d'%(name,k),cell(D,c,c,0,k),gx,gy,S,team=vehicle_team_mask)
+    strip(anir,'die 3',pics='%s/d_'%name,n=9,blend=0)
     # The build and help icons are classic frames drawn at another spot:
     # firing SE frame 0 and standing E frame 1 (classic origins (4,0) and
-    # (8,9) against (9,8) and (8,9) in the 24 px art); no shadow there, as in
-    # the classic icons
+    # (8,9) against (9,8) and (8,9) in the 24 px art)
     A=balance_paint(sheet('guard_fire.png'),'icon')
     save_pic('%s/icon000'%name,cell(A,c,c,3,0),gx+5*GUARD_ART,gy+8*GUARD_ART,S,team=vehicle_team_mask)
     strip(anir,'icon',pics='%s/icon'%name,n=1)
