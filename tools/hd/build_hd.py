@@ -800,6 +800,8 @@ def finish(out, preview_dir):
          '#   {V} in pics = h/d by the variant of the strip drawn just before (2 = draw nothing)']
     open(os.path.join(out,'manifest.txt'),'w').write('\n'.join(hdr+manifest)+'\n')
 JOBS=[
+    # Security Guard (the first infantry)
+    ('guard', lambda: security_guard()),
     ('warehouse', lambda: warehouse()),
     ('hrcvts', lambda: hrcvts()),
     ('proc', lambda: proc()),
@@ -844,7 +846,8 @@ JOBS=[
 
 # Every classic strip that must have HD pictures (a missing one draws the
 # classic art; checked after a full build)
-REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
+REQUIRED=[('sri.anir','%s %d'%(k,d)) for k in ('idle','jog','fire') for d in range(8)]+[('sri.anir','die 3')]+\
+    [('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
     [('Reactor.anir',s) for s in ('spin 0','spin 1','spin 2')]+\
     [(a,s) for a in ('Radar.anir','Research.anir','CommandCenter.anir','Warehouse.anir','VTS.anir') for s in ('a 0','a 1','a 2')]+\
     [('VTS.anir',s) for s in ('b 0','b 1','b 2')]+\
@@ -857,6 +860,41 @@ REQUIRED=[('HQ.anir',s) for s in ('a 0','a 1','a 2')]+\
     [('artillery.anir',s) for s in ['fire %d'%d for d in range(8)]+['move %d'%d for d in range(8)]+['icon']]+\
     [(a,s) for a in ('miner.anir','mobilehq.anir') for s in ['run %d'%d for d in range(8)]+['icon']]+\
     [('vacuum.anir','a %d'%d) for d in range(8)]+[('proc.anir','miner 0')]
+
+def security_guard():
+    """Security Guard (sri.anir): the artist's 144 px cells at 4x, eight
+    directions in columns N to NW, frames down the rows. The cell's middle
+    (72,72) is the guard's spot. Standing: 8 pictures a direction, played as
+    one loop over the classic 4, 6 or 8 frames (with their pause); walking
+    6, firing 5 (the muzzle flash drawn in) and dying 9, one a classic
+    frame. No team masks came with the art: the uniform is the only blue,
+    so the vehicles' paint mask takes it whole, and its brightness is
+    matched to the vehicles' paint like theirs."""
+    name,anir,c,S='guard','sri.anir',144,4.0
+    print(name)
+    g=-c/2.0/S
+    for key,f,rows,strips in (('i','guard_idle.png',8,'idle'),('j','guard_jog.png',6,'jog'),('f','guard_fire.png',5,'fire')):
+        A=balance_paint(sheet(f),strips)
+        for d in range(8):
+            for k in range(rows):
+                save_pic('%s/%s%d_%03d'%(name,key,d,k),cell(A,c,c,d,k),g,g,S,team=vehicle_team_mask)
+            if strips=='idle':
+                strip(anir,'idle %d'%d,pics='%s/i%d_'%(name,d),n=rows)
+            else:
+                strip(anir,'%s %d'%(strips,d),pics='%s/%s%d_'%(name,key,d),n=rows,blend=0)
+    D=balance_paint(sheet('guard_die.png'),'die')
+    for k in range(9):
+        save_pic('%s/d_%03d'%(name,k),cell(D,c,c,0,k),g,g,S,team=vehicle_team_mask)
+    strip(anir,'die 3',pics='%s/d_'%name,n=9,blend=0)
+    # The build and help icons are classic frames drawn at another spot:
+    # firing SE frame 0 and standing E frame 1 (classic origins (4,0) and
+    # (8,9) against (9,8) and (8,9))
+    strip(anir,'icon',pics='%s/icon'%name,n=1)
+    A=balance_paint(sheet('guard_fire.png'),'icon')
+    save_pic('%s/icon000'%name,cell(A,c,c,3,0),g+5,g+8,S,team=vehicle_team_mask)
+    A=balance_paint(sheet('guard_idle.png'),'help')
+    save_pic('%s/help000'%name,cell(A,c,c,2,1),g,g,S,team=vehicle_team_mask)
+    strip(anir,'help',pics='%s/help'%name,n=1)
 
 def check_manifest():
     have=set(tuple(l.split('\t')[1:3]) for l in manifest)

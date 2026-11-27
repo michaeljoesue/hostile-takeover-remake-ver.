@@ -223,3 +223,30 @@ strip	mtank.anir	fire 13	pics=liberator/t13_	n=5	blend=0
 strip	mtank.anir	fire 14	pics=liberator/t14_	n=5	blend=0
 strip	mtank.anir	fire 15	pics=liberator/t15_	n=5	blend=0
 strip	mtank.anir	icon	pics=liberator/icon	n=1
+strip	sri.anir	idle 0	pics=guard/i0_	n=8
+strip	sri.anir	idle 1	pics=guard/i1_	n=8
+strip	sri.anir	idle 2	pics=guard/i2_	n=8
+strip	sri.anir	idle 3	pics=guard/i3_	n=8
+strip	sri.anir	idle 4	pics=guard/i4_	n=8
+strip	sri.anir	idle 5	pics=guard/i5_	n=8
+strip	sri.anir	idle 6	pics=guard/i6_	n=8
+strip	sri.anir	idle 7	pics=guard/i7_	n=8
+strip	sri.anir	jog 0	pics=guard/j0_	n=6	blend=0
+strip	sri.anir	jog 1	pics=guard/j1_	n=6	blend=0
+strip	sri.anir	jog 2	pics=guard/j2_	n=6	blend=0
+strip	sri.anir	jog 3	pics=guard/j3_	n=6	blend=0
+strip	sri.anir	jog 4	pics=guard/j4_	n=6	blend=0
+strip	sri.anir	jog 5	pics=guard/j5_	n=6	blend=0
+strip	sri.anir	jog 6	pics=guard/j6_	n=6	blend=0
+strip	sri.anir	jog 7	pics=guard/j7_	n=6	blend=0
+strip	sri.anir	fire 0	pics=guard/f0_	n=5	blend=0
+strip	sri.anir	fire 1	pics=guard/f1_	n=5	blend=0
+strip	sri.anir	fire 2	pics=guard/f2_	n=5	blend=0
+strip	sri.anir	fire 3	pics=guard/f3_	n=5	blend=0
+strip	sri.anir	fire 4	pics=guard/f4_	n=5	blend=0
+strip	sri.anir	fire 5	pics=guard/f5_	n=5	blend=0
+strip	sri.anir	fire 6	pics=guard/f6_	n=5	blend=0
+strip	sri.anir	fire 7	pics=guard/f7_	n=5	blend=0
+strip	sri.anir	die 3	pics=guard/d_	n=9	blend=0
+strip	sri.anir	icon	pics=guard/icon	n=1
+strip	sri.anir	help	pics=guard/help	n=1
